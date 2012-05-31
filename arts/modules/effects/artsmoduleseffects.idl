@@ -1,0 +1,147 @@
+/*  This file is part of the KDE project
+    Copyright (C) 2002 Arnold Krille <arnold@arnoldarts.de>
+
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Library General Public
+    License version 2 as published by the Free Software Foundation.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Library General Public License for more details.
+
+    You should have received a copy of the GNU Library General Public License
+    along with this library; see the file COPYING.LIB.  If not, write to
+    the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+    Boston, MA 02111-1307, USA.
+
+*/
+
+/*
+ * DISCLAIMER: The interfaces in envmixer.idl (and the derived .cc/.h files)
+ *             DO NOT GUARANTEE BINARY COMPATIBILITY YET.
+ *
+ * They are intended for developers. You shouldn't expect that applications in
+ * binary form will be fully compatibile with further releases of these
+ * interfaces.
+ */
+
+#include <artsflow.idl>
+#include <artsgui.idl>
+#include <artsmodulescommon.idl>
+
+module Arts {
+
+	interface StereoToMono : Arts::SynthModule {
+		attribute float pan; // From -1(left) to +1(right)
+		in audio stream inleft, inright;
+		out audio stream outmono;
+	};
+
+	interface MonoToStereo : Arts::SynthModule {
+		attribute float pan; // Same as StereoToMono
+		in audio stream inmono;
+		out audio stream outleft, outright;
+	};
+
+	interface StereoBalance : Arts::StereoEffect {
+		attribute float balance;
+	};
+	interface StereoBalanceGuiFactory : Arts::GuiFactory {};
+
+	interface FiveBandMonoComplexEQ : Arts::StereoEffect {
+		readonly attribute StereoToMono s2m;
+		attribute float lowfreq, lowq, lowgain;
+		attribute float mid1freq, mid1q, mid1gain;
+		attribute float mid2freq, mid2q, mid2gain;
+		attribute float mid3freq, mid3q, mid3gain;
+		attribute float highfreq, highq, highgain;
+		readonly attribute MonoToStereo m2s;
+	};
+	interface FiveBandMonoComplexEQGuiFactory : Arts::GuiFactory {};
+
+	interface Synth_VOICE_REMOVAL : StereoEffect {
+		attribute float position, frequency;
+	};
+
+	interface VoiceRemovalGuiFactory : GuiFactory {
+	};
+
+	interface Synth_STEREO_COMPRESSOR : StereoEffect {
+		attribute float attack, release, threshold, ratio, output;
+		attribute boolean thru;
+	};
+
+	interface StereoCompressorGuiFactory : GuiFactory {
+	};
+
+	interface Synth_STEREO_PITCH_SHIFT : StereoEffect {
+		attribute float speed, frequency;
+	};
+
+	interface Synth_STEREO_PITCH_SHIFT_FFT : StereoEffect {
+		attribute float speed, scaleFactor;
+		attribute long frameSize, oversample;
+	};
+
+	interface Synth_STEREO_FIR_EQUALIZER : StereoEffect {
+		attribute sequence<GraphPoint> frequencies;
+		attribute long taps;
+	};
+
+	interface StereoFirEqualizerGuiFactory : GuiFactory {
+	};
+
+	interface Synth_FREEVERB : StereoEffect {
+		attribute float roomsize, damp, wet, dry, width, mode;
+	};
+
+	interface FreeverbGuiFactory : GuiFactory {
+	};
+
+	interface Effect_WAVECAPTURE : StereoEffect {
+		attribute string filename;
+	};
+
+	interface StereoVolumeControlGui : LayoutBox  {
+		/**
+			Creates a Gui for a StereoVolumeControl.
+			This should be the most often used function.
+		*/
+		void constructor( Arts::StereoVolumeControl svc );
+		/*
+			The direction from min to max for all elements.
+			The elements will be order 90 degree clockwise to it.
+		*/
+		//attribute Direction direction; // Is already in LayoutBox
+
+		/// The title of this volumecontrol
+		attribute string title;
+		/// the minimum and maximum value for levelmeter(only min, max is 0dB) and volumecontrol
+		attribute float dbmin, dbmax;
+
+		/**
+			The elements separate:
+				- the two levelmeter
+				- the volumefader
+				- the tickmarks for levelmeter and volumefader
+				- the Label showing the title of the VolumeControl
+			Use this only if you want to connect them to own devices.
+		*/
+		readonly attribute LevelMeter left, right;
+		readonly attribute VolumeFader fader;
+		readonly attribute Tickmarks levelmetertickmarks, volumefadertickmarks;
+		readonly attribute Label label;
+
+		/**
+			Couples the two VolumeSlider
+			Is currently useless since StereoVolumeControl::scaleFactor is
+			only one value for both channels.
+		*/
+		attribute boolean couple;
+
+	};
+
+	interface StereoVolumeControlGuiFactory : Arts::GuiFactory {};
+};
+

@@ -1,0 +1,557 @@
+#MIN_CONFIG
+
+dnl Checks for header files.
+AC_HEADER_DIRENT
+AC_HEADER_STDC
+AC_CHECK_HEADERS(fcntl.h sys/time.h unistd.h features.h alloca.h linux/awe_voice.h awe_voice.h /usr/src/sys/i386/isa/sound/awe_voice.h /usr/src/sys/gnu/i386/isa/sound/awe_voice.h linux/ucdrom.h sys/stdtypes.h sys/filio.h sys/audioio.h Alib.h sys/sem.h string.h getopt.h machine/endian.h sys/awe_voice.h)
+
+dnl First, setup HAVE_LINUX_CDROM_H.
+dnl This gets cached, so later we can selectively
+dnl disable applications by using _CHECK_HEADER
+AC_CHECK_HEADERS(linux/cdrom.h)
+
+AC_CHECK_FUNCS(usleep snprintf)
+
+AC_MSG_CHECKING(machine architecture)
+AC_SUBST(ARCH_TYPE)
+ARCH_TYPE=`uname -m`
+if test `uname -s` = "FreeBSD"
+then
+	HW_MODEL=`sysctl -n hw.model`
+
+	case "$HW_MODEL" in
+		"Pentium II/Pentium II Xeon/Celeron")
+			ARCH_TYPE="i686"
+		;;
+	esac
+fi;
+AC_MSG_RESULT($ARCH_TYPE)
+
+case "$ARCH_TYPE" in
+i?86)
+	AC_MSG_CHECKING(for a binutils new enough to support MMX)
+	as_ver=`echo|as -v 2>&1|grep ".*version.*"`
+	if test -z "$as_ver"
+	then
+		MMX_SUPPORT="no"
+	else
+		as_ver=`echo $as_ver |sed -e "s/.*version //;s/ .*//"`
+		as_major=`echo $as_ver |cut -d. -f1`
+		if test $as_major -gt 2
+		then
+			MMX_SUPPORT="yes"
+		else
+			if test $as_major -lt 2
+			then
+				MMX_SUPPORT="no"
+			else
+				as_minor=`echo $as_ver |cut -d. -f2`
+				if test $as_minor -ge 10
+				then
+					MMX_SUPPORT="yes"
+				else
+					MMX_SUPPORT="no"
+				fi
+			fi
+		fi
+	fi
+	AC_MSG_RESULT($MMX_SUPPORT)
+	;;
+*)
+	dnl No MMX support on non-x86 architecture toolchains
+	MMX_SUPPORT="no"
+  ;;
+esac
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_HEADER_TIME
+CXXFLAGS="$CXXFLAGS $KDE_DEFAULT_CXXFLAGS"
+
+dnl check if the assembler supports SSE instructions
+AC_MSG_CHECKING([for x86 SSE instructions])
+AC_CACHE_VAL(ac_cv_x86_sse,
+[
+AC_TRY_COMPILE(,
+[
+#if defined(__GNUC__) && defined(__i386__)
+__asm__("movups %xmm0, (%esp)");
+#else
+#error Not gcc on x86
+#endif
+],
+ac_cv_x86_sse=yes,
+ac_cv_x86_sse=no)
+])
+AC_MSG_RESULT($ac_cv_x86_sse)
+if test "x$ac_cv_x86_sse" = "xyes"; then
+	    AC_DEFINE(HAVE_X86_SSE,1,
+		        [Define if your assembler supports x86 SSE instructions])
+fi
+
+AC_DEFUN([KDE_CHECK_OGGVORBIS],
+[
+  have_oggvorbis=yes
+
+  KDE_CHECK_LIB(ogg, ogg_page_version,
+    [:], [have_oggvorbis=no])
+
+  KDE_CHECK_HEADER(vorbis/vorbisfile.h,
+    [:], [have_oggvorbis=no])
+
+  KDE_CHECK_LIB(vorbis, vorbis_info_init,
+    [:], [have_oggvorbis=no])
+
+  KDE_CHECK_LIB(vorbisfile, ov_open,
+    [:], [have_oggvorbis=no], -lvorbis -logg)
+
+  KDE_CHECK_LIB(vorbisenc, vorbis_encode_init,
+    [:], [have_oggvorbis=no], -lvorbis -logg)
+
+  KDE_CHECK_LIB(vorbis, vorbis_bitrate_addblock,
+    [have_vorbis_value=2], [have_vorbis_value=1])
+
+  if test "x$have_oggvorbis" = xyes; then
+    # for akode/plugins/xiph_decoder/ kioslave/audiocd/plugins/ and krec/ogg_export/
+    VORBIS_LIBS="-lvorbis -logg"
+    VORBISFILE_LIBS="-lvorbisfile"
+    VORBISENC_LIBS="-lvorbisenc"
+
+    # for akode/plugins/xiph_decoder/
+    AC_DEFINE_UNQUOTED(HAVE_OGG_VORBIS, 1, [Define if you have ogg/vorbis installed])
+
+    # for kioslave/audiocd/plugins/ and krec/ogg_export/
+    AC_DEFINE_UNQUOTED(HAVE_VORBIS, $have_vorbis_value, [Define if you ogg/vorbis installed])
+
+    # for mpeglib/
+    OGG_VORBISLIBS="-lvorbisfile -lvorbis -logg"
+    AC_DEFINE(OGG_VORBIS, 1, [Define if you have ogg/vorbis installed])
+  fi
+
+  AC_SUBST(VORBIS_LIBS)
+  AC_SUBST(VORBISFILE_LIBS)
+  AC_SUBST(VORBISENC_LIBS)
+])
+
+AC_DEFUN([KDE_CHECK_OSSAUDIO],
+[
+  have_ossaudio=no
+
+  AC_CHECK_HEADERS([soundcard.h sys/soundcard.h],
+    [have_ossaudio=yes])
+
+  AC_CHECK_LIB(ossaudio, _oss_ioctl,
+    [:], [have_ossaudio=no])
+
+  if test "x$have_ossaudio" = xyes; then
+    # for kmix/ and akode/
+    LIBOSSAUDIO="-lossaudio"
+  fi
+
+  AC_SUBST(LIBOSSAUDIO)
+])
+
+AC_DEFUN([KDE_CHECK_ALSA],
+[
+  have_alsa=no
+
+  AC_CHECK_HEADERS([sys/asoundlib.h alsa/asoundlib.h],
+    [have_alsa=yes])
+
+  AC_CHECK_LIB(asound, snd_seq_create_simple_port,
+    [:], [have_alsa=no])
+
+  AC_LANG_SAVE
+  AC_LANG_C
+  if test "x$have_alsa" = xyes; then
+    AC_TRY_COMPILE([
+      #include "confdefs.h"
+      #ifdef HAVE_SYS_ASOUNDLIB_H
+      #include <sys/asoundlib.h>
+      #endif
+      #ifdef HAVE_ALSA_ASOUNDLIB_H
+      #include <alsa/asoundlib.h>
+      #endif
+    ],[
+      #if (SND_LIB_MAJOR == 0) && (SND_LIB_MINOR == 5)
+        /* we have ALSA 0.5.x */
+      #else
+        #error not ALSA 0.5.x
+      #endif
+    ],
+    have_alsa_0_5=yes)
+
+    AC_TRY_COMPILE([
+      #include "confdefs.h"
+      #ifdef HAVE_SYS_ASOUNDLIB_H
+      #include <sys/asoundlib.h>
+      #endif
+      #ifdef HAVE_ALSA_ASOUNDLIB_H
+      #include <alsa/asoundlib.h>
+      #endif
+    ],[
+      #if (SND_LIB_MAJOR == 0) && (SND_LIB_MINOR == 9)
+        /* we have ALSA 0.9.x */
+      #else
+        #error not ALSA 0.9.x
+      #endif
+    ],
+    have_alsa_0_9=yes)
+
+    AC_TRY_COMPILE([
+      #include "confdefs.h"
+      #ifdef HAVE_SYS_ASOUNDLIB_H
+      #include <sys/asoundlib.h>
+      #endif
+      #ifdef HAVE_ALSA_ASOUNDLIB_H
+      #include <alsa/asoundlib.h>
+      #endif
+    ],[
+      #if (SND_LIB_MAJOR == 1)
+        /* we have ALSA 1.x */
+      #else
+        #error not ALSA 1.x
+      #endif
+    ],
+    have_alsa_1=yes)
+  fi
+  AC_LANG_RESTORE
+
+  if test "x$have_alsa_0_9" = xyes || test "x$have_alsa_1" = xyes; then
+    # for kmix/ and akode/
+    LIBASOUND="-lasound"
+    AC_DEFINE(HAVE_LIBASOUND2, 1, [Define if you have libasound.so.2 (required for ALSA 0.9.x/1.x support)])
+
+    # for arts/
+    ARTS_LIBASOUND="-lasound"
+    AC_DEFINE(HAVE_ARTS_LIBASOUND2, 1, [Define if you have libasound.so.2 (required for ALSA 0.9.x/1.x support)])
+  fi
+
+  if test "x$have_alsa_0_5" = xyes; then
+    # for arts/
+    ARTS_LIBASOUND="-lasound"
+    AC_DEFINE(HAVE_ARTS_LIBASOUND, 1, [Define if you have libasound.so.1 (required for ALSA 0.5.x support)])
+  fi
+
+  AC_SUBST(LIBASOUND)
+  AC_SUBST(ARTS_LIBASOUND)
+])
+
+AC_DEFUN([KDE_CHECK_CDPARANOIA],
+[
+  have_cdparanoia=yes
+
+  if test -z "$CDPARANOIA"; then
+    KDE_FIND_PATH(cdparanoia, CDPARANOIA, [/bin /sbin /usr/bin /usr/sbin /usr/local/bin /usr/local/sbin])
+  fi
+
+  if test -z "$CDPARANOIA"; then
+    have_cdparanoia=no
+  fi
+
+  KDE_CHECK_HEADER(cdda_interface.h,
+    [:], [have_cdparanoia=no])
+
+  # Older versions of FreeBSD's cdparanoia lack cdrom_drive.cdda_device_name
+  AC_MSG_CHECKING([for cdrom_drive.cdda_device_name in cdda_interface.h])
+  kde_save_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS $all_includes"
+  AC_LANG_SAVE
+  AC_LANG_C
+  AC_TRY_COMPILE([
+    #include <cdda_interface.h>
+    ],
+    [
+        struct cdrom_drive device;
+        device.cdda_device_name = 0;
+    ],
+    [
+        AC_MSG_RESULT([yes])
+    ], [
+        AC_MSG_RESULT([no])
+        have_cdparanoia=no
+    ])
+  AC_LANG_RESTORE
+  CPPFLAGS=$kde_save_CPPFLAGS
+
+  KDE_CHECK_LIB(cdda_paranoia, paranoia_init,
+    [:], [have_cdparanoia=no], [-lcdda_interface -lm])
+
+  # because of the horrible hack we need shared cdparanoia
+  for ext in so sl la a; do
+    AC_FIND_FILE(libcdda_paranoia.$ext, $kde_libraries /usr/lib /usr/local/lib,
+      para_libdir)
+    if test -r $para_libdir/libcdda_paranoia.$ext; then
+      if test $ext = a && ls "$para_libdir" | grep "^libcdda_paranoia.so.*" 2>&1 >/dev/null; then
+        ext=so
+      fi
+      break
+    fi
+  done
+  if test "$ext" = la; then
+      grep "^library_names='.*[a-z].*'" $para_libdir/libcdda_paranoia.$ext 2>&1 > /dev/null || have_cdparanoia_only_static=yes
+  fi
+  if test "$ext" = a; then
+    have_cdparanoia_only_static=yes
+  fi
+
+  if test "x$have_cdparanoia" = xyes; then
+    # for kioslave/audiocd/
+    CDPARANOIA_LIBS="-lcdda_paranoia -lcdda_interface -lm"
+
+    # for mpeglib/
+    CDDALIBS="-lcdda_paranoia -lcdda_interface -lm"
+    AC_DEFINE(CDDA_PARANOIA, 1, [Define if you have cdparanoia installed])
+  fi
+
+  if test "x$have_cdparanoia_only_static" = xyes; then
+    # for kioslave/audiocd/
+    AC_DEFINE_UNQUOTED(CDPARANOIA_STATIC, 1, [Define if you only have a static cdparanoia])
+  fi
+
+  AC_SUBST(CDPARANOIA_LIBS)
+])
+
+AC_DEFUN([KDE_CHECK_LAME],
+[
+  have_lame=yes
+
+  KDE_CHECK_HEADER(lame/lame.h,
+    [:], [have_lame=no])
+
+  KDE_CHECK_LIB(mp3lame, lame_init,
+    [:], [have_lame=no], [-lm])
+
+  if test "x$have_lame" = xyes; then
+    # for krec/mp3_export/ (kioslave/audiocd/ uses the lame binary at runtime)
+    LAME_LIBS="-lmp3lame -lm"
+  fi
+
+  AC_SUBST(LAME_LIBS)
+])
+
+AC_DEFUN([KDE_CHECK_TAGLIB],
+[
+  AC_PATH_PROG(TAGLIB_CONFIG, taglib-config, [no], [$PATH:$prefix/bin])
+
+  if test "x$TAGLIB_CONFIG" != xno; then
+    AC_DEFINE(HAVE_TAGLIB, 1, [define if you have TagLib])
+    taglib_includes=`$TAGLIB_CONFIG --cflags`
+    taglib_libs=`$TAGLIB_CONFIG --libs`
+    have_taglib=yes
+  else
+    taglib_includes=""
+    taglib_libs=""
+    have_taglib=no
+  fi
+
+  KDE_CHECK_HEADER(taglib/mpcfile.h, have_taglib_mpc=yes, have_taglib_mpc=no)
+
+  AC_SUBST(taglib_includes)
+  AC_SUBST(taglib_libs)
+])
+
+AC_DEFUN([KDE_CHECK_AKODE],
+[
+  AC_PATH_PROG(AKODE_CONFIG, akode-config, [no], [$PATH:$prefix/bin])
+
+  if test "x$AKODE_CONFIG" != xno; then
+    AC_DEFINE(HAVE_AKODE, 1, [define if you have aKodelib installed])
+    akode_includes=`$AKODE_CONFIG --cflags`
+    akode_libs=`$AKODE_CONFIG --libs`
+    have_akode=yes
+  else
+    akode_includes=""
+    akode_libs=""
+    have_akode=no
+  fi
+
+  AC_SUBST(akode_includes)
+  AC_SUBST(akode_libs)
+])
+
+AC_DEFUN([KDE_CHECK_MPEGLIB_ARTS],
+[
+  MPEGLIB_ARTS_MAJOR_VERSION=0
+  MPEGLIB_ARTS_MINOR_VERSION=3
+  MPEGLIB_ARTS_MICRO_VERSION=0
+
+  MPEGLIB_ARTS_VERSION=$MPEGLIB_ARTS_MAJOR_VERSION.$MPEGLIB_ARTS_MINOR_VERSION.$MPEGLIB_ARTS_MICRO_VERSION
+
+  AC_SUBST(MPEGLIB_ARTS_MAJOR_VERSION)
+  AC_SUBST(MPEGLIB_ARTS_MINOR_VERSION)
+  AC_SUBST(MPEGLIB_ARTS_MICRO_VERSION)
+  AC_SUBST(MPEGLIB_ARTS_VERSION)
+
+  dnl build search PATH
+  artsc_config_test_path=$prefix/bin:$exec_prefix/bin:$KDEDIR/bin:$PATH
+  AC_PATH_PROG(kde_artsplug_compiles,artsc-config,no,$artsc_config_test_path)
+
+  dnl if we found it here set variable
+  if test x$kde_artsplug_compiles != xno; then
+    ARTSCCONFIG=$kde_artsplug_compiles;
+    kde_artsplug_compiles=yes
+  fi
+
+  dnl this is needed for a standalone mpeglib
+  dnl it should compile without KDE installed
+  dnl but if we find arts we need the include
+  dnl path for it.
+
+  if test x$kde_artsplug_compiles = xyes; then
+    ARTSC_INCLUDE=`${ARTSCCONFIG} --cflags`
+    AC_MSG_RESULT([arts includes... $ARTSC_INCLUDE])
+    AC_SUBST(ARTSC_INCLUDE)
+    ARTSC_LIBS=`${ARTSCCONFIG} --libs`
+    AC_MSG_RESULT([arts libraries... $ARTSC_LIBS])
+    AC_SUBST(ARTSC_LIBS)
+    AC_SUBST(LIBDL)
+  fi
+
+  if test x$kde_mpeglib_compiles = xno; then
+    AC_MSG_RESULT([** mpeglib disabled we disable artsplug **])
+    kde_artsplug_compiles=no;
+    fi
+
+  if test x$kde_artsplug_compiles = xno; then
+    AC_MSG_RESULT([** DO NOT COMPILE mpeglib_artsplug **])
+    DO_NOT_COMPILE="$DO_NOT_COMPILE mpeglib_artsplug"
+  fi
+])dnl KDE_CHECK_MPEGLIB_ARTS
+
+AC_TYPE_SIGNAL
+
+AC_ARG_WITH(vorbis,
+  [AC_HELP_STRING(--with-vorbis,
+    [enable support for Ogg Vorbis @<:@default=check@:>@])],
+  [], with_vorbis=check)
+
+have_oggvorbis=no
+if test "x$with_vorbis" != xno; then
+  KDE_CHECK_OGGVORBIS
+
+  if test "x$with_vorbis" != xcheck && test "x$have_oggvorbis" != xyes; then
+    AC_MSG_ERROR([--with-vorbis was given, but test for Ogg Vorbis failed])
+  fi
+fi
+
+# for krec/ogg_export
+AM_CONDITIONAL(compile_ogg_export, test "x$have_oggvorbis" = xyes)
+
+if test "x$kde_mpeglib_compiles" = xyes -o "x$have_oggvorbis" = xno; then
+  DO_NOT_COMPILE="$DO_NOT_COMPILE oggvorbis_artsplugin"
+fi
+
+AC_ARG_WITH(ossaudio,
+  [AC_HELP_STRING(--with-ossaudio,
+    [enable support for OpenBSD ossaudio @<:@default=check@:>@])],
+  [], with_ossaudio=check)
+
+if test "x$with_ossaudio" != xno; then
+  KDE_CHECK_OSSAUDIO
+
+  if test "x$with_ossaudio" != xcheck && test "x$have_ossaudio" != xyes; then
+    AC_MSG_ERROR([--with-ossaudio was given, but test for ossaudio failed])
+  fi
+fi
+
+AC_ARG_WITH(alsa,
+  [AC_HELP_STRING(--with-alsa,
+    [enable support for ALSA @<:@default=check@:>@])],
+  [], with_alsa=check)
+
+have_alsa=no
+if test "x$with_alsa" != xno; then
+  KDE_CHECK_ALSA
+
+  if test "x$with_alsa" != xcheck && test "x$have_alsa" != xyes; then
+    AC_MSG_ERROR([--with-alsa was given, but test for ALSA failed])
+  fi
+fi
+
+AC_ARG_WITH(cdparanoia,
+  [AC_HELP_STRING(--with-cdparanoia,
+    [enable support for CD ripping thorugh cdparanoia @<:@default=check@:>@])],
+  [], with_cdparanoia=check)
+
+have_cdparanoia=no
+if test "x$with_cdparanoia" != xno; then
+  KDE_CHECK_CDPARANOIA
+
+  if test "x$with_cdparanoia" != xcheck && test "x$have_cdparanoia" != xyes; then
+    AC_MSG_ERROR([--with-cdparanoia was given, but test for cdparanoia failed])
+  fi
+fi
+
+# for kioslave/audiocd/
+AM_CONDITIONAL(include_kioslave_audiocd, test "x$have_cdparanoia" = xyes)
+AM_CONDITIONAL(include_kcm_audiocd, test "x$have_cdparanoia" = xyes)
+if test "x$have_cdparanoia" != xyes; then
+    # kaudiocreator depends on kio_audiocd
+    DO_NOT_COMPILE="$DO_NOT_COMPILE kaudiocreator"
+fi
+
+AC_ARG_WITH(lame,
+  [AC_HELP_STRING(--with-lame,
+    [enable support for MP3 encoding thorugh lame @<:@default=check@:>@])],
+  [], with_lame=check)
+
+have_lame=no
+if test "x$with_lame" != xno; then
+  KDE_CHECK_LAME
+
+  if test "x$with_lame" != xcheck && test "x$have_lame" != xyes; then
+    AC_MSG_ERROR([--with-lame was given, but test for lame failed])
+  fi
+fi
+
+# for krec/mp3_export
+AM_CONDITIONAL(compile_mp3_export, test "x$have_lame" = xyes)
+
+AC_ARG_WITH(taglib,
+  [AC_HELP_STRING(--with-taglib,
+    [enable support for TagLib @<:@default=check@:>@])],
+  [], with_taglib=check)
+
+have_taglib=no
+have_taglib_mpc=no
+if test "x$with_taglib" != xno; then
+  KDE_CHECK_TAGLIB
+
+  if test "x$with_taglib" != xcheck && test "x$have_taglib" != xyes; then
+    AC_MSG_ERROR([--with-taglib was given, but test for TagLib failed])
+  fi
+fi
+
+AC_ARG_WITH(akode,
+    [AC_HELP_STRING([--with-akode],
+        [enable the aKode decoder @<:@default=check@:>@])],
+    [], with_akode=check)
+
+have_akode=no
+if test "x$with_akode" != xno; then
+  KDE_CHECK_AKODE
+
+  if test "x$with_akode" != xcheck && test "x$have_akode" != xyes; then
+    AC_MSG_ERROR([--with-akode was given, but test for aKode failed])
+  fi
+fi
+
+artsc_config_test_path=$prefix/bin:$exec_prefix/bin:$KDEDIR/bin:$PATH
+AC_PATH_PROG(ARTSCCONFIG, artsc-config, no, $artsc_config_test_path)
+
+if test "x$build_arts" = "xyes" && test "x$ARTSCCONFIG" != "xno" ; then
+	LIB_ARTS="-lartskde"
+	ARTS_PREFIX=[`$ARTSCCONFIG --arts-prefix`]
+	ARTS_CFLAGS="-I$ARTS_PREFIX/include/arts"
+	AC_DEFINE(HAVE_ARTS, 1, [have arts support in juk])
+else
+	build_arts="no"
+	LIB_ARTS=""
+	ARTS_CFLAGS=""
+	AC_DEFINE(HAVE_ARTS, 0, [no arts support in juk])
+fi
+
+AC_SUBST(LIB_ARTS)
+AC_SUBST(ARTS_CFLAGS)
+
+KDE_CHECK_MPEGLIB_ARTS

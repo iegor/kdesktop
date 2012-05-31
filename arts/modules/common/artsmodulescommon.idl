@@ -1,0 +1,167 @@
+/*
+
+    Copyright (C) 2000-2001 Stefan Westerfeld
+                                stefan@space.twc.de
+                  2001-2003 Matthias Kretz
+                            kretz@kde.org
+                  2002-2003 Arnold Krille
+                            arnold@arnoldarts.de
+
+     This library is free software; you can redistribute it and/or
+     modify it under the terms of the GNU Library General Public
+     License as published by the Free Software Foundation; either
+     version 2 of the License, or (at your option) any later version.
+
+     This library is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     Library General Public License for more details.
+
+     You should have received a copy of the GNU Library General Public License
+     along with this library; see the file COPYING.LIB.  If not, write to
+     the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+     Boston, MA 02111-1307, USA.
+
+*/
+
+/*
+* DISCLAIMER: The interfaces in artsmodules.idl (and the derived .cc/.h files)
+*             DO NOT GUARANTEE BINARY COMPATIBILITY YET.
+*
+* They are intended for developers. You shouldn't expect that applications in
+* binary form will be fully compatibile with further releases of these
+* interfaces.
+*/
+
+#include <artsgui.idl>
+#include <artsflow.idl>
+#include <artsmidi.idl>
+
+#include <artsmodulessynth.idl>
+
+module Arts {
+
+module Environment {
+	interface Context {
+		void addEntry(string name, object obj);
+		string lookupEntry(object obj);
+		void removeEntry(object obj);
+	};
+
+	interface Item;
+
+	interface Container {
+		attribute string dataDirectory;
+		attribute Context context;
+		readonly attribute sequence<Item> items;
+
+		sequence<string> saveToList();
+		void loadFromList(sequence<string> strlist);
+
+		void addItem(Item item);
+		Item createItem(string name);
+		void removeItem(Item item);
+	};
+
+	interface Item {
+		/**
+		 * true if item resides inside a container
+		 */
+		readonly attribute boolean active;
+
+		/**
+		 * the container the item lives in
+		 */
+		readonly attribute Container parent;
+
+		/**
+		 * called by the container to insert/remove item from/to the
+		 * environment
+		 */
+		void setContainer(Container container);
+
+		/**
+		 * called by the container to save the item
+		 */
+		sequence<string> saveToList();
+
+		/**
+		 * called by the container to restore the item
+		 */
+		void loadFromList(sequence<string> strlist);
+	};
+
+	interface InstrumentItem : Item {
+		readonly attribute Arts::MidiPort port;
+		attribute string filename;
+		attribute string busname;
+	};
+
+	interface InstrumentItemGuiFactory : Arts::GuiFactory {
+	};
+
+	interface StereoEffectItem : Item {
+		attribute Arts::SynthModule effect;
+		attribute Arts::StereoEffectStack stack;
+	};
+
+	interface MixerChannel : Arts::StereoEffect {
+		attribute string name;
+	};
+
+	interface MixerItem : Item {
+		readonly attribute sequence<MixerChannel> channels;
+		attribute long channelCount;
+		attribute string name;
+		attribute string type;
+	};
+
+	interface EffectRackItem : Item {
+		Arts::StereoEffect createEffect( string type, string name );
+		void delEffect( long pos );
+		void routeToMaster( long pos, boolean tomaster );
+		readonly attribute sequence<Arts::StereoEffect> effects;
+		readonly attribute long effectCount;
+		attribute string name;
+	};
+
+};
+
+interface MixerItemGui {
+	/*writeonly*/ attribute boolean active;
+	/*writeonly*/ attribute long channelCount;
+	/*writeonly*/ attribute string type;
+	// builds a MixerItemGui for a specific MixerItem (call this exactly once)
+	Widget initialize(Environment::MixerItem item);
+};
+
+interface EffectRackSlot;
+
+interface EffectRackItemGui {
+	void removeSlot( EffectRackSlot slot );
+	void routeToMaster( EffectRackSlot slot, boolean tomaster );
+
+	attribute boolean active;
+	attribute string type;
+	/*writeonly*/ attribute boolean addeffect;
+
+	// builds a EffectRackItemGui for a specific EffectRackItem (call this exactly once)
+	Widget initialize(Environment::EffectRackItem item);
+};
+
+interface EffectRackSlot {
+	void constructor( Widget parent, Widget effect, EffectRackItemGui effectrackgui );
+	/*writeonly*/ attribute boolean removeslot;
+	/*writeonly*/ attribute boolean tomaster;
+};
+
+// creates: Environment::MixerItem, SimpleMixerChannel
+interface MixerGuiFactory : GuiFactory {
+};
+
+// creates: Environment::EffectRackItem
+interface EffectRackGuiFactory : GuiFactory {
+};
+
+};
+

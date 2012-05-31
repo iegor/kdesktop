@@ -1,0 +1,304 @@
+Environments:
+=============
+
+1. What is an Environment?
+2. How do the interfaces look?
+3. How do I create/use one?
+4. How do I implement items?
+
+/*
+Documentation TODO: add more details:
+ - Guis and aRts (probably seperate document), GuiFactory, GenericGuiFactory,...
+ - the dataDirectory (sections 2,3,4)
+ - how items react on changes of active (section 4)
+*/
+
+  1. What is an Environment?
+  --------------------------
+
+Programs like sequencers often require complex structures with lots of
+parameters to configure running inside aRts, to create music. For instance
+for composing a song, you might require
+
+ - several effects
+ - several synthetic instruments
+ - several audio tracks
+ - a mixer
+
+While with artscontrol, the user can setup much of this himself manually, the
+problem is that this has to be done over and over again. That is, if he saves
+the song, the settings of his effects, instruments and the mixer will not be
+saved with it.
+
+The main idea of the new interfaces in Arts::Environment is that the sequencer
+can save the environment required to create a song along with the the song, so
+that the user will find himself surrounded by the same effects, instruments,...
+with the same settings again, once he loads the song again.
+
+So, conceptually, we can imagine the environment as a "room", where the user
+works in to create a song. He needs to install the things inside the room he
+needs. Initially, the room will be empty. Now, the user things: oh, I am going
+to need this nice 24 channel mixer. *plop* - it appears in the room. Now he
+thinks I need some sampler which can play my piano.  *plop* - it appears in
+the room.
+
+Now he starts working, and adds the "items" he needs. Finally, if he stops
+working on the song, he can pack all what is in the environment in a little
+box, and whenever he starts working on the song again, he can start where he
+left off. He can even take the environment to a friend, and continue working
+on the song there.
+
+Note that there might be other tasks (such as creating a film, playing an
+mp3 with noatun,...) which will have similar requirements of saving the
+current state, so the concept of environments is not limited to songs.
+
+  2. How do the interfaces look?
+  ------------------------------
+
+There are two main things in the Environment, that is
+
+Arts::Environment::Container    this interface is where you put all your stuff
+                                you need to create a song
+
+Arts::Environment::Item         this is an item that works inside an
+                                environment
+
+  2.1 The Container interface:
+  ----------------------------
+
+Initially "Container"s are empty when created. If you create items, you need
+to tell the container about it.
+
+	void addItem(Item item);        
+	Item createItem(string name);
+
+You can create the Item yourself and use addItem afterwards, or you can tell
+the container to create an Item (by name), and return it to you. Then it will
+automatically be put into the environment.
+
+You can list the items that are currently inside an environment with the
+attribute 
+
+	readonly attribute sequence<Item> items;
+
+and remove them with
+
+	void removeItem(Item item);
+
+Finally, the more interesting aspect is that you can save the whole
+environment to a list of strings, and restore it from there.
+
+	sequence<string> saveToList();
+   	void loadFromList(sequence<string> strlist);
+
+If you load it, all items will be created that were created in the environment
+you saved.
+
+
+There are two more special items. Here are two remaining problems to explain
+you the purpose of these (you can skip these explaination if you want get
+the basic idea first):
+
+ * the "sample data problem"
+
+Consider you have a song where you use these spectacular "boom" sound you just
+sampled. Now you save it to a list of strings, and take it to a friend. There
+are two things that could happen up to now:
+
+1. the "boom" sound doesn't get put into that list of strings, so when you play
+the song on your friends computer it might be missing
+
+2. the "boom" sound gets saved as string list - this would probably be really
+really inefficient for both, loading and saving
+
+So we introduce a 
+
+	attribute string dataDirectory;
+
+where song specific data can be saved. The general idea is that items should
+access data from anywhere on your harddisc. However, if you execute a special
+operation (such as "pack the environment"), all data used in the environment
+should get copied into the dataDirectory, and the data should be used from
+there in the future.
+
+The details of this are not quite done yet.
+
+ * the "outside world object" problem
+
+Suppose you use an environment and some items use objects that are not items
+of the environment. A typical example might be objects which refer to an
+Arts::StereoEffectStack outside the environment. Such objects could be saved,
+but they need to know how to restore themselves to "the same" StereoEffectStack
+again (which will not be restored by the environment).
+
+The general idea to solve this is the context. In the context the user can
+name non-environment objects and say: "well, here is a StereoEffectStack my
+items will refer to, and it is named 'OutputEffectStack'". Upon serialization,
+the environment would not care about the OutputEffectStack, and each item
+which needs to refer to it would only save that it needs to put the items
+in something called 'OutputEffectStack' again.
+
+The same way, up on restore, items could lookup the 'OutputEffectStack' again
+and insert StereoEffects in there.
+
+The details of this are not quite done yet.
+
+  2.2 The Item interface:
+  -----------------------
+
+Most functions in the Item interface are not too relevant for users. Upon
+insertion, the environment uses
+
+	void setContainer(Container container);
+
+to tell the Item in which environment it lives. It also uses setContainer(
+Container::null()) once the Item gets removed. Which container the Item
+is in can be seen in the
+
+    readonly attribute Container parent;
+
+Upon serialization, the container uses
+
+	sequence<string> saveToList();
+    void loadFromList(sequence<string> strlist);
+
+to save or restore the data. Finally, you can see if the item is currently
+inside a Container with the
+
+	readonly attribute boolean active;
+
+There is some trick here: the problem is that you will probably want to hold
+references to items (or parts of items) in some situations. But if you do so,
+and for instance display the item on the GUI, you will still display the item
+if it was removed from the environment. And you will (by reference counting)
+prevent it from disappearing.
+
+So... if you hold a reference, watch whether the item is still active, using
+
+  connect(item, "active_changed", ...)
+
+and do release the references you hold if it is not. I.e. if you have a mixer
+window on the screen, and the mixer gets inactive, close it. (See also: change
+notification documentation).
+
+  3. How do I create/use one?
+  ---------------------------
+
+First of all, creation. Usually, you will hold your environments on the
+sound server. So creating will look like:
+
+	/* lookup sound server (use an existing one, if you have one) */
+    Arts::SoundServer server = Reference("global:Arts_SoundServer");
+	if(server.isNull())
+		/* error handling -> no sound server running */;
+
+	/* create the object on the server */
+	Arts::Environment::Container container =
+        Arts::DynamicCast(server.createObject("Arts::Environment::Container"));
+	if(container.isNull())
+		/* error handling -> environment container could not be created */;
+
+Good, now we have an environment. What to do now? We could add a mixer. This
+would work like
+
+	Arts::Environment::MixerItem mixer =
+		Arts::DynamicCast(container.createItem("Arts::Environment::MixerItem"));
+	if(mixer.isNull())
+		/* error handling -> no mixer */;
+
+Cool. A mixer. What do we do with that. Hm... setting the channel count would
+be nice, for instance.
+
+	mixer.channelCount(8); /* an eight channel mixer */
+
+And finally, we could display a GUI for it, using the KDE gui embedding thing.
+
+	Arts::GenericGuiFactory guiFactory;
+    Arts::Widget widget = guiFactory.createGui(mixer);
+    if(!widget.isNull())
+    {
+		KArtsWidget *kartswidget = new KArtsWidget(widget);
+		kartswidget->show();
+    }
+    else
+    {
+		/* error handling -> no gui available for this item */
+    }
+
+NOTE: for GenericGuiFactory to work, it needs to know what toolkit you are
+using. For KDE, you need to add the line
+
+    ObjectManager::the()->provideCapability("kdegui");
+
+somewhere in your application (only do this once).
+
+You can try using saveToList or loadFromList on the container, too. A classical
+piece of code which does this is, copied from artscontrol:
+
+void EnvironmentView::load()		/* load from file DEFAULT_ENV_FILENAME */
+{
+    ifstream infile(DEFAULT_ENV_FILENAME);
+    string line;
+    vector<string> strseq;
+ 
+    while(getline(infile,line))
+        strseq.push_back(line);
+ 
+    defaultEnvironment().loadFromList(strseq); /* we'd use "container" here */
+}
+ 
+void EnvironmentView::save()
+{
+    vector<string> *strseq;
+    strseq = defaultEnvironment().saveToList(); /* we'd use "container" here */
+ 
+    ofstream outfile(DEFAULT_ENV_FILENAME);
+    for(vector<string>::iterator i = strseq->begin(); i != strseq->end(); i++)
+        outfile << *i << endl;
+    delete strseq;
+}
+
+/* remark about loading:
+Of course, after loading the environment, you might want to look at
+container.items, to be able to display the guis again. To find out if an
+item is a mixer, you can do Arts::Environment::MixerItem m =
+Arts::DynamicCast(item); - or if you want to get the type in a generic
+way, you can use string typename = item._interfaceName(); */
+
+Finally, if we're tired of using our mixer, we can remove it again, using
+
+	container.removeItem(mixer);
+
+  4. How do I implement items?
+  ----------------------------
+
+Basically, you derive an interface from Arts::Environment::Item, like this:
+
+	// this code is in the .idl file:
+	interface MyItem : Arts::Environment::Item {
+		/* methods/attributes here */
+	};
+
+and your implementation from Arts::Environment::Item_impl, like this:
+
+    // this code is in the .cc file:
+    #include "artsmodules.h"
+    #include "env_item_impl.h"
+    
+    class MyItem_impl : virtual public MyItem_skel,
+					    virtual public Arts::Environment::Item_impl
+    {
+    public:
+	    void loadFromList(const vector<string>& list)
+	    {
+		    /* you need to implement this... */
+	    }
+	    vector<string> *saveToList()
+	    {
+		    /* ... and that */
+	    }
+    };
+    REGISTER_IMPLEMENTATION(MyItem_impl); /* register your implementation */
+
+If you want your item to have a Gui, implement a GuiFactory that can create
+a gui for the item.

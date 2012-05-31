@@ -1,0 +1,16 @@
+## kdebase/Makefile.am
+## (C) 1997 Stephan Kulow
+
+AUTOMAKE_OPTIONS = foreign 1.6.1
+DISTCLEANFILES = inst-apps
+
+# COMPILE_AFTER_arts = noatun krec akode_artsplugin
+# COMPILE_AFTER_mpeglib = mpeglib_artsplug
+# COMPILE_AFTER_libkcddb = kaudiocreator kioslave kscd
+# COMPILE_AFTER_akode = juk
+
+MAINTAINERCLEANFILES = subdirs configure.in acinclude.m4 SUBDIRS
+
+include admin/deps.am
+
+SUBDIRS=$(TOPSUBDIRS)

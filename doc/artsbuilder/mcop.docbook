@@ -1,0 +1,2274 @@
+<!-- <?xml version="1.0" ?>
+<!DOCTYPE chapter PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" "dtd/kdex.dtd">
+To validate or process this file as a standalone document, uncomment
+this prolog. Be sure to comment it out again when you are done -->
+
+<chapter id="mcop">
+<title>&MCOP;: Object Model and Streaming</title>
+
+<sect1 id="mcop-overview">
+
+<title>Overview</title>
+
+<para>
+&MCOP; is the standard &arts; uses for:
+</para>
+
+<itemizedlist>
+<listitem>
+<para>
+Communication between objects.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Network transparency.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Describing object interfaces.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Language independancy.
+</para>
+</listitem>
+</itemizedlist>
+
+<para>
+One major aspect of &MCOP; is the <emphasis>interface description
+language</emphasis>, &IDL;, in which many of the &arts; interfaces and
+<acronym>API</acronym>s are defined in a language independent way.
+</para>
+
+<para>
+To use &IDL; interfaces from C++, is compiled by the &IDL;
+compiler into C++ code. When you implement an interface, you derive from
+the skeleton class the &IDL; compiler has generated. When you use an
+interface, you do so using a wrapper. This way, &MCOP; can use a
+protocol if the object you are talking to is not local - you get network
+transparency.
+</para>
+
+<para>
+This chapter is supposed to describe the basic features of the object
+model that results from the use of &MCOP;, the protocol, how do use
+&MCOP; in C++ (language binding), and so on.
+</para>
+
+</sect1>
+
+<sect1 id="interfaces">
+
+<title>Interfaces and &IDL;</title>
+
+<para>
+Many of the services provided by &arts;, such as modules and the sound
+server, are defined in terms of <acronym>interfaces</acronym>.
+Interfaces are specified in a programming language independent format:
+&IDL;.
+</para>
+
+<para>
+This allows many of the implementation details such as the format of
+multimedia data streams, network transparency, and programming language
+dependencies, to be hidden from the specification for the interface. A
+tool, &mcopidl;, translates the interface
+definition into a specific programming language (currently only C++ is
+supported).
+</para>
+
+<para>
+The tool generates a skeleton class with all of the boilerplate code and
+base functionality. You derive from that class to implement the features
+you want.
+</para>
+
+<para>
+The &IDL; used by &arts; is similar to that used by
+<acronym>CORBA</acronym> and <acronym>DCOM</acronym>.
+</para>
+
+<para>
+&IDL; files can contain:
+</para>
+
+<itemizedlist>
+<listitem>
+<para>
+C-style #include directives for other &IDL; files.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Definitions of enumerated and struct types, as in C/C++.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Definitions of interfaces.
+</para>
+</listitem>
+</itemizedlist>
+
+<para>
+In &IDL;, interfaces are defined much like a C++ class or C struct,
+albeit with some restrictions. Like C++, interfaces can subclass other
+interfaces using inheritance. Interface definitions can include three
+things: streams, attributes, and methods.
+</para>
+
+<sect2 id="streams">
+
+<title>Streams</title>
+
+<para>
+Streams define multimedia data, one of the most important components of
+a module. Streams are defined in the following format:
+</para>
+
+<para>
+[ async ] in|out [ multi ] <replaceable>type</replaceable> stream <replaceable>name</replaceable> [ , <replaceable>name</replaceable> ] ;
+</para>
+
+<para>
+Streams have a defined direction in reference to the module, as
+indicated by the required qualifiers in or out. The type argument
+defines the type of data, which can be any of the types described later
+for attributes (not all are currently supported). Many modules use the
+stream type audio, which is an alias for float since that is the
+internal data format used for audio stream. Multiple streams of the same
+type can defined in the same definition uisng comma separated names.
+</para>
+
+<para>
+Streams are by default synchronous, which means they are continuous
+flows of data at a constant rate, such as <acronym>PCM</acronym>
+audio. The async qualifier specifies an asynchronous stream, which is
+used for non-continuous data flows. The most common example of an async
+stream is &MIDI; messages.
+</para>
+
+<para>
+The multi keyword, only valid for input streams, indicates that the
+interface supports a variable number of inputs. This is useful for
+implementing devices such as mixers that can accept any number of input
+streams.
+</para>
+
+</sect2>
+<sect2 id="attributes">
+
+<title>Attributes</title>
+
+<para>
+Attributes are data associated with an instance of an interface. They
+are declared like member variables in C++, and can can use any of the
+primitive types boolean, byte, long, string, or float. You can also use
+user-defined struct or enum types as well as variable sized sequences
+using the syntax sequence&lt;type&gt;. Attributes can optionally be
+marked readonly.
+</para>
+
+</sect2>
+<sect2 id="methods">
+
+<title>Methods</title>
+
+<para>
+As in C++, methods can be defined in interfaces. The method parameters
+are restricted to the same types as attributes. The keyword oneway
+indicates a method which returns immediately and is executed
+asynchronously.
+</para>
+
+</sect2>
+
+<sect2 id="standardinterfaces">
+
+<title>Standard Interfaces</title>
+
+<para>
+Several standard module interfaces are already defined for you in
+&arts;, such as <interfacename>StereoEffect</interfacename>, and
+<interfacename>SimpleSoundServer</interfacename>.
+</para>
+
+</sect2>
+
+<sect2 id="example">
+<title>Example</title>
+
+<para>
+A simple example of a module taken from &arts; is the constant delay
+module, found in the file
+<filename>kdemultimedia/arts/modules/artsmodules.idl</filename>. The
+interface definition is listed below.
+</para>
+
+<programlisting>
+interface Synth_CDELAY : SynthModule {
+        attribute float time;
+        in audio stream invalue;
+        out audio stream outvalue;
+};
+</programlisting>
+
+<para>
+This modules inherits from
+<interfacename>SynthModule</interfacename>. That interface, defined in
+<filename>artsflow.idl</filename>, defines the standard methods
+implemented in all music synthesizer modules.
+</para>
+
+<para>
+The CDELAY effect delays a stereo audio stream by the time value
+specified as a floating point parameter. The interface definition has an
+attribute of type float to store the delay value. It defines two input
+audio streams and two output audio streams (typical of stereo
+effects). No methods are required other than those it inherits.
+</para>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="more-about-streams">
+<title>More About Streams</title>
+
+<para>
+This section covers some additional topics related to streams.
+</para>
+
+<sect2 id="stream-types">
+<title>Stream Types</title>
+
+<para>
+There are various requirements for how a module can do streaming. To
+illustrate this, consider these examples:
+</para>
+
+<itemizedlist>
+<listitem>
+<para>
+Scaling a signal by a factor of two.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Performing sample frequency conversion.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Decompressing a run-length encoded signal.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Reading &MIDI; events from <filename
+class="devicefile">/dev/midi00</filename> and inserting them into a
+stream.
+</para>
+</listitem> 
+</itemizedlist>
+
+<para>
+The first case is the simplest: upon receiving 200 samples of input the
+module produces 200 samples of output. It only produces output when it
+gets input.
+</para>
+
+<para>
+The second case produces different numbers of output samples when given
+200 input samples. It depends what conversion is performed, but the
+number is known in advance.
+</para>
+
+<para>
+The third case is even worse. From the outset you cannot even guess how
+much data 200 input bytes will generate (probably a lot more than 200
+bytes, but...).
+</para>
+
+<para>
+The last case is a module which becomes active by itself, and sometimes
+produces data.
+</para>
+
+<para>
+In &arts;s-0.3.4, only streams of the first type were handled, and most
+things worked nicely. This is probably what you need most when writing
+modules that process audio. The problem with the other, more complex
+types of streaming, is that they are hard to program, and that you don't
+need the features most of the time. That is why we do this with two
+different stream types: synchronous and asynchronous.
+</para>
+
+<para>
+Synchronous streams have these characteristics:
+</para>
+
+<itemizedlist>
+<listitem>
+<para>
+Modules must be able to calculate data of any length, given enough
+input.
+</para>
+</listitem>
+
+<listitem>
+<para>
+All streams have the same sampling rate.
+</para>
+</listitem>
+
+<listitem>
+<para>
+The <function>calculateBlock()</function> function will be called when
+enough data is available, and the module can rely on the pointers
+pointing to data.
+</para>
+</listitem> 
+
+<listitem>
+<para>
+There is no allocation and deallocation to be done.
+</para>
+</listitem>
+</itemizedlist>
+
+<para>
+Asynchronous streams, on the other hand, have this behavior:
+</para>
+
+<itemizedlist>
+<listitem>
+<para>
+Modules may produce data sometimes, or with varying sampling rate, or
+only if they have input from some filed descriptor. They are not bound by
+the rule <quote>must be able to satisfy requests of any size</quote>.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Asynchronous streams of a module may have entirely different sampling
+rates.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Outgoing streams: there are explicit functions to allocate packets, to
+send packets - and an optional polling mechanism that will tell you when
+you should create some more data.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Incoming streams: you get a call when you receive a new packet - you
+have to say when you are through with processing all data of that
+packet, which must not happen at once (you can say that anytime later,
+and if everybody has processed a packet, it will be freed/reused)
+</para>
+</listitem>
+</itemizedlist>
+
+<para>
+When you declare streams, you use the keyword <quote>async</quote> to
+indicate you want to make an asynchronous stream. So, for instance,
+assume you want to convert an asynchronous stream of bytes into a
+synchronous stream of samples. Your interface could look like this:
+</para>
+
+<programlisting>
+interface ByteStreamToAudio : SynthModule {
+    async in byte stream indata;   // the asynchronous input sample stream
+
+    out audio stream left,right;   // the synchronous output sample streams
+};
+</programlisting>
+
+</sect2>
+
+<sect2 id="async-streams">
+<title>Using Asynchronous Streams</title>
+
+<para>
+Suppose you decided to write a module to produce sound
+asynchronously. Its interface could look like this:
+</para>
+
+<programlisting>
+interface SomeModule : SynthModule
+{
+    async out byte stream outdata;
+};
+</programlisting>
+
+<para>
+How do you send the data? The first method is called <quote>push
+delivery</quote>.  With asynchronous streams you send the data as
+packets. That means you send individual packets with bytes as in the
+above example. The actual process is: allocate a packet, fill it, send
+it.
+</para>
+
+<para>
+Here it is in terms of code. First we allocate a packet:
+</para>
+
+<programlisting>
+DataPacket&lt;mcopbyte&gt; *packet = outdata.allocPacket(100);
+</programlisting>
+
+<para>
+The we fill it:
+</para>
+
+<programlisting>
+// cast so that fgets is happy that it has a (char *) pointer
+char *data = (char *)packet-&gt;contents;
+
+// as you can see, you can shrink the packet size after allocation
+// if you like
+if(fgets(data,100,stdin))
+    packet-&gt;size = strlen(data);
+else
+    packet-&gt;size = 0;
+</programlisting>
+
+<para>
+Now we send it:
+</para>
+
+<programlisting>
+packet-&gt;send();
+</programlisting>
+
+<para>
+This is quite simple, but if we want to send packets exactly as fast as
+the receiver can process them, we need another approach, the <quote>pull
+delivery</quote> method. You ask to send packets as fast as the receiver
+is ready to process them. You start with a certain amount of packets you
+send. As the receiver processes one packet after another, you start
+refilling them with fresh data, and send them again.
+</para>
+
+<para>
+You start that by calling setPull. For example:
+</para>
+
+<programlisting>
+outdata.setPull(8, 1024);
+</programlisting>
+
+<para>
+This means that you want to send packets over outdata. You want to start
+sending 8 packets at once, and as the receiver processes some of them,
+you want to refill them.
+</para>
+
+<para>
+Then, you need to implement a method which fills the packets, which could
+look like this:
+</para>
+
+<programlisting>
+void request_outdata(DataPacket&lt;mcopbyte&gt; *packet)
+{
+    packet-&gt;size = 1024;  // shouldn't be more than 1024
+    for(int i = 0;i &lt; 1024; i++)
+        packet-&gt;contents[i] = (mcopbyte)'A';
+    packet-&gt;send();
+}
+</programlisting>
+
+<para>
+Thats it. When you don't have any data any more, you can start sending
+packets with zero size, which will stop the pulling.
+</para>
+
+<para>
+Note that it is essential to give the method the exact name
+<methodname>request_<replaceable>streamname</replaceable></methodname>.
+</para>
+
+<para>
+We just discussed sending data. Receiving data is much much
+simpler. Suppose you have a simple ToLower filter, which simply converts
+all letters in lowercase:
+</para>
+
+<programlisting>
+interface ToLower {
+    async in byte stream indata;
+    async out byte stream outdata;
+};
+</programlisting>
+
+<para>
+This is really simple to implement; here is the whole implementation:
+</para>
+
+<programlisting>
+class ToLower_impl : public ToLower_skel {
+public:
+    void process_indata(DataPacket&lt;mcopbyte&gt; *inpacket)
+    {
+        DataPacket&lt;mcopbyte&gt; *outpacket = outdata.allocPacket(inpacket-&gt;size);
+
+        // convert to lowercase letters
+        char *instring = (char *)inpacket-&gt;contents;
+        char *outstring = (char *)outpacket-&gt;contents;
+
+        for(int i=0;i&lt;inpacket-&gt;size;i++)
+            outstring[i] = tolower(instring[i]);
+
+        inpacket-&gt;processed();
+        outpacket-&gt;send();
+    }
+};
+
+REGISTER_IMPLEMENTATION(ToLower_impl);
+</programlisting>
+
+<para>
+Again, it is essential to name the method
+<methodname>process_<replaceable>streamname</replaceable></methodname>.
+</para>
+
+<para>
+As you see, for each arriving packet you get a call for a function (the
+<function>process_indata</function> call in our case). You need to call
+the <methodname>processed()</methodname> method of a packet to indicate
+you have processed it.
+</para>
+
+<para>
+Here is an implementation tip: if processing takes longer (&ie; if you
+need to wait for soundcard output or something like that), don't call
+processed immediately, but store the whole data packet and call
+processed only as soon as you really processed that packet. That way,
+senders have a chance to know how long it really takes to do your work.
+</para>
+
+<para>
+As synchronization isn't so nice with asynchronous streams, you should
+use synchronous streams wherever possible, and asynchronous streams only
+when necessary.
+</para>
+
+</sect2>
+
+<sect2 id="default-streams">
+<title>Default Streams</title>
+
+<para>
+Suppose you have 2 objects, for example an AudioProducer and an
+AudioConsumer.  The AudioProducer has an output stream and AudioConsumer
+has an input one. Each time you want to connect them, you will use those
+2 streams. The first use of defaulting is to enable you to make the
+connection without specifying the ports in that case.
+</para>
+
+<para>
+Now suppose the teo objects above can handle stereo, and each have a
+<quote>left</quote> and <quote>right</quote> port. You'd still like to
+connect them as easily as before.  But how can the connecting system
+know which output port to connect to which input port? It has no way to
+correctly map the streams.  Defaulting is then used to specify several
+streams, with an order. Thus, when you connect an object with 2 default
+output streams to another one with 2 default input streams, you don't
+have to specify the ports, and the mapping will be done correctly.
+</para>
+
+<para>
+Of course, this is not limited to stereo. Any number of streams can be
+made default if needed, and the connect function will check that the
+number of defaults for 2 object match (in the required direction) if you
+don't specify the ports to use.
+</para>
+
+<para>
+The syntax is as follows: in the &IDL;, you can use the default keyword
+in the stream declaration, or on a single line. For example:
+</para>
+
+<programlisting>
+interface TwoToOneMixer {
+    default in audio stream input1, input2;
+    out audio stream output;
+};
+</programlisting>
+
+<para>
+In this example, the object will expect its two input ports to be
+connected by default. The order is the one specified on the default
+line, so an object like this one:
+</para>
+
+<programlisting>
+interface DualNoiseGenerator {
+    out audio stream bzzt, couic;
+    default couic, bzzt;
+};
+</programlisting>
+
+<para>
+Will make connections from <quote>couic</quote> to
+<quote>input1</quote>, and <quote>bzzt</quote> to <quote>input2</quote>
+automatically. Note that since there is only one output for the mixer,
+it will be made default in this case (see below). The syntax used in the
+noise generator is useful to declare a different order than the
+declaration, or selecting only a few ports as default. The directions of
+the ports on this line will be looked up by &mcopidl;, so don't specify
+them.  You can even mix input and output ports in such a line, only the
+order is important.
+</para>
+
+<para>
+There are some rules that are followed when using inheritance:
+</para>
+
+<itemizedlist>
+<listitem>
+<para>
+If a default list is specified in the &IDL;, then use
+it. Parent ports can be put in this list as well, whether they were
+default in the parent or not.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Otherwise, inherit parent's defaults. Ordering is parent1 default1,
+parent1 default2..., parent2 default1... If there is a common ancestor
+using 2 parent branches, a <quote>virtual public</quote>-like merging is
+done at that default's first occurrence in the list.
+</para>
+</listitem>
+
+<listitem>
+<para>
+If there is still no default and a single stream in a
+direction, use it as default for that direction.
+</para>
+</listitem>
+</itemizedlist>
+
+</sect2>
+
+</sect1>
+<sect1 id="attribute-change-notify">
+<title>Attribute change notifications</title>
+
+<!-- TODO: This should be embedded better into the context - I mean: the
+ context should be written ;-). -->
+
+<para>
+Attribute change notifications are a way to know when an attribute
+changed.  They are a bit comparable with &Qt;'s or Gtk's signals and
+slots. For instance, if you have a &GUI; element, a slider, which
+configures a number between 0 and 100, you will usually have an object
+that does something with that number (for instance, it might be
+controlling the volume of some audio signal). So you would like that
+whenever the slider is moved, the object which scales the volume gets
+notified. A connection between a sender and a receiver.
+</para>
+
+<para>
+&MCOP; deals with that by being able to providing notifications when
+attributes change. Whatever is declared as <quote>attribute</quote> in
+the &IDL;, can emit such change notifications, and should do so,
+whenever it is modified. Whatever is declared as
+<quote>attribute</quote> can also receive such change notifications. So
+for instance if you had two &IDL; interfaces, like these:
+</para>
+
+<programlisting>
+ interface Slider {
+         attribute long min,max;
+         attribute long position;
+ };
+ interface VolumeControl : Arts::StereoEffect {
+     attribute long volume; // 0..100
+ };
+</programlisting>
+
+<para>
+You can connect them using change notifications. It works using the
+normal flowsystem connect operation. In this case, the C++ code to
+connect two objects would look like this:
+</para>
+
+<programlisting>
+#include &lt;connect.h&gt;
+using namespace Arts;
+[...]
+connect(slider,"position_changed",volumeControl,"volume");
+</programlisting>
+
+<para>
+As you see, each attribute offers two different streams, one for sending
+the change notifications, called
+<function><replaceable>attributename</replaceable>_changed</function>,
+
+<!-- TODO - how do I markup code that is an example - you wouldn't write
+ attributename in the source, but the name of some attribute
+
+ LW: I'm guessing
+ here, because I know how to markup QT code, but your stuff is different.
+ Hopefully this will give you inspiration, and we can work out later the fine
+ tuning if I have it wrong.  The line above in the code sample, if it were qt
+ stuff, I would mark up this way (linebreaks for clarity of markup only, yes I
+ know it's incorrect!):
+
+ <function>connect(<classname>slider</classname>,
+ <function><replaceable>position</replaceable>_changed</function>,
+ <classname>volumeControl</classname>,
+ <function>volume</function>);</function>
+
+ You can use <function><replaceable>attributename</function> and even
+ <function><replaceable>attributename</replaceable>_changed</function>.
+
+ If I have the above totally wrong (which is entirely possible!) Some other
+ elements you might find handy:
+
+ <varname>, <type>, <returnvalue>, <constant>, <methodname>
+  There's also a markup guide at http://madmax.atconnex.net/kde/ that might
+  help, although unfortunately the programming section is still incomplete. -->
+
+ and one for receiving change notifications, called
+<function>attributename</function>.
+</para>
+
+<para>
+It is important to know that change notifications and asynchronous
+streams are compatible. They are also network transparent. So you can
+connect a change notification of a float attribute of a &GUI; widget has
+to an asynchronous stream of a synthesis module running on another
+computer. This of course also implies that change notifications are
+<emphasis>not synchronous</emphasis>, this means, that after you have
+sent the change notification, it may take some time until it really gets
+received.
+</para>
+
+<sect2 id="sending-change-notifications">
+
+<title>Sending change notifications</title>
+
+<para>
+When implementing objects that have attributes, you need to send change
+notifications whereever an attribute changes. The code for doing this
+looks like this:
+</para>
+
+<programlisting>
+ void KPoti_impl::value(float newValue)
+ {
+     if(newValue != _value)
+     {
+         _value = newValue;
+         value_changed(newValue); // &lt;- send change notification
+     }
+ }
+</programlisting>
+ 
+<para>
+It is strongly recommended to use code like this for all objects you
+implement, so that change notifications can be used by other people. You
+should however void sending notifications too often, so if you are doing
+signal processing, it is probably the best if you keep track when you
+sent your last notification, so that you don't send one with every
+sample you process.
+</para>
+
+</sect2>
+
+<sect2 id="change-notifications-apps">
+<title>Applications for change notifications</title>
+
+<para>
+It will be especially useful to use change notifications in conjunction
+with scopes (things that visualize audio data for instance), gui
+elements, control widgets, and monitoring. Code using this is in
+<filename class="directory">kdelibs/arts/tests</filename>, and in the
+experimental artsgui implementation, which you can find under <filename
+class="directory">kdemultimedia/arts/gui</filename>.
+</para>
+
+<!-- TODO: can I markup links into the source code - if yes, how? -->
+
+<!-- LW: Linking into the source is problematic - we can't assume people are
+reading this on a machine with the sources available, or that they aren't
+reading it from a website. We're working on it! -->
+
+</sect2>
+</sect1>
+
+<sect1 id="the-mcoprc-file">
+
+<title>The <literal role="extension">.mcoprc</literal> file</title>
+
+<para>
+The <literal role="extension">.mcoprc</literal> file (in each user's
+home folder) can be used to configure &MCOP; in some ways. Currently,
+the following is possible:
+</para>
+
+<variablelist>
+
+<varlistentry>
+<term>GlobalComm</term>
+<listitem>
+<para>
+The name of an interface to be used for global communication. Global
+communication is used to find other objects and obtain the secret
+cookie.  Multiple &MCOP; clients/servers that should be able to talk to
+each other need to have a GlobalComm object which is able to share
+information between them. Currently, the possible values are
+<quote>Arts::TmpGlobalComm</quote> to communicate via <filename
+class="directory">/tmp/mcop-<replaceable>username</replaceable></filename>
+folder (which will only work on the local computer) and
+<quote>Arts::X11GlobalComm</quote> to communicate via the root window
+properties on the X11 server.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>TraderPath</term>
+
+<listitem>
+<para>
+Specifies where to look for trader information. You can list more than
+one folder here, and separate them with commas, like
+</para>
+</listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term>ExtensionPath</term>
+
+<listitem>
+<para>
+Specifies from which folders extensions (in the form of shared
+libraries) are loaded. Multiple values can be specified comma separated.
+</para>
+</listitem>
+
+</varlistentry>
+</variablelist>
+
+<para>
+An example which uses all of the above is:
+</para>
+
+<programlisting>
+# $HOME/.mcoprc file
+GlobalComm=Arts::X11GlobalComm
+
+# if you are a developer, it might be handy to add a folder in your home
+# to the trader/extension path to be able to add components without
+# installing them
+TraderPath="/opt/kde2/lib/mcop","/home/joe/mcopdevel/mcop"
+ExtensionPath="/opt/kde2/lib","/home/joe/mcopdevel/lib"
+</programlisting>
+
+</sect1>
+
+<sect1 id="mcop-for-corba-users">
+<title>&MCOP; for <acronym>CORBA</acronym> Users</title>
+
+<para>
+If you have used <acronym>CORBA</acronym> before, you will see that
+&MCOP; is much the same thing. In fact, &arts; prior to version 0.4 used
+<acronym>CORBA</acronym>.
+</para>
+
+<para>
+The basic idea of <acronym>CORBA</acronym> is the same: you implement
+objects (components). By using the &MCOP; features, your objects are not
+only available as normal classes from the same process (via standard C++
+techniques) - they also are available to remote servers
+transparently. For this to work, the first thing you need to do is to
+specify the interface of your objects in an &IDL; file - just like
+<acronym>CORBA</acronym> &IDL;. There are only a few differences.
+</para>
+
+<sect2 id="corba-missing">
+<title><acronym>CORBA</acronym> Features That Are Missing In
+&MCOP;</title>
+
+<para>
+In &MCOP; there are no <quote>in</quote> and <quote>out</quote>
+parameters on method invocations. Parameters are always incoming, the
+return code is always outgoing, which means that the interface:
+</para>
+
+<programlisting>
+// CORBA idl
+interface Account {
+  void deposit( in long amount );
+  void withdraw( in long amount );
+  long balance();
+};
+</programlisting>
+
+<para>
+is written as
+</para>
+
+<programlisting>
+// MCOP idl
+interface Account {
+  void deposit( long amount );
+  void withdraw( long amount );
+  long balance();
+};
+</programlisting>
+
+<para>
+in &MCOP;.
+</para>
+
+<para>
+There is no exception support. &MCOP; doesn't have exceptions - it uses
+something else for error handling.
+</para>
+
+<para>
+There are no union types and no typedefs. I don't know if that is a real
+weakness, something one would desperately need to survive.
+</para>
+
+<para>
+There is no support for passing interfaces or object references
+</para>
+
+</sect2>
+
+<sect2 id="corba-different">
+<title><acronym>CORBA</acronym> Features That Are Different In
+&MCOP;</title>
+
+<para>
+You declare sequences as
+<quote>sequence<replaceable>type</replaceable></quote> in &MCOP;. There
+is no need for a typedef.  For example, instead of:
+</para>
+
+<programlisting>
+// CORBA idl
+struct Line {
+    long x1,y1,x2,y2;
+};
+typedef sequence&lt;Line&gt; LineSeq;
+interface Plotter {
+    void draw(in LineSeq lines);
+};
+</programlisting>
+
+<para>
+you would write
+</para>
+
+<programlisting>
+// MCOP idl
+struct Line {
+    long x1,y1,x2,y2;
+};
+interface Plotter {
+    void draw(sequence&lt;Line&gt; lines);
+};
+</programlisting>
+
+</sect2>
+
+<sect2 id="no-in-corba">
+<title>&MCOP; Features That Are Not In <acronym>CORBA</acronym></title>
+
+<para>
+You can declare streams, which will then be evaluated by the &arts;
+framework. Streams are declared in a similar manner to attributes. For
+example:
+</para>
+
+<programlisting>
+// MCOP idl
+interface Synth_ADD : SynthModule {
+    in audio stream signal1,signal2;
+    out audio stream outvalue;
+};
+</programlisting>
+
+<para>
+This says that your object will accept two incoming synchronous audio
+streams called signal1 and signal2. Synchronous means that these are
+streams that deliver x samples per second (or other time), so that the
+scheduler will guarantee to always provide you a balanced amount of
+input data (&eg; 200 samples of signal1 are there and 200 samples
+signal2 are there). You guarantee that if your object is called with
+those 200 samples signal1 + signal2, it is able to produce exactly 200
+samples to outvalue.
+</para>
+
+</sect2>
+
+<sect2 id="mcop-binding">
+<title>The &MCOP; C++ Language Binding</title>
+
+<para>
+This differs from <acronym>CORBA</acronym> mostly:
+</para>
+
+<itemizedlist>
+<listitem>
+<para>
+Strings use the C++ <acronym>STL</acronym> <classname>string</classname>
+class. When stored in sequences, they are stored <quote>plain</quote>,
+that means they are considered to be a primitive type. Thus, they need
+copying.
+</para>
+</listitem>
+
+<listitem>
+<para>
+longs are plain long's (expected to be 32 bit).
+</para>
+</listitem>
+
+<listitem>
+<para>
+Sequences use the C++ <acronym>STL</acronym>
+<classname>vector</classname> class.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Structures are all derived from the &MCOP; class
+<classname>Type</classname>, and generated by the &MCOP; &IDL;
+compiler. When stored in sequences, they are not stored
+<quote>plain</quote> , but as pointers, as otherwise, too much copying
+would occur.
+</para>
+</listitem>
+</itemizedlist>
+</sect2>
+
+<sect2 id="implementing-objects">
+<title>Implementing &MCOP; Objects</title>
+
+<para>
+After having them passed through the &IDL; compiler, you need to derive
+from the <classname>_skel</classname> class. For instance, consider you
+have defined your interface like this:
+</para>
+
+<programlisting>
+// MCOP idl: hello.idl
+interface Hello {
+    void hello(string s);
+    string concat(string s1, string s2);
+    long sum2(long a, long b);
+};
+</programlisting>
+
+<para>
+You pass that through the &IDL; compiler by calling
+<userinput><command>mcopidl</command>
+<parameter>hello.idl</parameter></userinput>, which will in turn generate
+<filename>hello.cc</filename> and <filename>hello.h</filename>.  To
+implement it, you need to define a C++-class that inherits the skeleton:
+</para>
+
+<programlisting>
+// C++ header file - include hello.h somewhere
+class Hello_impl : virtual public Hello_skel {
+public:
+    void hello(const string&amp; s);
+    string concat(const string&amp; s1, const string&amp; s2);
+    long sum2(long a, long b);
+};
+</programlisting>
+
+<para>
+Finally, you need to implement the methods as normal C++
+</para>
+
+<programlisting>
+// C++ implementation file
+
+// as you see string's are passed as const string references
+void Hello_impl::hello(const string&amp; s)
+{
+    printf("Hello '%s'!\n",s.c_str());
+}
+
+// when they are a returncode they are passed as "normal" strings
+string Hello_impl::concat(const string&amp; s1, const string&amp; s2)
+{
+    return s1+s2;
+}
+
+long Hello_impl::sum2(long a, long b)
+{
+    return a+b;
+}
+</programlisting>
+
+<para>
+Once you do that, you have an object which can communicate using &MCOP;.
+Just create one (using the normal C++ facilities to create an object):
+</para>
+
+<programlisting>
+    Hello_impl server;
+</programlisting>
+
+<para>
+And as soon as you give somebody the reference
+</para>
+
+<programlisting>
+    string reference = server._toString();
+    printf("%s\n",reference.c_str());
+</programlisting>
+
+<para>
+and go to the &MCOP; idle loop
+</para>
+
+<programlisting>
+Dispatcher::the()-&gt;run();
+</programlisting>
+
+<para>
+People can access the thing using
+</para>
+
+<programlisting>
+// this code can run anywhere - not necessarily in the same process
+// (it may also run on a different computer/architecture)
+
+    Hello *h = Hello::_fromString([the object reference printed above]);
+</programlisting>
+
+<para>
+and invoke methods:
+</para>
+
+<programlisting>
+    if(h)
+        h-&gt;hello("test");
+    else
+        printf("Access failed?\n");
+</programlisting>
+
+</sect2>
+</sect1>
+
+<sect1 id="mcop-security">
+<title>&MCOP; Security Considerations</title>
+
+<para>
+Since &MCOP; servers will listen on a <acronym>TCP</acronym> port,
+potentially everybody (if you are on the Internet) may try to connect
+&MCOP; services. Thus, it is important to authenticate clients. &MCOP;
+uses the md5-auth protocol.
+</para>
+
+<para>
+The md5-auth protocol does the following to ensure that only selected
+(trusted) clients may connect to a server:
+</para>
+
+<itemizedlist>
+<listitem>
+<para>
+It assumes you can give every client a secret cookie.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Every time a client connects, it verifies that this client knows that
+secret cookie, without actually transferring it (not even in a form that
+somebody listening to the network traffic could find it out).
+</para>
+</listitem>
+
+</itemizedlist>
+
+<para>
+To give each client the secret cookie, &MCOP; will (normally) put it in
+the <filename class="directory">mcop</filename> folder (under
+<filename
+class="directory">/tmp/mcop-<envar>USER</envar>/secret-cookie</filename>). Of
+course, you can copy it to other computers. However, if you do so, use a
+secure transfer mechanism, such as <command>scp</command> (from
+<application>ssh</application>).  
+</para>
+
+<para>
+The authentication of clients uses the following steps:
+</para>
+
+<procedure>
+<step>
+<para>
+[SERVER] generate a new (random) cookie R
+</para>
+</step>
+
+<step>
+<para>
+[SERVER] send it to the client
+</para>
+</step>
+
+<step>
+<para>
+[CLIENT] read the "secret cookie" S from a file
+</para>
+</step>
+
+<step>
+<para>
+[CLIENT] mangle the cookies R and S to a mangled cookie M using the MD5
+algorithm
+</para>
+</step>
+
+<step>
+<para>
+[CLIENT] send M to the server
+</para>
+</step>
+
+<step>
+<para>
+[SERVER] verify that mangling R and S gives just the
+same thing as the cookie M received from the client. If yes,
+authentication is successful.
+</para>
+</step>
+
+</procedure>
+
+<para>
+This algorithm should be secure, given that
+</para>
+
+<orderedlist>
+<listitem>
+<para>
+The secret cookies and random cookies are <quote>random enough</quote>
+ and
+</para>
+</listitem>
+
+<listitem>
+<para>
+The MD5 hashing algorithm doesn't allow to find out the
+<quote>original text</quote>, that is the secret cookie S and the random
+cookie R (which is known, anyway), from the mangled cookie M.
+</para>
+</listitem>
+</orderedlist>
+
+<para>
+The &MCOP; protocol will start every new connection with an
+authentication process. Basically, it looks like this:
+</para>
+
+<procedure>
+
+<step>
+<para>
+Server sends a ServerHello message, which describes
+the known authentication protocols.
+</para>
+</step>
+
+<step>
+<para>
+Client sends a ClientHello message, which includes authentication info.
+</para>
+</step>
+
+<step>
+<para>
+Server sends an AuthAccept message.
+</para>
+</step>
+</procedure>
+
+<para>
+To see that the security actually works, we should look at how messages
+are processed on unauthenticated connections:
+</para>
+
+<itemizedlist>
+<listitem>
+<para>
+Before the authentication succeeds, the server will not receive other
+messages from the connection. Instead, if the server for instance
+expects a <quote>ClientHello</quote> message, and gets an mcopInvocation
+message, it will drop the connection.
+</para>
+</listitem>
+
+<listitem>
+<para>
+If the client doesn't send a valid &MCOP; message at all (no &MCOP;
+magic in the message header) in the authentication phase, but something
+else, the connection is dropped.
+</para>
+</listitem>
+
+<listitem>
+<para>
+If the client tries to send a very very large message (&gt; 4096 bytes
+in the authentication phase, the message size is truncated to 0 bytes,
+which will cause that it isn't accepted for authentication) This is to
+prevent unauthenticated clients from sending &eg; 100 megabytes of
+message, which would be received and could cause the server to run out
+of memory.
+</para>
+</listitem>
+
+<listitem>
+<para>
+If the client sends a corrupt ClientHello message (one, for which
+demarshalling fails), the connection is dropped.
+</para>
+</listitem>
+
+<listitem>
+<para>
+If the client send nothing at all, then a timeout should occur (to be
+implemented).
+</para>
+</listitem>
+</itemizedlist>
+
+</sect1>
+
+<sect1 id="mcop-protocol">
+<title>&MCOP; Protocol Specification</title>
+
+<sect2 id="mcop-protocol-intro">
+<title>Introduction</title>
+
+<para>
+It has conceptual similarities to <acronym>CORBA</acronym>, but it is
+intended to extend it in all ways that are required for real time
+multimedia operations.
+</para>
+
+<para>
+It provides a multimedia object model, which can be used for both:
+communication between components in one address space (one process), and
+between components that are in different threads, processes or on
+different hosts.
+</para>
+
+<para>
+All in all, it will be designed for extremely high performance (so
+everything shall be optimized to be blazingly fast), suitable for very
+communicative multimedia applications. For instance streaming videos
+around is one of the applications of &MCOP;, where most
+<acronym>CORBA</acronym> implementations would go down to their knees.
+</para>
+
+<para>
+The interface definitions can handle the following natively:
+</para>
+
+<itemizedlist>
+<listitem>
+<para>
+Continuous streams of data (such as audio data).
+</para>
+</listitem>
+
+<listitem>
+<para>
+Event streams of data (such as &MIDI; events).
+</para>
+</listitem>
+
+<listitem>
+<para>
+Real reference counting.
+</para>
+</listitem>
+</itemizedlist>
+
+<para>
+and the most important <acronym>CORBA</acronym> gimmicks, like
+</para>
+
+<itemizedlist>
+<listitem>
+<para>
+Synchronous method invocations.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Asynchronous method invocations.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Constructing user defined data types.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Multiple inheritance.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Passing object references.
+</para>
+</listitem>
+</itemizedlist>
+
+</sect2>
+
+<sect2 id="mcop-protocol-marshalling">
+<title>The &MCOP; Message Marshalling</title>
+
+<para>
+Design goals/ideas:
+</para>
+
+<itemizedlist>
+
+<listitem>
+<para>
+Marshalling should be easy to implement.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Demarshalling requires the receiver to know what type he wants to
+demarshall.
+</para>
+</listitem>
+
+<listitem>
+<para>
+The receiver is expected to use every information - so skipping is only
+in the protocol to a degree that:
+</para>
+
+<itemizedlist>
+<listitem>
+<para>
+If you know you are going to receive a block of bytes, you don't need to
+look at each byte for an end marker.
+</para>
+</listitem>
+
+<listitem>
+<para>
+If you know you are going to receive a string, you don't need to read it
+until the zero byte to find out it's length while demarshalling, however,
+</para>
+</listitem>
+
+<listitem>
+<para>
+If you know you are going to receive a sequence of strings, you need to
+look at the length of each of them to find the end of the sequence, as
+strings have variable length. But if you use the strings for something
+useful, you'll need to do that anyway, so this is no loss.
+</para>
+</listitem>
+</itemizedlist>
+
+</listitem>
+
+<listitem>
+<para>
+As little overhead as possible.
+</para>
+</listitem>
+</itemizedlist>
+
+<!-- TODO: Make this a table -->
+
+<para>
+Marshalling of the different types is show in the table below:
+</para>
+
+<informaltable>
+<tgroup cols="3">
+<thead>
+<row>
+<entry>Type</entry>
+<entry>Marshalling Process</entry>
+<entry>Result</entry>
+</row>
+</thead>
+
+<tbody>
+<row>
+<entry><type>void</type></entry>
+<entry><type>void</type> types are marshalled by omitting them, so
+nothing is written to the stream for them.</entry>
+<entry></entry>
+</row>
+
+<row>
+<entry><type>long</type></entry>
+<entry>is marshalled as four bytes, the most significant byte first,
+so the number 10001025 (which is 0x989a81) would be marshalled
+as:</entry>
+<entry><literal>0x00 0x98 0x9a 0x81</literal></entry>
+</row>
+
+<row>
+<entry><type>enums</type></entry>
+<entry><para>are marshalled like <type>long</type>s</para></entry>
+<entry></entry>
+</row>
+
+<row>
+<entry><type>byte</type></entry>
+<entry><para>is marshalled as a single byte, so the byte 0x42 would be
+marshalled as:</para></entry>
+<entry><literal>0x42</literal></entry>
+</row>
+
+<row>
+<entry><type>string</type></entry>
+<entry><para>is marshalled as a <type>long</type>, containing the length
+of the following string, and then the sequence of characters strings
+must end with one zero byte (which is included in the length
+counting).</para>
+<important>
+<para>include the trailing 0 byte in length counting!</para>
+</important>
+<para><quote>hello</quote> would be marshalled as:</para></entry>
+<entry><literal>0x00 0x00 0x00 0x06 0x68 0x65 0x6c 0x6c 0x6f 0x00</literal></entry>
+</row>
+
+<row>
+<entry><type>boolean</type></entry>
+<entry><para>is marshalled as a byte, containing 0 if
+<returnvalue>false</returnvalue> or 1 if
+<returnvalue>true</returnvalue>, so the boolean value
+<returnvalue>true</returnvalue> is marshalled as:</para></entry>
+<entry><literal>0x01</literal></entry>
+</row>
+
+<row>
+<entry><type>float</type></entry>
+<entry><para>is marshalled after the four byte IEEE754 representation -
+detailed docs how IEEE works are here: <ulink
+url="http://twister.ou.edu/workshop.docs/common-tools/numerical_comp_guide/ncg_math.doc.html">http://twister.ou.edu/workshop.docs/common-tools/numerical_comp_guide/ncg_math.doc.html</ulink>
+and here: <ulink
+url="http://java.sun.com/docs/books/vmspec/2nd-edition/html/Overview.doc.html">http://java.sun.com/docs/books/vmspec/2nd-edition/html/Overview.doc.html</ulink>.
+So, the value 2.15 would be marshalled as:</para></entry>
+<entry><literal>0x9a 0x99 0x09 0x40</literal></entry>
+</row>
+
+<row>
+<entry><type>struct</type></entry>
+<entry><para>A structure is marshalled by marshalling it's
+contents. There are no additional prefixes or suffixes required, so the
+structure
+</para>
+<programlisting>
+struct test {
+    string name;        // which is "hello"
+    long value;         // which is 10001025  (0x989a81)
+};
+</programlisting>
+<para>would be marshalled as</para></entry>
+<entry>
+<literallayout>
+0x00 0x00 0x00 0x06   0x68 0x65 0x6c 0x6c
+0x6f 0x00 0x00 0x98   0x9a 0x81
+</literallayout></entry>
+</row>
+
+<row>
+<entry><type>sequence</type></entry>
+<entry><para>a sequence is marshalled by listing the number of elements
+that follow, and then marshalling the elements one by one.</para>
+<para>So a sequence of 3 longs a, with a[0] = 0x12345678, a[1] = 0x01
+and a[2] = 0x42 would be marshalled as:</para></entry>
+<entry>
+<literallayout>
+0x00 0x00 0x00 0x03   0x12 0x34 0x56 0x78
+0x00 0x00 0x00 0x01   0x00 0x00 0x00 0x42
+</literallayout>
+</entry>
+</row>
+</tbody>
+</tgroup>
+</informaltable>
+
+<para>
+If you need to refer to a type, all primitive types are referred by the
+names given above. Structures and enums get own names (like
+Header). Sequences are referred as *<replaceable>normal
+type</replaceable>, so that a sequence of longs is <quote>*long</quote>
+and a sequence of Header struct's is <quote>*Header</quote>.
+</para>
+
+</sect2>
+
+<sect2 id="mcop-protocol-messages">
+<title>Messages</title>
+
+<para>
+The &MCOP; message header format is defined as defined by this
+structure:
+</para>
+
+<programlisting>
+struct Header {
+    long magic;          // the value 0x4d434f50, which is marshalled as MCOP
+    long messageLength;
+    long messageType;
+};
+</programlisting>
+
+<para>
+The possible messageTypes are currently
+</para>
+
+<programlisting>
+ mcopServerHello		= 1
+ mcopClientHello		= 2
+ mcopAuthAccept			= 3
+ mcopInvocation			= 4
+ mcopReturn				= 5
+ mcopOnewayInvocation   = 6
+</programlisting>
+
+<para>
+A few notes about the &MCOP; messaging:
+</para>
+
+
+<itemizedlist>
+<listitem>
+<para>
+Every message starts with a Header.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Some messages types should be dropped by the server, as long as the
+authentication is not complete.
+</para>
+</listitem>
+
+<listitem>
+<para>
+After receiving the header, the protocol (connection) handling can
+receive the message completely, without looking at the contents.
+</para>
+</listitem>
+</itemizedlist>
+
+<para>
+The messageLength in the header is of course in some cases redundant,
+which means that this approach is not minimal regarding the number of
+bytes.
+</para>
+
+<para>
+However, it leads to an easy (and fast) implementation of non-blocking
+messaging processing. With the help of the header, the messages can be
+received by protocol handling classes in the background (non-blocking),
+if there are many connections to the server, all of them can be served
+parallel.  You don't need to look at the message content, to receive the
+message (and to determine when you are done), just at the header, so the
+code for that is pretty easy.
+</para>
+
+<para>
+Once a message is there, it can be demarshalled and processed in one
+single pass, without caring about cases where not all data may have been
+received (because the messageLength guarantees that everything is
+there).
+</para>
+
+</sect2>
+
+<sect2 id="mcop-protocol-invocations">
+<title>Invocations</title>
+
+<para>
+To call a remote method, you need to send the following structure in the
+body of an &MCOP; message with the messageType = 1 (mcopInvocation):
+</para>
+
+<programlisting>
+struct Invocation {
+    long objectID;
+    long methodID;
+    long requestID;
+};
+</programlisting>
+
+<para>
+after that, you send the parameters as structure, &eg; if you invoke the
+method string concat(string s1, string s2), you send a structure like
+</para>
+
+<programlisting>
+struct InvocationBody {
+    string s1;
+    string s2;
+};
+</programlisting>
+
+
+<para>
+if the method was declared to be oneway - that means asynchronous
+without return code - then that was it. Otherwise, you'll receive as
+answer the message with messageType = 2 (mcopReturn)
+</para>
+
+<programlisting>
+struct ReturnCode {
+    long requestID;
+    &lt;resulttype&gt; result;
+};
+</programlisting>
+
+
+<para>
+where &lt;resulttype&gt; is the type of the result. As void types are
+omitted in marshalling, you can also only write the requestID if you
+return from a void method.
+</para>
+
+<para>
+So our string concat(string s1, string s2) would lead to a returncode
+like
+</para>
+
+<programlisting>
+struct ReturnCode {
+    long   requestID;
+    string result;
+};
+</programlisting>
+
+</sect2>
+
+<sect2 id="mcop-protocol-inspecting">
+<title>Inspecting Interfaces</title>
+
+<para>
+To do invocations, you need to know the methods an object supports. To
+do so, the methodID 0, 1, 2 and 3 are hardwired to certain
+functionalities. That is
+</para>
+
+<programlisting>
+long _lookupMethod(MethodDef methodDef);				// methodID always 0
+string _interfaceName();								// methodID always 1
+InterfaceDef _queryInterface(string name);				// methodID always 2
+TypeDef _queryType(string name);						// methodID always 3
+</programlisting>
+
+<para>
+to read that, you of course need also
+</para>
+
+<programlisting>
+struct MethodDef {
+	string  methodName;
+	string  type;
+	long    flags;        // set to 0 for now (will be required for streaming)
+	sequence&lt;ParamDef&gt; signature;
+};
+
+struct ParamDef {
+	string name;
+	long   typeCode;
+};
+</programlisting>
+
+<para>
+the parameters field contains type components which specify the types of
+the parameters. The type of the returncode is specified in the
+MethodDef's type field.
+</para>
+
+<para>
+Strictly speaking, only the methods
+<methodname>_lookupMethod()</methodname> and
+<methodname>_interfaceName()</methodname> differ from object to object,
+while the <methodname>_queryInterface()</methodname> and
+<methodname>_queryType()</methodname> are always the same.
+</para>
+
+<para>
+What are those methodIDs? If you do an &MCOP; invocation, you are
+expected to pass a number for the method you are calling. The reason for
+that is, that numbers can be processed much faster than strings when
+executing an &MCOP; request.
+</para>
+
+<para>
+So how do you get those numbers? If you know the signature of the
+method, that is a MethodDef that describes the method, (which contains
+name, type, parameter names, parameter types and such), you can pass
+that to _lookupMethod of the object where you wish to call a method. As
+_lookupMethod is hardwired to methodID 0, you should encounter no
+problems doing so.
+</para>
+
+<para>
+On the other hand, if you don't know the method signature, you can find
+which methods are supported by using _interfaceName, _queryInterface and
+_queryType.
+</para>
+</sect2>
+
+<sect2 id="mcop-protocol-typedefs">
+<title>Type Definitions</title>
+
+<para>
+User defined datatypes are described using the
+<structname>TypeDef</structname> structure:
+</para>
+
+<programlisting>
+struct TypeComponent {
+	string type;
+	string name;
+};
+
+struct TypeDef {
+	string name;
+
+	sequence&lt;TypeComponent&gt; contents;
+};
+</programlisting>
+
+</sect2>
+</sect1>
+
+<sect1 id="why-not-dcop">
+<title>Why &arts; Doesn't Use &DCOP;</title>
+
+<para>
+Since &kde; dropped <acronym>CORBA</acronym> completely, and is using
+&DCOP; everywhere instead, naturally the question arises why &arts;
+isn't doing so. After all, &DCOP; support is in
+<classname>KApplication</classname>, is well-maintained, supposed to
+integrate greatly with libICE, and whatever else.
+</para>
+
+<para>
+Since there will be (potentially) a lot of people asking whether having
+&MCOP; besides &DCOP; is really necessary, here is the answer. Please
+don't get me wrong, I am not trying to say <quote>&DCOP; is
+bad</quote>. I am just trying to say <quote>&DCOP; isn't the right
+solution for &arts;</quote> (while it is a nice solution for other
+things).
+</para>
+
+<para>
+First, you need to understand what exactly &DCOP; was written
+for. Created in two days during the &kde;-TWO meeting, it was intended
+to be as simple as possible, a really <quote>lightweight</quote>
+communication protocol. Especially the implementation left away
+everything that could involve complexity, for instance a full blown
+concept how data types shall be marshalled.
+</para>
+
+<para>
+Even although &DCOP; doesn't care about certain things (like: how do I
+send a string in a network-transparent manner?) - this needs to be
+done. So, everything that &DCOP; doesn't do, is left to &Qt; in the
+&kde; apps that use &DCOP; today. This is mostly type management (using
+the &Qt; serialization operator).
+</para>
+
+<para>
+So &DCOP; is a minimal protocol which perfectly enables &kde;
+applications to send simple messages like <quote>open a window pointing
+to http://www.kde.org</quote> or <quote>your configuration data has
+changed</quote>. However, inside &arts; the focus lies on other things.
+</para>
+
+<para>
+The idea is, that little plugins in &arts; will talk involving such data
+structures as <quote>midi events</quote> and <quote>songposition
+pointers</quote> and <quote>flow graphs</quote>.
+</para>
+
+<para>
+These are complex data types, which must be sent between different
+objects, and be passed as streams, or parameters. &MCOP; supplies a type
+concept, to define complex data types out of simpler ones (similar to
+structs or arrays in C++). &DCOP; doesn't care about types at all, so
+this problem would be left to the programmer - like: writing C++ classes
+for the types, and make sure they can serialize properly (for instance:
+support the &Qt; streaming operator).
+</para>
+
+<para>
+But that way, they would be inaccessible to everything but direct C++
+coding. Specifically, you could not design a scripting language, that
+would know all types plugins may ever expose, as they are not self
+describing.
+</para>
+
+<para>
+Much the same argument is valid for interfaces as well. &DCOP; objects
+don't expose their relationships, inheritance hierarchies, etc. - if you
+were to write an object browser which shows you <quote>what attributes
+has this object got</quote>, you'd fail.
+</para>
+
+
+<para>
+While Matthias told me that you have a special function
+<quote>functions</quote> on each object that tells you about the methods
+that an object supports, this leaves out things like attributes
+(properties), streams and inheritance relations.
+</para>
+
+<para>
+This seriously breaks applications like &arts-builder;. But remember:
+&DCOP; was not so much intended to be an object model (as &Qt; already
+has one with <application>moc</application> and similar), nor to be
+something like <acronym>CORBA</acronym>, but to supply inter-application
+communication.
+</para>
+
+<para>
+Why &MCOP; even exists is: it should work fine with streams between
+objects.  &arts; makes heavily use of small plugins, which interconnect
+themselves with streams. The <acronym>CORBA</acronym> version of &arts;
+had to introduce a very annoying split between <quote>the SynthModule
+objects</quote>, which were the internal work modules that did do the
+streaming, and <quote>the <acronym>CORBA</acronym> interface</quote>,
+which was something external.
+</para>
+
+<para>
+Much code cared about making interaction between <quote>the SynthModule
+objects</quote> and <quote>the <acronym>CORBA</acronym>
+interface</quote> look natural, but it didn't, because
+<acronym>CORBA</acronym> knew nothing at all about streams. &MCOP;
+does. Look at the code (something like
+<filename>simplesoundserver_impl.cc</filename>). Way better!  Streams
+can be declared in the interface of modules, and implemented in a
+natural looking way.
+</para>
+
+<para>
+One can't deny it. One of the reasons why I wrote &MCOP; was speed. Here
+are some arguments why &MCOP; will definitely be faster than &DCOP;
+(even without giving figures).
+</para>
+
+
+<para>
+An invocation in &MCOP; will have a six-<quote>long</quote>-header. That
+is:
+</para>
+
+<itemizedlist>
+<listitem><para>magic <quote>MCOP</quote></para></listitem>
+<listitem><para>message type (invocation)</para></listitem>
+<listitem><para>size of the request in bytes</para></listitem>
+<listitem><para>request ID</para></listitem>
+<listitem><para>target object ID</para></listitem>
+<listitem><para>target method ID</para></listitem>
+</itemizedlist>
+
+<para>
+After that, the parameters follow. Note that the demarshalling of this
+is extremely fast. You can use table lookups to find the object and the
+method demarshalling function, which means that complexity is O(1) [ it
+will take the same amount of time, no matter how many objects are alive,
+or how many functions are there ].
+</para>
+
+<para>
+Comparing this to &DCOP;, you'll see, that there are at least
+</para>
+
+<itemizedlist>
+<listitem><para>a string for the target object - something like
+<quote>myCalculator</quote></para></listitem> 
+<listitem><para>a string like <quote>addNumber(int,int)</quote> to
+specify the method</para></listitem>
+<listitem><para>several more protocol info added by libICE, and other
+DCOP specifics I don't know</para></listitem>
+</itemizedlist>
+
+<para>
+These are much more painful to demarshall, as you'll need to parse the
+string, search for the function, &etc;.
+</para>
+
+<para>
+In &DCOP;, all requests are running through a server
+(<application>DCOPServer</application>). That means, the process of a
+synchronous invocation looks like this: 
+</para>
+
+<itemizedlist>
+<listitem>
+<para>
+Client process sends invocation.
+</para>
+</listitem>
+
+<listitem>
+<para>
+<application>DCOPserver</application> (man-in-the-middle) receives
+invocation and looks where it needs to go, and sends it to the
+<quote>real</quote> server.
+</para>
+</listitem> 
+
+<listitem>
+<para>
+Server process receives invocation, performs request and sends result.
+</para>
+</listitem>
+
+<listitem>
+<para>
+<application>DCOPserver</application> (man-in-the-middle) receives
+result and ... sends it to the client.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Client decodes reply.
+</para>
+</listitem>
+</itemizedlist>
+
+<para>
+In &MCOP;, the same invocation looks like this:
+</para>
+
+<itemizedlist>
+<listitem>
+<para>
+Client process sends invocation.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Server process receives invocation, performs request and sends result.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Client decodes reply.
+</para>
+</listitem>
+</itemizedlist>
+
+<para>
+Say both were implemented correctly, &MCOP;s peer-to-peer strategy
+should be faster by a factor of two, than &DCOP;s man-in-the-middle
+strategy. Note however that there were of course reasons to choose the
+&DCOP; strategy, which is namely: if you have 20 applications running,
+and each app is talking to each app, you need 20 connections in &DCOP;,
+and 200 with &MCOP;. However in the multimedia case, this is not
+supposed to be the usual setting.
+</para>
+
+<para>
+I tried to compare &MCOP; and &DCOP;, doing an invocation like adding
+two numbers. I modified testdcop to achieve this. However, the test may
+not have been precise on the &DCOP; side. I invoked the method in the
+same process that did the call for &DCOP;, and I didn't know how to get
+rid of one debugging message, so I used output redirection.
+</para>
+
+<para>
+The test only used one object and one function, expect &DCOP;s results
+to decrease with more objects and functions, while &MCOP;s results
+should stay the same. Also, the <application>dcopserver</application>
+process wasn't connected to other applications, it might be that if many
+applications are connected, the routing performance decreases.
+</para>
+
+<para>
+The result I got was that while &DCOP; got slightly more than 2000
+invocations per second, &MCOP; got slightly more than 8000 invocations
+per second. That makes a factor of 4. I know that &MCOP; isn't tuned to
+the maximum possible, yet. (Comparison: <acronym>CORBA</acronym>, as
+implemented with mico, does something between 1000 and 1500 invocations
+per second).
+</para>
+
+<para>
+If you want <quote>harder</quote> data, consider writing some small
+benchmark app for &DCOP; and send it to me.
+</para>
+
+<para>
+<acronym>CORBA</acronym> had the nice feature that you could use objects
+you implemented once, as <quote>separate server process</quote>, or as
+<quote>library</quote>. You could use the same code to do so, and
+<acronym>CORBA</acronym> would transparently decide what to do. With
+&DCOP;, that is not really intended, and as far as I know not really
+possible.
+</para>
+
+<para>
+&MCOP; on the other hand should support that from the beginning. So you
+can run an effect inside &artsd;. But if you are a wave editor, you can
+choose to run the same effect inside your process space as well.
+</para>
+
+<para>
+While &DCOP; is mostly a way to communicate between apps, &MCOP; is also
+a way to communicate inside apps. Especially for multimedia streaming,
+this is important (as you can run multiple &MCOP; objects parallely, to
+solve a multimedia task in your application).
+</para>
+
+<para>
+Although &MCOP; does not currently do so, the possibilities are open to
+implement quality of service features. Something like <quote>that &MIDI; event
+is really really important, compared to this invocation</quote>. Or something
+like <quote>needs to be there in time</quote>.
+</para>
+
+<para>
+On the other hand, stream transfer can be integrated in the &MCOP;
+protocol nicely, and combined with <acronym>QoS</acronym> stuff. Given
+that the protocol may be changed, &MCOP; stream transfer should not
+really get slower than conventional <acronym>TCP</acronym> streaming,
+but: it will be easier and more consistent to use.
+</para>
+
+<para>
+There is no need to base a middleware for multimedia on &Qt;. Deciding
+so, and using all that nice &Qt;-streaming and stuff, will easily lead
+to the middleware becoming a &Qt;-only (or rather &kde;-only) thing. I
+mean: as soon as I'll see the GNOMEs using &DCOP;, too, or something like
+that, I am certainly proven wrong.
+</para>
+
+<para>
+While I do know that &DCOP; basically doesn't know about the data types
+it sends, so that you could use &DCOP; without using &Qt;, look at how
+it is used in daily &kde; usage: people send types like
+<classname>QString</classname>, <classname>QRect</classname>,
+<classname>QPixmap</classname>, <classname>QCString</classname>, ...,
+around. These use &Qt;-serialization. So if somebody choose to support
+&DCOP; in a GNOME program, he would either have to claim to use
+<classname>QString</classname>,...  types (although he doesn't do so),
+and emulate the way &Qt; does the streaming, or he would send other
+string, pixmap and rect types around, and thus not be interoperable.
+</para>
+
+<para>
+Well, whatever. &arts; was always intended to work with or without
+&kde;, with or without &Qt;, with or without X11, and maybe even with or
+without &Linux; (and I have even no problems with people who port it to
+a popular non-free operating systems).
+</para>
+
+<para>
+It is my position that non-&GUI;-components should be written
+non-&GUI;-dependant, to make sharing those among wider amounts of
+developers (and users) possible.
+</para>
+
+<para>
+I see that using two <acronym>IPC</acronym> protocols may cause
+inconveniences. Even more, if they are both non-standard. However, for
+the reasons given above, switching to &DCOP; is no option. If there is
+significant interest to find a way to unite the two, okay, we can
+try. We could even try to make &MCOP; speak <acronym>IIOP</acronym>,
+then we'd have a <acronym>CORBA</acronym> <acronym>ORB</acronym> ;).
+</para>
+
+<para>
+I talked with Matthias Ettrich a bit about the future of the two
+protocols, and we found lots of ways how things could go on. For
+instance, &MCOP; could handle the message communication in &DCOP;, thus
+bringing the protocols a bit closer together.
+</para>
+
+<para>
+So some possible solutions would be:
+</para>
+
+<itemizedlist>
+<listitem>
+<para>
+Write an &MCOP; - &DCOP; gateway (which should be possible, and would
+make interoperation possible) - note: there is an experimental
+prototype, if you like to work on that.
+</para>
+</listitem>
+
+<listitem>
+<para>
+Integrate everything &DCOP; users expect into &MCOP;, and try to only do
+&MCOP; - one could add an <quote>man-in-the-middle-option</quote> to
+&MCOP;, too ;)
+</para>
+</listitem>
+
+<listitem>
+<para>
+Base &DCOP; on &MCOP; instead of libICE, and slowly start integrating
+things closer together.
+</para>
+</listitem>
+</itemizedlist>
+
+<para>
+However, it may not be the worst possibility to use each protocol for
+everything it was intended for (there are some big differences in the
+design goals), and don't try to merge them into one.
+</para>
+
+</sect1>
+</chapter>

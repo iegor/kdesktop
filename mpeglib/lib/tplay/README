@@ -1,0 +1,95 @@
+This is a buffered audio player for Linux. POSIX-thread library is
+used. This is still considered BETA software and may not work as
+expected. Please mail me for bug reports, opinions or suggestions.
+
+This is primarily made for use with MPEG-decoders. They typically
+consume lots of CPU-time and some kind of audio buffer is needed to
+reduce cutting while writing to audio device. You can also play any
+audio files with tplay or use it with any program that writes audio 
+data to standard out.
+
+RIFF/WAVE (WAV) and Sun audio (AU) file headers are recognized by
+now.
+
+Binary:
+
+In the source tree there is a readily compiled binary that is build
+under Linux/ELF 2.0.30 with libc 5.4.20 and LinuxThreads 0.6 (the
+thread library is statically linked).
+
+Command line options:
+
+  tplay [-hvVmuxrf] [-s Hz] [-b 8|16] [-B kilobytes] [filename]
+
+	-h, --help		Print help, then exit
+	-v, --version		Print version, then exit
+	-V, --verbose		Print useful information about the sample
+	-x, --swap		Swap endianness
+	-r, --raw		Force raw audio format. Ignore headers.
+	-f, --force		Force playing with any parameters
+	-m, --mono		Mono sample
+	-u, --usage		Print buffer usage while playing
+	-s, --speed=SPEED	Sample speed (Hz)
+	-b, --bytes=BYTES	Bytes in a sample
+	-B, --buffer-size=SIZE	Buffer size in (kB)
+
+Buffer size is defaulted to 512k. It is about 3 seconds CD audio
+(44100Hz/sample, 16bytes, stereo). If filename is not given, standard
+input is used. If -x (or --swap) flag is set, the byte order of
+audio sample is swapped before playing. The default is Intel little-
+endian which is mostly used in x86 machines. The world outside Intel
+is big-endian.
+Option -r (or --raw) forces tplay to handle the sample as an raw
+PCM audio sample. Sun audio or WAV headers are ignored.
+
+Requirements:
+
+	- Linux 2.0 or newer with audio card support
+	- POSIX thread library
+	- Audio card
+
+There are several POSIX thread libraries available. I used
+LinuxThreads by Xavier Leroy (Xavier.Leroy@inria.fr). LinuxThreads
+library use clone() that is provided by Linux 2.0 kernel. 
+
+The code:
+
+tplay starts one thread, named consumer, that reads circular audio
+buffer and writes it to audio device. The producer is a function that
+runs in parallel with the consumer and its task is to read the sample
+file or standard input and write this data to audio buffer to meet
+consumer's needs. Usually, the buffer is full but on the times when
+CPU-time is suddenly needed for other processes (usually: disk
+read/write), the producer can't write fast enough and consumer can use
+the buffer to keep audio stream uninterrupted. If the buffer is used
+and the producer is still unable to feed it fast enough, underflow
+situation is met and consumer waits for awhile (typically: one second)
+for the producer to fill the buffer again.
+
+Building:
+
+If you want to link tplay with static libpthread library, edit
+Makefile and uncomment preferred LIBS-setting there.  Type:
+
+	- make
+	- make install
+	- make install.man
+
+Thanks:
+
+Jerko Golubovic <jerko.golubovic@public.srce.hr>
+Jukka Palviainen <oh3kjt@ele.tut.fi>
+
+TODO:
+
+Find out the best sizes for the audio buffer and one block.  
+Better documentation.
+Better RIFF/WAVE checking.
+
+Ilkka Karvinen
+ik@iki.fi
+
+
+
+
+
