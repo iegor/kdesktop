@@ -1,7 +1,7 @@
 lib_LTLIBRARIES = libtext2path.la
 
 KDE_CXXFLAGS = $(USE_EXCEPTIONS)
-INCLUDES = $(FRIBIDI_CFLAGS) $(FREETYPE_CFLAGS) $(FONTCONFIG_CFLAGS) $(all_includes)
+INCLUDES = $(FRIBIDI_CFLAGS) $(FREETYPE_CFLAGS) $(FONTCONFIG_CFLAGS) -I/usr/include/glib-2.0 $(all_includes)
 
 libtext2path_includedir=$(includedir)/libtext2path-0.1
 libtext2path_include_HEADERS = BezierPath.h Glyph.h GlyphTracer.h
