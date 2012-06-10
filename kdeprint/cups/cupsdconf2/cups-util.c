@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <cups/ipp.h>
 #include <cups/http.h>
 #include <cups/cups.h>
