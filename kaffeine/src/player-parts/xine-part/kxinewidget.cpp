@@ -1677,7 +1677,7 @@ void KXineWidget::dvbShowOSD()
 	int h = m_videoFrameHeight;
 	if ( !w || !h )
 		return;
-	if ( w<800 ) {
+	if ( w<1921 ) {
 		if ( dvbCurrentNext[0]=="E" ) {
 			dvbOSDHideTimer.stop();
 			dvbOSD = xine_osd_new( m_xineStream, border, border, w-(2*border), h-(2/border) );
@@ -1858,7 +1858,7 @@ void KXineWidget::setDvbCurrentNext( const QString &channelName, const QStringLi
 
 void KXineWidget::setDvb( const QString &pipeName, const QString &chanName, int haveVideo )
 {
-	m_trackURL = pipeName;
+	m_trackURL = /*"fifo://"+*/pipeName;
 	m_trackTitle = chanName;
 	dvbHaveVideo = haveVideo;
 }

@@ -62,10 +62,11 @@ public :
 	void setPlug( KaffeineDvbPlugin *p );
 	QStringList getSources( bool all=false );
 	bool canSource( ChannelDesc *chan );
+	int getPriority();
 	bool tuneDvb( ChannelDesc *chan, bool dvr=true );
 	void stopFrontend();
 	virtual void run();
-	int goLive( ChannelDesc *chan, const QString &pipeName );
+	int goLive( ChannelDesc *chan, const QString &pipeName, int ringBufSize );
 	void preStopLive();
 	void stopLive( ChannelDesc *chan );
 	void stop();
@@ -89,8 +90,9 @@ public :
 	bool hasLive();
 	bool liveIsRecording();
 	int getSNR();
+	void probeCam();
+	void showCamDialog();
 
-	unsigned char thBuf[188*10];
 	struct pollfd pfd;
 	DVBevents *dvbEvents;
 
@@ -109,6 +111,7 @@ protected:
 private :
 
 	int setDiseqc( int switchPos, ChannelDesc *chan, int hiband, int &rotor, bool dvr );
+	void moveRotor( int switchPos, ChannelDesc *chan, int hiband, bool dvr );
 	void rotorCommand( int cmd, int n1=0, int n2=0, int n3=0 );
 	void gotoX( double azimuth );
 	double getAzimuth( double angle );
@@ -119,7 +122,6 @@ private :
 	void removeOut( DVBout *o );
 	void recordingState();
 	void startReading();
-	void probeCam();
 	bool openFe();
 	bool closeFe();
 	void connectStatus( bool con );
@@ -143,6 +145,7 @@ private :
 	QString timeShiftFileName;
 	DvbCam *cam;
 	bool camProbed;
+	int diseqcTwice;
 	KaffeineDvbPlugin *plug;
 
 signals:

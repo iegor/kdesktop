@@ -307,8 +307,10 @@ void Kaffeine::updateArgs()
 	}
 	loadTMP(urls);
 
-	if (args->isSet("fullscreen"))
+	if (args->isSet("fullscreen")) {
+		inplug->showPlayer();
 		fullscreen();
+	}
 
 	if (args->isSet("minimal"))
 		minimal();

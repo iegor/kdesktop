@@ -2,6 +2,7 @@
  * libdvbfe - a DVB frontend library
  *
  * Copyright (C) 2005 Andrew de Quincey (adq_dvb@lidskialf.net)
+ * Copyright (C) 2005 Manu Abraham <abraham.manu@gmail.com>
  * Copyright (C) 2005 Kenneth Aafloy (kenneth@linuxtv.org)
  *
  * This library is free software; you can redistribute it and/or
@@ -26,14 +27,16 @@
 #include <sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
+#include <sys/poll.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <ctype.h>
 #include <errno.h>
 #include <linux/dvb/frontend.h>
+#include <libdvbmisc/dvbmisc.h>
 #include "dvbfe.h"
 
-#define GET_INFO_MIN_DELAY_US 100000
+int verbose = 0;
 
 static int dvbfe_spectral_inversion_to_kapi[][2] =
 {
@@ -128,6 +131,7 @@ static int dvbfe_dvbt_hierarchy_to_kapi[][2] =
 	{ -1, -1 }
 };
 
+
 static int lookupval(int val, int reverse, int table[][2])
 {
 	int i =0;
@@ -149,19 +153,16 @@ static int lookupval(int val, int reverse, int table[][2])
 }
 
 
-struct dvbfe_handle_prv {
+struct dvbfe_handle {
 	int fd;
-	dvbfe_type_t type;
+	enum dvbfe_type type;
 	char *name;
-	struct timeval nextinfotime;
-	struct dvbfe_info cachedinfo;
-	int cachedreturnval;
 };
 
-dvbfe_handle_t dvbfe_open(int adapter, int frontend, int readonly)
+struct dvbfe_handle *dvbfe_open(int adapter, int frontend, int readonly)
 {
 	char filename[PATH_MAX+1];
-	struct dvbfe_handle_prv *fehandle;
+	struct dvbfe_handle *fehandle;
 	int fd;
 	struct dvb_frontend_info info;
 
@@ -188,8 +189,8 @@ dvbfe_handle_t dvbfe_open(int adapter, int frontend, int readonly)
 	}
 
 	// setup structure
-	fehandle = (struct dvbfe_handle_prv*) malloc(sizeof(struct dvbfe_handle_prv));
-	memset(fehandle, 0, sizeof(struct dvbfe_handle_prv));
+	fehandle = (struct dvbfe_handle*) malloc(sizeof(struct dvbfe_handle));
+	memset(fehandle, 0, sizeof(struct dvbfe_handle));
 	fehandle->fd = fd;
 	switch(info.type) {
 	case FE_QPSK:
@@ -214,99 +215,118 @@ dvbfe_handle_t dvbfe_open(int adapter, int frontend, int readonly)
 	return fehandle;
 }
 
-void dvbfe_close(dvbfe_handle_t _fehandle)
+void dvbfe_close(struct dvbfe_handle *fehandle)
 {
-	struct dvbfe_handle_prv *fehandle = (struct dvbfe_handle_prv*) _fehandle;
-
 	close(fehandle->fd);
 	free(fehandle->name);
 	free(fehandle);
 }
 
-int dvbfe_get_info(dvbfe_handle_t _fehandle, dvbfe_info_mask_t querymask, struct dvbfe_info *result)
+extern int dvbfe_get_info(struct dvbfe_handle *fehandle,
+			  enum dvbfe_info_mask querymask,
+			  struct dvbfe_info *result,
+			  enum dvbfe_info_querytype querytype,
+			  int timeout)
 {
 	int returnval = 0;
-	fe_status_t status;
-	struct dvb_frontend_parameters kparams;
-	struct dvbfe_handle_prv *fehandle = (struct dvbfe_handle_prv*) _fehandle;
-	struct timeval curtime;
+	struct dvb_frontend_event kevent;
+	int ok = 0;
 
-	// limit how often this is called to reduce bus traffic
-	gettimeofday(&curtime, NULL);
-	if ((curtime.tv_sec < fehandle->nextinfotime.tv_sec) ||
-	    ((curtime.tv_sec == fehandle->nextinfotime.tv_sec) && (curtime.tv_usec < fehandle->nextinfotime.tv_usec))) {
-		memcpy(result, &fehandle->cachedinfo, sizeof(struct dvbfe_info));
-		return fehandle->cachedreturnval;
-	}
-
-	// retrieve the requested values
-	memset(result, 0, sizeof(result));
-	result->type = fehandle->type;
 	result->name = fehandle->name;
-	if (querymask & DVBFE_INFO_LOCKSTATUS) {
-		if (!ioctl(fehandle->fd, FE_READ_STATUS, &status)) {
-			returnval |= DVBFE_INFO_LOCKSTATUS;
-			if (status & FE_HAS_SIGNAL)
-				result->signal = 1;
+	result->type = fehandle->type;
 
-			if (status & FE_HAS_CARRIER)
-				result->carrier = 1;
-
-			if (status & FE_HAS_VITERBI)
-				result->viterbi = 1;
-
-			if (status & FE_HAS_SYNC)
-				result->sync = 1;
-
-			if (status & FE_HAS_LOCK)
-				result->lock = 1;
-		}
-	}
-	if (querymask & DVBFE_INFO_FEPARAMS) {
-		if (!ioctl(fehandle->fd, FE_GET_FRONTEND, &kparams)) {
-			returnval |= DVBFE_INFO_FEPARAMS;
-			result->feparams.frequency = kparams.frequency;
-			result->feparams.inversion = lookupval(kparams.inversion, 1, dvbfe_spectral_inversion_to_kapi);
-			switch(fehandle->type) {
-			case FE_QPSK:
-				result->feparams.u.dvbs.symbol_rate = kparams.u.qpsk.symbol_rate;
-				result->feparams.u.dvbs.fec_inner =
-					lookupval(kparams.u.qpsk.fec_inner, 1, dvbfe_code_rate_to_kapi);
-				break;
-
-			case FE_QAM:
-				result->feparams.u.dvbc.symbol_rate = kparams.u.qam.symbol_rate;
-				result->feparams.u.dvbc.fec_inner =
-					lookupval(kparams.u.qam.fec_inner, 1, dvbfe_code_rate_to_kapi);
-				result->feparams.u.dvbc.modulation =
-					lookupval(kparams.u.qam.modulation, 1, dvbfe_dvbc_mod_to_kapi);
-				break;
-
-			case FE_OFDM:
-				result->feparams.u.dvbt.bandwidth =
-					lookupval(kparams.u.ofdm.bandwidth, 1, dvbfe_dvbt_bandwidth_to_kapi);
-				result->feparams.u.dvbt.code_rate_HP =
-					lookupval(kparams.u.ofdm.code_rate_HP, 1, dvbfe_code_rate_to_kapi);
-				result->feparams.u.dvbt.code_rate_LP =
-					lookupval(kparams.u.ofdm.code_rate_LP, 1, dvbfe_code_rate_to_kapi);
-				result->feparams.u.dvbt.constellation =
-					lookupval(kparams.u.ofdm.constellation, 1, dvbfe_dvbt_const_to_kapi);
-				result->feparams.u.dvbt.transmission_mode =
-					lookupval(kparams.u.ofdm.transmission_mode, 1, dvbfe_dvbt_transmit_mode_to_kapi);
-				result->feparams.u.dvbt.guard_interval =
-					lookupval(kparams.u.ofdm.guard_interval, 1, dvbfe_dvbt_guard_interval_to_kapi);
-				result->feparams.u.dvbt.hierarchy_information =
-					lookupval(kparams.u.ofdm.hierarchy_information, 1, dvbfe_dvbt_hierarchy_to_kapi);
-				break;
-
-			case FE_ATSC:
-				result->feparams.u.atsc.modulation =
-					lookupval(kparams.u.vsb.modulation, 1, dvbfe_atsc_mod_to_kapi);
-				break;
+	switch(querytype) {
+	case DVBFE_INFO_QUERYTYPE_IMMEDIATE:
+		if (querymask & DVBFE_INFO_LOCKSTATUS) {
+			if (!ioctl(fehandle->fd, FE_READ_STATUS, &kevent.status)) {
+				returnval |= DVBFE_INFO_LOCKSTATUS;
 			}
 		}
+		if (querymask & DVBFE_INFO_FEPARAMS) {
+			if (!ioctl(fehandle->fd, FE_GET_FRONTEND, &kevent.parameters)) {
+				returnval |= DVBFE_INFO_FEPARAMS;
+			}
+		}
+		break;
 
+	case DVBFE_INFO_QUERYTYPE_LOCKCHANGE:
+		{
+			struct pollfd pollfd;
+			pollfd.fd = fehandle->fd;
+			pollfd.events = POLLIN | POLLERR;
+
+			ok = 1;
+			if (poll(&pollfd, 1, timeout) < 0)
+				ok = 0;
+			if (pollfd.revents & POLLERR)
+				ok = 0;
+			if (!(pollfd.revents & POLLIN))
+				ok = 0;
+		}
+
+		if (ok &&
+		    ((querymask & DVBFE_INFO_LOCKSTATUS) ||
+		     (querymask & DVBFE_INFO_FEPARAMS))) {
+			if (!ioctl(fehandle->fd, FE_GET_EVENT, &kevent)) {
+				if (querymask & DVBFE_INFO_LOCKSTATUS)
+					returnval |= DVBFE_INFO_LOCKSTATUS;
+				if (querymask & DVBFE_INFO_FEPARAMS)
+					returnval |= DVBFE_INFO_FEPARAMS;
+			}
+		}
+		break;
 	}
+
+	if (returnval & DVBFE_INFO_LOCKSTATUS) {
+		result->signal = kevent.status & FE_HAS_SIGNAL ? 1 : 0;
+		result->carrier = kevent.status & FE_HAS_CARRIER ? 1 : 0;
+		result->viterbi = kevent.status & FE_HAS_VITERBI ? 1 : 0;
+		result->sync = kevent.status & FE_HAS_SYNC ? 1 : 0;
+		result->lock = kevent.status & FE_HAS_LOCK ? 1 : 0;
+	}
+
+	if (returnval & DVBFE_INFO_FEPARAMS) {
+		result->feparams.frequency = kevent.parameters.frequency;
+		result->feparams.inversion = lookupval(kevent.parameters.inversion, 1, dvbfe_spectral_inversion_to_kapi);
+		switch(fehandle->type) {
+		case FE_QPSK:
+			result->feparams.u.dvbs.symbol_rate = kevent.parameters.u.qpsk.symbol_rate;
+			result->feparams.u.dvbs.fec_inner =
+				lookupval(kevent.parameters.u.qpsk.fec_inner, 1, dvbfe_code_rate_to_kapi);
+			break;
+
+		case FE_QAM:
+			result->feparams.u.dvbc.symbol_rate = kevent.parameters.u.qam.symbol_rate;
+			result->feparams.u.dvbc.fec_inner =
+				lookupval(kevent.parameters.u.qam.fec_inner, 1, dvbfe_code_rate_to_kapi);
+			result->feparams.u.dvbc.modulation =
+				lookupval(kevent.parameters.u.qam.modulation, 1, dvbfe_dvbc_mod_to_kapi);
+			break;
+
+		case FE_OFDM:
+			result->feparams.u.dvbt.bandwidth =
+				lookupval(kevent.parameters.u.ofdm.bandwidth, 1, dvbfe_dvbt_bandwidth_to_kapi);
+			result->feparams.u.dvbt.code_rate_HP =
+				lookupval(kevent.parameters.u.ofdm.code_rate_HP, 1, dvbfe_code_rate_to_kapi);
+			result->feparams.u.dvbt.code_rate_LP =
+				lookupval(kevent.parameters.u.ofdm.code_rate_LP, 1, dvbfe_code_rate_to_kapi);
+			result->feparams.u.dvbt.constellation =
+				lookupval(kevent.parameters.u.ofdm.constellation, 1, dvbfe_dvbt_const_to_kapi);
+			result->feparams.u.dvbt.transmission_mode =
+				lookupval(kevent.parameters.u.ofdm.transmission_mode, 1, dvbfe_dvbt_transmit_mode_to_kapi);
+			result->feparams.u.dvbt.guard_interval =
+				lookupval(kevent.parameters.u.ofdm.guard_interval, 1, dvbfe_dvbt_guard_interval_to_kapi);
+			result->feparams.u.dvbt.hierarchy_information =
+				lookupval(kevent.parameters.u.ofdm.hierarchy_information, 1, dvbfe_dvbt_hierarchy_to_kapi);
+			break;
+
+		case FE_ATSC:
+			result->feparams.u.atsc.modulation =
+				lookupval(kevent.parameters.u.vsb.modulation, 1, dvbfe_atsc_mod_to_kapi);
+			break;
+		}
+	}
+
 	if (querymask & DVBFE_INFO_BER) {
 		if (!ioctl(fehandle->fd, FE_READ_BER, &result->ber))
 			returnval |= DVBFE_INFO_BER;
@@ -324,24 +344,15 @@ int dvbfe_get_info(dvbfe_handle_t _fehandle, dvbfe_info_mask_t querymask, struct
 			returnval |= DVBFE_INFO_UNCORRECTED_BLOCKS;
 	}
 
-	// setup for next poll
-	gettimeofday(&fehandle->nextinfotime, NULL);
-	fehandle->nextinfotime.tv_usec += GET_INFO_MIN_DELAY_US;
-	if (fehandle->nextinfotime.tv_usec >= 1000000) {
-		fehandle->nextinfotime.tv_usec -= 1000000;
-		fehandle->nextinfotime.tv_sec++;
-	}
-	memcpy(&fehandle->cachedinfo, result, sizeof(struct dvbfe_info));
-	fehandle->cachedreturnval = returnval;
-
 	// done
 	return returnval;
 }
 
-int dvbfe_set(dvbfe_handle_t _fehandle, struct dvbfe_parameters *params, int timeout)
+int dvbfe_set(struct dvbfe_handle *fehandle,
+	      struct dvbfe_parameters *params,
+	      int timeout)
 {
 	struct dvb_frontend_parameters kparams;
-	struct dvbfe_handle_prv *fehandle = (struct dvbfe_handle_prv*) _fehandle;
 	int res;
 	struct timeval endtime;
 	fe_status_t status;
@@ -428,320 +439,123 @@ int dvbfe_set(dvbfe_handle_t _fehandle, struct dvbfe_parameters *params, int tim
 	return -ETIMEDOUT;
 }
 
-void dvbfe_poll(dvbfe_handle_t fehandle)
+int dvbfe_get_pollfd(struct dvbfe_handle *handle)
 {
-	// no implementation required yet
+	return handle->fd;
 }
 
-
-
-
-
-
-
-int dvbfe_diseqc_command(dvbfe_handle_t _fehandle, char *command)
+int dvbfe_set_22k_tone(struct dvbfe_handle *fehandle, enum dvbfe_sec_tone_mode tone)
 {
-	int i = 0;
-	int waittime;
-	int status;
-	struct dvb_diseqc_master_cmd master_cmd;
-	unsigned int tmpcmd[6];
-	struct dvbfe_handle_prv *fehandle = (struct dvbfe_handle_prv*) _fehandle;
-	char value_s[20];
-	int value_i;
-	int addr;
+	int ret = 0;
 
-	while(command[i]) {
-		/* kill whitespace */
-		if (isspace(command[i])) {
-			i++;
-			continue;
-		}
-
-		switch(command[i]) {
-		case 't':
-			if ((status = ioctl(fehandle->fd, FE_SET_TONE, SEC_TONE_OFF)) != 0)
-				return status;
-			break;
-
-		case 'T':
-			if ((status = ioctl(fehandle->fd, FE_SET_TONE, SEC_TONE_ON)) != 0)
-				return status;
-			break;
-
-		case '_':
-			if ((status = ioctl(fehandle->fd, FE_SET_VOLTAGE, SEC_VOLTAGE_OFF)) != 0)
-				return status;
-			break;
-
-		case 'v':
-			if ((status = ioctl(fehandle->fd, FE_SET_VOLTAGE, SEC_VOLTAGE_13)) != 0)
-				return status;
-			break;
-
-		case 'V':
-			if ((status = ioctl(fehandle->fd, FE_SET_VOLTAGE, SEC_VOLTAGE_18)) != 0)
-				return status;
-			break;
-
-		case 'A':
-			if ((status = ioctl(fehandle->fd, FE_DISEQC_SEND_BURST, SEC_MINI_A)) != 0)
-				return status;
-			break;
-
-		case 'B':
-			if ((status = ioctl(fehandle->fd, FE_DISEQC_SEND_BURST, SEC_MINI_B)) != 0)
-				return status;
-			break;
-
-		case '+':
-			ioctl(fehandle->fd, FE_ENABLE_HIGH_LNB_VOLTAGE, 1);
-			/* don't care if this one is not supported */
-			break;
-
-		case '-':
-			ioctl(fehandle->fd, FE_ENABLE_HIGH_LNB_VOLTAGE, 0);
-			/* don't care if this one is not supported */
-			break;
-
-		case 'W':
-			waittime = atoi(command + i + 1);
-			if (waittime == 0) {
-				return -EINVAL;
-			}
-			usleep(waittime * 1000);
-			while(command[i] && !isspace(command[i]))
-				i++;
-			break;
-
-		case '.': // extended command
-		{
-			i++;
-
-			if (!strncmp(command+i, "D(", 2)) {
-				i += 2;
-
-				master_cmd.msg_len =
-					sscanf(command+i, "%x %x %x %x %x %x",
-					       tmpcmd, tmpcmd+1, tmpcmd+2, tmpcmd+3, tmpcmd+4, tmpcmd+5);
-				if (master_cmd.msg_len == 0)
-					return -EINVAL;
-				master_cmd.msg[0] = tmpcmd[0];
-				master_cmd.msg[1] = tmpcmd[1];
-				master_cmd.msg[2] = tmpcmd[2];
-				master_cmd.msg[3] = tmpcmd[3];
-				master_cmd.msg[4] = tmpcmd[4];
-				master_cmd.msg[5] = tmpcmd[5];
-
-				if ((status = ioctl(fehandle->fd, FE_DISEQC_SEND_MASTER_CMD, &master_cmd)) != 0)
-					return status;
-			} else if (!strncmp(command+i, "Dband(", 6)) {
-				if (sscanf(command+i+6, "%i %2s", &addr, value_s) != 2)
-					return -EINVAL;
-				if (!strncmp(value_s, "lo", 2)) {
-					master_cmd.msg[0] = 0xe0;
-					master_cmd.msg[1] = addr;
-					master_cmd.msg[2] = 0x20;
-					master_cmd.msg_len = 3;
-				} else if (!strncmp(value_s, "hi", 2)) {
-					master_cmd.msg[0] = 0xe0;
-					master_cmd.msg[1] = addr;
-					master_cmd.msg[2] = 0x24;
-					master_cmd.msg_len = 3;
-				} else {
-					return -EINVAL;
-				}
-				if ((status = ioctl(fehandle->fd, FE_DISEQC_SEND_MASTER_CMD, &master_cmd)) != 0)
-					return status;
-
-			} else if ((!strncmp(command+i, "Dpolarisation(", 14) ||
-				   (!strncmp(command+i, "Dpolarization(", 14)))) {
-				if (sscanf(command+i+14, "%i %1s", &addr, value_s) != 2)
-					return -EINVAL;
-				switch(*value_s) {
-				case 'H':
-				case 'L':
-					master_cmd.msg[0] = 0xe0;
-					master_cmd.msg[1] = addr;
-					master_cmd.msg[2] = 0x25;
-					master_cmd.msg_len = 3;
-					break;
-
-				case 'V':
-				case 'R':
-					master_cmd.msg[0] = 0xe0;
-					master_cmd.msg[1] = addr;
-					master_cmd.msg[2] = 0x21;
-					master_cmd.msg_len = 3;
-					break;
-
-				default:
-					return -EINVAL;
-				}
-				if ((status = ioctl(fehandle->fd, FE_DISEQC_SEND_MASTER_CMD, &master_cmd)) != 0)
-					return status;
-
-			} else if (!strncmp(command+i, "Dsatellite_position(", 20)) {
-				if (sscanf(command+i+20, "%i %1s", &addr, value_s) != 2)
-					return -EINVAL;
-				switch(*value_s) {
-				case 'A':
-				case 'C':
-					master_cmd.msg[0] = 0xe0;
-					master_cmd.msg[1] = addr;
-					master_cmd.msg[2] = 0x22;
-					master_cmd.msg_len = 3;
-					break;
-
-				case 'B':
-				case 'D':
-					master_cmd.msg[0] = 0xe0;
-					master_cmd.msg[1] = addr;
-					master_cmd.msg[2] = 0x26;
-					master_cmd.msg_len = 3;
-					break;
-
-				default:
-					return -EINVAL;
-				}
-				if ((status = ioctl(fehandle->fd, FE_DISEQC_SEND_MASTER_CMD, &master_cmd)) != 0)
-					return status;
-
-			} else if (!strncmp(command+i, "Dswitch_option(", 15)) {
-				if (sscanf(command+i+15, "%i %1s", &addr, value_s) != 2)
-					return -EINVAL;
-				switch(*value_s) {
-				case 'A':
-					master_cmd.msg[0] = 0xe0;
-					master_cmd.msg[1] = addr;
-					master_cmd.msg[2] = 0x23;
-					master_cmd.msg_len = 3;
-					break;
-
-				case 'B':
-					master_cmd.msg[0] = 0xe0;
-					master_cmd.msg[1] = addr;
-					master_cmd.msg[2] = 0x27;
-					master_cmd.msg_len = 3;
-					break;
-
-				default:
-					return -EINVAL;
-				}
-				if ((status = ioctl(fehandle->fd, FE_DISEQC_SEND_MASTER_CMD, &master_cmd)) != 0)
-					return status;
-
-			} else if (!strncmp(command+i, "Dport_pins(", 11)) {
-				int mask;
-				if (sscanf(command+i+11, "%i %i %i", &addr, &mask, &value_i) != 3)
-					return -EINVAL;
-
-				if (mask & 0x0f) {
-					master_cmd.msg[0] = 0xe0;
-					master_cmd.msg[1] = addr;
-					master_cmd.msg[2] = 0x38;
-					master_cmd.msg[3] = ((mask & 0x0f) << 4) | (value_i & 0x0f);
-					master_cmd.msg_len = 4;
-
-					if ((status = ioctl(fehandle->fd, FE_DISEQC_SEND_MASTER_CMD, &master_cmd)) != 0)
-						return status;
-				}
-				if (mask & 0xf0) {
-					master_cmd.msg[0] = 0xe0;
-					master_cmd.msg[1] = addr;
-					master_cmd.msg[2] = 0x39;
-					master_cmd.msg[3] = (mask & 0xf0) | ((value_i & 0xf0) >> 4);
-					master_cmd.msg_len = 4;
-
-					if ((status = ioctl(fehandle->fd, FE_DISEQC_SEND_MASTER_CMD, &master_cmd)) != 0)
-						return status;
-				}
-
-			} else if (!strncmp(command+i, "Dgoto_preset(", 13)) {
-				if (sscanf(command+i+13, "%i %i", &addr, &value_i) != 2)
-					return -EINVAL;
-
-				master_cmd.msg[0] = 0xe0;
-				master_cmd.msg[1] = addr;
-				master_cmd.msg[2] = 0x3b;
-				master_cmd.msg[3] = value_i;
-				master_cmd.msg_len = 4;
-
-				if ((status = ioctl(fehandle->fd, FE_DISEQC_SEND_MASTER_CMD, &master_cmd)) != 0)
-					return status;
-
-			} else if (!strncmp(command+i, "Dgoto_angle(", 12)) {
-				int integer = 0;
-				int fraction = 0;
-				char *tmp;
-
-				if (sscanf(command+i+12, "%i %s", &addr, value_s) != 2)
-					return -EINVAL;
-
-				// parse the integer and fractional parts using fixed point
-				integer = atoi(value_s);
-				tmp = strchr(value_s, '.');
-				if (tmp != NULL) {
-					tmp++;
-					tmp[3] = 0;
-					fraction = ((atoi(tmp) * 16000) / 1000000) & 0xf;
-				}
-
-				// generate the command
-				master_cmd.msg[0] = 0xe0;
-				master_cmd.msg[1] = addr;
-				master_cmd.msg[2] = 0x6e;
-				if (integer < -256) {
-					return -EINVAL;
-				} else if (integer < 0) {
-					integer = -integer;
-					master_cmd.msg[3] = 0xf0;
-				} else if (integer < 256) {
-					master_cmd.msg[3] = 0x00;
-				} else if (integer < 512) {
-					integer -= 256;
-					master_cmd.msg[3] = 0x10;
-				} else {
-					return -EINVAL;
-				}
-				master_cmd.msg[3] |= ((integer / 16) & 0x0f);
-				integer = integer % 16;
-				master_cmd.msg[4] |= ((integer & 0x0f) << 4) | fraction;
-				master_cmd.msg_len = 5;
-
-				if ((status = ioctl(fehandle->fd, FE_DISEQC_SEND_MASTER_CMD, &master_cmd)) != 0)
-					return status;
-
-			} else if (!strncmp(command+i, "dishnetworks(", 13)) {
-				if (sscanf(command+i+13, "%i", tmpcmd) != 1)
-					return -EINVAL;
-
-				if ((status = ioctl(fehandle->fd, FE_DISHNETWORK_SEND_LEGACY_CMD, tmpcmd)) != 0)
-					return status;
-			}
-
-			/* skip to the end... */
-			while(command[i] && (command[i] != ')'))
-				i++;
-			break;
-		}
-
-
-		default:
-			return -EINVAL;
-		}
-
-		i++;
+	switch (tone) {
+	case DVBFE_SEC_TONE_OFF:
+		ret = ioctl(fehandle->fd, FE_SET_TONE, SEC_TONE_OFF);
+		break;
+	case DVBFE_SEC_TONE_ON:
+		ret = ioctl(fehandle->fd, FE_SET_TONE, SEC_TONE_ON);
+		break;
+	default:
+		print(verbose, ERROR, 1, "Invalid command !");
+		break;
 	}
+	if (ret == -1)
+		print(verbose, ERROR, 1, "IOCTL failed !");
 
+	return ret;
+}
+
+int dvbfe_set_tone_data_burst(struct dvbfe_handle *fehandle, enum dvbfe_sec_mini_cmd minicmd)
+{
+	int ret = 0;
+
+	switch (minicmd) {
+	case DVBFE_SEC_MINI_A:
+		ret = ioctl(fehandle->fd, FE_DISEQC_SEND_BURST, SEC_MINI_A);
+		break;
+	case DVBFE_SEC_MINI_B:
+		ret = ioctl(fehandle->fd, FE_DISEQC_SEND_BURST, SEC_MINI_B);
+		break;
+	default:
+		print(verbose, ERROR, 1, "Invalid command");
+		break;
+	}
+	if (ret == -1)
+		print(verbose, ERROR, 1, "IOCTL failed");
+
+	return ret;
+}
+
+int dvbfe_set_voltage(struct dvbfe_handle *fehandle, enum dvbfe_sec_voltage voltage)
+{
+	int ret = 0;
+
+	switch (voltage) {
+	case DVBFE_SEC_VOLTAGE_OFF:
+		ret = ioctl(fehandle->fd, FE_SET_VOLTAGE, SEC_VOLTAGE_OFF);
+		break;
+	case DVBFE_SEC_VOLTAGE_13:
+		ret = ioctl(fehandle->fd, FE_SET_VOLTAGE, SEC_VOLTAGE_13);
+		break;
+	case DVBFE_SEC_VOLTAGE_18:
+		ret = ioctl(fehandle->fd, FE_SET_VOLTAGE, SEC_VOLTAGE_18);
+		break;
+	default:
+		print(verbose, ERROR, 1, "Invalid command");
+		break;
+	}
+	if (ret == -1)
+		print(verbose, ERROR, 1, "IOCTL failed");
+
+	return ret;
+}
+
+int dvbfe_set_high_lnb_voltage(struct dvbfe_handle *fehandle, int on)
+{
+	switch (on) {
+	case 0:
+		ioctl(fehandle->fd, FE_ENABLE_HIGH_LNB_VOLTAGE, 0);
+		break;
+	default:
+		ioctl(fehandle->fd, FE_ENABLE_HIGH_LNB_VOLTAGE, 1);
+		break;
+	}
 	return 0;
 }
 
-int dvbfe_diseqc_read(dvbfe_handle_t _fehandle, int timeout, unsigned char *buf, unsigned int len)
+int dvbfe_do_dishnetworks_legacy_command(struct dvbfe_handle *fehandle, unsigned int cmd)
+{
+	int ret = 0;
+
+	ret = ioctl(fehandle->fd, FE_DISHNETWORK_SEND_LEGACY_CMD, cmd);
+	if (ret == -1)
+		print(verbose, ERROR, 1, "IOCTL failed");
+
+	return ret;
+}
+
+int dvbfe_do_diseqc_command(struct dvbfe_handle *fehandle, uint8_t *data, uint8_t len)
+{
+	int ret = 0;
+	struct dvb_diseqc_master_cmd diseqc_message;
+
+	if (len > 6)
+		return -EINVAL;
+
+	diseqc_message.msg_len = len;
+	memcpy(diseqc_message.msg, data, len);
+
+	ret = ioctl(fehandle->fd, FE_DISEQC_SEND_MASTER_CMD, &diseqc_message);
+	if (ret == -1)
+		print(verbose, ERROR, 1, "IOCTL failed");
+
+	return ret;
+}
+
+int dvbfe_diseqc_read(struct dvbfe_handle *fehandle, int timeout, unsigned char *buf, unsigned int len)
 {
 	struct dvb_diseqc_slave_reply reply;
 	int result;
-	struct dvbfe_handle_prv *fehandle = (struct dvbfe_handle_prv*) _fehandle;
 
 	if (len > 4)
 		len = 4;

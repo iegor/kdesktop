@@ -40,7 +40,7 @@ struct dvb_rnt_rar_over_ip_descriptor {
 	dvbdate_t last_valid_date;
   EBIT3(uint8_t weighting		: 6; ,
 	uint8_t complete_flag		: 1; ,
-	uint8_t reserved		: 1; )
+	uint8_t reserved		: 1; );
 	uint8_t url_length;
 	/* uint8_t url[] */
 } __ucsi_packed;

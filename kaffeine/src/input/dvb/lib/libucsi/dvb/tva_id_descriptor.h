@@ -45,7 +45,7 @@ struct dvb_tva_id_descriptor {
 struct dvb_tva_id_entry {
 	uint16_t tva_id;
   EBIT2(uint8_t reserved		: 5; ,
-	uint8_t running_status		: 3; )
+	uint8_t running_status		: 3; );
 } __ucsi_packed;
 
 /**
@@ -105,7 +105,7 @@ static inline struct dvb_tva_id_entry*
 }
 
 static inline struct dvb_tva_id_entry*
-	dvb_tva_id_descriptor_countries_next(struct dvb_tva_id_descriptor *d,
+	dvb_tva_id_descriptor_entries_next(struct dvb_tva_id_descriptor *d,
 							     struct dvb_tva_id_entry *pos)
 {
 	uint8_t *end = (uint8_t*) d + 2 + d->d.len;

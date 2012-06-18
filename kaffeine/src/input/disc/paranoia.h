@@ -32,8 +32,8 @@
 
 extern "C"
 {
-#include <cdda_interface.h>
-#include <cdda_paranoia.h>
+#include <cdio/cdda.h>
+#include <cdio/paranoia.h>
 }
 
 class KiloConfig : public ParanoiaSettings
@@ -91,8 +91,8 @@ private:
 	bool setPath( QString &path, const QString &artist, const QString &album );
 
 	long nTracks;
-	cdrom_drive *d;
-	cdrom_paranoia *p;
+	cdrom_drive_t *d;
+	cdrom_paranoia_t *p;
 	long currentSector, endOfTrack;
 	bool isRunning;
 	QStringList encodingList;

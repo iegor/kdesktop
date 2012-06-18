@@ -28,7 +28,7 @@ libkaffeinedisc_la_LDFLAGS = $(KDE_RPATH) \
 libkaffeinedisc_la_LIBADD = $(top_builddir)/kaffeine/src/input/libkaffeineinput.la \
 	$(top_builddir)/kaffeine/src/player-parts/kaffeine-part/libkaffeinepart.la \
 	$(top_builddir)/kaffeine/src/input/disc/plugins/libkaffeineaudioencoder.la \
-	-lcdda_interface -lcdda_paranoia
+	-lcdio_cdda -lcdio_paranoia
 
 # this is where the XML-GUI resource file goes
 shellrcdir   = $(kde_datadir)/kaffeine

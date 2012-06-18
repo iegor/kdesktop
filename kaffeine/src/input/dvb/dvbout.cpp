@@ -136,19 +136,23 @@ void DVBout::writePmt()
 	tspmt[0x0a] = 0xc1;
 	// section # and last section #
 	tspmt[0x0b] = tspmt[0x0c] = 0x00;
-	// PCR PID
-	tspmt[0x0d] = channel.vpid>>8; tspmt[0x0e] = channel.vpid&0xff;
+	if ( channel.vpid ) {
+		// PCR PID
+		tspmt[0x0d] = channel.vpid>>8; tspmt[0x0e] = channel.vpid&0xff;
+	}
+	else if ( channel.napid )
+		tspmt[0x0d] = channel.apid[0].pid>>8; tspmt[0x0e] = channel.apid[0].pid&0xff;
 	// program_info_length == 0
 	tspmt[0x0f] = 0xf0; tspmt[0x10] = 0x00;
-	// Program Map / Video PID
-	tspmt[0x11] = channel.vType; // video stream type
-	tspmt[0x12] = channel.vpid>>8; tspmt[0x13] = channel.vpid&0xff;
-	tspmt[0x14] = 0xf0; tspmt[0x15] = 0x09; // es info length
-	// useless info
-	tspmt[0x16] = 0x07; tspmt[0x17] = 0x04; tspmt[0x18] = 0x08; tspmt[0x19] = 0x80;
-	tspmt[0x1a] = 0x24; tspmt[0x1b] = 0x02; tspmt[0x1c] = 0x11; tspmt[0x1d] = 0x01;
-	tspmt[0x1e] = 0xfe;
-	off = 0x1e;
+	if ( channel.vpid ) {
+		// Program Map / Video PID
+		tspmt[0x11] = channel.vType; // video stream type
+		tspmt[0x12] = channel.vpid>>8; tspmt[0x13] = channel.vpid&0xff;
+		tspmt[0x14] = 0xf0; tspmt[0x15] = 0x00; // es info length
+		off = 0x15;
+	}
+	else
+		off = 0x10;
 	// audio pids
 	i = 0;
 	for ( i=0; i<channel.napid && i<MAX_AUDIO; i++ ) {
@@ -258,20 +262,19 @@ bool DVBout::doPause( const QString &name ) // called from dvbstream::run()
 		liveFile.writeBlock( (char*)tspmt, TS_SIZE );
 		mutex.lock();
 		haveLive = false;
-		mutex.unlock();
-		if ( !wait(100) ) {
+		if ( !wait(1000) ) {
 			terminate();
 			wait();
 		}
-		mutex.lock();
-		haveLive = true;
 		if ( close( fdPipe )<0 )
 			perror("close out pipe: ");
 		else
 			fprintf(stderr,"out pipe closed\n");
 		fdPipe = 0;
-		mutex.unlock();
+		if ( wDist>0 )
+			liveFile.writeBlock( (char*)(wBuf+(wRead*TS_SIZE*NTS)), TS_SIZE*NTS*wDist );
 		timeShifting = true;
+		mutex.unlock();
 		//emit shifting( timeShifting );
 	}
 	return true;
@@ -286,7 +289,7 @@ void DVBout::setPatPmt()
 
 
 
-bool DVBout::goLive( const QString &name )
+bool DVBout::goLive( const QString &name, int ringBufSize )
 {
 	if ( fdPipe ) return false;
 
@@ -299,7 +302,8 @@ bool DVBout::goLive( const QString &name )
 	writePmt();
 	if ( !pids.contains(8192) )
 		patpmt = wpatpmt = true;
-	wBuf = new unsigned char[TS_SIZE*NTS*100];
+	wbufSize = ringBufSize*1024*1024/(TS_SIZE*NTS);
+	wBuf = new unsigned char[TS_SIZE*NTS*wbufSize];
 	if ( !wBuf ) fprintf( stderr, "\nNO WBUF !!!\n\n" );
 	wRead = wWrite = wDist = 0;
 	start();
@@ -326,7 +330,7 @@ void DVBout::stopLive()
 		emit shifting( timeShifting );
 	}
 	mutex.unlock();
-	if ( !wait(500) ) {
+	if ( !wait(1000) ) {
 		terminate();
 		wait();
 	}
@@ -469,14 +473,16 @@ void DVBout::process( unsigned char *buf, int size )
 						beginLive = !beginLive;
 						start();
 					}
-					if ( wDist<95 ) {
+					if ( wDist<wbufSize ) {
 						memcpy( wBuf+(wWrite*TS_SIZE*NTS), thBuf, TS_SIZE*NTS );
 						wpatpmt = patpmt;
 						++wDist;
 						++wWrite;
-						if ( wWrite>99 )
+						if ( wWrite==wbufSize )
 							wWrite = 0;
-						//fprintf(stderr,"WDIST = %d\n",wDist);
+					}
+					else {
+						fprintf(stderr,"Live ringbuffer full!! (%d)\n",wDist);
 					}
 				}
 				else if ( timeShifting ) {
@@ -531,7 +537,7 @@ void DVBout::run()
 {
 	if ( haveLive && fdPipe ) {
 		while ( haveLive && fdPipe ) {
-			if ( wDist>0 ) {
+			if ( wDist>5 ) {
 				if ( wpatpmt ) {
 					write( fdPipe, tspat, TS_SIZE );
 					write( fdPipe, tspmt, TS_SIZE );
@@ -540,11 +546,12 @@ void DVBout::run()
 				write( fdPipe, wBuf+(wRead*TS_SIZE*NTS), TS_SIZE*NTS );
 				--wDist;
 				++wRead;
-				if ( wRead>99 )
+				if ( wRead==wbufSize )
 					wRead = 0;
 			}
-			else
+			else {
 				usleep( 100 );
+			}
 		}
 		return;
 	}

@@ -44,7 +44,7 @@ public:
 	DVBout( ChannelDesc chan, int anum, int tnum, KaffeineDvbPlugin *p );
 	~DVBout();
 	void process( unsigned char *buf, int size );
-	bool goLive( const QString &name );
+	bool goLive( const QString &name, int ringBufSize );
 	void preStopLive();
 	void stopLive();
 	bool goBroadcast( Ts2Rtp *r );
@@ -102,6 +102,7 @@ private:
 	int fileNumber;
 	QString fileName;
 	long long int fileMaxSize;
+	int wbufSize;
 
 signals:
 

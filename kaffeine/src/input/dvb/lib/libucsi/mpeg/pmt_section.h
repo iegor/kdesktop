@@ -36,9 +36,9 @@ struct mpeg_pmt_section {
 	struct section_ext head;
 
   EBIT2(uint16_t reserved_1		: 3; ,
-	uint16_t pcr_pid		:13; )
+	uint16_t pcr_pid		:13; );
   EBIT2(uint16_t reserved_2		: 4; ,
-	uint16_t program_info_length	:12; )
+	uint16_t program_info_length	:12; );
 	/* struct descriptor descriptors[] */
 	/* struct mpeg_pmt_stream streams[] */
 } __ucsi_packed;
@@ -49,9 +49,9 @@ struct mpeg_pmt_section {
 struct mpeg_pmt_stream {
 	uint8_t stream_type;
   EBIT2(uint16_t reserved_1		: 3; ,
-	uint16_t pid			:13; )
+	uint16_t pid			:13; );
   EBIT2(uint16_t reserved_2		: 4; ,
-	uint16_t es_info_length		:12; )
+	uint16_t es_info_length		:12; );
 
 	/* struct descriptor descriptors[] */
 } __ucsi_packed;
@@ -66,7 +66,7 @@ extern struct mpeg_pmt_section *mpeg_pmt_section_codec(struct section_ext *secti
 
 /**
  * Accessor for program_number field of a PMT.
- * 
+ *
  * @param pmt PMT pointer.
  * @return The program_number.
  */
@@ -140,7 +140,7 @@ static inline struct descriptor *
 static inline struct mpeg_pmt_stream *
 	mpeg_pmt_section_streams_first(struct mpeg_pmt_section * pmt)
 {
-	int pos = sizeof(struct mpeg_pmt_section) + pmt->program_info_length;
+	size_t pos = sizeof(struct mpeg_pmt_section) + pmt->program_info_length;
 
 	if (pos >= section_ext_length(&pmt->head))
 		return NULL;

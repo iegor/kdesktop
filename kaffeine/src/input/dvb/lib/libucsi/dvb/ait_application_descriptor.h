@@ -36,7 +36,7 @@ extern "C"
 enum {
 	AVB_AIT_APPLICATION_VISIBILITY_HIDDEN		= 0x00,
 	AVB_AIT_APPLICATION_VISIBILITY_APPSONLY		= 0x01,
-	AVB_AIT_APPLICATION_VISIBILITY_VISIBLE		= 0x03
+	AVB_AIT_APPLICATION_VISIBILITY_VISIBLE		= 0x03,
 };
 
 /**
@@ -66,7 +66,7 @@ struct dvb_ait_application_profile {
 struct dvb_ait_application_descriptor_part2 {
   EBIT3(uint8_t service_bound_flag		: 1; ,
 	uint8_t visibility			: 2; ,
-	uint8_t reserved			: 5; )
+	uint8_t reserved			: 5; );
 	uint8_t application_priority;
 	/* uint8_t transport_protocol_label[] */
 } __ucsi_packed;

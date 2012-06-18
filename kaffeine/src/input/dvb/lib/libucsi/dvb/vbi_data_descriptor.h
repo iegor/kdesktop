@@ -39,7 +39,7 @@ enum {
 	DVB_VBI_DATA_SERVICE_ID_VPS		= 0x04,
 	DVB_VBI_DATA_SERVICE_ID_WSS		= 0x05,
 	DVB_VBI_DATA_SERVICE_ID_CC		= 0x06,
-	DVB_VBI_DATA_SERVICE_ID_MONO_422	= 0x07
+	DVB_VBI_DATA_SERVICE_ID_MONO_422	= 0x07,
 };
 
 /**
@@ -66,7 +66,7 @@ struct dvb_vbi_data_entry {
 struct dvb_vbi_data_x {
   EBIT3(uint8_t reserved 	: 2; ,
 	uint8_t field_parity 	: 1; ,
-	uint8_t line_offset	: 5; )
+	uint8_t line_offset	: 5; );
 } __ucsi_packed;
 
 /**

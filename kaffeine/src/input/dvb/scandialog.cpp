@@ -109,13 +109,15 @@ ScanDialog::ScanDialog( QPtrList<DvbStream> *d, QPtrList<ChannelDesc> *ch, QSize
 	foundList->clear();
 	foundList->setAllColumnsShowFocus( true );
 	foundList->setSelectionMode( QListView::Extended );
-	channelsList->setSorting( 0 );
+	channelsList->setSorting( 1 ); // sort by source 1st than channel name 
+	channelsList->setAllColumnsShowFocus( true ); 
+	channelsList->setSelectionMode( QListView::Extended );
 
 	ChannelDesc *chan;
 	QListViewItem *it;
 	for ( int i=0; i<(int)chandesc->count(); i++ ) {
 		chan = chandesc->at(i);
-		it = new QListViewItem( channelsList, chan->name );
+	it = new QListViewItem( channelsList, chan->name, chan->tp.source );
 		if ( !chan->pix.isNull() )
 			it->setPixmap( 0, chan->pix );
 		else {
@@ -425,7 +427,11 @@ void ScanDialog::parseTp( QString s, fe_type_t type, QString src )
 		trans->type=FE_QAM;
 		trans->source = "Cable";
 	}
-	else {
+	else if ( s.left(pos)=="A" ) {
+		trans->type=FE_ATSC;
+		trans->source = "ATSC Terrestrial";
+	}
+	else if ( s.left(pos)=="S" ) {
 		trans->type=FE_QPSK;
 		trans->source = src;
 	}
@@ -439,14 +445,15 @@ void ScanDialog::parseTp( QString s, fe_type_t type, QString src )
 	trans->freq = s.left(pos).toULong()/1000;
 	s = s.right( s.length()-pos-1 );
 	s = s.stripWhiteSpace();
-	pos = s.find(" ");
+	if ( trans->type!=FE_ATSC )
+		pos = s.find(" ");
 	if ( trans->type==FE_QPSK ) {
 		trans->pol =  s.left(pos).lower()[0].latin1();
 		s = s.right( s.length()-pos-1 );
 		s = s.stripWhiteSpace();
 		pos = s.find(" ");
 	}
-	if ( trans->type!=FE_OFDM ) {
+	if ( trans->type!=FE_OFDM && trans->type!=FE_ATSC ) {
 		trans->sr = s.left(pos).toULong()/1000;
 	}
 	else {
@@ -459,6 +466,27 @@ void ScanDialog::parseTp( QString s, fe_type_t type, QString src )
 		else
 			trans->bandwidth = BANDWIDTH_AUTO;
 	}
+	if ( trans->type==FE_ATSC ) {
+		if ( s.left(pos)=="8VSB" )
+			trans->modulation = VSB_8;
+		else if ( s.left(pos)=="16VSB" )
+			trans->modulation = VSB_16;
+		else if ( s.left(pos)=="QAM16" )
+			trans->modulation = QAM_16;
+		else if ( s.left(pos)=="QAM32" )
+			trans->modulation = QAM_32;
+		else if ( s.left(pos)=="QAM64" )
+			trans->modulation = QAM_64;
+		else if ( s.left(pos)=="QAM128" )
+			trans->modulation = QAM_128;
+		else if ( s.left(pos)=="QAM256" )
+			trans->modulation = QAM_256;
+		else
+			trans->modulation = QAM_AUTO;
+		transponders.append( trans );
+		return;
+	}
+
 	s = s.right( s.length()-pos-1 );
 	s = s.stripWhiteSpace();
 	pos = s.find(" ");
@@ -584,7 +612,17 @@ bool ScanDialog::getTransData()
 
 	if ( searchComb->currentText().startsWith("AUTO") ) {
 		int i;
-		for ( i=402; i<900; i+=8 ) {
+		for ( i=177; i<227; i+=7 ) {
+			if ( offset07->isChecked() ) {
+				s = QString("T %1 7MHz AUTO AUTO AUTO AUTO AUTO AUTO").arg( (i*1000000)+500000 );
+				parseTp( s, ds->getType(), "" );
+			}
+			if ( offset125p->isChecked() ) {
+				s = QString("T %1 7MHz AUTO AUTO AUTO AUTO AUTO AUTO").arg( (i*1000000)+500000+125000 );
+				parseTp( s, ds->getType(), "" );
+			}
+		}
+		for ( i=474; i<859; i+=8 ) {
 			if ( offset167m->isChecked() ) {
 				s = QString("T %1 8MHz AUTO AUTO AUTO AUTO AUTO AUTO").arg( (i*1000000)-167000 );
 				parseTp( s, ds->getType(), "" );
@@ -605,7 +643,9 @@ bool ScanDialog::getTransData()
 		case FE_QPSK : s += "dvb-s/"; break;
 		case FE_QAM : s += "dvb-c/"; break;
 		case FE_OFDM : s += "dvb-t/"; break;
-		case FE_ATSC : return false;
+		case FE_ATSC : s += "atsc/"; break;
+		default:
+			return false;
 	}
 	s += searchComb->currentText();
 	QFile f( s );
@@ -713,7 +753,9 @@ void ScanDialog::addSelected()
 		if(checkChannUpdate(chan)){
 			checkDuplicateName( chan );
 
-			chan->num = chandesc->count()+1;
+			if (chan->num == 0) {
+				chan->num = chandesc->count()+1;
+			}
 			chandesc->append( new ChannelDesc( *chan ) );
 			it = new QListViewItem( channelsList, chan->name );
 			if ( chan->type==1 ) {

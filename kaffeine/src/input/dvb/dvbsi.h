@@ -36,6 +36,7 @@ public:
 	bool getSection( int pid, int tid, int timeout=5000 );
 	bool tableNIT( unsigned char* buf );
 	void satelliteDesc( unsigned char* buf, Transponder *trans );
+	void S2satelliteDesc( unsigned char* buf, Transponder *trans );
 	void cableDesc( unsigned char* buf, Transponder *trans );
 	void terrestrialDesc( unsigned char* buf, Transponder *trans );
 	void freqListDesc( unsigned char* buf, Transponder *trans );
@@ -66,6 +67,11 @@ public:
 	bool tablePMT( unsigned char* buf );
 	void serviceDesc( unsigned char* buf, ChannelDesc *desc );
 
+	// ATSC related methods
+	virtual bool handle_atsc_transponder();
+	virtual bool parseMGT( int pid, int tid, int timeout=5000, int sid=0 );
+	virtual bool parseVCT( int pid, int tid, int timeout=5000, int sid=0 );
+
 	QPtrList<ChannelDesc> channels;
 	QPtrList<Transponder> transponders;
 	DvbStream *dvb;
@@ -89,6 +95,9 @@ private:
 
 	int scanMode;
 	NitSection *ns;
+
+	/* ATSC related */
+	int vct_table;
 
 signals:
 

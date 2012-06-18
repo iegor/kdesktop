@@ -77,6 +77,7 @@ int main(int argc, char *argv[])
 
 	/* FIXME: what about the other contributors listed in CREDITS? --pfister */
 
+	aboutData.addCredit("Devin J. Heitmuelle", I18N_NOOP("ATSC scanning."), "devin.heitmueller@gmail.com");
 	aboutData.addCredit("Eldon Tyrell", I18N_NOOP("DVB patches."), "dr.e.tyrell@gmail.com");
 	aboutData.addCredit("Michael Hoertnagl", I18N_NOOP("Various patches."), "mtron@a1.net");
 	aboutData.addCredit("Ricardo Manuel Santos Rodrigues", I18N_NOOP("Various patches."), "madinfo@cadaval.net");

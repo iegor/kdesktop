@@ -38,7 +38,7 @@ struct dvb_country_availability_descriptor {
 	struct descriptor d;
 
   EBIT2(uint8_t country_availability_flag	: 1; ,
-	uint8_t reserved			: 7; )
+	uint8_t reserved			: 7; );
 	/* struct dvb_country_availability_entry countries[] */
 } __ucsi_packed;
 

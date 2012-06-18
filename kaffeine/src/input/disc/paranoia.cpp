@@ -120,7 +120,7 @@ KiloConfig::~KiloConfig()
 {
 }
 
-void paranoiaCallback( long, int )
+void paranoiaCallback( long int, paranoia_cb_mode_t )
 {
 }
 
@@ -396,7 +396,7 @@ void Paranoia::run()
 		curpos = currentSector;
 		endpos = endOfTrack;
 		if ( normalize ) {
-			len = CD_FRAMESIZE_RAW;
+			len = CDIO_CD_FRAMESIZE_RAW;
 			fn.open( IO_ReadWrite | IO_Truncate );
 			do {
 				buf = paranoia_read_limited( p, paranoiaCallback, 3 );
@@ -419,7 +419,7 @@ void Paranoia::run()
 			while ( curpos<endpos && len!=0 );
 
 			factor = 32767.0/max;
-			buf = new signed short[CD_FRAMESIZE_RAW];
+			buf = new signed short[CDIO_CD_FRAMESIZE_RAW];
 			fn.at( 0 );
 			f.open( IO_ReadWrite | IO_Truncate );
 			currentEncoder->start( encodingList[i].remove(0,3), encodingList[0], encodingList[1], encodingList[i].left(2) );
@@ -428,7 +428,7 @@ void Paranoia::run()
 				f.writeBlock( encoded, len );
 
 			do {
-				len = fn.readBlock( (char*)buf, CD_FRAMESIZE_RAW );
+				len = fn.readBlock( (char*)buf, CDIO_CD_FRAMESIZE_RAW );
 				if ( len>0 ) {
 					if ( max<32760 )
 						for ( n=0; n<len/2; ++n )
@@ -455,7 +455,7 @@ void Paranoia::run()
 			encoded = currentEncoder->getHeader( len );
 			if ( encoded )
 				f.writeBlock( encoded, len );
-			len = CD_FRAMESIZE_RAW;
+			len = CDIO_CD_FRAMESIZE_RAW;
 			do {
 				buf = paranoia_read_limited( p, paranoiaCallback, 3 );
 				if ( Q_BYTE_ORDER == Q_BIG_ENDIAN ) {
@@ -514,7 +514,7 @@ QString Paranoia::trackSize( int t )
 	QString s, c;
 	long total;
 
-	total = CD_FRAMESIZE_RAW * (cdda_track_lastsector( d, t+1 )-cdda_track_firstsector( d, t+1 ) );
+	total = CDIO_CD_FRAMESIZE_RAW * (cdda_track_lastsector( d, t+1 )-cdda_track_firstsector( d, t+1 ) );
 	if ( total>(1048576 ) ) s = c.setNum(total/1048576.0, 'f', 2)+" "+i18n("MB");
 	else if ( total>1024 ) s = c.setNum(total/1024.0, 'f', 2)+" "+i18n("KB");
 	else s = c.setNum(total*1.0, 'f', 2)+" "+i18n("Bytes");
@@ -532,8 +532,8 @@ QString Paranoia::trackTime( int t )
 	long total, time;
 	int m, s;
 
-	if ( t<0 ) total = CD_FRAMESIZE_RAW * (cdda_disc_lastsector( d )-cdda_disc_firstsector( d ) );
-	else total = CD_FRAMESIZE_RAW * (cdda_track_lastsector( d, t+1 )-cdda_track_firstsector( d, t+1 ) );
+	if ( t<0 ) total = CDIO_CD_FRAMESIZE_RAW * (cdda_disc_lastsector( d )-cdda_disc_firstsector( d ) );
+	else total = CDIO_CD_FRAMESIZE_RAW * (cdda_track_lastsector( d, t+1 )-cdda_track_firstsector( d, t+1 ) );
 	time = (8 * total) / (44100 * 2 * 16);
 	m = time/60;
 	s = time%60;

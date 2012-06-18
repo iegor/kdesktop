@@ -39,7 +39,7 @@ enum {
 	DVB_CRID_TYPE_NONE		= 0x00,
 	DVB_CRID_TYPE_ITEM		= 0x01,
 	DVB_CRID_TYPE_SERIES		= 0x02,
-	DVB_CRID_TYPE_RECOMMENDATION	= 0x03
+	DVB_CRID_TYPE_RECOMMENDATION	= 0x03,
 };
 
 /**
@@ -47,7 +47,7 @@ enum {
  */
 enum {
 	DVB_CRID_LOCATION_THIS_DESCRIPTOR	= 0x00,
-	DVB_CRID_LOCATION_CIT			= 0x01
+	DVB_CRID_LOCATION_CIT			= 0x01,
 };
 
 /**
@@ -64,7 +64,7 @@ struct dvb_content_identifier_descriptor {
  */
 struct dvb_content_identifier_entry {
   EBIT2(uint8_t crid_type		: 6; ,
-	uint8_t crid_location		: 2; )
+	uint8_t crid_location		: 2; );
 	/* struct dvb_content_identifier_data_00 data0 */
 	/* struct dvb_content_identifier_data_01 data1 */
 } __ucsi_packed;
@@ -153,6 +153,17 @@ static inline struct dvb_content_identifier_entry_data_0*
 		return NULL;
 	return (struct dvb_content_identifier_entry_data_0*)
 		((uint8_t*) d + sizeof(struct dvb_content_identifier_entry));
+}
+/**
+ * Accessor for the data field of a dvb_content_identifier_entry_data_0.
+ *
+ * @param d dvb_content_identifier_entry_data_0 pointer.
+ * @return Pointer, or NULL on error.
+ */
+static inline uint8_t*
+	dvb_content_identifier_entry_data_0_data(struct dvb_content_identifier_entry_data_0 *d)
+{
+	return ((uint8_t*) d + sizeof(struct dvb_content_identifier_entry_data_0));
 }
 
 /**

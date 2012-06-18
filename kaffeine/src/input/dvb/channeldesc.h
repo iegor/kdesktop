@@ -101,6 +101,8 @@ public:
 	fe_code_rate_t coderateH;
 	fe_bandwidth_t bandwidth;
 	int snr;
+	fe_rolloff_t rolloff;
+	char S2;
 };
 
 class ChannelDesc

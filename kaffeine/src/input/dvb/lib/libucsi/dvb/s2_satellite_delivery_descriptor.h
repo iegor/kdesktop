@@ -39,7 +39,7 @@ struct dvb_s2_satellite_delivery_descriptor {
   EBIT4(uint8_t scrambling_sequence_selector	: 1; ,
 	uint8_t multiple_input_stream		: 1; ,
 	uint8_t backwards_compatability		: 1; ,
-	uint8_t reserved			: 5; )
+	uint8_t reserved			: 5; );
 	/* uint32_t scrambling_sequence_index if scrambling_sequence_selector = 1 */
 	/* uint8_t input_stream_id if multiple_input_stream = 1 */
 } __ucsi_packed;

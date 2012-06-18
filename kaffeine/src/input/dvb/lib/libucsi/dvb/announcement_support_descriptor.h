@@ -41,7 +41,7 @@ enum {
 	DVB_ANNOUNCEMENT_SUPPORT_NEWS_FLASH		= 0x10,
 	DVB_ANNOUNCEMENT_SUPPORT_WEATHER_FLASH		= 0x20,
 	DVB_ANNOUNCEMENT_SUPPORT_EVENT_ANNOUNCEMENT	= 0x40,
-	DVB_ANNOUNCEMENT_SUPPORT_PERSONAL_CALL		= 0x80
+	DVB_ANNOUNCEMENT_SUPPORT_PERSONAL_CALL		= 0x80,
 };
 
 /**
@@ -55,7 +55,7 @@ enum {
 	DVB_ANNOUNCEMENT_TYPE_NEWS_FLASH		= 0x04,
 	DVB_ANNOUNCEMENT_TYPE_WEATHER_FLASH		= 0x05,
 	DVB_ANNOUNCEMENT_TYPE_EVENT_ANNOUNCEMENT	= 0x06,
-	DVB_ANNOUNCEMENT_TYPE_PERSONAL_CALL		= 0x07
+	DVB_ANNOUNCEMENT_TYPE_PERSONAL_CALL		= 0x07,
 };
 
 /**
@@ -65,7 +65,7 @@ enum {
 	DVB_REFERENCE_TYPE_AUDIO			= 0x00,
 	DVB_REFERENCE_TYPE_OTHER_AUDIO			= 0x01,
 	DVB_REFERENCE_TYPE_OTHER_SERVICE		= 0x02,
-	DVB_REFERENCE_TYPE_OTHER_TS			= 0x03
+	DVB_REFERENCE_TYPE_OTHER_TS			= 0x03,
 };
 
 /**
@@ -83,7 +83,7 @@ struct dvb_announcement_support_descriptor {
 struct dvb_announcement_support_entry {
   EBIT3(uint8_t announcement_type		: 4; ,
 	uint8_t reserved			: 1; ,
-	uint8_t reference_type			: 3; )
+	uint8_t reference_type			: 3; );
 	/* Only if reference_type == 1, 2 or 3:
 	 * struct dvb_announcement_support_reference reference */
 } __ucsi_packed;

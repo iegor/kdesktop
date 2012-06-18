@@ -42,13 +42,13 @@
 #include "ts2rtp.h"
 #include "cleaner.h"
 #include "dvbevents.h"
+#include "kaffeineinput.h"
 
 
 
 class ChannelDesc;
 class DvbStream;
 class DvbPanel;
-class KaffeineInput;
 class KaffeineDvbPlugin;
 
 
@@ -153,6 +153,7 @@ public slots:
 	void dvbNewTimer( QString name, QString channel, QString datetime, QString duration );
 	int getSNR( int device );
 	void diskStatus();
+	void camClicked( int devNum );
 
 private:
 

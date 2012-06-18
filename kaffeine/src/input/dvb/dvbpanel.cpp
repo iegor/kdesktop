@@ -45,7 +45,6 @@
 #include <kxmlguifactory.h>
 #include <kparts/componentfactory.h>
 
-#include "kaffeineinput.h"
 #include "kaffeinedvbplugin.h"
 #include "dvbpanel.h"
 #include "channeldesc.h"
@@ -55,6 +54,12 @@
 #include "channeleditor.h"
 
 #define CHANICONSIZE 28
+
+#define MODE_FREE 0
+#define MODE_LIVE 100
+#define MODE_BROADCAST 200
+#define MODE_RECORD 300
+#define MODE_CANTDO 400
 
 
 
@@ -1091,7 +1096,7 @@ void DvbPanel::setConfig()
 
 void DvbPanel::showConfigDialog()
 {
-	int ret;
+	int i, ret;
 
 loop:
 	if ( !dvbConfig->haveData() ) {
@@ -1104,7 +1109,9 @@ loop:
 		return;
 	}
 
-	DvbConfigDialog dlg( dvbConfig, mainWidget, plug );
+	for ( i=0; i<(int)dvb.count(); i++ )
+		dvb.at(i)->probeCam();
+	DvbConfigDialog dlg( this, dvbConfig, mainWidget, plug );
 	connect( dlg.dumpBtn, SIGNAL(clicked()), this, SLOT(dumpEvents()) );
 	ret = dlg.exec();
 	disconnect( dlg.dumpBtn, SIGNAL(clicked()), this, SLOT(dumpEvents()) );
@@ -1112,6 +1119,14 @@ loop:
 		return;
 	rtp->setSocket( dvbConfig->broadcastAddress, dvbConfig->broadcastPort, dvbConfig->senderPort );
 	cleaner->setPaths( dvbConfig->shiftDir, dvbConfig->recordDir );
+	fillChannelList();
+}
+
+
+
+void DvbPanel::camClicked( int devNum )
+{
+	dvb.at(devNum)->showCamDialog();
 }
 
 
@@ -1124,6 +1139,8 @@ QPtrList<Transponder> DvbPanel::getSourcesStatus()
 	Transponder t;
 
 	for ( i=0; i<(int)dvb.count(); i++ ) {
+		if ( !dvb.at(i)->getPriority() ) // priority==0==don't use
+			continue;
 		list = dvb.at(i)->getSources();
 		for ( j=0; j<(int)list.count(); j++ ) {
 			if ( dvb.at(i)->hasRec() || dvb.at(i)->hasBroadcast() )
@@ -1176,7 +1193,7 @@ void DvbPanel::fillChannelList( ChannelDesc *ch )
 		}
 		else if ( currentCategory!="All" && chan->category!=currentCategory )
 			continue;
-		it = new KListViewItem( channelsCb, QString().sprintf("%04d", chan->num), chan->name, chan->tp.source );
+		it = new KListViewItem( channelsCb, QString().sprintf("%05d", chan->num), chan->name, chan->tp.source );
 		if ( ch && ch==chan )
 			visible = it;
 		it->setDragEnabled( true );
@@ -1211,15 +1228,15 @@ void DvbPanel::fillChannelList( ChannelDesc *ch )
 DvbStream* DvbPanel::getWorkingDvb( int mode, ChannelDesc *chan )
 {
 	int i, ret;
-	QValueList<int> working; //  notTuned=0, hasLive=1, hasBroadcast=2, hasRec=3, can'tDoChannel=4
+	QValueList<int> working; //  free=0, hasLive=100, hasBroadcast=200, hasRec=300, can'tDoChannel=400
 
 	for ( i=0; i<(int)dvb.count(); i++ )
-		working.append( 0 );
+		working.append( 100-dvb.at(i)->getPriority() );
 
 	// fill in working status
 	for ( i=0; i<(int)dvb.count(); i++ ) {
-		if ( !dvb.at(i)->canSource( chan ) ) {
-			working[i] = 4;
+		if ( !dvb.at(i)->canSource( chan ) || working[i]==100 ) {
+			working[i] = MODE_CANTDO;
 			continue;
 		}
 		if ( dvb.at(i)->isTuned() ) {
@@ -1227,14 +1244,18 @@ DvbStream* DvbPanel::getWorkingDvb( int mode, ChannelDesc *chan )
 				return dvb.at(i); // use that one since it's already tuned on the good mplex
 			}
 			else if ( dvb.at(i)->hasRec() )
-				working[i] = 3;
+				working[i] += MODE_RECORD;
 			else if ( dvb.at(i)->hasBroadcast() )
-				working[i] = 2;
-			else
-				working[i] = 1;
+				working[i] += MODE_BROADCAST;
+			else {
+				if ( mode==MODE_LIVE )
+					working[i] += MODE_FREE;
+				else
+					working[i] += MODE_LIVE;
+			}
 		}
 		else
-			working[i] = 0;
+			working[i] += MODE_FREE;
 	}
 	ret = 0;
 	// search for least working card
@@ -1272,7 +1293,7 @@ void DvbPanel::setBroadcast()
 		return;
 	}
 
-	d = getWorkingDvb( 2, list.at(0) );
+	d = getWorkingDvb( MODE_BROADCAST, list.at(0) );
 
 	if ( d )
 		ret = d->canStartBroadcast( live, list.at(0) );
@@ -1316,7 +1337,7 @@ void DvbPanel::checkTimers()
 			}
 			if ( !chan )
 				continue;
-			d = getWorkingDvb( 3, chan );
+			d = getWorkingDvb( MODE_RECORD, chan );
 			live = false;
 			if ( d )
 				ret = d->canStartTimer( live, chan );
@@ -1826,7 +1847,7 @@ void DvbPanel::playLastChannel()
 		QTimer::singleShot( 2000, this, SLOT(playLastChannel()) );
 		return;
 	}
-	d = getWorkingDvb( 2, list.at(0) );
+	d = getWorkingDvb( MODE_BROADCAST, list.at(0) );
 	if ( d )
 		ret = d->canStartBroadcast( live, list.at(0) );
 	else
@@ -1880,7 +1901,7 @@ void DvbPanel::next()
 
 	QListViewItem* nextItem;
 
-	QListViewItem* playingItem = channelsCb->findItem( QString().sprintf("%04d", dvbConfig->lastChannel), 0 );
+	QListViewItem* playingItem = channelsCb->findItem( QString().sprintf("%05d", dvbConfig->lastChannel), 0 );
 
 	if ( !playingItem == 0 ) // yes, it's in the current category
 	{
@@ -1906,7 +1927,7 @@ void DvbPanel::previous()
 
 	QListViewItem* prevItem;
 
-	QListViewItem* playingItem = channelsCb->findItem( QString().sprintf("%04d", dvbConfig->lastChannel), 0 );
+	QListViewItem* playingItem = channelsCb->findItem( QString().sprintf("%05d", dvbConfig->lastChannel), 0 );
 
 	if ( !playingItem == 0 ) // yes, it's in the current category
 	{
@@ -1927,19 +1948,14 @@ void DvbPanel::previous()
 void DvbPanel::dvbZap( ChannelDesc *chan )
 {
 	int i;
-	DvbStream *d=0;
+	DvbStream *d;
 
 	if ( currentFifo.isEmpty() || isTuning )
 		return;
 
 	isTuning = true;
 	emit setTimeShiftFilename( "" );
-	for ( i=0; i<(int)dvb.count(); i++ ) {
-		if ( dvb.at(i)->getCurrentTransponder()==chan->tp ) {
-			d = dvb.at(i);
-			break;
-		}
-	}
+	d = getWorkingDvb( MODE_LIVE, chan );
 	for ( i=0; i<(int)dvb.count(); i++ ) {
 		if ( dvb.at(i)->hasLive() ) {
 			dvb.at(i)->preStopLive();
@@ -1973,40 +1989,20 @@ void DvbPanel::finalZap( DvbStream *d, ChannelDesc *chan )
 {
 	QString s, t;
 	int i;
-	DvbStream *d1=d, *d2=0;
 
 	emit setCurrentPlugin( this );
 
 	fprintf( stderr, "Tuning to: %s / autocount: %lu\n", chan->name.latin1(), autocount );
 	QTime tm;
 	tm.start();
-	if ( !d1 ) {
-		for ( i=0; i<(int)dvb.count(); i++ ) {
-			if ( !dvb.at(i)->canSource( chan ) )
-				continue;
-			if ( dvb.at(i)->isTuned() ) {
-				if ( dvb.at(i)->getCurrentTransponder()==chan->tp ) {
-					d1 = dvb.at(i);
-					break;
-				}
-				else d2 = dvb.at(i);
-			}
-			else {
-				d1 = dvb.at(i);
-				break;
-			}
-		}
-		if ( !d1 && d2 )
-			d1 = d2;
-	}
 
-	if ( !d1 ) {
+	if ( !d ) {
 		emit dvbStop();
 		isTuning = false;
 		return;
 	}
 
-	int ret = d1->goLive( chan, currentFifo );
+	int ret = d->goLive( chan, currentFifo, dvbConfig->ringBufSize );
 
 	switch ( ret ) {
 		case DvbStream::ErrIsRecording :
@@ -2045,7 +2041,7 @@ void DvbPanel::finalZap( DvbStream *d, ChannelDesc *chan )
 			resetSearch();
 		}
 
-		if ( d1->liveIsRecording() )
+		if ( d->liveIsRecording() )
 			recordBtn->setOn( true );
 		else
 			recordBtn->setOn( false );
@@ -2255,6 +2251,8 @@ bool DvbPanel::getChannelList()
 				case 67 : chan->tp.coderateH = FEC_6_7; break;
 				case 78 : chan->tp.coderateH = FEC_7_8; break;
 				case 89 : chan->tp.coderateH = FEC_8_9; break;
+				case 35 : chan->tp.coderateH = FEC_3_5; break;
+				case 910 : chan->tp.coderateH = FEC_9_10; break;
 				case -1 : chan->tp.coderateH = FEC_AUTO;
 			}
 			s = s.right( s.length()-pos-1 );
@@ -2275,6 +2273,9 @@ bool DvbPanel::getChannelList()
 				case 256 : chan->tp.modulation = QAM_256; break;
 				case 108 : chan->tp.modulation = VSB_8; break;
 				case 116 : chan->tp.modulation = VSB_16; break;
+				case 1000 : chan->tp.modulation = PSK_8; break;
+				case 1001 : chan->tp.modulation = APSK_16; break;
+				case 1003 : chan->tp.modulation = DQPSK; break;
 				case -1 : chan->tp.modulation = QAM_AUTO;
 			}
 			s = s.right( s.length()-pos-1 );
@@ -2289,6 +2290,8 @@ bool DvbPanel::getChannelList()
 				case 67 : chan->tp.coderateL = FEC_6_7; break;
 				case 78 : chan->tp.coderateL = FEC_7_8; break;
 				case 89 : chan->tp.coderateL = FEC_8_9; break;
+				case 35 : chan->tp.coderateH = FEC_3_5; break;
+				case 910 : chan->tp.coderateH = FEC_9_10; break;
 				case -1 : chan->tp.coderateL = FEC_AUTO;
 			}
 			s = s.right( s.length()-pos-1 );
@@ -2356,6 +2359,17 @@ bool DvbPanel::getChannelList()
 			s = s.right( s.length()-pos-1 );
 			pos = s.find("|");
 			chan->tp.nid = s.left(pos).toUShort();
+			s = s.right( s.length()-pos-1 );
+			pos = s.find("|");
+			switch ( s.left(pos).toInt() ) {
+				case 20 : chan->tp.rolloff = ROLLOFF_20; break;
+				case 25 : chan->tp.rolloff = ROLLOFF_25; break;
+				case 35 : chan->tp.rolloff = ROLLOFF_35; break;
+				case -1 : chan->tp.rolloff = ROLLOFF_AUTO;
+			}
+			s = s.right( s.length()-pos-1 );
+			pos = s.find("|");
+			chan->tp.S2 = s.left(pos).toInt();
 
 			if ( chan->tp.source.isEmpty() ) {
 				delete chan;
@@ -2363,7 +2377,7 @@ bool DvbPanel::getChannelList()
 			}
 
 			chan->pix.load( dvbConfig->dvbConfigIconsDir+chan->name );
-			it = new KListViewItem( channelsCb, QString().sprintf("%04d", chan->num), chan->name, chan->tp.source );
+			it = new KListViewItem( channelsCb, QString().sprintf("%05d", chan->num), chan->name, chan->tp.source );
 			it->setDragEnabled( true );
 			if ( !chan->pix.isNull() )
 				it->setPixmap( 1, chan->pix );
@@ -2467,6 +2481,8 @@ bool DvbPanel::saveChannelList()
 				case FEC_6_7 : tt<< "67|"; break;
 				case FEC_7_8 : tt<< "78|"; break;
 				case FEC_8_9 : tt<< "89|"; break;
+				case FEC_3_5 : tt<< "35|"; break;
+				case FEC_9_10 : tt<< "910|"; break;
 				case FEC_AUTO : tt<< "-1|";
 			}
 			switch ( chan->tp.inversion ) {
@@ -2483,6 +2499,9 @@ bool DvbPanel::saveChannelList()
 				case QAM_256 : tt<< "256|"; break;
 				case VSB_8 : tt<< "108|"; break;
 				case VSB_16 : tt<< "116|"; break;
+				case PSK_8 : tt<< "1000|"; break;
+				case APSK_16 : tt<< "1001|"; break;
+				case DQPSK : tt<< "1003|"; break;
 				case QAM_AUTO : tt<< "-1|";
 			}
 			switch ( chan->tp.coderateL ) {
@@ -2495,6 +2514,8 @@ bool DvbPanel::saveChannelList()
 				case FEC_6_7 : tt<< "67|"; break;
 				case FEC_7_8 : tt<< "78|"; break;
 				case FEC_8_9 : tt<< "89|"; break;
+				case FEC_3_5 : tt<< "35|"; break;
+				case FEC_9_10 : tt<< "910|"; break;
 				case FEC_AUTO : tt<< "-1|";
 			}
 			switch ( chan->tp.bandwidth ) {
@@ -2533,7 +2554,15 @@ bool DvbPanel::saveChannelList()
 			}
 			tt<< "|";
 			tt<< chan->category+"|";
-			tt<< s.setNum(chan->tp.nid)+"|\n";
+			tt<< s.setNum(chan->tp.nid)+"|";
+			switch ( chan->tp.rolloff ) {
+				case ROLLOFF_20 : tt<< "20|"; break;
+				case ROLLOFF_25 : tt<< "25|"; break;
+				case ROLLOFF_35 : tt<< "35|"; break;
+				case ROLLOFF_AUTO : tt<< "-1|";
+			}
+			tt<< s.setNum(chan->tp.S2)+"|";
+			tt<< "\n";
 		}
 		ret = true;
 		f.close();

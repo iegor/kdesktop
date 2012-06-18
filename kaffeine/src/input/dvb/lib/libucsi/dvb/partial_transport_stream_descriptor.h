@@ -41,7 +41,7 @@ struct dvb_partial_transport_stream_descriptor {
   	uint64_t reserved_2				: 2;  ,
 	uint64_t minimum_overall_smoothing_rate		:22;  ,
   	uint64_t reserved_3				: 2;  ,
-	uint64_t maximum_overall_smoothing_rate		:14;  )
+	uint64_t maximum_overall_smoothing_rate		:14;  );
 } __ucsi_packed;
 
 /**

@@ -40,7 +40,7 @@ struct dvb_rnt_rar_over_dvb_stream_descriptor {
 	dvbdate_t last_valid_date;
   EBIT3(uint8_t weighting		: 6; ,
 	uint8_t complete_flag		: 1; ,
-	uint8_t scheduled_flag		: 1; )
+	uint8_t scheduled_flag		: 1; );
 	uint16_t transport_stream_id;
 	uint16_t original_network_id;
 	uint16_t service_id;

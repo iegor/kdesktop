@@ -42,7 +42,7 @@ struct dvb_ancillary_data_descriptor {
 	uint8_t dab_ancillary_data		: 1; ,
 	uint8_t announcement_switching_data	: 1; ,
 	uint8_t extended_ancillary_data		: 1; ,
-	uint8_t dvd_video_ancillary_data	: 1; )
+	uint8_t dvd_video_ancillary_data	: 1; );
 } __ucsi_packed;
 
 /**

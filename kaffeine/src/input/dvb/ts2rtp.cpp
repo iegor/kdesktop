@@ -345,7 +345,12 @@ void Ts2Rtp::psiTables( QPtrList<ChannelDesc> *channels )
 		buf[off++] = 0x01; // current_next_indicator
 		buf[off++] = 0x00; // section_number
 		buf[off++] = 0x00; // last_section_number
-		buf[off++] = desc->vpid>>8; buf[off++] = desc->vpid&0xff; // PCR pid
+		if ( desc->vpid ) {
+			buf[off++] = desc->vpid>>8; buf[off++] = desc->vpid&0xff; // PCR pid
+		}
+		else if ( desc->napid ) {
+			buf[off++] = desc->apid[0].pid>>8; buf[off++] = desc->apid[0].pid&0xff; // PCR pid
+		}
 		buf[off++] = 0x00; buf[off++] = 0x00; // infos_length
 		if ( desc->vpid ) {
 			buf[off++] = desc->vType; // stream_type

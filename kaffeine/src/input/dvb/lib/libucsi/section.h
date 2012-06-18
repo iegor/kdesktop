@@ -43,7 +43,7 @@ struct section {
   EBIT4(uint16_t syntax_indicator	: 1; ,
 	uint16_t private_indicator	: 1; , /* 2.4.4.10 */
 	uint16_t reserved 		: 2; ,
-	uint16_t length			:12; )
+	uint16_t length			:12; );
 } __ucsi_packed;
 
 /**
@@ -54,12 +54,12 @@ struct section_ext {
   EBIT4(uint16_t syntax_indicator	: 1; ,
 	uint16_t private_indicator	: 1; , /* 2.4.4.10 */
 	uint16_t reserved		: 2; ,
-	uint16_t length			:12; )
+	uint16_t length			:12; );
 
 	uint16_t table_id_ext;
   EBIT3(uint8_t reserved1		: 2; ,
 	uint8_t version_number		: 5; ,
-	uint8_t current_next_indicator	: 1; )
+	uint8_t current_next_indicator	: 1; );
 	uint8_t section_number;
 	uint8_t last_section_number;
 } __ucsi_packed;
@@ -76,13 +76,36 @@ struct psi_table_state {
 
 
 /**
+ * Determine the total length of a section, including the header.
+ *
+ * @param section The parsed section structure.
+ * @return The length.
+ */
+static inline size_t section_length(struct section *section)
+{
+	return section->length + sizeof(struct section);
+}
+
+/**
+ * Determine the total length of an extended section, including the header,
+ * but omitting the CRC.
+ *
+ * @param section The parsed section_ext structure.
+ * @return The length.
+ */
+static inline size_t section_ext_length(struct section_ext * section)
+{
+	return section->length + sizeof(struct section) - CRC_SIZE;
+}
+
+/**
  * Process a section structure in-place.
  *
  * @param buf Pointer to the data.
  * @param len Length of data.
  * @return Pointer to the section structure, or NULL if invalid.
  */
-static inline struct section * section_codec(uint8_t * buf, int len)
+static inline struct section * section_codec(uint8_t * buf, size_t len)
 {
 	struct section * ret = (struct section *)buf;
 
@@ -91,7 +114,7 @@ static inline struct section * section_codec(uint8_t * buf, int len)
 
 	bswap16(buf+1);
 
-	if (len != ret->length + 3)
+	if (len != ret->length + 3U)
 		return NULL;
 
 	return ret;
@@ -107,7 +130,7 @@ static inline struct section * section_codec(uint8_t * buf, int len)
 static inline int section_check_crc(struct section *section)
 {
 	uint8_t * buf = (uint8_t *) section;
-	int len = sizeof(struct section) + section->length;
+	size_t len = section_length(section);
 	uint32_t crc;
 
 	/* the crc check has to be performed on the unswapped data */
@@ -167,12 +190,9 @@ static inline struct section_ext * section_ext_encode(struct section_ext* sectio
 		int len = sizeof(struct section) + section->length;
 		uint32_t crc;
 
-		/* zap the current CRC value */
-		memset(buf+len-4, 0, 4);
-
 		/* the crc has to be performed on the swapped data */
 		bswap16(buf+1);
-		crc = crc32(CRC32_INIT, buf, len);
+		crc = crc32(CRC32_INIT, buf, len-4);
 		bswap16(buf+1);
 
 		/* update the CRC */
@@ -181,29 +201,6 @@ static inline struct section_ext * section_ext_encode(struct section_ext* sectio
 	}
 
 	return (struct section_ext *)section;
-}
-
-/**
- * Determine the total length of a section, including the header.
- *
- * @param section The parsed section structure.
- * @return The length.
- */
-static inline int section_length(struct section *section)
-{
-	return section->length + sizeof(struct section);
-}
-
-/**
- * Determine the total length of an extended section, including the header,
- * but omitting the CRC.
- *
- * @param section The parsed section_ext structure.
- * @return The length.
- */
-static inline int section_ext_length(struct section_ext * section)
-{
-	return section->length + sizeof(struct section) - CRC_SIZE;
 }
 
 /**
@@ -227,7 +224,10 @@ static inline int section_ext_useful(struct section_ext *section, struct psi_tab
 {
 	if ((section->version_number == tstate->version_number) && tstate->complete)
 		return 0;
-	if ((section->version_number != tstate->version_number) && (section->section_number == 0)) {
+	if (section->version_number != tstate->version_number) {
+	        if (section->section_number != 0)
+	                return 0;
+
 		tstate->next_section_number = 0;
 		tstate->complete = 0;
 		tstate->version_number = section->version_number;

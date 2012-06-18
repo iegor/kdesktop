@@ -26,16 +26,15 @@ struct dvb_int_section * dvb_int_section_codec(struct section_ext *ext)
 {
 	uint8_t *buf = (uint8_t *) ext;
 	struct dvb_int_section *in = (struct dvb_int_section *) ext;
-
-	unsigned int pos = sizeof(struct section_ext);
-	unsigned int len = section_ext_length(ext);
+	size_t pos = sizeof(struct section_ext);
+	size_t len = section_ext_length(ext);
 
 	if (len < sizeof(struct dvb_int_section))
 		return NULL;
 
 	bswap32(buf+8);
 	bswap16(buf+12);
-	pos += 9;
+	pos += 6;
 
 	if (len - pos < in->platform_descriptors_length)
 		return NULL;

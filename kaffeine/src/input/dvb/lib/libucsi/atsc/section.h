@@ -19,6 +19,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <libucsi/section.h>
+#include <libucsi/atsc/mgt_section.h>
+#include <libucsi/atsc/tvct_section.h>
+#include <libucsi/atsc/cvct_section.h>
+#include <libucsi/atsc/rrt_section.h>
+#include <libucsi/atsc/eit_section.h>
+#include <libucsi/atsc/ett_section.h>
+#include <libucsi/atsc/stt_section.h>
+#include <libucsi/atsc/dcct_section.h>
+#include <libucsi/atsc/dccsct_section.h>
+
 #ifndef _UCSI_ATSC_SECTION_H
 #define _UCSI_ATSC_SECTION_H 1
 
@@ -27,40 +38,44 @@ extern "C"
 {
 #endif
 
+#define ATSC_BASE_PID 0x1ffb
+
 /**
  * Enumeration of ATSC section tags.
  */
 enum atsc_section_tag {
-/* 0xC0-0xC6   [ATSC coordinated values which are defined in other standards.] */
-	stag_atsc_master_guide				= 0xc7,
+	stag_atsc_master_guide					= 0xc7,
 	stag_atsc_terrestrial_virtual_channel			= 0xc8,
-	stag_atsc_cable_virtual_channel			= 0xc9,
-	stag_atsc_rating_region				= 0xca,
-	stag_atsc_event_informationen				= 0xcb,
-	stag_atsc_extended_text				= 0xcc,
+	stag_atsc_cable_virtual_channel				= 0xc9,
+	stag_atsc_rating_region					= 0xca,
+	stag_atsc_event_information				= 0xcb,
+	stag_atsc_extended_text					= 0xcc,
 	stag_atsc_system_time					= 0xcd,
-
-	stag_atsc_data_event					= 0xce,
-	stag_atsc_data_service				= 0xcf,
-	stag_atsc_network_resources				= 0xd1,
-	stag_atsc_long_term_serivce				= 0xd2,
-/* identical to DVB/ISO ?
-	0x3F        DSM-CC Addressable Section Table
-	0x3B        DSM-CC Section Table
-	0x3C        DSM-CC Section Table */
-
-	/* 0xCE-0xD2   [ATSC coordinated values which are defined in other standards.] */
-	stag_atsc_directed_channel_change			= 0xd3,
-	stag_atsc_directed_channel_change_selection_code	= 0xd4,
-
-	/* 0xD5-0xDF   [ATSC coordinated values which are defined in other standards.] */
-	stag_atsc_aggregate_event_information			= 0xd6,
-	stag_atsc_aggregate_extended_text			= 0xd7,
-	stag_atsc_satellite_virtual_channel			= 0xda,
-
-	/* 0xE0-0xE5   [Used in other systems] */
-	/* 0xE6-0xFE   [Reserved for future ATSC use] */
 };
+
+/**
+ * ATSC specific PSIP section structure.
+ */
+struct atsc_section_psip {
+	struct section_ext		ext_head;
+	uint8_t				protocol_version;
+} __ucsi_packed;
+
+/**
+ * Decode a PSIP section structure.
+ *
+ * @param section_ext Pointer to the processed section_ext structure.
+ * @return Pointer to the parsed section_psip structure, or NULL if invalid.
+ */
+static inline struct atsc_section_psip *atsc_section_psip_decode(struct section_ext *section_ext)
+{
+	size_t len = section_ext_length(section_ext);
+	if (len < sizeof(struct atsc_section_psip)) {
+		return NULL;
+	}
+
+	return (struct atsc_section_psip *) section_ext;
+}
 
 #ifdef __cplusplus
 }

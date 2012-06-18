@@ -37,7 +37,7 @@ struct dvb_adaptation_field_data_descriptor {
 	struct descriptor d;
 
   EBIT2(uint8_t reserved			: 7; ,
-	uint8_t announcement_switching_data	: 1; )
+	uint8_t announcement_switching_data	: 1; );
 } __ucsi_packed;
 
 /**

@@ -47,6 +47,9 @@ extern "C"
 #include <libucsi/dvb/dsng_descriptor.h>
 #include <libucsi/dvb/extended_event_descriptor.h>
 #include <libucsi/dvb/frequency_list_descriptor.h>
+#include <libucsi/dvb/ip_mac_platform_name_descriptor.h>
+#include <libucsi/dvb/ip_mac_platform_provider_name_descriptor.h>
+#include <libucsi/dvb/ip_mac_stream_location_descriptor.h>
 #include <libucsi/dvb/linkage_descriptor.h>
 #include <libucsi/dvb/local_time_offset_descriptor.h>
 #include <libucsi/dvb/mosaic_descriptor.h>
@@ -74,15 +77,28 @@ extern "C"
 #include <libucsi/dvb/stream_identifier_descriptor.h>
 #include <libucsi/dvb/stuffing_descriptor.h>
 #include <libucsi/dvb/subtitling_descriptor.h>
+#include <libucsi/dvb/target_ip_address_descriptor.h>
+#include <libucsi/dvb/target_ipv6_address_descriptor.h>
+#include <libucsi/dvb/target_ip_slash_descriptor.h>
+#include <libucsi/dvb/target_ip_source_slash_descriptor.h>
+#include <libucsi/dvb/target_ipv6_slash_descriptor.h>
+#include <libucsi/dvb/target_ipv6_source_slash_descriptor.h>
 #include <libucsi/dvb/telephone_descriptor.h>
 #include <libucsi/dvb/teletext_descriptor.h>
 #include <libucsi/dvb/terrestrial_delivery_descriptor.h>
 #include <libucsi/dvb/time_shifted_event_descriptor.h>
 #include <libucsi/dvb/time_shifted_service_descriptor.h>
+#include <libucsi/dvb/time_slice_fec_identifier_descriptor.h>
 #include <libucsi/dvb/transport_stream_descriptor.h>
 #include <libucsi/dvb/tva_id_descriptor.h>
 #include <libucsi/dvb/vbi_data_descriptor.h>
 #include <libucsi/dvb/vbi_teletext_descriptor.h>
+#include <libucsi/endianops.h>
+
+/**
+ * The following are disabled because support is incomplete just now.
+ */
+/*
 #include <libucsi/dvb/rnt_rar_over_dvb_stream_descriptor.h>
 #include <libucsi/dvb/rnt_rar_over_ip_descriptor.h>
 #include <libucsi/dvb/rnt_rnt_scan_descriptor.h>
@@ -90,7 +106,7 @@ extern "C"
 #include <libucsi/dvb/ait_application_name_descriptor.h>
 #include <libucsi/dvb/ait_external_application_authorisation_descriptor.h>
 #include <libucsi/dvb/ait_application_icons_descriptor.h>
-#include <libucsi/endianops.h>
+*/
 
 /**
  * The following are not implemented just now
@@ -169,6 +185,10 @@ enum dvb_descriptor_tag {
 	dtag_dvb_time_slice_fec_identifier	= 0x77,
 	dtag_dvb_ecm_repetition_rate		= 0x78,
 	dtag_dvb_s2_satellite_delivery_descriptor= 0x79,
+	dtag_dvb_enhanced_ac3_descriptor	= 0x7a,
+	dtag_dvb_dts_descriptor			= 0x7b,
+	dtag_dvb_aac_descriptor			= 0x7c,
+	dtag_dvb_extension_descriptor		= 0x7f,
 
 	/* descriptors which may only appear in an RNT */
 	dtag_dvb_rnt_rar_over_dvb_stream	= 0x40,
@@ -188,8 +208,20 @@ enum dvb_descriptor_tag {
 	dtag_dvb_ait_application_icons		= 0x0b,
 	dtag_dvb_ait_prefetch			= 0x0c,
 	dtag_dvb_ait_dii_location		= 0x0d,
-	dtag_dvb_ait_ip_signalling		= 0x11
-};/*__ucsi_packed;*/
+	dtag_dvb_ait_ip_signalling		= 0x11,
+
+	/* descriptors which may only appear in INT */
+	dtag_dvb_target_ip_address		= 0x09,
+	dtag_dvb_target_ipv6_address		= 0x0a,
+	dtag_dvb_ip_mac_platform_name		= 0x0c,
+	dtag_dvb_ip_mac_platform_provider_name	= 0x0d,
+	dtag_dvb_target_ip_slash		= 0x0f,
+	dtag_dvb_target_ip_source_slash		= 0x10,
+	dtag_dvb_target_ipv6_slash		= 0x11,
+	dtag_dvb_target_ipv6_source_slash	= 0x12,
+	dtag_dvb_ip_mac_stream_location		= 0x13,
+
+};
 
 #ifdef __cplusplus
 }

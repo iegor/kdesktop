@@ -38,7 +38,7 @@ enum {
 	DVB_STREAM_CONTENT_VIDEO 		= 0x01,
 	DVB_STREAM_CONTENT_AUDIO 		= 0x02,
 	DVB_STREAM_CONTENT_SUBTITLE 		= 0x03,
-	DVB_STREAM_CONTENT_AC3	 		= 0x04
+	DVB_STREAM_CONTENT_AC3	 		= 0x04,
 };
 
 /**
@@ -84,7 +84,7 @@ enum {
 	DVB_COMPONENT_TYPE_SUBTITLE_DVB_HARDHEAR	= 0x20,
 	DVB_COMPONENT_TYPE_SUBTITLE_DVB_HARDHEAR_43	= 0x21,
 	DVB_COMPONENT_TYPE_SUBTITLE_DVB_HARDHEAR_169	= 0x22,
-	DVB_COMPONENT_TYPE_SUBTITLE_DVB_HARDHEAR_2211	= 0x23
+	DVB_COMPONENT_TYPE_SUBTITLE_DVB_HARDHEAR_2211	= 0x23,
 };
 
 /**
@@ -94,7 +94,7 @@ struct dvb_component_descriptor {
 	struct descriptor d;
 
   EBIT2(uint8_t reserved	: 4; ,
-	uint8_t stream_content	: 4; )
+	uint8_t stream_content	: 4; );
 	uint8_t component_type;
 	uint8_t component_tag;
 	iso639lang_t language_code;

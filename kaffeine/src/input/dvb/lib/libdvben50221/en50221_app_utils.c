@@ -2,7 +2,7 @@
     en50221 encoder An implementation for libdvb
     an implementation for the en50221 transport layer
 
-    Copyright (C) 2004, 2005 Manu Abraham (manu@kromtek.com)
+    Copyright (C) 2004, 2005 Manu Abraham <abraham.manu@gmail.com>
     Copyright (C) 2005 Julian Scheel (julian at jusst dot de)
     Copyright (C) 2006 Andrew de Quincey (adq_dvb@lidskialf.net)
 
@@ -23,15 +23,16 @@
 
 #include "en50221_app_utils.h"
 
-struct en50221_app_public_resource_id *
-    en50221_app_decode_public_resource_id(struct en50221_app_public_resource_id *idf, uint32_t resource_id)
+struct en50221_app_public_resource_id
+	*en50221_app_decode_public_resource_id(struct en50221_app_public_resource_id *idf,
+					       uint32_t resource_id)
 {
-    // reject private resources
-    if ((resource_id & 0xc0000000) == 0xc0000000)
-        return NULL;
+	// reject private resources
+	if ((resource_id & 0xc0000000) == 0xc0000000)
+		return NULL;
 
-    idf->resource_class = (resource_id >> 16) & 0xffff; // use the resource_id as the MSBs of class
-    idf->resource_type = (resource_id >> 6) & 0x3ff;
-    idf->resource_version = resource_id & 0x3f;
-    return idf;
+	idf->resource_class = (resource_id >> 16) & 0xffff;	// use the resource_id as the MSBs of class
+	idf->resource_type = (resource_id >> 6) & 0x3ff;
+	idf->resource_version = resource_id & 0x3f;
+	return idf;
 }

@@ -38,14 +38,14 @@ struct dvb_telephone_descriptor {
 
   EBIT3(uint8_t reserved_1			: 2; ,
 	uint8_t foreign_availability		: 1; ,
-	uint8_t connection_type			: 5; )
+	uint8_t connection_type			: 5; );
   EBIT4(uint8_t reserved_2			: 1; ,
 	uint8_t country_prefix_length		: 2; ,
 	uint8_t international_area_code_length	: 3; ,
-	uint8_t operator_code_length		: 2; )
+	uint8_t operator_code_length		: 2; );
   EBIT3(uint8_t reserved_3			: 1; ,
 	uint8_t national_area_code_length	: 3; ,
-	uint8_t core_number_length		: 4; )
+	uint8_t core_number_length		: 4; );
 	/* uint8_t country_prefix[] */
 	/* uint8_t international_area_code[] */
 	/* uint8_t operator_code[] */

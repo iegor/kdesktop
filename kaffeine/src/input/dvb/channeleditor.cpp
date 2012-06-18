@@ -143,6 +143,9 @@ void ChannelEditor::accept()
 		else channel->tp.pol = 'h';
 		channel->tp.coderateH = (fe_code_rate_t)(FEC_NONE+coderateHComb->currentItem());
 		channel->tp.inversion = (fe_spectral_inversion_t)(INVERSION_OFF+inversionComb->currentItem());
+		channel->tp.modulation = (fe_modulation_t)(QPSK+modulationComb->currentItem());
+		channel->tp.S2 = stypeComb->currentItem();
+		channel->tp.rolloff = (fe_rolloff_t)(ROLLOFF_35+rolloffComb->currentItem() );
 	}
 	else if ( channel->tp.type==FE_QAM ) {
 		channel->tp.freq = freqSpin->value();
@@ -165,13 +168,7 @@ void ChannelEditor::accept()
 	else {
 		channel->tp.freq = freqSpin->value();
 		channel->tp.inversion = (fe_spectral_inversion_t)(INVERSION_OFF+inversionComb->currentItem());
-		switch (modulationComb->currentItem()) {
-		case 0: channel->tp.modulation = QAM_64; break;
-		case 1: channel->tp.modulation = QAM_256; break;
-		case 2: channel->tp.modulation = VSB_8; break;
-		case 3: channel->tp.modulation = VSB_16; break;
-		default: channel->tp.modulation = QAM_AUTO; break;
-		}
+		channel->tp.modulation = (fe_modulation_t)(QPSK+modulationComb->currentItem());
 	}
 
 	done( Accepted );
@@ -187,10 +184,15 @@ void ChannelEditor::initS()
 	inversionComb->setCurrentItem( INVERSION_OFF+channel->tp.inversion );
 	coderateHComb->insertStringList( coderateList() );
 	coderateHComb->setCurrentItem( FEC_NONE+channel->tp.coderateH );
+	modulationComb->insertStringList( modulationList() );
+	modulationComb->setCurrentItem( QPSK+channel->tp.modulation );
+	stypeComb->insertStringList( stypeList() );
+	stypeComb->setCurrentItem( channel->tp.S2 );
+	rolloffComb->insertStringList( rolloffList() );
+	rolloffComb->setCurrentItem( ROLLOFF_35+channel->tp.rolloff );
 	transmissionComb->setEnabled( false );
 	coderateLComb->setEnabled( false );
 	bandwidthComb->setEnabled( false );
-	modulationComb->setEnabled( false );
 	hierarchyComb->setEnabled( false );
 	guardComb->setEnabled( false );
 }
@@ -211,6 +213,8 @@ void ChannelEditor::initC()
 	bandwidthComb->setEnabled( false );
 	hierarchyComb->setEnabled( false );
 	guardComb->setEnabled( false );
+	stypeComb->setEnabled( false );
+	rolloffComb->setEnabled( false );
 }
 
 void ChannelEditor::initT()
@@ -234,6 +238,8 @@ void ChannelEditor::initT()
 	guardComb->setCurrentItem( GUARD_INTERVAL_1_32+channel->tp.guard );
 	srSpin->setEnabled( false );
 	polGroup->setEnabled( false );
+	stypeComb->setEnabled( false );
+	rolloffComb->setEnabled( false );
 }
 
 void ChannelEditor::initA()
@@ -241,14 +247,8 @@ void ChannelEditor::initA()
 	freqSpin->setValue( channel->tp.freq );
 	inversionComb->insertStringList( inversionList() );
 	inversionComb->setCurrentItem( INVERSION_OFF+channel->tp.inversion );
-	modulationComb->insertStringList( modulationListAtsc() );
-	switch (channel->tp.modulation) {
-	case QAM_64: modulationComb->setCurrentItem(0); break;
-	case QAM_256: modulationComb->setCurrentItem(1); break;
-	case VSB_8: modulationComb->setCurrentItem(2); break;
-	case VSB_16: modulationComb->setCurrentItem(3); break;
-	default: modulationComb->setCurrentItem(4); break;
-	}
+	modulationComb->insertStringList( modulationList() );
+	modulationComb->setCurrentItem( QPSK+channel->tp.modulation );
 	srSpin->setEnabled( false );
 	polGroup->setEnabled( false );
 	transmissionComb->setEnabled( false );
@@ -257,6 +257,8 @@ void ChannelEditor::initA()
 	bandwidthComb->setEnabled( false );
 	hierarchyComb->setEnabled( false );
 	guardComb->setEnabled( false );
+	stypeComb->setEnabled( false );
+	rolloffComb->setEnabled( false );
 }
 
 QStringList ChannelEditor::inversionList()
@@ -271,7 +273,7 @@ QStringList ChannelEditor::coderateList()
 {
 	QStringList list;
 
-	list<<"NONE"<<"1/2"<<"2/3"<<"3/4"<<"4/5"<<"5/6"<<"6/7"<<"7/8"<<"8/9"<<"AUTO";
+	list<<"NONE"<<"1/2"<<"2/3"<<"3/4"<<"4/5"<<"5/6"<<"6/7"<<"7/8"<<"8/9"<<"AUTO"<<"3/5"<<"9/10";
 	return list;
 }
 
@@ -279,15 +281,7 @@ QStringList ChannelEditor::modulationList()
 {
 	QStringList list;
 
-	list<<"QPSK"<<"QAM 16"<<"QAM 32"<<"QAM 64"<<"QAM 128"<<"QAM 256"<<"AUTO";
-	return list;
-}
-
-QStringList ChannelEditor::modulationListAtsc()
-{
-	QStringList list;
-
-	list<<"QAM 64"<<"QAM 256"<<"VSB 8"<<"VSB 16"<<"AUTO";
+	list<<"QPSK"<<"QAM 16"<<"QAM 32"<<"QAM 64"<<"QAM 128"<<"QAM 256"<<"AUTO"<<"VSB-8"<<"VSB-16"<<"8PSK"<<"16APSK"<<"DQPSK";
 	return list;
 }
 
@@ -320,6 +314,22 @@ QStringList ChannelEditor::guardList()
 	QStringList list;
 
 	list<<"1/32"<<"1/16"<<"1/8"<<"1/4"<<"AUTO";
+	return list;
+}
+
+QStringList ChannelEditor::stypeList()
+{
+	QStringList list;
+
+	list<<"DVB-S"<<"DVB-S2";
+	return list;
+}
+
+QStringList ChannelEditor::rolloffList()
+{
+	QStringList list;
+
+	list<<"35"<<"20"<<"25"<<"AUTO";
 	return list;
 }
 

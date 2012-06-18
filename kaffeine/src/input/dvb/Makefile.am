@@ -30,6 +30,8 @@ libkaffeinedvb_la_SOURCES = audioeditor.cpp \
 	dvbsection.h \
 	dvbsi.cpp \
 	dvbsi.h \
+	camdialog.ui \
+	cammenudialog.ui \
 	dvbstream.cpp \
 	dvbstream.h \
 	gdvb.h \

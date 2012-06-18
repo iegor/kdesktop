@@ -39,7 +39,7 @@ struct dvb_mosaic_descriptor {
   EBIT4(uint8_t mosaic_entry_point		: 1; ,
 	uint8_t number_of_horiz_elementary_cells: 3; ,
 	uint8_t reserved			: 1; ,
-	uint8_t number_of_vert_elementary_cells	: 3; )
+	uint8_t number_of_vert_elementary_cells	: 3; );
 	/* struct dvb_mosaic_info infos[] */
 } __ucsi_packed;
 
@@ -49,7 +49,7 @@ struct dvb_mosaic_descriptor {
 struct dvb_mosaic_info {
   EBIT3(uint16_t logical_cell_id		: 6; ,
 	uint16_t reserved			: 7; ,
-	uint16_t logical_cell_presentation_info	: 3; )
+	uint16_t logical_cell_presentation_info	: 3; );
 	uint8_t elementary_cell_field_length;
 	/* struct dvb_mosaic_elementary_cell_field fields[] */
 	/* struct dvb_mosaic_info_part2 part2 */
@@ -61,7 +61,7 @@ struct dvb_mosaic_info {
  */
 struct dvb_mosaic_elementary_cell_field {
   EBIT2(uint8_t reserved		: 2; ,
-	uint8_t elementary_cell_id	: 6; )
+	uint8_t elementary_cell_id	: 6; );
 } __ucsi_packed;
 
 /**

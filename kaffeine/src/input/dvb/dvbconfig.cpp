@@ -38,6 +38,7 @@
 
 #include "dvbconfig.h"
 #include "kaffeinedvbplugin.h"
+#include "dvbpanel.h"
 
 
 
@@ -68,6 +69,21 @@ MPushButton::MPushButton( QWidget *parent, int devNum, int lnbNum ) : KPushButto
 void MPushButton::isClicked()
 {
 	emit clicked( deviceNumber, lnbNumber );
+}
+
+
+
+MCAMButton::MCAMButton( QWidget *parent, int devNum ) : QPushButton( i18n("CAM"), parent )
+{
+	deviceNumber = devNum;
+	connect( this, SIGNAL(clicked()), this, SLOT(isClicked()) );
+}
+
+
+
+void MCAMButton::isClicked()
+{
+	emit clicked( deviceNumber );
 }
 
 
@@ -109,6 +125,12 @@ Device::Device( int anum, int tnum, fe_type_t t, const QString &n, bool as )
 	source = "";
 	canAutoscan= as;
 	tuningTimeout = 1500;
+	hasCAM = false;
+	camMaxService = 1;
+	secMini = 0;
+	secTwice = 0;
+	priority = 10;
+	doS2 = 0;
 }
 
 
@@ -134,6 +156,7 @@ DVBconfig::DVBconfig( const QString &dvbConf )
 	sizeFile = 0;
 	categories.setAutoDelete( true );
 	devList.setAutoDelete( true );
+	readFirst();
 	startup();
 	readConfig();
 }
@@ -187,6 +210,7 @@ void DVBconfig::startup()
 	int i=0, j=0, res, fdFrontend=0;
 	struct dvb_frontend_info info;
 	bool as;
+	QTime t1;
 
 	QStringList list, flist;
 	QString s, t;
@@ -200,6 +224,11 @@ void DVBconfig::startup()
 		for ( j=0; j<(int)flist.count(); j++ ) {
 			s = list[i];
 			t = flist[j];
+			if ( devList.count()==MAX_DEVICES )
+				break;
+			if ( !probeMfe && t!="frontend0" )
+				continue;
+			t1 = QTime::currentTime();
 			fdFrontend = open( QString("/dev/dvb/%1/%2").arg( s ).arg( t ).ascii(), O_RDWR);
 			if ( fdFrontend>0 ) {
 				if ( !(res = ioctl( fdFrontend, FE_GET_INFO, &info ) < 0) ) {
@@ -212,13 +241,14 @@ void DVBconfig::startup()
 						as = true;
 					else
 						as = false;
-					fprintf(stderr,"/dev/dvb/%s/%s : opened ( %s )\n", s.ascii(), t.ascii(), info.name );
+					fprintf(stderr,"/dev/dvb/%s/%s : opened ( %s ) (%dms)\n", s.ascii(), t.ascii(), info.name, t1.msecsTo(QTime::currentTime()) );
 					devList.append( new Device( s.replace("adapter","").toInt(), t.replace("frontend","").toInt(), info.type, info.name, as ) );
 				}
 				close( fdFrontend );
 			}
-			else
-				perror( QString("/dev/dvb/%1/%2").arg( s ).arg( t ).ascii() );
+			else {
+				perror( QString("/dev/dvb/%1/%2  %3/%4").arg( s ).arg( t ).arg( errno ).arg( -EBUSY ).ascii() );
+			}
 		}
 	}
 
@@ -292,9 +322,9 @@ bool DVBconfig::localData()
 
 bool DVBconfig::haveData()
 {
-	if ( !QDir( dvbConfigDir+"dvb-s" ).exists() || !QDir( dvbConfigDir+"dvb-c" ).exists() || !QDir( dvbConfigDir+"dvb-t" ).exists() ) {
+	if ( !QDir( dvbConfigDir+"dvb-s" ).exists() || !QDir( dvbConfigDir+"dvb-c" ).exists() || !QDir( dvbConfigDir+"dvb-t" ).exists() || !QDir( dvbConfigDir+"atsc" ).exists()) {
 		loadDvbData(0);
-		if ( !QDir( dvbConfigDir+"dvb-s" ).exists() || !QDir( dvbConfigDir+"dvb-c" ).exists() || !QDir( dvbConfigDir+"dvb-t" ).exists() ) {
+		if ( !QDir( dvbConfigDir+"dvb-s" ).exists() || !QDir( dvbConfigDir+"dvb-c" ).exists() || !QDir( dvbConfigDir+"dvb-t" ).exists() || !QDir( dvbConfigDir+"atsc" ).exists() ) {
 			if ( !localData() )
 				return false;
 		}
@@ -313,6 +343,7 @@ QStringList DVBconfig::getSourcesList( fe_type_t type )
 		case FE_QPSK : s = "dvb-s"; break;
 		case FE_QAM : s = "dvb-c"; break;
 		case FE_OFDM : s = "dvb-t"; break;
+		case FE_ATSC : s = "atsc"; break;
 		default : return list;
 	}
 	list = QDir( dvbConfigDir+s ).entryList( QDir::Files, QDir::Name );
@@ -383,6 +414,14 @@ void DVBconfig::saveDvbChanOrder( int s, int col )
 
 
 
+void DVBconfig::readFirst()
+{
+	config->setGroup( "DVB Options" );
+	probeMfe = config->readNumEntry( "ProbeMFE", 1 );
+}
+
+
+
 void DVBconfig::readConfig()
 {
 	QSize size;
@@ -413,6 +452,8 @@ void DVBconfig::readConfig()
 	for ( i=0; i<(int)devList.count(); i++ ) {
 		devList.at(i)->source = config->readEntry( QString("DVB%1").arg(i), "" );
 		devList.at(i)->tuningTimeout = config->readNumEntry( QString("DVB%1_TIMEOUT").arg(i), 1500 );
+		devList.at(i)->camMaxService = config->readNumEntry( QString("DVB%1_CAM_MAX").arg(i), 1 );
+		devList.at(i)->priority = config->readNumEntry( QString("DVB%1_PRIORITY").arg(i), 10 );
 		if ( devList.at(i)->type!=FE_QPSK )
 			continue;
 		devList.at(i)->numLnb = config->readNumEntry( QString("DVB%1_NLNB").arg(i), 1 );
@@ -426,6 +467,9 @@ void DVBconfig::readConfig()
 			devList.at(i)->lnb[j].speed13v = config->readDoubleNumEntry( QString("DVB%1_LNB%2_speed13v").arg(i).arg(j), 2.5 );
 			devList.at(i)->lnb[j].speed18v = config->readDoubleNumEntry( QString("DVB%1_LNB%2_speed18v").arg(i).arg(j), 1.5 );
 		}
+		devList.at(i)->secMini = config->readNumEntry( QString("DVB%1_SEC_MINI").arg(i), 0 );
+		devList.at(i)->secTwice = config->readNumEntry( QString("DVB%1_SEC_TWICE").arg(i), 0 );
+		devList.at(i)->doS2 = config->readNumEntry( QString("DVB%1_DOS2").arg(i), 0 );
 	}
 	j = config->readNumEntry( "NumCategories", 0 );
 	for ( i=0; i<j; i++ )
@@ -442,6 +486,9 @@ void DVBconfig::readConfig()
 		devList.at(i)->usalsLatitude = usalsLatitude;
 		devList.at(i)->usalsLongitude = usalsLongitude;
 	}
+	ringBufSize = config->readNumEntry( "RingBufSize", 2 );
+	if ( ringBufSize<2 )
+		ringBufSize = 2;
 }
 
 
@@ -463,9 +510,12 @@ void DVBconfig::saveConfig()
 	config->writeEntry( "BroadcastAddress", broadcastAddress );
 	config->writeEntry( "BroadcastPort", broadcastPort );
 	config->writeEntry( "SenderPort", senderPort );
+	config->writeEntry( "ProbeMFE", probeMfe );
 	for ( i=0; i<(int)devList.count(); i++ ) {
 		config->writeEntry( QString("DVB%1").arg(i), devList.at(i)->source );
 		config->writeEntry( QString("DVB%1_TIMEOUT").arg(i), devList.at(i)->tuningTimeout );
+		config->writeEntry( QString("DVB%1_PRIORITY").arg(i), devList.at(i)->priority );
+		config->writeEntry( QString("DVB%1_CAM_MAX").arg(i), devList.at(i)->camMaxService );
 		if ( devList.at(i)->type!=FE_QPSK )
 			continue;
 		config->writeEntry( QString("DVB%1_NLNB").arg(i), devList.at(i)->numLnb );
@@ -479,6 +529,9 @@ void DVBconfig::saveConfig()
 			config->writeEntry( QString("DVB%1_LNB%2_speed13v").arg(i).arg(j), devList.at(i)->lnb[j].speed13v );
 			config->writeEntry( QString("DVB%1_LNB%2_speed18v").arg(i).arg(j), devList.at(i)->lnb[j].speed18v );
 		}
+		config->writeEntry( QString("DVB%1_SEC_MINI").arg(i), devList.at(i)->secMini );
+		config->writeEntry( QString("DVB%1_SEC_TWICE").arg(i), devList.at(i)->secTwice );
+		config->writeEntry( QString("DVB%1_DOS2").arg(i), devList.at(i)->doS2 );
 	}
 	config->writeEntry( "NumCategories", categories.count() );
 	for ( i=0; i<(int)categories.count(); i++ ) {
@@ -494,6 +547,7 @@ void DVBconfig::saveConfig()
 	config->writeEntry( "UsalsLatitude", usalsLatitude );
 	config->writeEntry( "UsalsLongitude", usalsLongitude );
 	config->writeEntry( "SizeFile", sizeFile );
+	config->writeEntry( "RingBufSize", ringBufSize );
 	config->sync();
 }
 
@@ -511,7 +565,7 @@ bool DVBconfig::firstRun()
 
 
 
-DvbConfigDialog::DvbConfigDialog( DVBconfig *dc, QWidget *parent, KaffeineDvbPlugin *p ) :
+DvbConfigDialog::DvbConfigDialog( DvbPanel *pan, DVBconfig *dc, QWidget *parent, KaffeineDvbPlugin *p ) :
 	KDialogBase ( IconList, i18n("DVB Settings"), Ok|Cancel, Ok, parent, "dvbConfigDialog", true, true )
 {
 	QLabel *lab;
@@ -529,7 +583,7 @@ DvbConfigDialog::DvbConfigDialog( DVBconfig *dc, QWidget *parent, KaffeineDvbPlu
 	QSpinBox *spin;
 	KPushButton *usals;
 	QWidget *swidg;
-	QStringList rotorList; rotorList<<i18n("No rotor")<<i18n("USALS rotor")<<i18n("Positions rotor");
+	QStringList rotorList; rotorList<<i18n("No rotor")<<i18n("USALS rotor")<<i18n("Positions rotor")<<i18n("External positionner");
 
 	dvbConfig = dc;
 	timeoutSpin.setAutoDelete( true );
@@ -558,7 +612,22 @@ DvbConfigDialog::DvbConfigDialog( DVBconfig *dc, QWidget *parent, KaffeineDvbPlu
 			case FE_ATSC : dvbType->setText( i18n("Atsc") ); break;
 			default : dvbType->setText( i18n("Unknown") );
 		}
-		grid->addMultiCellWidget( dvbType, gridLine, gridLine, 1, 3 );
+		if ( dvbConfig->devList.at(i)->hasCAM ) {
+			grid->addWidget( dvbType, gridLine, 1 );
+			MCAMButton *camb = new MCAMButton( gb, i );
+			connect( camb, SIGNAL(clicked(int)), pan, SLOT(camClicked(int)) );
+			grid->addWidget( camb, gridLine, 2 );
+		}
+		else
+			grid->addMultiCellWidget( dvbType, gridLine, gridLine, 1, 3 );
+		++gridLine;
+		
+		lab = new QLabel( i18n("Tuner priority (0=Don't use):"), gb );
+		grid->addWidget( lab, gridLine, 0 );
+		spin = new QSpinBox( 0, 99, 1, gb );
+		spin->setValue( dvbConfig->devList.at(i)->priority );
+		priority.append( spin );
+		grid->addWidget( spin, gridLine, 1 );
 		++gridLine;
 
 		lab = new QLabel( i18n("Tuner timeout :"), gb );
@@ -572,6 +641,11 @@ DvbConfigDialog::DvbConfigDialog( DVBconfig *dc, QWidget *parent, KaffeineDvbPlu
 		++gridLine;
 
 		if ( dvbConfig->devList.at(i)->type==FE_QPSK ) {
+			doS2[i] = new QCheckBox( i18n("S2 capable device"), gb );
+			doS2[i]->setChecked( dvbConfig->devList.at(i)->doS2 );
+			grid->addWidget( doS2[i], gridLine, 0 );
+			++gridLine;
+			
 			lab = new QLabel( i18n("Number of LNBs:"), gb );
 			grid->addWidget( lab, gridLine, 0 );
 			satNumber[i] = new MSpinBox( gb, i );
@@ -582,6 +656,16 @@ DvbConfigDialog::DvbConfigDialog( DVBconfig *dc, QWidget *parent, KaffeineDvbPlu
 			connect( usals, SIGNAL(clicked()), this, SLOT(setUsals()));
 			grid->addWidget( usals, gridLine, 2 );
 
+			++gridLine;
+			
+			secMini[i] = new QCheckBox( i18n("Mini DiSEqC (A-B)."), gb );
+			secMini[i]->setChecked( dvbConfig->devList.at(i)->secMini );
+			secMini[i]->setEnabled( false );
+			grid->addWidget( secMini[i], gridLine, 1 );
+			secTwice[i] = new QCheckBox( i18n("Send DiSEqC commands twice."), gb );
+			secTwice[i]->setChecked( dvbConfig->devList.at(i)->secTwice );
+			grid->addWidget( secTwice[i], gridLine, 0 );
+			
 			++gridLine;
 
 			lnb0[i] = new MPushButton( gb, i, 0 );
@@ -853,9 +937,19 @@ DvbConfigDialog::DvbConfigDialog( DVBconfig *dc, QWidget *parent, KaffeineDvbPlu
 	vb = new QVBoxLayout( page, 6, 6 );
 	gb = new QGroupBox( "", page );
 	grid = new QGridLayout( gb, 1, 1, 20, 6 );
+	
+	probeMfe = new QCheckBox( i18n("Probe Multiple-Frontends (Restart required)."), gb );
+	probeMfe->setChecked( dvbConfig->probeMfe );
+	grid->addWidget( probeMfe, 0, 0 );
+	
+	lab = new QLabel( i18n("LiveShow ringbuffer size (MB) :"), gb );
+	grid->addWidget( lab, 1, 0 );
+	ringBufSize = new QSpinBox( 2, 99, 1, gb );
+	ringBufSize->setValue( dvbConfig->ringBufSize );
+	grid->addWidget( ringBufSize, 1, 1 );
 
 	lab = new QLabel( i18n("Default charset (restart needed):"), gb );
-	grid->addWidget( lab, 0, 0 );
+	grid->addWidget( lab, 2, 0 );
 	charsetComb = new QComboBox( gb );
 	charsetComb->insertItem( "ISO8859-1" );
 	charsetComb->insertItem( "ISO6937" );
@@ -863,19 +957,19 @@ DvbConfigDialog::DvbConfigDialog( DVBconfig *dc, QWidget *parent, KaffeineDvbPlu
 		charsetComb->setCurrentItem( 0 );
 	else if ( dvbConfig->defaultCharset=="ISO6937" )
 		charsetComb->setCurrentItem( 1 );
-	grid->addWidget( charsetComb, 0, 1 );
+	grid->addWidget( charsetComb, 2, 1 );
 
 	lab = new QLabel( i18n("Update scan data:"), gb );
-	grid->addWidget( lab, 1, 0 );
+	grid->addWidget( lab, 3, 0 );
 	updateBtn = new KPushButton( gb );
 	updateBtn->setGuiItem( KGuiItem(i18n("Download"), icon->loadIconSet("khtml_kget", KIcon::Small) ) );
-	grid->addWidget( updateBtn, 1, 1 );
+	grid->addWidget( updateBtn, 3, 1 );
 
 	lab = new QLabel( i18n("Dump epg's events to \n~/kaffeine_dvb_events.tx:"), gb );
-	grid->addWidget( lab, 2, 0 );
+	grid->addWidget( lab, 4, 0 );
 	dumpBtn = new KPushButton( gb );
 	dumpBtn->setGuiItem( KGuiItem(i18n("Dump"), icon->loadIconSet("filesave", KIcon::Small) ) );
-	grid->addWidget( dumpBtn, 2, 1 );
+	grid->addWidget( dumpBtn, 4, 1 );
 
 	vb->addWidget( gb );
 	vb->addItem( new QSpacerItem( 20, 20, QSizePolicy::Ignored, QSizePolicy::Ignored ) );
@@ -1039,6 +1133,8 @@ void DvbConfigDialog::satNumberChanged( int value, int devNum )
 	rotor1[devNum]->setEnabled( value > 1 );
 	rotor2[devNum]->setEnabled( value > 2 );
 	rotor3[devNum]->setEnabled( value > 3 );
+
+	secMini[devNum]->setEnabled( value==2 );
 }
 
 
@@ -1103,6 +1199,9 @@ void DvbConfigDialog::accept()
 		switch (dvbConfig->devList.at(i)->type) {
 		case FE_QPSK: {
 			dvbConfig->devList.at(i)->numLnb = satNumber[i]->value();
+			dvbConfig->devList.at(i)->secMini = secMini[i]->isChecked();
+			dvbConfig->devList.at(i)->secTwice = secTwice[i]->isChecked();
+			dvbConfig->devList.at(i)->doS2 = doS2[i]->isChecked();
 			if ( dvbConfig->devList.at(i)->lnb[3].rotorType==0 ) {
 				dvbConfig->devList.at(i)->lnb[3].source.clear();
 				dvbConfig->devList.at(i)->lnb[3].source.append(sat3[i]->currentText());
@@ -1140,6 +1239,7 @@ void DvbConfigDialog::accept()
 		}
 		dvbConfig->devList.at(i)->source = s;
 		dvbConfig->devList.at(i)->tuningTimeout = timeoutSpin.at(i)->value();
+		dvbConfig->devList.at(i)->priority = priority.at(i)->value();
 	}
 
 	dvbConfig->recordDir = recordDirLe->text();
@@ -1157,6 +1257,8 @@ void DvbConfigDialog::accept()
 	dvbConfig->broadcastAddress = broadcastLe->text().stripWhiteSpace();
 	dvbConfig->broadcastPort = bportSpin->value();
 	dvbConfig->senderPort = sportSpin->value();
+	dvbConfig->probeMfe = probeMfe->isChecked();
+	dvbConfig->ringBufSize = ringBufSize->value();
 	dvbConfig->saveConfig();
 	done( Accepted );
 }
@@ -1403,22 +1505,24 @@ RotorConfig::RotorConfig( Device *d, DVBconfig *c, int lnb, QWidget *parent ) :
 	vb->addWidget( resetBtn );
 	vb->addItem( new QSpacerItem( 20, 20, QSizePolicy::Fixed, QSizePolicy::Fixed ) );
 
-	grid = new QGridLayout( 0, 1, 1 );
-	lab = new QLabel( i18n("13V rotor speed:"), page );
-	grid->addWidget( lab, 0, 0 );
-	speed13 = new QLineEdit( page );
-	speed13->setText( QString().setNum( dev->lnb[lnbNum].speed13v ) );
-	grid->addWidget( speed13, 0, 1 );
-	lab = new QLabel( i18n("sec./ °"), page );
-	grid->addWidget( lab, 0, 2 );
-	lab = new QLabel( i18n("18V rotor speed:"), page );
-	grid->addWidget( lab, 1, 0 );
-	speed18 = new QLineEdit( page );
-	speed18->setText( QString().setNum( dev->lnb[lnbNum].speed18v ) );
-	grid->addWidget( speed18, 1, 1 );
-	lab = new QLabel( i18n("sec./ °"), page );
-	grid->addWidget( lab, 1, 2 );
-	vb->addLayout( grid );
+	if ( dev->lnb[lnbNum].rotorType!=3 ) {
+		grid = new QGridLayout( 0, 1, 1 );
+		lab = new QLabel( i18n("13V rotor speed:"), page );
+		grid->addWidget( lab, 0, 0 );
+		speed13 = new QLineEdit( page );
+		speed13->setText( QString().setNum( dev->lnb[lnbNum].speed13v ) );
+		grid->addWidget( speed13, 0, 1 );
+		lab = new QLabel( i18n("sec./ °"), page );
+		grid->addWidget( lab, 0, 2 );
+		lab = new QLabel( i18n("18V rotor speed:"), page );
+		grid->addWidget( lab, 1, 0 );
+		speed18 = new QLineEdit( page );
+		speed18->setText( QString().setNum( dev->lnb[lnbNum].speed18v ) );
+		grid->addWidget( speed18, 1, 1 );
+		lab = new QLabel( i18n("sec./ °"), page );
+		grid->addWidget( lab, 1, 2 );
+		vb->addLayout( grid );
+	}
 
 	vb->addItem( new QSpacerItem( 20, 20, QSizePolicy::Ignored, QSizePolicy::Ignored ) );
 
@@ -1462,8 +1566,14 @@ void RotorConfig::accept()
 {
 	QListViewItem *it;
 
-	dev->lnb[lnbNum].speed18v = speed18->text().toDouble();
-	dev->lnb[lnbNum].speed13v = speed13->text().toDouble();
+	if ( dev->lnb[lnbNum].rotorType!=3 ) {
+		dev->lnb[lnbNum].speed18v = speed18->text().toDouble();
+		dev->lnb[lnbNum].speed13v = speed13->text().toDouble();
+	}
+	else {
+		dev->lnb[lnbNum].speed18v = 0;
+		dev->lnb[lnbNum].speed13v = 0;
+	}
 	dev->lnb[lnbNum].source.clear();
 	dev->lnb[lnbNum].position.clear();
 	for ( it=listView->firstChild(); it; it=it->nextSibling() ) {

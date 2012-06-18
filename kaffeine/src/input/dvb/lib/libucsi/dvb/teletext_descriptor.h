@@ -39,7 +39,7 @@ enum {
 	DVB_TELETEXT_TYPE_SUBTITLE		= 0x02,
 	DVB_TELETEXT_TYPE_ADDITIONAL		= 0x03,
 	DVB_TELETEXT_TYPE_SCHEDULE		= 0x04,
-	DVB_TELETEXT_TYPE_SUBTITLE_HEARING_IMPAIRED= 0x05
+	DVB_TELETEXT_TYPE_SUBTITLE_HEARING_IMPAIRED= 0x05,
 };
 
 /**
@@ -57,7 +57,7 @@ struct dvb_teletext_descriptor {
 struct dvb_teletext_entry {
 	iso639lang_t language_code;
   EBIT2(uint8_t type		: 5; ,
-	uint8_t magazine_number: 3; )
+	uint8_t magazine_number: 3; );
 	uint8_t page_number;
 } __ucsi_packed;
 

@@ -38,7 +38,7 @@ struct dvb_extended_event_descriptor {
 	struct descriptor d;
 
   EBIT2(uint8_t descriptor_number	: 4; ,
-	uint8_t last_descriptor_number	: 4; )
+	uint8_t last_descriptor_number	: 4; );
 	iso639lang_t language_code;
 	uint8_t length_of_items;
 	/* struct dvb_extended_event_item items[] */

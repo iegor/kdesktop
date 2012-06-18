@@ -61,9 +61,9 @@ struct mpeg_odsmt_stream_multi
  */
 struct mpeg_odsmt_stream {
 	union {
-		struct mpeg_odsmt_stream_single single __ucsi_packed;
-		struct mpeg_odsmt_stream_multi multi __ucsi_packed;
-	} u __ucsi_packed;
+		struct mpeg_odsmt_stream_single single;
+		struct mpeg_odsmt_stream_multi multi;
+	} u;
 } __ucsi_packed;
 
 /**
@@ -118,7 +118,7 @@ static inline uint16_t mpeg_odsmt_section_pid(struct mpeg_odsmt_section *odsmt)
  */
 static inline uint8_t*
 	mpeg_odsmt_section_object_descriptors(struct mpeg_odsmt_section * odsmt,
-					      uint32_t* len);
+					      size_t* len);
 
 
 
@@ -133,7 +133,7 @@ static inline uint8_t*
 static inline struct mpeg_odsmt_stream *
 	mpeg_odsmt_section_streams_first(struct mpeg_odsmt_section *odsmt)
 {
-	int pos = sizeof(struct mpeg_odsmt_section);
+	size_t pos = sizeof(struct mpeg_odsmt_section);
 
 	if (pos >= section_ext_length(&odsmt->head))
 		return NULL;
@@ -144,12 +144,12 @@ static inline struct mpeg_odsmt_stream *
 static inline struct mpeg_odsmt_stream *
 	mpeg_odsmt_section_streams_next(struct mpeg_odsmt_section *odsmt,
 					struct mpeg_odsmt_stream *pos,
-				        int index)
+				        int _index)
 {
 	uint8_t *end = (uint8_t*) odsmt + section_ext_length(&odsmt->head);
 	uint8_t *next;
 
-	if (index > odsmt->stream_count)
+	if (_index > odsmt->stream_count)
 		return NULL;
 
 	next = (uint8_t *) pos + sizeof(struct mpeg_odsmt_stream_multi) +
@@ -198,13 +198,13 @@ static inline struct descriptor *
 
 static inline uint8_t*
 	mpeg_odsmt_section_object_descriptors(struct mpeg_odsmt_section * odsmt,
-					      uint32_t* len)
+					      size_t* len)
 {
 	struct mpeg_odsmt_stream* pos;
-	int size = sizeof(struct mpeg_odsmt_section);
-	int index;
+	size_t size = sizeof(struct mpeg_odsmt_section);
+	int _index;
 
-	mpeg_odsmt_section_streams_for_each(odsmt, pos, index) {
+	mpeg_odsmt_section_streams_for_each(odsmt, pos, _index) {
 		if (odsmt->stream_count == 0)
 			size += sizeof(struct mpeg_odsmt_stream_single) +
 					pos->u.single.es_info_length;

@@ -36,7 +36,7 @@ extern "C"
 enum {
 	DVB_CODING_TYPE_SATELLITE		= 0x01,
 	DVB_CODING_TYPE_CABLE			= 0x02,
-	DVB_CODING_TYPE_TERRESTRIAL		= 0x03
+	DVB_CODING_TYPE_TERRESTRIAL		= 0x03,
 };
 
 /**
@@ -46,7 +46,7 @@ struct dvb_frequency_list_descriptor {
 	struct descriptor d;
 
   EBIT2(uint8_t reserved	: 6; ,
-	uint8_t coding_type	: 2; )
+	uint8_t coding_type	: 2; );
 	/* uint32_t centre_frequencies [] */
 } __ucsi_packed;
 

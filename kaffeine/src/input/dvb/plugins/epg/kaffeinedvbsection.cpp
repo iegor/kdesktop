@@ -141,6 +141,9 @@ bool KaffeineDVBsection::doIconv( QCString &s, QCString table, char *buffer, int
 	if ( inSize<1 )
 		return false;
 	cd = iconv_open( "UTF8", table );
+	//check if charset unknown
+	if( cd == (iconv_t)(-1) )
+		return false;
 	inBuf = s.data();
 	outBuf = buffer;
 	outBuf[0] = 0;

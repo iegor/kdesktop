@@ -46,7 +46,7 @@ enum {
 	DVB_LINKAGE_TYPE_SOFTWARE_UPDATE		= 0x09,
 	DVB_LINKAGE_TYPE_TS_WITH_SSU_BAT_NIT		= 0x0a,
 	DVB_LINKAGE_TYPE_IP_MAC_NOTIFICATION		= 0x0b,
-	DVB_LINKAGE_TYPE_TS_WITH_INT_BAT_NIT		= 0x0c
+	DVB_LINKAGE_TYPE_TS_WITH_INT_BAT_NIT		= 0x0c,
 };
 
 /**
@@ -55,7 +55,7 @@ enum {
 enum {
 	DVB_HAND_OVER_TYPE_IDENTICAL_NEIGHBOURING_COUNTRY	= 0x01,
 	DVB_HAND_OVER_TYPE_LOCAL_VARIATION			= 0x02,
-	DVB_HAND_OVER_TYPE_ASSOCIATED_SERVICE			= 0x03
+	DVB_HAND_OVER_TYPE_ASSOCIATED_SERVICE			= 0x03,
 };
 
 /**
@@ -63,7 +63,7 @@ enum {
  */
 enum {
 	DVB_ORIGIN_TYPE_NIT				= 0x00,
-	DVB_ORIGIN_TYPE_SDT				= 0x01
+	DVB_ORIGIN_TYPE_SDT				= 0x01,
 };
 
 /**
@@ -85,7 +85,7 @@ struct dvb_linkage_descriptor {
 struct dvb_linkage_data_08 {
   EBIT3(uint8_t hand_over_type		: 4;  ,
 	uint8_t reserved		: 3;  ,
-	uint8_t origin_type		: 1;  )
+	uint8_t origin_type		: 1;  );
 	/* uint16_t network_id if hand_over_type == 1,2,3 */
 	/* uint16_t initial_service_id if origin_type = 0 */
 	/* uint8_t data[] */
@@ -104,7 +104,7 @@ struct dvb_linkage_data_0b {
  */
 struct dvb_platform_id {
   EBIT2(uint32_t platform_id			: 24; ,
-	uint32_t platform_name_loop_length	: 8;  )
+	uint8_t platform_name_loop_length	: 8;  );
 	/* struct platform_name names[] */
 } __ucsi_packed;
 
@@ -187,6 +187,8 @@ static inline struct dvb_linkage_descriptor*
 			return NULL;
 
 		while (pos2 < l_0b->platform_id_data_length) {
+			bswap32(buf + pos + pos2);
+
 			struct dvb_platform_id *p_id = (struct dvb_platform_id *) (buf + pos + pos2);
 			if ((len - pos - pos2) < p_id->platform_name_loop_length)
 				return NULL;
@@ -359,7 +361,7 @@ static inline struct dvb_linkage_data_0b *
  * @param linkage dvb_linkage_data_0b pointer.
  * @param pos Variable containing a pointer to the current dvb_platform_id.
  */
-#define dvb_dvb_linkage_data_0b_platform_id_for_each(linkage, pos) \
+#define dvb_linkage_data_0b_platform_id_for_each(linkage, pos) \
 	for ((pos) = dvb_platform_id_first(linkage); \
 	     (pos); \
 	     (pos) = dvb_platform_id_next(linkage, pos))

@@ -33,6 +33,7 @@ extern "C"
 #include <libucsi/mpeg/pmt_section.h>
 #include <libucsi/mpeg/tsdt_section.h>
 #include <libucsi/mpeg/metadata_section.h>
+#include <libucsi/mpeg/datagram_section.h>
 
 #define TRANSPORT_PAT_PID 0x00
 #define TRANSPORT_CAT_PID 0x01
@@ -48,7 +49,8 @@ enum mpeg_section_tag {
 	stag_mpeg_transport_stream_description		= 0x03,
 	stag_mpeg_iso14496_scene_description		= 0x04,
 	stag_mpeg_iso14496_object_description		= 0x05,
-	stag_mpeg_metadata				= 0x06
+	stag_mpeg_metadata				= 0x06,
+	stag_mpeg_datagram				= 0x3e,
 };
 
 #ifdef __cplusplus

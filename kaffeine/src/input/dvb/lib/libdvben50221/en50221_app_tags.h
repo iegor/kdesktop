@@ -2,7 +2,7 @@
     en50221 encoder An implementation for libdvb
     an implementation for the en50221 transport layer
 
-    Copyright (C) 2004, 2005 Manu Abraham (manu@kromtek.com)
+    Copyright (C) 2004, 2005 Manu Abraham <abraham.manu@gmail.com>
     Copyright (C) 2005 Julian Scheel (julian at jusst dot de)
 
     This library is free software; you can redistribute it and/or modify
@@ -25,7 +25,7 @@
 
 /*	Resource Manager		*/
 #define TAG_PROFILE_ENQUIRY		0x9f8010
-#define TAG_PROFILE			    0x9f8011
+#define TAG_PROFILE			0x9f8011
 #define TAG_PROFILE_CHANGE		0x9f8012
 
 /*	Application Info		*/
@@ -85,20 +85,20 @@
 #define TAG_COMMS_RECV_MORE		0x9f8c06
 
 /* Authentication */
-#define TAG_AUTH_REQ       0x9f8200
-#define TAG_AUTH_RESP      0x9f8201
+#define TAG_AUTH_REQ			0x9f8200
+#define TAG_AUTH_RESP			0x9f8201
 
 /* Teletext */
-#define TAG_TELETEXT_EBU      0x9f9000
+#define TAG_TELETEXT_EBU		0x9f9000
 
 /* Smartcard */
-#define TAG_SMARTCARD_COMMAND       0x9f8e00
-#define TAG_SMARTCARD_REPLY         0x9f8e01
-#define TAG_SMARTCARD_SEND          0x9f8e02
-#define TAG_SMARTCARD_RCV           0x9f8e03
+#define TAG_SMARTCARD_COMMAND		0x9f8e00
+#define TAG_SMARTCARD_REPLY		0x9f8e01
+#define TAG_SMARTCARD_SEND		0x9f8e02
+#define TAG_SMARTCARD_RCV		0x9f8e03
 
 /* EPG */
-#define TAG_EPG_ENQUIRY         0x9f8f00
-#define TAG_EPG_REPLY           0x9f8f01
+#define TAG_EPG_ENQUIRY         	0x9f8f00
+#define TAG_EPG_REPLY           	0x9f8f01
 
 #endif

@@ -42,9 +42,9 @@ struct dvb_satellite_delivery_descriptor {
 	uint8_t polarization  	  	: 2; ,
 	uint8_t roll_off	  	: 2; ,
 	uint8_t modulation_system 	: 1; ,
-	uint8_t modulation_type 	: 2; )
+	uint8_t modulation_type 	: 2; );
   EBIT2(uint32_t symbol_rate		: 28; , // BCD, units 100Hz
-	uint32_t fec_inner		: 4;  )
+	uint32_t fec_inner		: 4;  );
 } __ucsi_packed;
 
 /**

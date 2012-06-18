@@ -115,6 +115,8 @@ Transponder::Transponder()
 	coderateH=FEC_AUTO;
 	bandwidth=BANDWIDTH_AUTO;
 	snr = 0;
+	rolloff = ROLLOFF_AUTO;
+	S2 = 0;
 }
 
 Transponder::Transponder( const Transponder &trans )
@@ -134,6 +136,8 @@ Transponder::Transponder( const Transponder &trans )
 	coderateL=trans.coderateL;
 	coderateH=trans.coderateH;
 	bandwidth=trans.bandwidth;
+	rolloff = trans.rolloff;
+	S2 = trans.S2;
 }
 
 bool Transponder::sameAs( Transponder *trans )

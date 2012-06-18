@@ -43,6 +43,7 @@
 
 #include <klocale.h>
 #include <kapplication.h>
+#include <kmessagebox.h>
 
 #include "dvbstream.h"
 #include "dvbevents.h"
@@ -100,9 +101,19 @@ void DvbStream::probeCam()
 	int ci_type=0;
 	if ( camProbed )
 		return;
-	if ( (ci_type=DvbCam::probe( dvbDevice->adapter, 0 ))>0 )
-		cam = new DvbCam( dvbDevice->adapter, 0, dvbDevice->tuner, ci_type );
+	if ( (ci_type=DvbCam::probe( dvbDevice->adapter, 0 ))>0 ) {
+		cam = new DvbCam( dvbDevice->adapter, 0, dvbDevice->tuner, ci_type, dvbDevice->camMaxService );
+		dvbDevice->hasCAM = true;
+	}
 	camProbed = true;
+}
+
+
+
+void DvbStream::showCamDialog()
+{
+	if ( cam )
+		dvbDevice->camMaxService = cam->showCamDialog();
 }
 
 
@@ -143,12 +154,21 @@ bool DvbStream::canSource( ChannelDesc *chan )
 		else
 			return false;
 	}
+	if ( chan->tp.S2 && !dvbDevice->doS2 )
+		return false;
 	int i;
 	for ( i=0; i<dvbDevice->numLnb; i++ ) {
 		if ( dvbDevice->lnb[i].source.contains(chan->tp.source) )
 			return true;
 	}
 	return false;
+}
+
+
+
+int DvbStream::getPriority()
+{
+	return dvbDevice->priority;
 }
 
 
@@ -174,7 +194,7 @@ bool DvbStream::openFe()
 		fprintf(stderr,"openFe: fdFrontend != 0\n");
 		return false;
 	}
-	fdFrontend = open( frontendName.ascii(), O_RDWR );
+	fdFrontend = open( frontendName.ascii(), O_RDWR /*| O_NONBLOCK*/ );
 	if ( fdFrontend<0 ) {
 		perror("openFe:");
 		fdFrontend = 0;
@@ -308,7 +328,6 @@ bool DvbStream::tuneDvb( ChannelDesc *chan, bool dvr )
 {
 	unsigned long lof=0;
 	int res, hiband=0;
-	struct dvb_frontend_parameters feparams;
 	struct dvb_frontend_info fe_info;
 	fe_status_t status;
 	unsigned long freq=chan->tp.freq;
@@ -316,6 +335,14 @@ bool DvbStream::tuneDvb( ChannelDesc *chan, bool dvr )
 	int lnbPos = getSatPos( chan->tp.source );
 	int rotorMove = 0;
 	int loop=0, i;
+
+	struct dtv_property cmdargs[20];
+	struct dtv_properties cmdseq;
+	int inversion;
+	int bandwidth;
+	
+	if ( chan->tp.S2 && !dvbDevice->doS2 )
+		return false;
 
 	closeFe();
 	if ( !openFe() )
@@ -333,18 +360,45 @@ bool DvbStream::tuneDvb( ChannelDesc *chan, bool dvr )
 	freq*=1000;
 	srate*=1000;
 
+	QTime t1 = QTime::currentTime();
+
+	if ( chan->tp.inversion==INVERSION_AUTO ) {
+		if ( fe_info.caps & FE_CAN_INVERSION_AUTO )
+			inversion = chan->tp.inversion;
+		else {
+			fprintf(stderr,"Can NOT inversion_auto\n");
+			inversion = INVERSION_OFF;
+		}
+	}
+	else
+		inversion=chan->tp.inversion;
+
 	switch( fe_info.type ) {
 		case FE_OFDM : {
+			QString s = fe_info.name;
+			//if ( s.contains("TerraTec/qanu USB2.0 Highspeed DVB-T Receiver") ) // cinergyT2 hack
+			//	freq+=167000;
 			if (freq < 1000000)
 				freq*=1000UL;
-			feparams.frequency=freq;
-			feparams.u.ofdm.bandwidth=chan->tp.bandwidth;
-			feparams.u.ofdm.code_rate_HP=chan->tp.coderateH;
-			feparams.u.ofdm.code_rate_LP=chan->tp.coderateL;
-			feparams.u.ofdm.constellation=chan->tp.modulation;
-			feparams.u.ofdm.transmission_mode=chan->tp.transmission;
-			feparams.u.ofdm.guard_interval=chan->tp.guard;
-			feparams.u.ofdm.hierarchy_information=chan->tp.hierarchy;
+			cmdargs[0].cmd = DTV_DELIVERY_SYSTEM; cmdargs[0].u.data = SYS_DVBT;
+			cmdargs[1].cmd = DTV_FREQUENCY; cmdargs[1].u.data = freq;
+			cmdargs[2].cmd = DTV_MODULATION; cmdargs[2].u.data = chan->tp.modulation;
+			cmdargs[3].cmd = DTV_CODE_RATE_HP; cmdargs[3].u.data = chan->tp.coderateH;
+			cmdargs[4].cmd = DTV_CODE_RATE_LP; cmdargs[4].u.data = chan->tp.coderateL;
+			cmdargs[5].cmd = DTV_GUARD_INTERVAL; cmdargs[5].u.data = chan->tp.guard;
+			cmdargs[6].cmd = DTV_TRANSMISSION_MODE; cmdargs[6].u.data = chan->tp.transmission;
+			cmdargs[7].cmd = DTV_HIERARCHY; cmdargs[7].u.data = chan->tp.hierarchy;
+			if ( chan->tp.bandwidth==BANDWIDTH_8_MHZ )
+				bandwidth = 8000000;
+			else if ( chan->tp.bandwidth==BANDWIDTH_7_MHZ )
+				bandwidth = 7000000;
+			else if ( chan->tp.bandwidth==BANDWIDTH_6_MHZ )
+				bandwidth = 6000000;
+			cmdargs[8].cmd = DTV_BANDWIDTH_HZ; cmdargs[8].u.data = bandwidth;
+			cmdargs[9].cmd = DTV_INVERSION; cmdargs[9].u.data = inversion;
+			cmdargs[10].cmd = DTV_TUNE;
+			cmdseq.num = 11;
+			cmdseq.props = cmdargs;
 			fprintf(stderr,"tuning DVB-T to %lu Hz\n", freq);
 			fprintf(stderr,"inv:%d bw:%d fecH:%d fecL:%d mod:%d tm:%d gi:%d hier:%d\n", chan->tp.inversion,
 				chan->tp.bandwidth, chan->tp.coderateH, chan->tp.coderateL, chan->tp.modulation,
@@ -352,11 +406,16 @@ bool DvbStream::tuneDvb( ChannelDesc *chan, bool dvr )
 			break;
 		}
 		case FE_QAM : {
+			cmdargs[0].cmd = DTV_DELIVERY_SYSTEM; cmdargs[0].u.data = SYS_DVBC_ANNEX_AC;
+			cmdargs[1].cmd = DTV_FREQUENCY; cmdargs[1].u.data = freq;
+			cmdargs[2].cmd = DTV_MODULATION; cmdargs[2].u.data = chan->tp.modulation;
+			cmdargs[3].cmd = DTV_SYMBOL_RATE; cmdargs[3].u.data = srate;
+			cmdargs[4].cmd = DTV_INNER_FEC; cmdargs[4].u.data = chan->tp.coderateH;
+			cmdargs[5].cmd = DTV_INVERSION; cmdargs[5].u.data = inversion;
+			cmdargs[6].cmd = DTV_TUNE;
+			cmdseq.num = 7;
+			cmdseq.props = cmdargs;
 			fprintf(stderr,"tuning DVB-C to %lu\n", freq);
-			feparams.frequency=freq;
-			feparams.u.qam.symbol_rate = srate;
-			feparams.u.qam.fec_inner = chan->tp.coderateH;
-			feparams.u.qam.modulation = chan->tp.modulation;
 			fprintf(stderr,"inv:%d sr:%lu fecH:%d mod:%d\n", chan->tp.inversion,
 				srate, chan->tp.coderateH, chan->tp.modulation );
 			break;
@@ -384,51 +443,78 @@ bool DvbStream::tuneDvb( ChannelDesc *chan, bool dvr )
 						lof = (dvbDevice->lnb[lnbPos].loFreq*1000);
 				}
 				if ( freq<lof )
-					feparams.frequency = ( lof-freq );
+					freq = ( lof-freq );
 				else
-					feparams.frequency = ( freq-lof );
+					freq = ( freq-lof );
 			}
-			else
-				feparams.frequency=freq;
-
-			feparams.u.qpsk.symbol_rate=srate;
-			feparams.u.qpsk.fec_inner=chan->tp.coderateH;
-			fprintf(stderr,"inv:%d fecH:%d\n", chan->tp.inversion, chan->tp.coderateH );
+			fprintf(stderr,"inv:%d fecH:%d mod:%d\n", chan->tp.inversion, chan->tp.coderateH, chan->tp.modulation );
 			if ( setDiseqc( lnbPos, chan, hiband, rotorMove, dvr )!=0 ) {
 				closeFe();
 				return false;
 			}
+			fprintf( stderr, "Diseqc settings time = %d ms\n", t1.msecsTo( QTime::currentTime() ) );
+			t1 = QTime::currentTime();
+			if ( chan->tp.S2 ) {
+				fprintf(stderr,"\nTHIS IS DVB-S2 >>>>>>>>>>>>>>>>>>>\n");
+				cmdargs[0].cmd = DTV_DELIVERY_SYSTEM; cmdargs[0].u.data = SYS_DVBS2;
+				cmdargs[1].cmd = DTV_FREQUENCY; cmdargs[1].u.data = freq;
+				cmdargs[2].cmd = DTV_MODULATION; cmdargs[2].u.data = chan->tp.modulation;
+				cmdargs[3].cmd = DTV_SYMBOL_RATE; cmdargs[3].u.data = srate;
+				cmdargs[4].cmd = DTV_INNER_FEC; cmdargs[4].u.data = chan->tp.coderateH;
+				cmdargs[5].cmd = DTV_PILOT; cmdargs[5].u.data = PILOT_AUTO;
+				cmdargs[6].cmd = DTV_ROLLOFF; cmdargs[6].u.data = chan->tp.rolloff;
+				cmdargs[7].cmd = DTV_INVERSION; cmdargs[7].u.data = inversion;
+				cmdargs[8].cmd = DTV_TUNE;
+				cmdseq.num = 9;
+				cmdseq.props = cmdargs;
+			}
+			else {
+				cmdargs[0].cmd = DTV_DELIVERY_SYSTEM; cmdargs[0].u.data = SYS_DVBS;
+				cmdargs[1].cmd = DTV_FREQUENCY; cmdargs[1].u.data = freq;
+				cmdargs[2].cmd = DTV_MODULATION; cmdargs[2].u.data = chan->tp.modulation;
+				if ( chan->tp.modulation==QAM_AUTO )
+					cmdargs[2].u.data = QPSK;
+				cmdargs[3].cmd = DTV_SYMBOL_RATE; cmdargs[3].u.data = srate;
+				cmdargs[4].cmd = DTV_INNER_FEC; cmdargs[4].u.data = chan->tp.coderateH;
+				cmdargs[5].cmd = DTV_INVERSION; cmdargs[5].u.data = inversion;
+				cmdargs[6].cmd = DTV_TUNE;
+				cmdseq.num = 7;
+				cmdseq.props = cmdargs;
+			}
 			break;
 		}
 		case FE_ATSC : {
+			cmdargs[0].cmd = DTV_DELIVERY_SYSTEM; cmdargs[0].u.data = SYS_ATSC;
+			cmdargs[1].cmd = DTV_FREQUENCY; cmdargs[1].u.data = freq;
+			cmdargs[2].cmd = DTV_MODULATION; cmdargs[2].u.data = chan->tp.modulation;
+			cmdargs[3].cmd = DTV_INVERSION; cmdargs[3].u.data = inversion;
+			cmdargs[4].cmd = DTV_TUNE;
+			cmdseq.num = 5;
+			cmdseq.props = cmdargs;
 			fprintf(stderr,"tuning ATSC to %lu\n", freq);
-			feparams.frequency=freq;
-			feparams.u.vsb.modulation = chan->tp.modulation;
 			fprintf(stderr,"inv:%d mod:%d\n", chan->tp.inversion, chan->tp.modulation );
 			break;
 		}
 	}
-	if ( chan->tp.inversion==INVERSION_AUTO ) {
-		if ( fe_info.caps & FE_CAN_INVERSION_AUTO )
-			feparams.inversion=chan->tp.inversion;
-		else {
-			fprintf(stderr,"Can NOT inversion_auto\n");
-			feparams.inversion=INVERSION_OFF;
-		}
-	}
-	else
-		feparams.inversion=chan->tp.inversion;
 
-	if ( rotorMove )
-		loop = 2;
-
-	while ( loop>-1 ) {
-		if (ioctl(fdFrontend,FE_SET_FRONTEND,&feparams) < 0) {
-			perror("ERROR tuning \n");
+	if ( rotorMove ) {
+		if ( ioctl( fdFrontend, FE_SET_PROPERTY, &cmdseq )<0 ) {
+			perror("ERROR tuning\n");
 			closeFe();
 			return false;
 		}
-		for ( i=0; i<(dvbDevice->tuningTimeout/100); i++ ) {
+		moveRotor( lnbPos, chan, hiband, dvr );
+		loop = 2;
+	}
+
+	while ( loop>-1 ) {
+		if ( ioctl( fdFrontend, FE_SET_PROPERTY, &cmdseq )<0 ) {
+			perror("ERROR tuning\n");
+			closeFe();
+			return false;
+		}
+		QTime lockTime = QTime::currentTime();
+		do {
 			usleep( 100000 );
 			fprintf( stderr, "." );
 			if ( ioctl( fdFrontend, FE_READ_STATUS, &status )==-1 ) {
@@ -440,7 +526,7 @@ bool DvbStream::tuneDvb( ChannelDesc *chan, bool dvr )
 				loop = 0;
 				break;
 			}
-		}
+		} while ( lockTime.msecsTo( QTime::currentTime() )<=dvbDevice->tuningTimeout );
 		fprintf(stderr,"\n");
 		--loop;
 	}
@@ -450,6 +536,8 @@ bool DvbStream::tuneDvb( ChannelDesc *chan, bool dvr )
 		closeFe();
 		return false;
 	}
+
+	fprintf( stderr, "Tuning time = %d ms\n", t1.msecsTo( QTime::currentTime() ) );
 
 	if ( rotorMove )
 		dvbDevice->lnb[lnbPos].currentSource = chan->tp.source;
@@ -496,6 +584,23 @@ int DvbStream::setDiseqc( int switchPos, ChannelDesc *chan, int hiband, int &rot
 	int i;
 	int voltage18 = ( (chan->tp.pol=='H')||(chan->tp.pol=='h') );
 	int ci = 4 * switchPos + 2 * hiband + (voltage18 ? 1 : 0);
+	bool secMini = false;
+	bool hasRotor = false;
+	bool hasSwitch = true;
+	
+	if ( dvbDevice->numLnb<2 )
+		hasSwitch = false;
+		
+	if ( dvbDevice->lnb[switchPos].rotorType!=0 && dvbDevice->lnb[switchPos].rotorType!=3 )
+		hasRotor = true;
+		
+	if ( dvbDevice->numLnb==2 && dvbDevice->secMini )
+		secMini = true;
+		
+	if ( dvbDevice->secTwice )
+		diseqcTwice = 2;
+	else
+		diseqcTwice = 1;
 
 	fprintf( stderr, "DiSEqC: switch pos %i, %sV, %sband (index %d)\n", switchPos, voltage18 ? "18" : "13", hiband ? "hi" : "lo", ci );
 	if ( ci < 0 || ci >= (int)(sizeof(switchCmd)/sizeof(struct dvb_diseqc_master_cmd)) )
@@ -507,85 +612,108 @@ int DvbStream::setDiseqc( int switchPos, ChannelDesc *chan, int hiband, int &rot
 	if ( ioctl(fdFrontend, FE_SET_VOLTAGE, ci%2 ? SEC_VOLTAGE_18 : SEC_VOLTAGE_13) )
 		perror("FE_SET_VOLTAGE failed");
 
-	fprintf( stderr, "DiSEqC: %02x %02x %02x %02x %02x %02x\n", switchCmd[ci].msg[0], switchCmd[ci].msg[1], switchCmd[ci].msg[2], switchCmd[ci].msg[3], switchCmd[ci].msg[4], switchCmd[ci].msg[5] );
-	for ( i=0; i<2; ++i ) {
+	if ( hasSwitch ) {
+		if ( !secMini ) {
+			fprintf( stderr, "DiSEqC: %02x %02x %02x %02x %02x %02x\n", switchCmd[ci].msg[0], switchCmd[ci].msg[1], switchCmd[ci].msg[2], switchCmd[ci].msg[3], switchCmd[ci].msg[4], 	switchCmd[ci].msg[5] );
+			for ( i=0; i<diseqcTwice; ++i ) {
+				usleep(15*1000);
+				if ( ioctl(fdFrontend, FE_DISEQC_SEND_MASTER_CMD, &switchCmd[ci]) )
+					perror("FE_DISEQC_SEND_MASTER_CMD failed");
+			}
+		}
+		else {
+			fprintf( stderr, "DiSEqC: mini_diseqc\n" );
+			for ( i=0; i<diseqcTwice; ++i ) {
+				usleep(15*1000);
+				if ( ioctl(fdFrontend, FE_DISEQC_SEND_BURST, (ci/4)%2 ? SEC_MINI_B : SEC_MINI_A) )
+					perror("FE_DISEQC_SEND_BURST failed");
+			}
+		}
+	}
+
+	if ( hasRotor && chan->tp.source!=dvbDevice->lnb[switchPos].currentSource ) {
+		rotor = 1;
+		return 0;
+	}
+
+	if ( (ci/2)%2 ) {
 		usleep(15*1000);
-		if ( ioctl(fdFrontend, FE_DISEQC_SEND_MASTER_CMD, &switchCmd[ci]) )
-			perror("FE_DISEQC_SEND_MASTER_CMD failed");
+		if ( ioctl(fdFrontend, FE_SET_TONE, SEC_TONE_ON) )
+			perror("FE_SET_TONE failed");
 	}
-
-	QString msg;
-	if ( dvbDevice->lnb[switchPos].rotorType!=0 && chan->tp.source!=dvbDevice->lnb[switchPos].currentSource ) {
-		int i, index=-1;
-		double angle=0.0, oldAngle=0.0;
-		fprintf( stderr, "Driving rotor to %s\n", chan->tp.source.ascii() );
-		for ( i=0; i<(int)dvbDevice->lnb[switchPos].source.count(); i++ ) {
-			if ( dvbDevice->lnb[switchPos].source[i]==chan->tp.source ) {
-				index = i;
-				break;
-			}
-		}
-		angle = getSourceAngle( chan->tp.source );
-		if ( dvbDevice->lnb[switchPos].rotorType==1 ) {
-			fprintf( stderr, "Rotor: gotoX=%f\n", angle );
-			gotoX( angle );
-		}
-		else {
-			int pos = dvbDevice->lnb[switchPos].position[index];
-			fprintf( stderr, "Rotor: gotoN=%d\n", pos );
-			rotorCommand( 9, pos );
-		}
-		if ( dvbDevice->lnb[switchPos].currentSource.isEmpty() ) {
-			rotor = 10;
-			msg =  i18n("Moving rotor from unknown position...");
-		}
-		else {
-			oldAngle = getSourceAngle( dvbDevice->lnb[switchPos].currentSource );
-			fprintf( stderr, "old rotor pos: %f °\n", oldAngle );
-			fprintf( stderr, "new rotor pos: %f °\n", angle );
-			angle = fabs(angle-oldAngle);
-			fprintf( stderr, "Rotation angle: %f °\n", angle );
-			if ( voltage18 )
-				rotor = (int)(angle*dvbDevice->lnb[switchPos].speed18v)+1;
-			else
-				rotor = (int)(angle*dvbDevice->lnb[switchPos].speed13v)+1;
-			 msg = i18n("Moving rotor...");
-		}
-		fprintf( stderr, "Rotation time: %d sec.\n", rotor );
-	}
-
-	if ( rotor ) {
-		int j;
-		if ( !dvr ) {
-			for ( j=0; j<(rotor*2); j++ ) {
-				usleep( 500000 );
-			}
-		}
-		else {
-			QProgressDialog progress( msg, i18n("Cancel"), rotor*2, 0, "progress", true );
-			for ( j=0; j<(rotor*2); j++ ) {
-				progress.setProgress( j );
-				qApp->processEvents();
-				if ( progress.wasCanceled() )
-					break;
-				usleep( 500000 );
-			}
-			progress.setProgress( rotor*2 );
-			qApp->processEvents();
-		}
-	}
-
-	for ( i=0; i<2; ++i ) {
-		usleep(15*1000);
-		if ( ioctl(fdFrontend, FE_DISEQC_SEND_BURST, (ci/4)%2 ? SEC_MINI_B : SEC_MINI_A) )
-			perror("FE_DISEQC_SEND_BURST failed");
-	}
-
-	usleep(15*1000);
-	if ( ioctl(fdFrontend, FE_SET_TONE, (ci/2)%2 ? SEC_TONE_ON : SEC_TONE_OFF) )
-		perror("FE_SET_TONE failed");
 
 	return 0;
+}
+
+
+
+void DvbStream::moveRotor( int switchPos, ChannelDesc *chan, int hiband, bool dvr )
+{
+	int i, j, index=-1;
+	double angle=0.0, oldAngle=0.0;
+	int rotor=0;
+	int voltage18 = ( (chan->tp.pol=='H')||(chan->tp.pol=='h') );
+	int ci = 4 * switchPos + 2 * hiband + (voltage18 ? 1 : 0);
+	QString msg;
+
+	fprintf( stderr, "Driving rotor to %s\n", chan->tp.source.ascii() );
+	for ( i=0; i<(int)dvbDevice->lnb[switchPos].source.count(); i++ ) {
+		if ( dvbDevice->lnb[switchPos].source[i]==chan->tp.source ) {
+			index = i;
+			break;
+		}
+	}
+	angle = getSourceAngle( chan->tp.source );
+	if ( dvbDevice->lnb[switchPos].rotorType==1 ) {
+		fprintf( stderr, "Rotor: gotoX=%f\n", angle );
+		gotoX( angle );
+	}
+	else {
+		int pos = dvbDevice->lnb[switchPos].position[index];
+		fprintf( stderr, "Rotor: gotoN=%d\n", pos );
+		rotorCommand( 9, pos );
+	}
+	if ( dvbDevice->lnb[switchPos].currentSource.isEmpty() ) {
+		rotor = 10;
+		msg =  i18n("Moving rotor from unknown position...");
+	}
+	else {
+		oldAngle = getSourceAngle( dvbDevice->lnb[switchPos].currentSource );
+		fprintf( stderr, "old rotor pos: %f °\n", oldAngle );
+		fprintf( stderr, "new rotor pos: %f °\n", angle );
+		angle = fabs(angle-oldAngle);
+		fprintf( stderr, "Rotation angle: %f °\n", angle );
+		if ( voltage18 )
+			rotor = (int)(angle*dvbDevice->lnb[switchPos].speed18v)+1;
+		else
+			rotor = (int)(angle*dvbDevice->lnb[switchPos].speed13v)+1;
+		 msg = i18n("Moving rotor...");
+	}
+	fprintf( stderr, "Rotation time: %d sec.\n", rotor );
+	
+	if ( !dvr ) {
+		for ( j=0; j<(rotor*2); j++ ) {
+			usleep( 500000 );
+		}
+	}
+	else {
+		QProgressDialog progress( msg, i18n("Cancel"), rotor*2, 0, "progress", true );
+		for ( j=0; j<(rotor*2); j++ ) {
+			progress.setProgress( j );
+			qApp->processEvents();
+			if ( progress.wasCanceled() )
+				break;
+			usleep( 500000 );
+		}
+		progress.setProgress( rotor*2 );
+		qApp->processEvents();
+	}
+
+	if ( (ci/2)%2 ) {
+		usleep(15*1000);
+		if ( ioctl(fdFrontend, FE_SET_TONE, SEC_TONE_ON) )
+			perror("FE_SET_TONE failed");
+	}
 }
 
 
@@ -681,7 +809,7 @@ void DvbStream::rotorCommand( int cmd, int n1, int n2, int n3 )
 	};
 
 	int i;
-	for ( i=0; i<2; ++i ) {
+	for ( i=0; i<diseqcTwice; ++i ) {
 		usleep(15*1000);
 		if ( ioctl( fdFrontend, FE_DISEQC_SEND_MASTER_CMD, &cmds[cmd] ) )
 			perror("Rotor : FE_DISEQC_SEND_MASTER_CMD failed");
@@ -803,28 +931,33 @@ bool DvbStream::hasVideo()
 
 void DvbStream::run()
 {
-	unsigned char buf[188];
+	int READSIZE = 188*20;
+	int BUFSIZE = 188*100;
+	int WSIZE = 188*64;
+	unsigned char buf[READSIZE];
+	unsigned char thBuf[BUFSIZE];
 	int n, i, thWrite=0;
-	int WSIZE=188*8;
 	DVBout *o=0;
 
 	signal( SIGPIPE, SIG_IGN );
 
 	while ( isRunning ) {
 		if ( poll( &pfd, 1, 100 ) ) {
-			n = read( fdDvr, buf, 188 );
-			if ( n==188 ) {
+			n = read( fdDvr, buf, READSIZE );
+			if ( n && !(n%188) ) {
+				//fprintf( stderr, "DVR0: read : %d\n", n );
 				memcpy( thBuf+thWrite, buf, n );
 				thWrite+=n;
-				if ( thWrite==WSIZE ) {
+				if ( thWrite>=WSIZE ) {
 					for ( i=0; i<(int)out.count(); i++ )
-						out.at(i)->process( thBuf, WSIZE );
+						out.at(i)->process( thBuf, thWrite );
 					thWrite = 0;
 				}
 			}
+			else
+				fprintf( stderr, "DVR0: read failed : %d\n", n );
+			    
 		}
-		else
-			usleep(1000);
 
 		if ( waitPause>0 ) {
 			o = 0;
@@ -917,19 +1050,11 @@ void DvbStream::recordEnded( DVBout *o, RecTimer* t, bool kill )
 
 	if ( kill ) {
 		removePids( o );
+		if ( cam )
+			cam->stopService( &(o->channel) );
 		removeOut( o );
 		if ( out.count()==0 )
 			stop();
-		else if ( cam ) {
-			for ( i=0; i<(int)out.count(); i++ ) {
-				if ( out.at(i)->channel.fta ) {
-					i=-1;
-					break;
-				}
-			}
-			if ( i!=-1 )
-				cam->stop();
-		}
 	}
 	recordingState();
 	if ( t )
@@ -986,6 +1111,8 @@ void DvbStream::stopBroadcast()
 	}
 	for ( i=0; i<(int)p.count(); i++ ) {
 		removePids( p.at(i) );
+		if ( cam )
+			cam->stopService( &(p.at(i)->channel) );
 		removeOut( p.at(i) );
 	}
 	if ( out.count()==0 )
@@ -1002,7 +1129,7 @@ int DvbStream::canStartBroadcast( bool &live, ChannelDesc *chan )
 	for ( i=0; i<(int)out.count(); i++ ) {
 		if ( (chan->tp!=out.at(i)->channel.tp) && out.at(i)->hasRec() )
 			return ErrIsRecording;
-		if ( cam && out.at(i)->hasRec() && out.at(i)->channel.fta && chan->fta && out.at(i)->channel.sid!=chan->sid )
+		if ( chan->fta && cam && !cam->canPlay( chan ) )
 			return ErrCamUsed;
 		if ( out.at(i)->hasLive() && chan->tp!=out.at(i)->channel.tp )
 			live = true;
@@ -1070,6 +1197,8 @@ bool DvbStream::startBroadcast( QPtrList<ChannelDesc> *list, Ts2Rtp *rtp )
 			else {
 				broadcastList.append( new ChannelDesc( *list->at(i) ) );
 				no++;
+				if ( list->at(i)->fta && cam )
+					cam->startService( list->at(i) );
 			}
 		}
 	}
@@ -1102,14 +1231,10 @@ int DvbStream::canStartTimer( bool &live, ChannelDesc *chan )
 			return ErrIsRecording;
 		if ( (o->channel.name==chan->name) && o->hasRec() )
 			return ErrIsRecording;
-		if ( (chan->tp==o->channel.tp) && o->hasRec() ) {
-			if ( chan->fta && cam && o->channel.fta )
-				return ErrCamUsed;
-		}
+		if ( chan->fta && cam && !cam->canPlay( chan ) )
+			return ErrCamUsed;
 		if ( o->hasLive() ) {
 			if ( chan->tp!=o->channel.tp )
-				live = true;
-			else if ( cam && chan->fta && o->channel.fta )
 				live = true;
 		}
 	}
@@ -1194,8 +1319,8 @@ bool DvbStream::startTimer( ChannelDesc *chan, QString path, int maxsize, RecTim
 	}
 
 	fprintf(stderr,"NOUT: %d\n", out.count() );
-	if ( chan->fta && cam && ( ((cam->running() && chan->sid!=cam->serviceId()) || !cam->running()) ) )
-		cam->restart( chan->sid );
+	if ( chan->fta && cam )
+		cam->startService( chan );
 
 	startReading();
 
@@ -1205,7 +1330,7 @@ bool DvbStream::startTimer( ChannelDesc *chan, QString path, int maxsize, RecTim
 
 
 
-int DvbStream::goLive( ChannelDesc *chan, const QString &pipeName )
+int DvbStream::goLive( ChannelDesc *chan, const QString &pipeName, int ringBufSize )
 {
 	int i;
 	bool stop=false;
@@ -1216,10 +1341,8 @@ int DvbStream::goLive( ChannelDesc *chan, const QString &pipeName )
 			return ErrIsRecording;
 		if ( (chan->tp!=out.at(i)->channel.tp) && out.at(i)->hasBroadcast() )
 			return ErrIsBroadcasting;
-		if ( (chan->tp==out.at(i)->channel.tp) && (out.at(i)->hasBroadcast() || out.at(i)->hasRec())) {
-			if ( chan->fta && cam && cam->running() && (cam->serviceId()!=chan->sid) )
-				return ErrCamUsed;
-		}
+		if ( chan->fta && cam && !cam->canPlay( chan ) )
+			return ErrCamUsed;
 		if ( out.at(i)->channel.name==chan->name )
 			o = out.at(i);
 	}
@@ -1259,11 +1382,11 @@ int DvbStream::goLive( ChannelDesc *chan, const QString &pipeName )
 	else
 		i = 0;
 
-	o->goLive( pipeName );
+	o->goLive( pipeName, ringBufSize );
 	fprintf(stderr,"NOUT: %d\n", out.count() );
 
-	if ( chan->fta && cam && !cam->running() )
-		cam->restart( chan->sid );
+	if ( chan->fta && cam  )
+		cam->startService( chan );
 	startReading();
 
 	return i;
@@ -1307,17 +1430,12 @@ void DvbStream::stopLive( ChannelDesc *chan )
 	}
 	for ( i=0; i<(int)p.count(); i++ ) {
 		removePids( p.at(i) );
+		if ( cam )
+			cam->stopService( &(p.at(i)->channel) );
 		removeOut( p.at(i) );
 	}
 	fprintf(stderr,"Live stopped\n");
-	if ( cam ) {
-		for ( i=0; i<(int)out.count(); i++ ) {
-			if ( out.at(i)->channel.fta )
-				camUsed = true;
-		}
-	}
-	if ( cam && !camUsed )
-		cam->stop();
+
 	if ( out.count()==0 && chan->tp!=currentTransponder )
 		stop();
 }
@@ -1343,8 +1461,6 @@ void DvbStream::stop()
 		wait();
 		fprintf(stderr,"dvbstream::run() terminated\n");
 	}
-	if ( cam )
-		cam->stop();
 	dvbEvents->stop();
 	stopFrontend();
 }
@@ -1381,7 +1497,6 @@ DvbStream::~DvbStream()
 {
 	stop();
 	if ( cam ) {
-		cam->stop();
 		delete cam;
 	}
 	delete dvbEvents;

@@ -2,7 +2,7 @@
     en50221 encoder An implementation for libdvb
     an implementation for the en50221 transport layer
 
-    Copyright (C) 2004, 2005 Manu Abraham (manu@kromtek.com)
+    Copyright (C) 2004, 2005 Manu Abraham <abraham.manu@gmail.com>
     Copyright (C) 2005 Julian Scheel (julian at jusst dot de)
     Copyright (C) 2006 Andrew de Quincey (adq_dvb@lidskialf.net)
 
@@ -25,8 +25,7 @@
 #define __EN50221_APP_UTILS_H__
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 #include <stdlib.h>
@@ -41,30 +40,39 @@ extern "C"
  * would need special code for any private resource anyway.
  */
 struct en50221_app_public_resource_id {
-    uint16_t resource_class;
-    uint16_t resource_type;
-    uint8_t resource_version;
+	uint16_t resource_class;
+	uint16_t resource_type;
+	uint8_t resource_version;
 };
+
+typedef int (*en50221_send_data) (void *arg,
+				  uint16_t session_number,
+				  uint8_t * data,
+				  uint16_t data_length);
+typedef int (*en50221_send_datav) (void *arg,
+				   uint16_t session_number,
+				   struct iovec * vector,
+				   int iov_count);
 
 /**
  * An abstraction away from hardcoded send functions so different layers may be
  * slotted in under the application layer.
  */
 struct en50221_app_send_functions {
-    /**
-     * Argument to pass to these functions.
-     */
-    void *arg;
+	/**
+	 * Argument to pass to these functions.
+	 */
+	void *arg;
 
-    /**
-     * Send data.
-     */
-    int (*send_data)(void *arg, uint16_t session_number, uint8_t *data, uint16_t data_length);
+	/**
+	 * Send data.
+	 */
+	en50221_send_data send_data;
 
-    /**
-     * Send vector data.
-     */
-    int (*send_datav)(void *arg, uint16_t session_number, struct iovec *vector, int iov_count);
+	/**
+	 * Send vector data.
+	 */
+	en50221_send_datav send_datav;
 };
 
 /**
@@ -85,7 +93,8 @@ struct en50221_app_send_functions {
  * @return Pointer to idf on success, or NULL if this is not a public resource.
  */
 struct en50221_app_public_resource_id *
-        en50221_app_decode_public_resource_id(struct en50221_app_public_resource_id *idf, uint32_t resource_id);
+	en50221_app_decode_public_resource_id(struct en50221_app_public_resource_id *idf,
+					      uint32_t resource_id);
 
 /**
  * Encode an en50221_app_public_resource_id structure into a host-endian uint32_t.
@@ -93,13 +102,11 @@ struct en50221_app_public_resource_id *
  * @param idf Structure to encode.
  * @return The encoded value
  */
-static inline uint32_t en50221_app_encode_public_resource_id(struct en50221_app_public_resource_id *idf)
-{
-    return MKRID(idf->resource_class, idf->resource_type, idf->resource_version);
+static inline uint32_t en50221_app_encode_public_resource_id(struct en50221_app_public_resource_id *idf) {
+	return MKRID(idf->resource_class, idf->resource_type, idf->resource_version);
 }
 
 #ifdef __cplusplus
 }
 #endif
-
 #endif

@@ -53,11 +53,12 @@ private:
 	QStringList inversionList();
 	QStringList coderateList();
 	QStringList modulationList();
-	QStringList modulationListAtsc();
 	QStringList transmissionList();
 	QStringList bandwidthList();
 	QStringList hierarchyList();
 	QStringList guardList();
+	QStringList stypeList();
+	QStringList rolloffList();
 
 	ChannelDesc *channel;
 	QPtrList<ChannelDesc> *chandesc;

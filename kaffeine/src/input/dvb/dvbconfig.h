@@ -28,6 +28,7 @@
 #include <qtoolbutton.h>
 #include <qbuttongroup.h>
 #include <qlistview.h>
+#include <qcheckbox.h>
 
 #include <kdialogbase.h>
 #include <kpushbutton.h>
@@ -36,6 +37,8 @@
 #include <kprogress.h>
 
 #include <linux/dvb/frontend.h>
+
+#define MAX_DEVICES 8
 
 using namespace KIO;
 
@@ -66,6 +69,21 @@ signals:
 private:
 	int deviceNumber;
 	int lnbNumber;
+};
+
+
+
+class MCAMButton : public QPushButton
+{
+	Q_OBJECT
+public:
+	MCAMButton( QWidget *parent, int devNum );
+private slots:
+	void isClicked();
+signals:
+	void clicked( int devnum );
+private:
+	int deviceNumber;
 };
 
 
@@ -116,6 +134,12 @@ public:
 	bool canAutoscan;
 	int tuningTimeout;
 	double usalsLatitude, usalsLongitude;
+	bool hasCAM;
+	int camMaxService;
+	int secMini;
+	int secTwice;
+	int priority;
+	int doS2;
 };
 
 
@@ -138,6 +162,7 @@ public:
 
 	DVBconfig( const QString &dvbConf );
 	~DVBconfig();
+	void readFirst();
 	void readConfig();
 	void saveConfig();
 	int readDvbChanOrder();
@@ -168,6 +193,8 @@ public:
 	QValueList<int> splitSizes;
 	QString defaultCharset;
 	double usalsLatitude, usalsLongitude;
+	int probeMfe;
+	int ringBufSize;
 
 private:
 
@@ -183,6 +210,7 @@ private slots:
 
 
 class KaffeineDvbPlugin;
+class DvbPanel;
 
 class DvbConfigDialog : public KDialogBase
 {
@@ -190,34 +218,39 @@ class DvbConfigDialog : public KDialogBase
 
 public:
 
-	DvbConfigDialog( DVBconfig *dc, QWidget *parent, KaffeineDvbPlugin *p );
+	DvbConfigDialog( DvbPanel *pan, DVBconfig *dc, QWidget *parent, KaffeineDvbPlugin *p );
 	~DvbConfigDialog();
 	void setSource( QComboBox *box, QString s );
 
 	QLineEdit *recordDirLe, *shiftDirLe, *broadcastLe, *filenameFormatLe;
 	QSpinBox *beginSpin, *endSpin, *instantDurationSpin, *bportSpin, *sportSpin, *sizeFileSpin;
-	MSpinBox *satNumber[8];
-	QComboBox *sat0[8];
-	QComboBox *sat1[8];
-	QComboBox *sat2[8];
-	QComboBox *sat3[8];
-	MPushButton *src0[8];
-	MPushButton *src1[8];
-	MPushButton *src2[8];
-	MPushButton *src3[8];
-	MComboBox *rotor0[8];
-	MComboBox *rotor1[8];
-	MComboBox *rotor2[8];
-	MComboBox *rotor3[8];
-	MPushButton *lnb0[8];
-	MPushButton *lnb1[8];
-	MPushButton *lnb2[8];
-	MPushButton *lnb3[8];
+	MSpinBox *satNumber[MAX_DEVICES];
+	QCheckBox *secMini[MAX_DEVICES], *secTwice[MAX_DEVICES];
+	QCheckBox *doS2[MAX_DEVICES];
+	QComboBox *sat0[MAX_DEVICES];
+	QComboBox *sat1[MAX_DEVICES];
+	QComboBox *sat2[MAX_DEVICES];
+	QComboBox *sat3[MAX_DEVICES];
+	MPushButton *src0[MAX_DEVICES];
+	MPushButton *src1[MAX_DEVICES];
+	MPushButton *src2[MAX_DEVICES];
+	MPushButton *src3[MAX_DEVICES];
+	MComboBox *rotor0[MAX_DEVICES];
+	MComboBox *rotor1[MAX_DEVICES];
+	MComboBox *rotor2[MAX_DEVICES];
+	MComboBox *rotor3[MAX_DEVICES];
+	MPushButton *lnb0[MAX_DEVICES];
+	MPushButton *lnb1[MAX_DEVICES];
+	MPushButton *lnb2[MAX_DEVICES];
+	MPushButton *lnb3[MAX_DEVICES];
 	KPushButton *updateBtn, *dumpBtn;
 	QToolButton *recordDirBtn, *shiftDirBtn, *helpNameBtn;
 	DVBconfig *dvbConfig;
 	QComboBox *charsetComb;
 	QPtrList<QSpinBox> timeoutSpin;
+	QPtrList<QSpinBox> priority;
+	QCheckBox *probeMfe;
+	QSpinBox *ringBufSize;
 
 private slots:
 

@@ -46,9 +46,9 @@ struct dvb_content_descriptor {
  */
 struct dvb_content_nibble {
   EBIT2(uint8_t content_nibble_level_1	: 4; ,
-	uint8_t content_nibble_level_2	: 4; )
+	uint8_t content_nibble_level_2	: 4; );
   EBIT2(uint8_t user_nibble_1		: 4; ,
-	uint8_t user_nibble_2		: 4; )
+	uint8_t user_nibble_2		: 4; );
 } __ucsi_packed;
 
 /**

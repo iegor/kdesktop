@@ -38,10 +38,10 @@ struct dvb_cable_delivery_descriptor {
 
 	uint32_t frequency;			// BCD, units 100Hz
   EBIT2(uint16_t reserved	: 12; ,
-	uint16_t fec_outer	: 4;  )
+	uint16_t fec_outer	: 4;  );
 	uint8_t modulation;
   EBIT2(uint32_t symbol_rate	: 28; ,		// BCD, units 100Hz
-	uint32_t fec_inner	: 4;  )
+	uint32_t fec_inner	: 4;  );
 } __ucsi_packed;
 
 /**

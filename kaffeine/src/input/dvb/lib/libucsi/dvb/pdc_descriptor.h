@@ -37,7 +37,7 @@ struct dvb_pdc_descriptor {
 	struct descriptor d;
 
   EBIT2(uint32_t reserved		: 4; ,
-	uint32_t programme_id_label	:20; )
+	uint32_t programme_id_label	:20; );
 } __ucsi_packed;
 
 /**

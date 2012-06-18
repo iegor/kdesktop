@@ -48,7 +48,7 @@ struct dvb_cell_list_entry {
 	uint16_t cell_longitude;
   EBIT3(uint32_t cell_extend_of_latitude	:12; ,
 	uint32_t cell_extend_of_longitude	:12; ,
-	uint32_t subcell_info_loop_length	: 8; )
+	uint32_t subcell_info_loop_length	: 8; );
 	/* struct dvb_subcell_list_entry subcells[] */
 } __ucsi_packed;
 
@@ -60,7 +60,7 @@ struct dvb_subcell_list_entry {
 	uint16_t subcell_latitude;
 	uint16_t subcell_longitude;
   EBIT2(uint32_t subcell_extend_of_latitude	:12; ,
-	uint32_t subcell_extend_of_longitude	:12; )
+	uint32_t subcell_extend_of_longitude	:12; );
 } __ucsi_packed;
 
 /**
