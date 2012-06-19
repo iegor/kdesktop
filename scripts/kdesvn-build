@@ -1,0 +1,4286 @@
+#!/usr/bin/perl -w
+
+#Pod documentation:
+
+=head1 NAME
+
+=over
+
+=item B<kdesvn-build> - automate the kde svn build process
+
+=back
+
+=head1 SYNOPSIS
+
+=over
+
+=item B<kdesvn-build> I<[options]...> I<[modules]...>
+
+=back
+
+=head1 DESCRIPTION
+
+The B<kdesvn-build> script is used to automate the download, build,
+and install process for KDE (using Subversion).
+
+It is recommended that you first setup a F<.kdesvn-buildrc> file
+in your home directory. Please refer to B<kdesvn-build> help file
+in KDE help for information on how to write F<.kdesvn-buildrc>,
+or consult the sample file which should have been included
+with this program.  If you don't setup a F<.kdesvn-buildrc>, a
+default set of options will be used, and a few modules will be
+built by default.
+
+After setting up F<.kdesvn-buildrc>, you can run this program from
+either the command-line or from cron. It will automatically
+download the modules from Subversion, create the build
+system, and configure and make the modules you tell it to.
+You can use this program to install KDE as well,
+if you are building KDE for a single user. Note that B<kdesvn-build>
+will try to install the modules by default.
+
+If you DO specify a package name, then your settings will still be
+read, but the script will try to build / install the package
+regardless of F<.kdesvn-buildrc>
+
+kdesvn-build reads options in the following order:
+
+=over
+
+=item 1. From the command line.
+
+=item 2. From the file F<kdesvn-buildrc> in the current directory.  Note that
+         the file is not a hidden file.
+
+=item 3. From the file F<~/.kdesvn-buildrc>.
+
+=item 4. From a set of internal options.
+
+=back
+
+This utility is part of the KDE Software Development Kit.
+
+=head1 OPTIONS
+
+=over
+
+=item B<--quiet>,  B<-q>
+
+With this switch kdesvn-build will only output a general overview of the build
+process.  Progress output is still displayed if available.
+
+=item B<--really-quiet>
+
+With this switch only warnings and errors will be output.
+
+=item B<--verbose>,  B<-v>
+
+Be very detailed in what is going on, and what actions kdesvn-build is taking.
+Only B<--debug> is more detailed.
+
+=item B<--no-svn>
+
+Skip contacting the Subversion server.
+
+=item B<--no-build>
+
+Skip the build process.
+
+=item B<--no-install>
+
+Don't automatically install after build.
+
+=item B<--svn-only>
+
+Update from Subversion only (Identical to B<--no-build> at this point).
+
+=item B<--build-only>
+
+Build only, do not perform updates or install.
+
+=item B<--rc-file=E<lt>filenameE<gt>>
+
+Read configuration from filename instead of default.
+
+=item B<--debug>
+
+Activates debug mode.
+
+=item B<--pretend>,  B<-p>
+
+Do not contact the Subversion server, run make, or create / delete files
+and directories. Instead, output what the script would have done.
+
+=item B<--nice=E<lt>valueE<gt>>
+
+Allow you to run the script with a lower priority. The default value is
+10 (lower priority by 10 steps).
+
+=item B<--prefix=/kde/path>
+
+This option is a shortcut to change the setting for kdedir from the
+command line. It implies B<--reconfigure>.
+
+=item B<--color>
+
+Add color to the output.
+
+=item B<--no-color>
+
+Remove color from the output.
+
+=item B<--resume>
+
+Tries to resume the make process from the last time the script was run,
+without performing the Subversion update.
+
+=item B<--resume-from=E<lt>pkgE<gt>>
+
+Starts building from the given package, without performing the Subversion
+update.
+
+=item B<--revision=E<lt>revE<gt>>, B<-r=E<lt>revE<gt>>
+
+Forces update to revision <rev> from Subversion.
+
+=item B<--refresh-build>
+
+Start the build from scratch.  This means that the build directory for the
+module B<will be deleted> before make -f Makefile.cvs is run again.  You can
+use B<--recreate-configure> to do the same thing without deleting the module
+build directory.
+
+=item B<--reconfigure>
+
+Run configure again, but don't clean the build directory or re-run
+make -f Makefile.cvs.
+
+=item B<--recreate-configure>
+
+Run make -f Makefile.cvs again to redo the configure script.  The build
+directory is not deleted.
+
+=item B<--no-rebuild-on-fail>
+
+Do not try to rebuild a module from scratch if it failed building.  Normally
+kdesvn-build will try progressively harder to build the module before giving
+up.
+
+=item B<--build-system-only>
+
+Create the build infrastructure, but don't actually perform the build.
+
+=item B<--install>
+
+Try to install the packages passed on the command line, or all packages in
+F<~/.kdesvn-buildrc> that don't have manual-build set. Building and
+Subversion updates are not performed.
+
+=item B<--E<lt>optionE<gt>=>
+
+Any unrecognized options are added to the global configuration, overriding
+any value that may exist.
+
+For example, B<--svn-server=http://path.to.svn.server/> would change the
+setting of the global B<svn-server> option for this instance of kdesvn-build.
+
+=item B<--E<lt>moduleE<gt>,E<lt>optionE<gt>=>
+
+Likewise, allow you to override any module specific option from the
+command line.
+
+Example: B<--kdelibs,use-unsermake=false> would disable unsermake for the
+kdelibs module.
+
+=item B<--help>
+
+Display the help and exit.
+
+=item B<--author>
+
+Output the author(s)'s name.
+
+=item B<--version>
+
+Output the program version.
+
+=back
+
+=head1 EXAMPLES
+
+=over
+
+=item B<kdesvn-build>
+
+=item B<kdesvn-build> I<--no-svn kdelibs>
+
+=item B<kdesvn-bulid> I<--refresh-build> I<kdebase>
+
+=back
+
+=head1 BUGS
+
+Since kdesvn-build doesn't generally save information related to the build and
+prior settings, you may need to manually re-run kdesvn-build with a flag like
+B<--recreate-configure> if you change some options, including B<use-unsermake>.
+
+Please use KDE bugzilla at http://bugs.kde.org for information and
+reporting bugs.
+
+=head1 SEE ALSO
+
+You can find additional information at B<kdesvn-build> home page,
+F<http://kdesvn-build.kde.org/>, or using kdesvn-build
+docbook documentation, using the help kioslave, F<help:/kdesvn-build>.
+
+=head1 AUTHOR
+
+Michael Pyne <michael.pyne@kdemail.net>
+
+Man page written by:
+Carlos Leonhard Woelz <carlos.woelz@kdemail.net>
+
+=cut
+
+# Script to handle building KDE from Subversion.  All of the configuration is
+# stored in the file ~/.kdesvn-buildrc.
+#
+# Please also see the documentation that should be included with this program,
+# in doc.html
+#
+# Copyright (c) 2003, 2004, 2005 Michael Pyne. <michael.pyne@kdemail.net>
+# Home page: http://kdesvn-build.kde.org/
+#
+# You may use, alter, and redistribute this software under the terms
+# of the GNU General Public License, v2 (or any later version).
+#
+# TODO: It would be better to have lockfiles in each directory as it's
+#       being updated, instead of having one big lock for the script.
+
+use strict;
+use warnings;
+use Fcntl;    # For sysopen constants
+use POSIX 'strftime';
+use File::Find; # For our lndir reimplementation.
+use Errno qw(:POSIX);
+
+# Debugging level constants.
+use constant {
+    DEBUG   => 0,
+    WHISPER => 1,
+    INFO    => 2,
+    NOTE    => 3,
+    WARNING => 4,
+    ERROR   => 5,
+};
+
+# Some global variables
+# Remember kids, global variables are evil!  I only get to do this
+# because I'm an adult and you're not! :-P
+# Options that start with a # will replace values with the same name,
+# if the option is actually set.
+my %package_opts = (
+  'global' => {
+    "apidox"              => "",
+    "apply-qt-patches"    => "",
+    "binpath"             => "/bin:/usr/bin:/usr/X11R6/bin:/usr/local/bin",
+    "branch"              => "",
+    "build-dir"           => "build",
+    "build-system-only"   => "",
+    "checkout-only"       => "",
+    "configure-flags"     => "--enable-debug",
+    "colorful-output"     => 1, # Use color by default.
+    "cxxflags"            => "-pipe",
+    "debug"               => "",
+    "debug-level"         => INFO,
+    "dest-dir"            => '${MODULE}', # single quotes used on purpose!
+    "disable-agent-check" => 0,   # If true we don't check on ssh-agent
+    "do-not-compile"      => "",
+    "email-address"       => "",
+    "email-on-compile-error" => "",
+    "install-after-build" => "1", # Default to true
+    "inst-apps"           => "",
+    "kdedir"              => "$ENV{HOME}/kde",
+    "libpath"             => "",
+    "log-dir"             => "log",
+    "make-install-prefix" => "",  # Some people need sudo
+    "make-options"        => "-j2",
+    "manual-build"        => "",
+    "manual-update"       => "",
+    "module-base-path"    => "",  # Used for tags and branches
+    "niceness"            => "10",
+    "no-svn"              => "",
+    "no-rebuild-on-fail"  => "",
+    "override-url"        => "",
+    "prefix"              => "", # Override installation prefix.
+    "pretend"             => "",
+    "qtdir"               => "$ENV{HOME}/kdesvn/build/qt-copy",
+    "reconfigure"         => "",
+    "recreate-configure"  => "",
+    "refresh-build"       => "",
+    "remove-after-install"=> "none", # { none, builddir, all }
+    "revision"            => 0,
+    "set-env"             => { }, # Hash of environment vars to set
+    "source-dir"          => "$ENV{HOME}/kdesvn",
+    "stop-on-failure"     => "",
+    "svn-server"          => "svn://anonsvn.kde.org/home/kde",
+    "tag"                 => "",
+    "unsermake-options"   => "--compile-jobs=2 -p",
+    "unsermake-path"      => "unsermake",
+    "use-unsermake"       => "1", # Default to true now, we may need a blacklist
+  }
+);
+
+# This is a hash since Perl doesn't have a "in" keyword.
+my %ignore_list;  # List of packages to refuse to include in the build list.
+
+# update and build are lists since they support an ordering, which can't be
+# guaranteed using a hash unless I want a custom sort function (which isn't
+# necessarily a horrible way to go, I just chose to do it this way.
+my @update_list;  # List of modules to update/checkout.
+my @build_list;   # List of modules to build.
+
+# Dictionary of lists of failed modules, keyed by the name of the operation
+# that caused the failure (e.g. build).  Note that output_failed_module_lists
+# uses the key name to display text to the user so it should describe the
+# actual category of failure.  You should also add the key name to
+# output_failed_module_lists since it uses its own sorted list.
+my @fail_display_order = qw/build update install/;
+my %fail_lists = (
+    'build'   => [ ],
+    'install' => [ ],
+    'update'  => [ ],
+);
+
+my $install_flag; # True if we're in install mode.
+my $BUILD_ID;     # Used by logging subsystem to create a unique log dir.
+my $LOG_DATE;     # Used by logging subsystem to create logs in same dir.
+my @rcfiles = ("./kdesvn-buildrc", "$ENV{HOME}/.kdesvn-buildrc");
+my $rcfile; # the file that was used; set by read_options
+
+# Colors
+my ($RED, $GREEN, $YELLOW, $NORMAL, $BOLD) = ("") x 5;
+
+# Subroutine definitions
+
+# I swear Perl must be the only language where the docs tell you to use a
+# constant that you'll never find exported without some module from CPAN.
+use constant PRIO_PROCESS => 0;
+
+# I'm lazy and would rather write in shorthand for the colors.  This sub
+# allows me to do so. Put it right up top to stifle Perl warnings.
+sub clr($)
+{
+    my $str = shift;
+
+    $str =~ s/g\[/$GREEN/g;
+    $str =~ s/]/$NORMAL/g;
+    $str =~ s/y\[/$YELLOW/g;
+    $str =~ s/r\[/$RED/g;
+    $str =~ s/b\[/$BOLD/g;
+
+    return $str;
+}
+
+# Subroutine which returns true if pretend mode is on.  Uses the prototype
+# feature so you don't need the parentheses to use it.
+sub pretending()
+{
+    return get_option('global', 'pretend');
+}
+
+# Subroutine which returns true if debug mode is on.  Uses the prototype
+# feature so you don't need the parentheses to use it.
+sub debugging()
+{
+    return get_option('global', 'debug-level') <= DEBUG;
+}
+
+# The next few subroutines are used to print output at different importance
+# levels to allow for e.g. quiet switches, or verbose switches.  The levels are,
+# from least to most important:
+# debug, whisper, info (default), note (quiet), warning (very-quiet), and error.
+# 
+# You can also use the pretend output subroutine, which is emitted if, and only
+# if pretend mode is enabled.
+#
+# clr is automatically run on the input for all of those functions.
+# Also, the terminal color is automatically reset to normal as well so you don't
+# need to manually add the ] to reset.
+
+# Subroutine used to actually display the data, calls clr on each entry first.
+sub print_clr(@)
+{
+    print clr $_ foreach (@_);
+    print clr "]\n";
+}
+
+sub debug(@)
+{
+    print_clr @_ if debugging;
+}
+
+sub whisper(@)
+{
+    print_clr @_ if get_option('global', 'debug-level') <= WHISPER;
+}
+
+sub info(@)
+{
+    print_clr @_ if get_option('global', 'debug-level') <= INFO;
+}
+
+sub note(@)
+{
+    print_clr @_ if get_option('global', 'debug-level') <= NOTE;
+}
+
+sub warning(@)
+{
+    print_clr @_ if get_option('global', 'debug-level') <= WARNING;
+}
+
+# This sub has the additional side effect of printing the errno value if it
+# is set.
+sub error(@)
+{
+    print STDERR (clr $_) foreach (@_);
+    print "  $!\n" if $!;
+}
+
+sub pretend(@)
+{
+    print_clr @_ if pretending;
+}
+
+# Subroutine to handle removing the lock file upon receiving a signal
+sub quit_handler
+{
+    note "Signal received, terminating.";
+    finish(5);
+}
+
+# Subroutine that returns the path of a file used to output the results of the
+# build process.  It accepts one parameter, which changes the kind of file
+# returned.  If the parameter is set to 'existing', then the file returned is
+# the latest file that exists, or undef if no log has been created yet.  This
+# is useful for the --resume mode.  All other values will return the name if a
+# file that does not yet exist.
+#
+# All files will be stored in the log directory.
+sub get_output_file
+{
+    my $logdir;
+    my $mode;
+    $mode = shift or $mode = '';
+    my $fname;
+
+    debug "get_output_file in mode $mode";
+
+    if ($mode eq 'existing')
+    {
+        # There's two ways of finding the old file.  Searching backwards with
+        # valid combinations of the date and build id, or just reading in the
+        # name from a known file or location.  Since the latter option is much
+        # easier, that's what I'm going with.  Note that this depends on the
+        # latest symlink being in place.
+        $logdir = get_subdir_path ('global', 'log-dir');
+        $fname = "$logdir/latest/build-status";
+
+        debug "Old build status file is $fname";
+
+        # The _ at the end returns the cached file stats to avoid multiple
+        # stat() calls.
+        return "" if not -e $fname or not -r _;
+
+        return $fname;
+    }
+
+    # This call must follow the test above, because it changes the 'latest'
+    # symlink leading to failures later.
+    $logdir = get_log_dir('global');
+
+    $fname = "$logdir/build-status";
+    debug "Build status file is $fname";
+
+    return $fname;
+}
+
+# Subroutine to retrieve a subdirecty path for the given module.
+# First parameter is the name of the module, and the second
+# parameter is the option key (e.g. build-dir or log-dir).
+sub get_subdir_path
+{
+    my $module = shift;
+    my $option = shift;
+    my $dir = get_option($module, $option);
+
+    # If build-dir starts with a slash, it is an absolute path.
+    return $dir if $dir =~ /^\//;
+
+    # If it starts with a tilde, expand it out.
+    if ($dir =~ /^~/)
+    {
+        $dir =~ s/^~/$ENV{'HOME'}/;
+    }
+    else
+    {
+        # Relative directory, tack it on to the end of $kdesvn.
+        my $kdesvndir = get_kdesvn_dir();
+        $dir = "$kdesvndir/$dir";
+    }
+
+    return $dir;
+}
+
+# Subroutine to return the name of the destination directory for the checkout
+# and build routines.  Based on the dest-dir option.  The return value will be
+# relative to the src/build dir.  The user may use the '$MODULE' or '${MODULE}'
+# sequences, which will be replaced by the name of the module in question.
+#
+# The first parameter should be the module name.
+sub get_dest_dir
+{
+    my $module = shift;
+    my $dest_dir = get_option($module, 'dest-dir');
+
+    $dest_dir =~ s/(\${MODULE})|(\$MODULE\b)/$module/g;
+
+    return $dest_dir;
+}
+
+# Convienience subroutine to get the source root dir.
+sub get_kdesvn_dir
+{
+    return get_option ('global', 'source-dir');
+}
+
+# Function to work around a Perl language limitation.
+# First parameter is the list to search.
+# Second parameter is the value to search for.
+# Returns true if the value is in the list
+sub list_has(\@$)
+{
+    my ($list_ref, $value) = @_;
+    return scalar grep ($_ eq $value, @{$list_ref});
+}
+
+# Subroutine to return the branch prefix. i.e. the part before the branch name
+# and module name.
+#
+# The first parameter is the module in question.
+# The second parameter should be 'branches' if we're dealing with a branch or
+#     'tags' if we're dealing with a tag.
+#
+# Ex: 'kdelibs'  => 'branches/KDE'
+#     'kdevelop' => 'branches/kdevelop'
+sub branch_prefix
+{
+    my $module = shift;
+    my $type = shift;
+
+    # These modules seem to have their own subdir in /tags.
+    my @tag_components = qw/arts koffice amarok kst qt taglib/;
+
+    # The map call adds the kde prefix to the module names because I don't feel
+    # like typing them all in. kdevelop and konstruct are special cases.
+    my @kde_module_list = ((map {'kde' . $_} qw/-i18n -common accessibility
+            addons admin artwork base bindings edu games graphics libs
+            multimedia network nonbeta pim sdk toys utils webdev/), 'kdevelop',
+            'konstruct');
+
+    # KDE proper modules seem to use this pattern.
+    return "$type/KDE" if list_has(@kde_module_list, $module);
+
+    # If we doing a tag just return 'tags' because the next part is the actual
+    # tag name, which is added by the caller, unless the module has its own
+    # subdirectory in /tags.
+    return "$type" if $type eq 'tags' and not list_has(@tag_components, $module);
+
+    # Everything else.
+    return "$type/$module";
+}
+
+# Subroutine to return a module URL for a module using the 'branch' option.
+# First parameter is the module in question.
+# Second parameter is the type ('tags' or 'branches')
+sub handle_branch_tag_option
+{
+    my ($module, $type) = @_;
+    my $svn_server = get_option($module, 'svn-server');
+    my $branch = branch_prefix($module, $type);
+    my $branchname = get_option($module, 'tag');
+
+    if($type eq 'branches')
+    {
+        $branchname = get_option($module, 'branch');
+    }
+
+    # Remove trailing slashes.
+    $svn_server =~ s/\/*$//;
+
+    return "$svn_server/$branch/$branchname/$module";
+}
+
+# Subroutine to return the appropriate SVN URL for a given module, based on
+# the user settings.  For example, 'kdelibs' -> https://svn.kde.org/home/kde/trunk/KDE/kdelibs
+sub svn_module_url
+{
+    my $module = shift;
+    my $svn_server = get_option($module, 'svn-server');
+    my $branch = get_option($module, 'module-base-path');
+
+    # Allow user to override normal processing of the module in a few ways,
+    # to make it easier to still be able to use kdesvn-build even when I
+    # can't be there to manually update every little special case.
+    if(get_option($module, 'override-url'))
+    {
+        return get_option($module, 'override-url');
+    }
+
+    if(get_option($module, 'tag'))
+    {
+        return handle_branch_tag_option($module, 'tags');
+    }
+
+    if(get_option($module, 'branch'))
+    {
+        return handle_branch_tag_option($module, 'branches');
+    }
+    
+    # The following modules are in /trunk, not /trunk/KDE.  There are others,
+    # but there are the important ones.  The hash is associated with the value
+    # 1 so that we can do a boolean test by looking up the module name.
+    my @non_trunk_modules = qw(extragear kdenonbeta kdesupport koffice
+        playground qt-copy valgrind KDE kdereview www l10n);
+
+    my $module_root = $module;
+    $module_root =~ s/\/.*//; # Remove everything after the first slash
+
+    if (not $branch)
+    {
+        $branch = 'trunk/KDE';
+        $branch = 'trunk' if list_has(@non_trunk_modules, $module_root);
+    }
+
+    $branch =~ s/^\/*//; # Eliminate / at beginning of string.
+    $branch =~ s/\/*$//; # Likewise at the end.
+    
+    # Remove trailing slashes.
+    $svn_server =~ s/\/*$//;
+
+    return "$svn_server/$branch/$module";
+}
+
+# Convienience subroutine to return the build directory for a module. Use
+# this instead of get_subdir_path because this special-cases modules for you,
+# such as qt-copy.
+# TODO: From what I hear this hack is no longer necessary.  Investigate this.
+sub get_build_dir
+{
+    my $module = shift;
+
+    # It is the responsibility of the caller to append $module!
+    return get_kdesvn_dir() if ($module eq 'qt-copy') and not get_option('qt-copy', 'use-qt-builddir-hack');
+    return get_subdir_path($module, 'build-dir');
+}
+
+# Subroutine to return a list of the different log directories that are used
+# by the different modules in the script.
+sub get_all_log_directories
+{
+    my @module_list = keys %package_opts;
+    my %log_dict;
+
+    # A hash is used to track directories to avoid duplicate entries.
+    unshift @module_list, "global";
+    $log_dict{get_subdir_path($_, 'log-dir')} = 1 foreach @module_list;
+
+    debug "Log directories are ", join (", ", keys %log_dict);
+    return keys %log_dict;
+}
+
+# Subroutine to determine the build id for this invocation of the script.  The
+# idea of a build id is that we want to be able to run the script more than
+# once in a day and still retain each set of logs.  So if we run the script
+# more than once in a day, we need to increment the build id so we have a
+# unique value.  This subroutine sets the global variable $BUILD_ID and
+# $LOG_DATE for use by the logging subroutines.
+sub setup_logging_subsystem
+{
+    my $min_build_id = "00";
+    my $date = strftime "%F", localtime; # ISO 8601 date
+    my @log_dirs = get_all_log_directories();
+
+    for (@log_dirs)
+    {
+        my $id = "01";
+        $id++ while -e "$_/$date-$id";
+
+        # We need to use a string comparison operator to keep 
+        # the magic in the ++ operator.
+        $min_build_id = $id if $id gt $min_build_id;
+    }
+
+    $LOG_DATE = $date;
+    $BUILD_ID = $min_build_id;
+}
+
+# Convienience subroutine to return the log directory for a module.
+# It also creates the directory and manages the 'latest' symlink.
+#
+# Returns undef on an error, or the name of the directory otherwise.
+sub get_log_dir
+{
+    my $module = shift;
+    my $logbase = get_subdir_path($module, 'log-dir');
+    my $logpath = "$logbase/$LOG_DATE-$BUILD_ID/$module";
+
+    $logpath = "$logbase/$LOG_DATE-$BUILD_ID" if $module eq 'global';
+
+    debug "Log directory for $module is $logpath";
+
+    if (not -e $logpath and not pretending and not super_mkdir($logpath))
+    {
+        error "Unable to create log directory r[$logpath]";
+        return undef;
+    }
+
+    # Add symlink to the directory.
+    # TODO: This probably can result in a few dozen unnecessary calls to
+    # unlink and symlink, fix this.
+    if (not pretending)
+    {
+        unlink("$logbase/latest") if -l "$logbase/latest";
+        symlink("$logbase/$LOG_DATE-$BUILD_ID", "$logbase/latest");
+    }
+
+    return $logpath;
+}
+
+# This function returns true if the given option doesn't make sense with the
+# given module.
+# blacklisted($module, $option)
+sub blacklisted
+{
+    my ($module, $option) = @_;
+
+    # Known to not work.
+    my @unsermake_ban_list = qw/valgrind kde-common qt-copy kdebindings/;
+
+    return list_has(@unsermake_ban_list, $module) if ($option eq 'use-unsermake');
+    return 0;
+}
+
+# This subroutine returns an option value for a given module.  Some
+# globals can't be overridden by a module's choice.  If so, the
+# module's choice will be ignored, and a warning will be issued.
+#
+# Option names are case-sensitive!
+#
+# First parameter: Name of module
+# Second paramenter: Name of option
+sub get_option
+{
+    my $module = shift;
+    my $option = shift;
+    my $global_opts = $package_opts{'global'};
+    my $defaultQtCopyArgs = '-qt-gif -plugin-imgfmt-mng -thread -no-exceptions -debug -dlopen-opengl -plugin-sql-sqlite';
+    my @lockedOpts = qw(source-dir svn-server qtdir libpath binpath kdedir
+                        pretend disable-agent-check);
+
+    # These options can't override globals
+    if (list_has(@lockedOpts, $option) or $module eq 'global')
+    {
+        return ${$global_opts}{"#$option"} if exists ${$global_opts}{"#$option"};
+        return ${$global_opts}{$option};
+    }
+
+    # Don't even try this
+    return 0 if blacklisted($module, $option);
+
+    my $ref = $package_opts{$module};
+
+    # Check for a sticky option
+    return $$ref{"#$option"} if exists $$ref{"#$option"};
+
+    # Next in order of precedence
+    if (defined ${$global_opts}{"#$option"} and not 
+        ($module eq 'qt-copy' and $option eq 'configure-flags'))
+    {
+        return ${$global_opts}{"#$option"};
+    }
+
+    # No sticky options left.
+    # Configure flags and CXXFLAGS are appended to the global option
+    if (($module ne 'qt-copy' && $option eq 'configure-flags')
+        || $option eq 'cxxflags')
+    {
+        my $value = ${$global_opts}{$option};
+
+        if(defined $$ref{$option})
+        {
+            my $modvalue = $$ref{$option};
+            $value .= " $modvalue";
+        }
+
+        return $value;
+    }
+
+    # As always qt-copy has to be difficult
+    if ($module eq 'qt-copy' and $option eq 'configure-flags')
+    {
+        return $defaultQtCopyArgs if not defined $$ref{$option};
+        return $$ref{$option};
+    }
+
+    # Everything else overrides the global, unless of course it's not set.
+    # If we're reading for global options, we're pretty much done.
+    return $$ref{$option} if defined $$ref{$option};
+    return ${$global_opts}{$option};
+}
+
+# Subroutine used to handle the checkout-only option.  It handles
+# updating subdirectories of an already-checked-out module.
+# First parameter is the module, all remaining parameters are subdirectories
+# to check out.
+#
+# Returns 0 on success, non-zero on failure.
+sub update_module_subdirectories
+{
+    my $module = shift;
+    my $result;
+
+    # If we have elements in @path, download them now
+    for my $dir (@_)
+    {
+        info "\tUpdating g[$dir]";
+        $result = run_svn($module, "svn-up-$dir", [ 'svn', 'up', $dir ]);
+        return $result if $result;
+    }
+
+    return 0;
+}
+
+# Returns true if a module has a base component to their name (e.g. KDE/,
+# extragear/, or playground).  Note that modules that aren't in trunk/KDE
+# don't necessary meet this criteria (e.g. kdereview is a module itself).
+sub has_base_module
+{
+    my $module = shift;
+
+    return $module =~ /^(extragear|playground|KDE)(\/[^\/]+)?$/;
+}
+
+# Subroutine to return the directory that a module will be stored in.
+# NOTE: The return value is a hash. The key 'module' will return the final
+# module name, the key 'path' will return the full path to the module. The
+# key 'fullpath' will return their concatenation.
+# For example, with $module == 'KDE/kdelibs', and no change in the dest-dir
+# option, you'd get something like:
+# {
+#   'path'     => '/home/user/kdesvn/KDE',
+#   'module'   => 'kdelibs',
+#   'fullpath' => '/home/user/kdesvn/KDE/kdelibs'
+# }
+# If dest-dir were changed to e.g. extragear-multimedia, you'd get:
+# {
+#   'path'     => '/home/user/kdesvn',
+#   'module'   => 'extragear-multimedia',
+#   'fullpath' => '/home/user/kdesvn/extragear-multimedia'
+# }
+# First parameter is the module.
+# Second parameter is either source or build.
+sub get_module_path_dir
+{
+    my $module = shift;
+    my $type = shift;
+    my $destdir = get_dest_dir($module);
+    my $srcbase = get_kdesvn_dir();
+    $srcbase = get_build_dir($module) if $type eq 'build';
+
+    my $combined = "$srcbase/$destdir";
+
+    # Remove dup //
+    $combined =~ s/\/+/\//;
+
+    my @parts = split(/\//, $combined);
+    my %result = ();
+    $result{'module'} = pop @parts;
+    $result{'path'} = join('/', @parts);
+    $result{'fullpath'} = "$result{path}/$result{module}";
+
+    return %result;
+}
+
+sub get_fullpath
+{
+    my ($module, $type) = @_;
+    my %pathinfo = get_module_path_dir($module, $type);
+
+    return $pathinfo{'fullpath'};
+}
+
+# Checkout a module that has not been checked out before, along with any
+# subdirectories the user desires.
+# The first parameter is the module to checkout (including extragear and
+# playground modules), all remaining parameters are subdirectories of the
+# module to checkout.
+# Returns 0 on success, non-zero on failure.
+sub checkout_module_path
+{
+    my ($module, @path) = @_;
+    my %pathinfo = get_module_path_dir($module, 'source');
+    my $result;
+    my @args;
+
+    if (not -e $pathinfo{'path'} and not super_mkdir($pathinfo{'path'}))
+    {
+        error "Unable to create path r[$pathinfo{path}]!";
+        return 1;
+    }
+
+    chdir($pathinfo{'path'});
+
+    push @args, ('svn', 'co');
+    push @args, '-N' if scalar @path;
+    push @args, svn_module_url($module);
+    push @args, $pathinfo{'module'};
+
+    note "Checking out g[$module]";
+    $result = run_svn($module, 'svn-co', \@args);
+    return $result if $result;
+
+    chdir($pathinfo{'module'}) if scalar @path;
+
+    return update_module_subdirectories($module, @path);
+}
+
+# Update a module that has already been checked out, along with any
+# subdirectories the user desires.
+# The first parameter is the module to checkout (including extragear and
+# playground modules), all remaining parameters are subdirectories of the
+# module to checkout.
+# Returns 0 on success, non-zero on failure.
+sub update_module_path
+{
+    my ($module, @path) = @_;
+    my $fullpath = get_fullpath($module, 'source');
+    my $result;
+    my @args;
+
+    chdir $fullpath;
+
+    push @args, ('svn', 'up');
+    push @args, '-N' if scalar @path;
+
+    note "Updating g[$module]";
+
+    $result = run_svn($module, 'svn-up', \@args);
+
+    if($result) # Update failed, try svn cleanup.
+    {
+        info "\tUpdate failed, trying a cleanup.";
+        $result = safe_system('svn', 'cleanup');
+
+        return $result if $result;
+
+        info "\tCleanup complete.";
+        # Now try again.
+
+        $result = run_svn($module, 'svn-up-2', \@args);
+    }
+
+    return $result if $result;
+
+    # If the admin dir exists and is a soft link, remove it so that svn can
+    # update it if need be.  The link will automatically be re-created later
+    # in the process if necessary by the build functions.
+    unlink ("$fullpath/admin") if -l "$fullpath/admin";
+
+    return update_module_subdirectories($module, @path);
+}
+
+# Subroutine to run a command with redirected STDOUT and STDERR.  First parameter
+# is name of the log file (relative to the log directory), and the
+# second parameter is a reference to an array with the command and
+# its arguments
+sub log_command
+{
+    my $pid;
+    my $module = shift;
+    my $filename = shift;
+    my @command = @{(shift)};
+    my $logdir = get_log_dir($module);
+
+    debug "log_command(): Module $module, Command: ", join(' ', @command);
+
+    if (pretending)
+    {
+        pretend "\tWould have run g[", join (' ', @command);
+        return 0;
+    }
+
+    if ($pid = fork)
+    {
+        # Parent
+        waitpid $pid, 0;
+
+        # If the module fails building, set an internal flag in the module
+        # options with the name of the log file containing the error message.
+        my $result = $?;
+        set_error_logfile($module, "$filename.log") if $result;
+
+        # If we are using the alias to a kdesvn-build function, it should have
+        # already printed the error message, so clear out errno (but still
+        # return failure status).
+        if ($command[0] eq 'kdesvn-build')
+        {
+            $! = 0;
+        }
+
+        return $result;
+    }
+    else
+    {
+        # Child
+        if (not defined $logdir or not -e $logdir)
+        {
+            # Error creating directory for some reason.
+            error "\tLogging to std out due to failure creating log dir.";
+        }
+
+        # Redirect stdout and stderr to the given file.
+        if (not debugging)
+        {
+# Comment this out because it conflicts with make-install-prefix
+#            open (STDIN, "</dev/null");
+            open (STDOUT, ">$logdir/$filename.log") or do {
+                error "Error opening $logdir/$filename.log for logfile.";
+                # Don't abort, hopefully STDOUT still works.
+            };
+        }
+        else
+        {
+            open (STDOUT, "|tee $logdir/$filename.log") or do {
+                error "Error opening pipe to tee command.";
+                # Don't abort, hopefully STDOUT still works.
+            };
+        }
+
+        # Make sure we log everything.  If the command is svn, it is possible
+        # that the client will produce output trying to get a password, so
+        # don't redirect stderr in that case.
+        open (STDERR, ">&STDOUT") unless $command[0] eq 'svn';
+
+        # Call internal function, name given by $command[1]
+        if($command[0] eq 'kdesvn-build')
+        {
+            debug "Calling $command[1]";
+
+            my $cmd = $command[1];
+            splice (@command, 0, 2); # Remove first two elements.
+
+            no strict 'refs'; # Disable restriction on symbolic subroutines.
+            if (not &{$cmd}(@command)) # Call sub
+            {
+                exit EINVAL;
+            }
+
+            exit 0;
+        }
+
+        # External command.
+        exec (@command) or do {
+            my $cmd_string = join(' ', @command);
+            error <<EOF;
+r[b[Unable to execute "$cmd_string"]!
+	$!
+
+Please check your binpath setting (it controls the PATH used by kdesvn-build).
+Currently it is set to g[$ENV{PATH}].
+EOF
+            # Don't use return, this is the child still!
+            exit 1;
+        };
+    }
+}
+
+# Subroutine to mark a file as being the error log for a module.  This also
+# creates a symlink in the module log directory for easy viewing.
+# First parameter is the module in question.
+# Second parameter is the filename in the log directory of the error log.
+sub set_error_logfile
+{
+    my ($module, $logfile) = @_;
+    my $logdir = get_log_dir($module);
+
+    return unless $logfile;
+
+    set_option($module, '#error-log-file', "$logdir/$logfile");
+
+    # Setup symlink in the module log directory pointing to the appropriate
+    # file.  Make sure to remove it first if it already exists.
+    unlink("$logdir/error.log") if -l "$logdir/error.log";
+
+    if(-e "$logdir/error.log")
+    {
+        # Maybe it was a regular file?
+        error "r[b[ * Unable to create symlink to error log file]";
+        return 0;
+    }
+
+    symlink "$logdir/$logfile", "$logdir/error.log";
+}
+
+# Subroutine to run make/unsermake with redirected STDOUT and STDERR,
+# and to process the percentage in unsermake (-p). First parameter
+# is name of the log file (relative to the log directory), and the
+# second parameter is a reference to an array with the command and
+# its arguments.
+#
+# TODO: This is a fork of log_command().  Find a way to re-merge them.
+# Returns 0 on success, non-zero on failure.
+sub run_make_command
+{
+    my $pid;
+    my $module = shift;
+    my $filename = shift;
+    my @command = @{(shift)};
+    my $logdir = get_log_dir($module);
+    my $isunsermake = $command[0] =~ 'unsermake';
+
+    # Don't print ANSI characters if we're not on a tty.  Also, automake
+    # doesn't support printing output status.  Finally, we output the whole
+    # log to screen when debugging which makes this useless.
+    if (!$isunsermake or not -t STDERR or debugging)
+    {
+        return log_command($module, $filename, \@command);
+    }
+
+    # Make sure -p is in the unsermake flags, it's the whole reason for using
+    # this function.
+    if (!(grep /^(-p)|(--print-progress)$/, @command))
+    {
+        # Add in front of element 1, deleting 0 elements.
+        splice @command, 1, 0, '-p';
+    }
+
+    if (pretending)
+    {
+        pretend "\tWould have run g[", join (' ', @command);
+        return 0;
+    }
+
+    $pid = open(CHILD, '-|');
+    if ($pid)
+    {
+        my $last = -1;
+
+        while (<CHILD>)
+        {
+            chomp;
+
+            # Update terminal (\e[K clears the line) if the percentage
+            # changed.
+            if (/([0-9]+)% (creating|compiling|linking)/)
+            {
+                print STDERR "\r$1% \e[K" unless ($1 == $last);
+                $last = $1;
+            }
+        }
+
+        close(CHILD);
+        print STDERR "\r\e[K";
+
+        # If the module fails building, set an internal flag in the module
+        # options with the name of the log file containing the error message.
+        my $result = $?;
+        set_error_logfile($module, "$filename.log") if $result;
+
+        return $result;
+    }
+    else
+    {
+        # Child
+        if (not defined $logdir or not -e $logdir)
+        {
+            # Error creating directory for some reason.
+            error "\tLogging to standard output due to failure creating log dir.";
+        }
+
+        open (STDOUT, "|tee $logdir/$filename.log") or do {
+            error "Error opening pipe to tee command."
+        };
+
+        # Make sure we log everything.
+        open (STDERR, ">&STDOUT");
+
+        exec (@command) or do {
+            my $cmd_string = join(' ', @command);
+            error <<EOF;
+r[b[Unable to execute "$cmd_string"]!
+	$!
+
+Please check your binpath setting (it controls the PATH used by kdesvn-build).
+Currently it is set to g[$ENV{PATH}].
+EOF
+            # Don't return, we're still in the child!
+            exit 1;
+        };
+    }
+}
+
+# Subroutine to determine if the given subdirectory of a module can actually be
+# built or not.  For instance, /admin can never be built, and the /kalyptus subdir
+# of kdebindings can't either.
+sub is_subdir_buildable
+{
+    my ($module, $dir) = @_;
+
+    return 0 if $dir eq 'admin';
+    return 0 if $dir eq 'kalyptus' and $module eq 'kdebindings';
+    return 1;
+}
+
+# Subroutine to return the path to the given executable based on the current
+# binpath settings.  e.g. if you pass make you could get '/usr/bin/make'.  If
+# the executable is not found undef is returned.
+#
+# This assumes that the module environment has already been updated since
+# binpath doesn't exactly correspond to $ENV{'PATH'}.
+sub path_to_prog
+{
+    my $prog = shift;
+    my @paths = split(/:/, $ENV{'PATH'});
+
+    # If it starts with a / the path is already absolute.
+    return $prog if $prog =~ /^\//;
+
+    for my $path (@paths)
+    {
+        return "$path/$prog" if (-x "$path/$prog");
+    }
+
+    return undef;
+}
+
+# Subroutine to run the make command with the arguments given by the passed
+# list.  The first argument of the list given must be the module that we're
+# making.  The second argument is the "try number", used in creating the log
+# file name.
+#
+# Returns 0 on success, non-zero on failure (shell script style)
+sub safe_make (@)
+{
+    my ($module, $trynumber, $apidox, @args) = @_;
+    my $opts;
+    my $logdir = get_log_dir($module);
+    my $checkout_dirs = get_option($module, "checkout-only");
+    my @dirs = split(' ', $checkout_dirs);
+    my $installing = $trynumber eq 'install';
+    my $make = 'make';
+
+    if (get_option($module, 'use-unsermake'))
+    {
+        $make = get_option('global', 'unsermake-path');
+        $opts = get_option($module, 'unsermake-options');
+    }
+    else
+    {
+        $opts = get_option($module, 'make-options');
+    }
+
+    # Convert the path to an absolute path since I've encountered a sudo that
+    # is apparently unable to guess.  Maybe it's better that it doesn't guess
+    # anyways from a security point-of-view.
+    $make = path_to_prog($make) unless pretending;
+
+    if(not defined $make)
+    {
+        # Weird, we can't find make, you'd think configure would have
+        # noticed...
+        error " r[b[*] Unable to find the g[make] executable!";
+
+        # Make sure we don't bother trying again, this is a more serious
+        # error.
+        set_option($module, "#was-rebuilt", 1);
+        return 1;
+    }
+
+    # Add make-options to the given options, as long as we're not installing
+    # If we are installing, unsermake seems to assume that the options are a
+    # make target, and parallel builds don't help with installing anyways.
+    unshift (@args, split(' ', $opts)) unless $installing;
+
+    my $description;
+
+    # Check if we're installing
+    if($installing)
+    {
+        debug "Prepending install options, apidox: $apidox.";
+
+        $description = $apidox ? "API Documentation" : clr "g[$module]";
+        unshift @args, $make, $apidox ? 'install-apidox' : 'install';
+        unshift @args, split(' ', get_option ($module, 'make-install-prefix'));
+
+        info "\tInstalling $description.";
+    }
+    else
+    {
+        $description = "Building API Documentation";
+        $description = "Compiling, attempt $trynumber" unless $apidox;
+
+        push @args, 'apidox' if $apidox;
+        unshift @args, $make;
+
+        info "\t$description...";
+    }
+
+    push (@dirs, "") if scalar @dirs == 0;
+    for my $subdir (@dirs)
+    {
+        # Some subdirectories shouldn't have make run within them.
+        next unless is_subdir_buildable($module, $subdir);
+
+        my $logname = "build-$trynumber";
+        if ($installing)
+        {
+            $logname = $apidox ? 'install-apidox' : 'install';
+        }
+
+        if ($subdir ne '')
+        {
+            $logname = $installing ? "install-$subdir" : "build-$subdir-$trynumber";
+            next if $apidox; # Don't built apidox in a subdirectory
+
+            info $installing ? "\tInstalling " : "\tBuilding ", "subdirectory g[$subdir]";
+        }
+
+        my %pathinfo = get_module_path_dir($module, 'build');
+        my $builddir = "$pathinfo{fullpath}/$subdir";
+        $builddir =~ s/\/*$//;
+
+        chdir ($builddir);
+
+        my $result = run_make_command ($module, $logname, \@args );
+        return $result if $result;
+    };
+
+    return 0;
+}
+
+# Subroutine to add a variable to the environment, but ONLY if it
+# is set. First parameter is the variable to set, the second is the
+# value to give it.
+sub setenv
+{
+    my ($var, $val) = @_;
+
+    return unless $val;
+
+    pretend "\tWould have set g[$var]=y[$val].";
+
+    $ENV{$var} = $val;
+}
+
+# Display a message to the user regarding their relative lack of
+# ~/.kdesvn-buildrc, and point them to some help.  We will continue using a
+# default set of options.
+sub no_config_whine
+{
+    my $searched = join("\n    ", @rcfiles);
+    my $homepage = "http://kdesvn-build.kde.org/";
+
+    note <<"HOME";
+Unable to open configuration file!
+We looked for:
+    $searched
+
+kdesvn-build will continue using a default set of options.  These options may
+not apply to you, so feel free to visit the kdesvn-build homepage
+
+b[g[$homepage]
+
+and use the configuration file generator to guide you through the process of
+creating a config file to customize your kdesvn-build process.
+
+HOME
+}
+
+# This subroutine assigns the appropriate options to %package_opts and the
+# update and build lists to build a default set of modules.
+sub setup_default_modules()
+{
+    @update_list = qw(qt-copy arts kdesupport kdelibs kdebase kdeartwork
+                      kdemultimedia kdepim kdeutils kdegraphics kdegames
+                      kdetoys kdeedu kdeaddons);
+    @build_list = @update_list;
+
+    for my $i (@update_list) {
+        if (not exists $package_opts{$i})
+        {
+            $package_opts{$i} = { }; # Set up defaults
+            $package_opts{$i}{'set-env'} = { };
+        }
+    }
+
+    # Setup default options for qt-copy
+    $package_opts{'qt-copy'} = {
+        'conf-flags' => q(-system-zlib -qt-gif -system-libjpeg -system-libpng
+                          -plugin-imgfmt-mng -thread -no-exceptions -debug
+                          -dlopen-opengl),
+        'apply-qt-patches' => 'true',
+
+# See setup_kde35_hack() for why this option is here.
+        'module-base-path' => 'branches/qt/3.3',
+
+        'use-qt-builddir-hack' => 'true',
+        'use-unsermake' => 0,
+        'set-env' => { },
+    };
+
+    # That handy q() construct above kept the newlines, I don't want them.
+    $package_opts{'qt-copy'}{'conf-flags'} =~ s/\s+/ /gm;
+}
+
+# Reads in the options from the config file and adds them to the option store.
+# The first parameter is a reference to the file handle to read from.
+# The second parameter is 'global' if we're reading the global section, or
+# 'module' if we should expect an end module statement.
+sub parse_module
+{
+    my ($fh, $module) = @_;
+    $module = 'global' unless $module;
+
+    # Make sure we acknowledge that we read the module name in from the
+    # file.
+    if (not defined $package_opts{$module})
+    {
+        $package_opts{$module} = {
+            'set-env' => { }
+        };
+    }
+
+    # Read in each option
+    while (<$fh>)
+    {
+        # Handle line continuation
+        chomp;
+
+        if(s/\\\s*$//)  # Replace \ followed by optional space at EOL and try again.
+        {
+            $_ .= <$fh>;
+            redo unless eof($fh);
+        }
+
+        s/#.*$//;       # Remove comments
+        next if /^\s*$/;   # Skip blank lines
+
+        if($module eq 'global')
+        {
+            last if /^end\s+global/; # Stop
+        }
+        else
+        {
+            last if /^end\s+module/; # Stop
+        }
+
+        # The option is the first word, followed by the
+        # flags on the rest of the line.  The interpretation
+        # of the flags is dependant on the option.
+        my ($option, $value) = /^\s*     # Find all spaces
+                                ([-\w]+) # First match, alphanumeric, -, and _
+                                # (?: ) means non-capturing group, so (.*) is $value
+                                # So, skip spaces and pick up the rest of the line.
+                                (?:\s+(.*))?$/x;
+
+        $value = "" unless defined $value;
+
+        # Simplify this.
+        $value =~ s/\s+$//;
+        $value =~ s/^\s+//;
+        $value =~ s/\s+/ /;
+
+        # Check for false keyword and convert it to Perl false.
+        $value = 0 if lc($value) =~ /^false$/;
+
+        # Replace tildes with home directory.
+        1 while ($value =~ s"(^|:|=)~/"$1$ENV{'HOME'}/");
+
+        set_option($module, $option, $value);
+    }
+}
+
+# This subroutine reads in the settings from the user's configuration
+# file.
+sub read_options
+{
+    # The options are stored in the file $rcfile
+    my $success = 0;
+    my $global_opts = $package_opts{'global'};
+    for my $file (@rcfiles)
+    {
+        if (open CONFIG, "<$file")
+        {
+            $success = 1;
+            $rcfile = $file;
+            last;
+        }
+    }
+
+    if (not $success)
+    {
+        if(scalar @rcfiles == 1)
+        {
+            # This can only happen if the user uses --rc-file, if we fail to
+            # load the file, we need to fail to load.
+            error <<EOM;
+Unable to open config file $rcfiles[0]
+
+Script stopping here since you specified --rc-file on the command line to
+load $rcfiles[0] manually.  If you wish to run the script with no configuration
+file, leave the --rc-file option out of the command line.
+
+EOM
+            exit 1;
+        }
+
+        no_config_whine();
+        setup_default_modules();
+        return;
+    }
+
+    my ($option, $flags, $modulename);
+
+    # FIXME: Make global settings optional if only tweaks needed are for
+    # modules.
+
+    # Read in global settings
+    while (<CONFIG>)
+    {
+        s/#.*$//;       # Remove comments
+        next if (/^\s*$/); # Skip blank lines
+
+        # First command in .kdesvn-buildrc should be a global
+        # options declaration, even if none are defined.
+        if (not /^global\s*$/)
+        {
+            error "Invalid configuration file: $rcfile.";
+            error "Expecting global settings section!";
+            exit 1;
+        }
+
+        # Now read in each global option
+        parse_module(\*CONFIG, 'global');
+        last;
+    }
+
+    my $using_default = 1;
+
+    # Now read in module settings
+    while (<CONFIG>)
+    {
+        s/#.*$//;       # Remove comments
+        next if (/^\s*$/); # Skip blank lines
+
+        # Get modulename (has dash, dots, slashes, or letters/numbers)
+        ($modulename) = /^module\s+([-\/\.\w]+)\s*$/;
+
+        if (not $modulename)
+        {
+            warning "Invalid configuration file $rcfile!";
+            warning "Expecting a start of module section.";
+            warning "Global settings will be retained.";
+
+            $modulename = 'null'; # Keep reading the module section though.
+        }
+
+        # Don't build default modules if user has their own wishes.
+        if ($using_default)
+        {
+            $using_default = 0;
+            @update_list = @build_list = ( );
+        }
+
+        parse_module(\*CONFIG, $modulename);
+
+        next if ($modulename eq 'null');
+
+        # Done reading options, add this module to the update list
+        push (@update_list, $modulename) unless exists $ignore_list{$modulename};
+
+        # Add it to the build list, unless the build is only
+        # supposed to be done manually.
+        if (not get_option ($modulename, 'manual-build') and not exists $ignore_list{$modulename})
+        {
+            push (@build_list, $modulename);
+        }
+    }
+
+    close CONFIG;
+
+    delete $package_opts{'null'}; # Just in case.
+
+    # For the 3.5 edition we want to set the qt-copy option module-base-path
+    # to branches/qt/3.3 unless the user already has it set.
+    unless (exists $package_opts{'qt-copy'}{'module-base-path'})
+    {
+        set_option ('qt-copy', 'module-base-path', 'branches/qt/3.3');
+    }
+
+    # If the user doesn't ask to build any modules, build a default set.
+    # The good question is what exactly should be built, but oh well.
+    setup_default_modules() if $using_default;
+}
+
+# Subroutine to check if the given module needs special treatment to support
+# srcdir != builddir.  If this function returns true kdesvn-build will use a
+# few hacks to simulate it, and will update e.g. configure paths appropriately
+# as well.
+sub module_needs_builddir_help
+{
+    my $module = shift;
+    my @module_help_list = qw/qt-copy kdebindings valgrind/;
+
+    # qt-copy special case to support use-qt-builddir-hack.
+    if ($module eq 'qt-copy' and not get_option('qt-copy', 'use-qt-builddir-hack'))
+    {
+        return 0;
+    }
+
+    return list_has(@module_help_list, $module);
+}
+
+# This subroutine reads the set-env option for a given module and initializes
+# the environment based on that setting.
+sub setup_module_environment
+{
+    my $module = shift;
+    my ($key, $value);
+
+    # Let's see if the user has set env vars to be set.
+    my $env_hash_ref = get_option($module, 'set-env');
+    while (($key, $value) = each %{$env_hash_ref})
+    {
+        setenv($key, $value);
+    }
+}
+
+# Subroutine to initialize some environment variable for building
+# KDE from Subversion.  Change this section if a dependency changes later.
+sub initialize_environment
+{
+    $ENV{"WANT_AUTOMAKE"} = "1.7";
+    $ENV{"WANT_AUTOCONF_2_5"} = "1";
+    $ENV{"PATH"} = get_option ('global', 'binpath');
+
+    my $svnserver = get_option ('global', 'svn-server');
+
+    my $pc_path = get_option('global', 'kdedir') . "/lib/pkgconfig";
+    $pc_path .= ":" . $ENV{'PKG_CONFIG_PATH'} if ( exists $ENV{'PKG_CONFIG_PATH'} );
+    $ENV{'PKG_CONFIG_PATH'} = $pc_path;
+
+    if(-t STDOUT and get_option('global', 'colorful-output'))
+    {
+        $RED = "\e[31m";
+        $GREEN = "\e[32m";
+        $YELLOW = "\e[33m";
+        $NORMAL = "\e[0m";
+        $BOLD = "\e[1m";
+    }
+
+    # Set the process priority
+    setpriority PRIO_PROCESS, 0, get_option('global', 'niceness');
+
+    setup_module_environment ('global');
+}
+
+# Subroutine to get a list of modules to install, either from the command line
+# if it's not empty, or based on the list of modules successfully built.
+sub get_install_list
+{
+    my @install_list;
+
+    if ($#ARGV > -1)
+    {
+        @install_list = @ARGV;
+        @ARGV = ();
+    }
+    else
+    {
+        # Get list of built items from $logdir/latest/build-status
+        my $logdir = get_subdir_path('global', 'log-dir');
+
+        if (not open BUILTLIST, "<$logdir/latest/build-status")
+        {
+            error "Can't determine what modules have built.  You must";
+            error "specify explicitly on the command line what modules to build.";
+            exit (1); # Don't finish, no lock has been taken.
+        }
+
+        while (<BUILTLIST>)
+        {
+            chomp;
+            if (/Succeeded/)
+            {
+                # Clip to everything before the first colon.
+                my $module = (split(/:/))[0];
+                push @install_list, $module;
+            }
+        }
+
+        close BUILTLIST;
+    }
+
+    return @install_list;
+}
+
+# Print out an error message, and a list of modules that match that error
+# message.  It will also display the log file name if one can be determined.
+# The message will be displayed all in uppercase, with PACKAGES prepended, so
+# all you have to do is give a descriptive message of what this list of
+# packages failed at doing.
+sub output_failed_module_list($@)
+{
+    my ($message, @fail_list) = @_;
+    $message = uc $message; # Be annoying
+
+    debug "Message is $message";
+    debug "\tfor ", join(', ', @fail_list);
+
+    if (scalar @fail_list > 0)
+    {
+        my $homedir = $ENV{'HOME'};
+        my $logfile;
+
+        warning "\nr[b[<<<  PACKAGES $message  >>>]";
+
+        for (@fail_list)
+        {
+            $logfile = get_option($_, '#error-log-file');
+            $logfile = "No log file" unless $logfile;
+            $logfile =~ s|$homedir|~|;
+
+            warning "r[$_] - g[$logfile]";
+        }
+    }
+}
+
+# This subroutine reads the fail_lists dictionary to automatically call
+# output_failed_module_list for all the module failures in one function
+# call.
+sub output_failed_module_lists()
+{
+    for my $type (@fail_display_order)
+    {
+        my @failures = @{$fail_lists{$type}};
+        output_failed_module_list("failed to $type", @failures);
+    }
+}
+
+# This subroutine extract the value from options of the form --option=value,
+# which can also be expressed as --option value.  The first parameter is the
+# option that the user passed to the cmd line (e.g. --prefix=/opt/foo), and
+# the second parameter is a reference to the list of command line options.
+# The return value is the value of the option (the list might be shorter by
+# 1, copy it if you don't want it to change), or undef if no value was
+# provided.
+sub extract_option_value($\@)
+{
+    my ($option, $options_ref) = @_;
+
+    if ($option =~ /=/)
+    {
+        my @value = split(/=/, $option);
+        shift @value; # We don't need the first one, that the --option part.
+
+        return undef if (scalar @value == 0);
+
+        # If we have more than one element left in @value it's because the
+        # option itself has an = in it, make sure it goes back in the answer.
+        return join('=', @value);
+    }
+
+    return undef if scalar @{$options_ref} == 0;
+    return shift @{$options_ref};
+}
+
+# Utility subroutine to handle setting the environment variable type of value.
+# Returns true (non-zero) if this subroutine handled everything, 0 otherwise.
+# The first parameter should by the reference to the hash with the 'set-env'
+# hash ref, second parameter is the exact option to check, and the third
+# option is the value to set that option to.
+sub handle_set_env
+{
+    my ($href, $option, $value) = @_;
+
+    return 0 if $option !~ /^#?set-env$/;
+
+    my ($var, @values) = split(' ', $value);
+
+    $$href{$option} = ( ) unless exists $$href{$option};
+    $$href{$option}{$var} = join(' ', @values);
+
+    return 1;
+}
+
+# Sets the option for the given module to the given value.  If the data for the
+# module doesn't exist yet, it will be defined starting with a default value.
+# First parameter: module to set option for (or 'global')
+# Second parameter: option name (Preceded by # for a sticky option)
+# Third parameter: option value
+# Return value is void
+sub set_option
+{
+    my ($module, $option, $value) = @_;
+
+    # Set module options
+    if (not exists $package_opts{$module})
+    {
+        $package_opts{$module} = {
+            'set-env' => { }
+        };
+    }
+
+    return if handle_set_env($package_opts{$module}, $option, $value);
+    $package_opts{$module}{$option} = $value;
+}
+
+# Subroutine to process the command line arguments.  Any arguments so
+# processed will be removed from @ARGV.
+# The arguments are generally documented in doc.html now.
+# NOTE: Don't call finish() from this routine, the lock hasn't been obtained.
+# NOTE: The options have not been loaded yet either.  Any option which
+# requires more than rudimentary processing should set a flag for later work.
+sub process_arguments
+{
+    my $arg;
+    my $version = "kdesvn-build 0.97.6 (KDE 3.5 Edition)";
+    my $author = <<DONE;
+$version was written (mostly) by:
+  Michael Pyne <michael.pyne\@kdemail.net>
+
+Many people have contributed code, bugfixes, and documentation.
+
+Please report bugs using the KDE Bugzilla, at http://bugs.kde.org/
+DONE
+
+    my @argv;
+
+    while ($_ = shift @ARGV)
+    {
+        SWITCH: {
+            /^(--version)$/      && do { print "$version\n"; exit; };
+            /^--author$/         && do { print $author; exit; };
+            /^(-h)|(--?help)$/   && do {
+                print <<DONE;
+$version
+
+This script automates the download, build, and install process for KDE (using
+Subversion).
+
+It is recommended that you first setup a .kdesvn-buildrc file in your home
+directory.  Please visit http://kdesvn-build.kde.org/ for
+information on how to write the file, or consult the sample file which should
+have been included with this program.  If you don't setup a .kdesvn-buildrc,
+a default set of options will be used, which a few modules to be built by
+default.
+
+After setting up .kdesvn-buildrc, you can run this program from either the
+command-line or from cron.  It will automatically download the modules from
+Subversion, create the build system, and configure and make the modules you
+tell it to.  If you\'d like, you can use this program to install KDE as well,
+if you\'re building KDE for a single user.  Note that kdesvn-build will try
+by default to install the modules.
+
+Basic synopsis, after setting up .kdesvn-buildrc:
+\$ kdesvn-build [package names] (Download, build, and install KDE)
+
+If you don\'t specify any particular package names, then your settings
+in .kdesvn-buildrc will be used.  If you DO specify a package name, then
+your settings will still be read, but the script will try to build/install
+the package regardless of .kdesvn-buildrc
+
+Copyright (c) 2003, 2004, 2005 $author
+The script is distributed under the terms of the GNU General Public License
+v2, and includes ABSOLUTELY NO WARRANTY!!!
+
+Options:
+    --no-svn             Skip contacting the Subversion server.
+    --no-build           Skip the build process.
+    --no-install         Don't automatically install after build.
+
+    --svn-only           Update from Subversion only (Identical to --no-build
+                         at this point).
+    --build-only         Build only, don't perform updates or install.
+
+    --pretend (or -p)    Don't actually contact the Subversion server, run make,
+                         or create/delete files and directories.  Instead,
+                         output what the script would have done.
+    --quiet (or -q)      Be less descriptive of the build process, without
+                         printing each little substep kdesvn-build is
+                         performing.
+    --really-quiet       Only warnings and errors will be displayed.
+    --verbose (or -v)    Be *very* descriptive of the build process.  Only
+                         --debug outputs more.
+    --debug              Activates debug mode.
+    --color
+    --no-color           Add (or remove) color from the output.
+
+    --rc-file=<filename> Read configuration from filename instead of default.
+    --nice=<value>       Allows you to run the script with a lower priority
+                         The default value is 10 (lower priority by 10 steps).
+    --prefix=/kde/path   This option is a shortcut to change the setting for
+                         kdedir from the command line.  It implies
+                         --reconfigure.
+
+    --resume             Tries to resume the make process from the last time
+                         the script was run, without performing the Subversion
+                         update.
+    --resume-from=<pkg>  Starts building from the given package, without
+                         performing the Subversion update.
+    --revision (or -r)=<rev> Forces update to revision <rev> from Subversion.
+
+    --refresh-build      Start the build from scratch.
+    --reconfigure        Run configure again, but don't clean the build
+                         directory or re-run make -f Makefile.cvs.
+    --recreate-configure Run make -f Makefile.cvs again to redo the configure
+                         script.
+    --no-rebuild-on-fail Don't try to rebuild a module from scratch if it
+                         failed building and we didn't already try to build it
+                         from scratch.
+    --build-system-only  Create the build infrastructure, but don't actually
+                         perform the build.
+    --install            Try to install the packages passed on the command
+                         line, or all packages in ~/.kdesvn-buildrc that don't
+                         have manual-build set.  Building and Subversion
+                         updates are not performed.
+
+    --<option>=          Any unrecognized options are added to the global
+                         configuration, overriding any value that may exist.
+    --<module>,<option>= Likewise, this allows you to override any module
+                         specific option from the command line.
+
+    --help               You\'re reading it. :-)
+    --author             Output the author(s)\'s name.
+    --version            Output the program version.
+
+You can get more help by reading the included HTML documentation, or going
+online to http://kdesvn-build.kde.org/
+DONE
+                # We haven't done any locking... no need to finish()
+                #  Avoids log-dir errors due to having not performed.
+                #  read_options() and setup_logging_subsystem().
+                exit 0;
+            };
+
+            /^--install$/ && do {
+                $install_flag = 1;
+                last SWITCH;
+            };
+
+            /^--no-svn$/ && do {
+                set_option('global', '#no-svn', 1);
+                last SWITCH;
+            };
+
+            /^--no-install$/ && do {
+                set_option('global', '#install-after-build', 0);
+                last SWITCH;
+            };
+
+            /^(-v)|(--verbose)$/ && do {
+                set_option('global', '#debug-level', WHISPER);
+                last SWITCH;
+            };
+
+            /^(-q)|(--quiet)$/ && do {
+                set_option('global', '#debug-level', NOTE);
+                last SWITCH;
+            };
+
+            /^--really-quiet$/ && do {
+                set_option('global', '#debug-level', WARNING);
+                last SWITCH;
+            };
+
+            /^--debug$/ && do {
+                set_option('global', 'debug-level', DEBUG);
+                last SWITCH;
+            };
+
+            /^--reconfigure$/ && do {
+                set_option('global', '#reconfigure', 1);
+                last SWITCH;
+            };
+
+            /^--recreate-configure$/ && do {
+                set_option('global', '#recreate-configure', 1);
+                last SWITCH;
+            };
+
+            /^--color$/ && do {
+                set_option('global', '#colorful-output', 1);
+                last SWITCH;
+            };
+
+            /^--no-color$/ && do {
+                set_option('global', '#colorful-output', 0);
+                last SWITCH;
+            };
+
+            /^--no-build$/ && do {
+                set_option('global', '#manual-build', 1);
+                last SWITCH;
+            };
+
+            # Although equivalent to --no-build at this point, someday the
+            # script may interpret the two differently, so get ready now.
+            /^--svn-only$/ && do {      # Identically to --no-build
+                set_option('global', '#manual-build', 1);
+                last SWITCH;
+            };
+
+            # Don't run Subversion or install
+            /^--build-only$/ && do {
+                set_option('global', '#no-svn', 1);
+                set_option('global', '#install-after-build', 0);
+                last SWITCH;
+            };
+
+            /^--build-system-only$/ && do {
+                set_option('global', '#build-system-only', 1);
+                last SWITCH;
+            };
+
+            /^--rc-file=?/ && do {
+                my $rcfile = extract_option_value($_, @ARGV);
+                if (not $rcfile)
+                {
+                    print "You must specify a filename to use as the config file!\n";
+                    exit 8;
+                }
+
+                @rcfiles = ( $rcfile );
+
+                last SWITCH;
+            };
+
+            /^--prefix=?/ && do {
+                my $prefix = extract_option_value($_, @ARGV);
+                if (not $prefix)
+                {
+                    print "No prefix selected with the --prefix option.\n";
+                    exit 8;
+                }
+
+                set_option('global', '#kdedir', $prefix);
+                set_option('global', '#reconfigure', 1);
+
+                last SWITCH;
+            };
+
+            /^--no-rebuild-on-fail$/ && do {
+                set_option('global', '#no-rebuild-on-fail', 1);
+                last SWITCH;
+            };
+
+            /^--nice=?/ && do {
+                my $niceness = extract_option_value($_, @ARGV);
+
+                if($niceness)
+                {
+                    set_option('global', '#niceness', $niceness);
+                }
+                else
+                {
+                    print "You need to specify a value for the --nice option\n";
+                    exit 8;
+                }
+
+                last SWITCH;
+            };
+
+            /^--ignore-modules$/ && do {
+                # We need to keep read_options() from adding these modules to
+                # the build list, taken care of by ignore_list.  We then need
+                # to remove the modules from the command line, taken care of
+                # by the @ARGV = () statement;
+                my @options = ();
+                foreach (@ARGV)
+                {
+                    if (/^-/)
+                    {
+                        push @options, $_;
+                    }
+                    else
+                    {
+                        $ignore_list{$_} = 1;
+
+                        # the pattern match doesn't work with $_, alias it.
+                        my $module = $_;
+                        @argv = grep (!/^$module$/, @argv);
+                    }
+                }
+                @ARGV = @options;
+
+                last SWITCH;
+            };
+
+            /^(--dry-run)|(--pretend)|(-p)$/ && do {
+                set_option('global', '#pretend', 1);
+                last SWITCH;
+            };
+
+            /^--refresh-build$/ && do {
+                set_option('global', '#refresh-build', 1);
+                last SWITCH;
+            };
+
+            /^(--revision|-r)=?/ && do {
+                my $revision = extract_option_value($_, @ARGV);
+                if (not $revision)
+                {
+                    print "No revision selected with the --revision option.\n";
+                    exit 8;
+                }
+
+                set_option('global', '#revision', $revision);
+
+                last SWITCH;
+            };
+
+            /^--resume-from=?/ && do {
+                $_ = extract_option_value($_, @ARGV);
+                if (not $_)
+                {
+                    print "You must pass a module to resume from to the --resume-from option!\n";
+                    exit 7;
+                }
+
+                if (defined $package_opts{'global'}{'#resume'})
+                {
+                    print "WARNING: Don't pass both --resume and --resume-from\n";
+                    delete $package_opts{'global'}{'#resume'};
+                }
+
+                set_option('global', '#resume-from', $_);
+                set_option('global', '#no-svn', 1);
+                last SWITCH;
+            };
+
+            /^--resume$/ && do {
+                if (defined $package_opts{'global'}{'#resume'})
+                {
+                    print "WARNING: Don't pass both --resume and --resume-from\n";
+                    delete $package_opts{'global'}{'#resume-from'};
+                }
+
+                set_option('global', '#resume', 1);
+                set_option('global', '#no-svn', 1);
+                last SWITCH;
+            };
+
+            /^--/ && do {
+                # First let's see if they're trying to override a global option.
+                my ($option) = /^--([-\w\d\/]+)/;
+                my $value = extract_option_value($_, @ARGV);
+
+                if (exists $package_opts{'global'}{$option})
+                {
+                    # Global option
+                    set_option('global', "#$option", $value);
+                }
+                else
+                {
+                    # Module specific option.  The module options haven't been
+                    # read in, so we'll just have to assume that the module the
+                    # user passes actually does exist.
+                    my ($module, $option) = /^--([\w\/-]+),([-\w\d\/]+)/;
+
+                    if (not $module)
+                    {
+                        print "Unknown option $_\n";
+                        exit 8;
+                    }
+
+                    set_option($module, "#$option", $value);
+                }
+
+                last SWITCH;
+            };
+
+            /^-/ && do { print "WARNING: Unknown option $_\n"; last SWITCH; };
+
+            # Strip trailing slashes.
+            s/\/*$//;
+            push @argv, $_; # Reconstruct correct @ARGV
+        }
+    }
+
+    @ARGV = @argv;
+}
+
+# Subroutine to try to get a lock on the script's lockfile to prevent
+# more than one script from updating KDE Subversion at once.
+# The value returned depends on the system's open() call.  Normally 0
+# is failure and non-zero is success (e.g. a file descriptor to read).
+# TODO: This could be improved to not fight over the lock when the scripts are
+# handling separate tasks.
+sub get_lock
+{
+    my $lockfile = "$ENV{HOME}/.kdesvn-lock";
+    sysopen LOCKFILE, $lockfile, O_WRONLY | O_CREAT | O_EXCL;
+    my $errorCode = $!; # Save for later testing.
+
+    # Install signal handlers to ensure that the lockfile gets closed.
+    # There is a race condition here, but at worst we have a stale lock
+    # file, so I'm not *too* concerned.
+    $SIG{'HUP'} = \&quit_handler;
+    $SIG{'INT'} = \&quit_handler;
+    $SIG{'QUIT'} = \&quit_handler;
+    $SIG{'ABRT'} = \&quit_handler;
+    $SIG{'TERM'} = \&quit_handler;
+    $SIG{'PIPE'} = \&quit_handler;
+
+    # Note that we can use color codes at this point since get_lock is called
+    # after read_options (which sets up the color).
+    if($errorCode == EEXIST)
+    {
+        # Path already exists, read the PID and see if it belongs to a
+        # running process.
+        open PIDFILE, "<$lockfile" or do
+        {
+            # Lockfile is there but we can't open it?!?  Maybe a race
+            # condition but I have to give up somewhere.
+            warning " WARNING: Can't open or create lockfile r[$lockfile]";
+            return 1;
+        };
+        
+        my $pid = <PIDFILE>;
+        close PIDFILE;
+
+        if($pid)
+        {
+            # Recent kdesvn-build; we wrote a PID in there.
+            chomp $pid;
+
+            # See if something's running with this PID.
+            if (kill(0, $pid) == 1)
+            {
+                # Something *is* running, likely kdesvn-build.  Don't use error,
+                # it'll scan for $!
+                print clr " r[*y[*r[*] kdesvn-build appears to be running.  Do you want to:\n";
+                print clr "  (b[Q])uit, (b[P])roceed anyways?: ";
+
+                my $choice = <STDIN>;
+                chomp $choice;
+
+                if(lc $choice ne 'p')
+                {
+                    print clr " y[*] kdesvn-build run canceled.\n";
+                    exit 1;
+                }
+
+                # We still can't grab the lockfile, let's just hope things
+                # work out.
+                print clr " y[*] kdesvn-build run in progress by user request.\n";
+                return 1;
+            }
+
+            # If we get here, then the program isn't running (or at least not
+            # as the current user), so allow the flow of execution to fall
+            # through below and unlink the lockfile.
+        } # pid
+
+        # No pid found, optimistically assume the user isn't running
+        # twice.
+        warning " y[WARNING]: stale kdesvn-build lockfile found, deleting.";
+        unlink $lockfile;
+        sysopen LOCKFILE, $lockfile, O_WRONLY | O_CREAT | O_EXCL and do
+        {
+            print LOCKFILE "$$\n";
+            close LOCKFILE;
+        };
+        return 1; # Hope the sysopen worked.
+    }
+
+    print LOCKFILE "$$\n";
+    close LOCKFILE;
+
+    # Even if we fail it's generally better to allow the script to proceed
+    # without being a jerk about things, especially as more non-CLI-skilled
+    # users start using kdesvn-build to build KDE.
+    return 1;
+}
+
+# Subroutine to free the lock allocated by get_lock()
+sub close_lock
+{
+    my $lockfile = "$ENV{HOME}/.kdesvn-lock";
+
+    close LOCKFILE;
+    unlink $lockfile;
+}
+
+sub adjust_update_list
+{
+    my $list_ref = shift;
+    my $build_ref = shift;
+
+    # Check to see if the user has requested for one of the modules to be
+    # built is using unsermake.  If so, we need to check if kdenonbeta is
+    # already supposed to be checked out.  If so, we need to make sure that
+    # unsermake is present in any checkout-only directives, and if not, we need
+    # to add kdenonbeta/unsermake to the checkout list.
+    my $unsermake_needed = grep (get_option ($_, 'use-unsermake'), @{$build_ref});
+
+    # If the user has told us that they will manage unsermake then we don't
+    # need to do anything.
+    $unsermake_needed = 0 if get_option('global', 'use-unsermake') eq 'self';
+
+    # If the user has set manual-update, don't second-guess them.
+    $unsermake_needed = 0 if get_option('kdenonbeta', 'manual-update');
+
+    debug "Do we update unsermake? ", ($unsermake_needed ? 'yes' : 'no');
+
+    if ($unsermake_needed)
+    {
+        if (not list_has(@{$list_ref}, 'kdenonbeta'))
+        {
+            whisper "Adding kdenonbeta/unsermake to build.";
+
+            # kdenonbeta isn't being downloaded by the user.
+            unshift (@{$list_ref}, 'kdenonbeta');
+            $package_opts{'kdenonbeta'} = {
+                'manual-build'   => 'true',
+                'checkout-only'  => 'unsermake',
+                '#suppress-auto-admin' => 1,
+            };
+        }
+        else
+        {
+            my $checkouts = get_option('kdenonbeta', 'checkout-only');
+
+            if ($checkouts !~ /\bunsermake\b/)
+            {
+                # kdenonbeta is being checked out, but the user has
+                # excluded unsermake.
+                set_option('kdenonbeta', 'checkout-only', "$checkouts unsermake");
+                set_option('kdenonbeta', '#suppress-auto-admin', 1);
+            }
+        }
+    }
+}
+
+# Subroutine to get the list of Subversion modules to update.  Returned
+# as a list.  Parse the command-line arguments first.
+sub get_update_list
+{
+    return @ARGV unless $#ARGV == -1;
+
+    my @return_list;
+    for (@update_list)
+    {
+        push @return_list, $_ if not get_option($_, "manual-update");
+    }
+
+    return @return_list;
+}
+
+# Subroutine to get the list of Subversion modules to build.  Returned
+# as a list.  A module will not be built if manual-build is set
+# in the module's options.  The command-line arguments should have been
+# parsed first.
+#
+# This subroutine will handle the --resume and --resume-from options.
+sub get_build_list
+{
+    my $resume_point;
+    my $autoresuming;
+
+    # We check explicity for sticky options here since they can only be
+    # set from the command line.
+    if (get_option('global', '#manual-build'))
+    {
+        if (get_option('global', '#resume') || get_option('global',
+            '#resume-from'))
+        {
+            warning "I'm confused, you enabled y[--no-build] and y[--resume].";
+            warning "Skipping the build process.";
+        }
+
+        return ();
+    }
+
+    if (get_option ('global', '#resume'))
+    {
+        if (scalar @ARGV > 0)
+        {
+            warning "Ignoring modules specified on command line because y[--resume] was set.";
+        }
+
+        # Try to determine location of last existing status file.
+        my $status_fname = get_output_file('existing');
+        if (not $status_fname)
+        {
+            error "Unable to open status file from last run, can't resume!";
+            return ();
+        }
+
+        my ($line, $oldline);
+        open STATUS_FILE, "<$status_fname" or do {
+            error "Can't open $status_fname, so I can't resume!";
+            return ();
+        };
+
+        while ($line = <STATUS_FILE>)
+        {
+            $oldline = $line;
+        }
+
+        close STATUS_FILE;
+
+        if (not defined $oldline)
+        {
+            # Hmm, empty file?
+            error <<"EOF";
+Unable to read information from resume status file.
+It's probably empty, but there's no way to resume!
+EOF
+            return ();
+        }
+
+        chomp $oldline;
+        debug "The last success line is $oldline";
+
+        ($resume_point = $oldline) =~ s/^([^:]+):.*/$1/;
+        whisper "Resuming at $resume_point";
+    }
+    elsif (get_option ('global', '#resume-from'))
+    {
+        $resume_point = get_option ('global', '#resume-from');
+        $autoresuming = 1;
+    }
+
+    if ($resume_point)
+    {
+        my $resume_found = 0;
+
+        # Pop stuff off of the list until we hit the resume point.
+        while (scalar @build_list > 0 and not $resume_found)
+        {
+            $resume_found = 1 if $build_list[0] eq $resume_point;
+
+            # If we're doing an auto resume, pop off the last package read
+            # from the file.  If we're doing resume from on the other hand,
+            # I'm assuming the user intends to start with building that
+            # package.
+            shift @build_list unless $resume_found and $autoresuming;
+        }
+
+        return @build_list;
+    }
+
+    return @ARGV unless $#ARGV == -1;
+
+    my @list;
+    for (@build_list)
+    {
+        push @list, $_ unless get_option($_, 'manual-update');
+    }
+
+    return @list;
+}
+
+# Used to sort module names.  'global' always starts first, modules with /
+# sort last.
+sub module_sort
+{
+    # This is always true.
+    return 0 if $a eq $b;
+
+    # Look for global modules.
+    return -1 if $a eq 'global';
+    return 1 if $b eq 'global';
+
+    # If both have /, use a normal sort.
+    return $a cmp $b if $a =~ /\// and $b =~ /\//;
+
+    # If left has slash, it's < $b (and vice versa)
+    return 1 if $a =~ /\//;
+    return -1 if $b =~ /\//;
+
+    # Normal sort.
+    return $a cmp $b;
+}
+
+# Helper subroutine for debugging purposes.  Dumps all of the
+# options which have been read in to %global_opts and %package_opts.
+sub dump_options
+{
+    my ($item, $ref_item, $ref);
+    my @keys = sort module_sort keys %package_opts;
+    my $c; # $c is a color variable to be used with clr()
+
+    # Now dump the options for each module
+    foreach $item (@keys)
+    {
+        debug "\nOptions for module g[$item]:";
+        my $ref = $package_opts{$item};
+
+        foreach $ref_item (sort keys %{$package_opts{$item}})
+        {
+            # Put the first bracket in here, otherwise it breaks on some
+            # Perl systems.
+            $c = $ref_item =~ /^#/ ? 'r[' : 'g[';
+
+            if($ref_item !~ /^#?set-env$/)
+            {
+                next unless defined $$ref{$ref_item};
+                debug "  ${c}$ref_item] is \"y[", $$ref{$ref_item}, clr ']"';
+            }
+            else
+            {
+                # Dump the environment variables that will be set.
+                my $setref = $$ref{$ref_item};
+
+                foreach my $envitem (keys %{$setref})
+                {
+                    debug "  Set env variable ${c}$envitem] to y[", $$setref{$envitem};
+                }
+            }
+        }
+    }
+}
+
+# Subroutine to unlink the given symlink if global-pretend isn't set.
+sub safe_unlink
+{
+    if (pretending)
+    {
+        pretend "\tWould have unlinked ", shift, ".";
+        return 1; # Return true
+    }
+
+    return unlink (shift);
+}
+
+# Subroutine to execute the system call on the given list if the pretend
+# global option is not set.
+sub safe_system(@)
+{
+    if (not pretending)
+    {
+        info "\tExecuting g[", join(" ", @_);
+        return system (@_) >> 8;
+    }
+
+    pretend "\tWould have run g[", join(' ', @_);
+    return 0; # Return true
+}
+
+# Helper subroutine to create a directory, including any parent
+# directories that may also need created.
+# Returns 0 on failure, non-zero on success
+sub super_mkdir
+{
+    my $pathname = shift;
+    my $temp;
+    my @parts = split (/\//, $pathname);
+
+    if (pretending)
+    {
+        pretend "\tWould have created g[$pathname]";
+        return 1;
+    }
+
+    foreach (@parts)
+    {
+        $temp .= "$_/";
+
+        next if -e $temp;
+        return 0 if not mkdir ($temp);
+    }
+
+    return 1;
+}
+
+# Subroutine to remove a package from the package build list.  This
+# is for use when you've detected an error that should keep the
+# package from building, but you don't want to abort completely.
+sub dont_build
+{
+    my $module = shift;
+
+    whisper "Not building $module";
+
+    # Weed out matches of the module name
+    @build_list = grep (!/^$module$/, @build_list);
+
+    push @{$fail_lists{'update'}}, $module;
+}
+
+# Subroutine to split a url into a protocol and host
+sub split_url
+{
+    my $url = shift;
+    my ($proto, $host) = ($url =~ m|([^:]*)://([^/]*)/|);
+
+    return ($proto, $host);
+}
+
+# This subroutine checks if we are supposed to use ssh agent by examining the
+# environment, and if so checks if ssh-agent has a list of identities.  If it
+# doesn't, we run ssh-add (with no arguments) and inform the user.  This can
+# be controlled with the disable-agent-check parameter.
+sub check_for_ssh_agent
+{
+    my $agent_running = 0;
+    my $server = get_option('global', 'svn-server');
+    my ($proto, $host) = split_url($server);
+
+    # Don't bother with all this if the user isn't even using SSH.
+    return 1 if($proto !~ /ssh/) or get_option('global', 'disable-agent-check');
+
+    # We're using ssh to download, see if ssh-agent is running.
+    return 1 unless exists $ENV{'SSH_AGENT_PID'};
+
+    my $pid = $ENV{'SSH_AGENT_PID'};
+
+    # It's supposed to be running, let's see if there exists the program with
+    # that pid.
+    # PORTABILITY NOTE: I'm not sure if this works under *BSD or Solaris.
+    if (not -e "/proc/$pid")
+    {
+        warning "r[ *] SSH Agent is enabled, but y[doesn't seem to be running].";
+        warning "Since SSH is used to download from Subversion you may want to see why";
+        warning "SSH Agent is not working, or correct the environment variable settings.";
+
+        return 0;
+    }
+
+    # The agent is running, but does it have any keys?  We can't be more specific
+    # with this check because we don't know what key is required.
+    my $keys = `ssh-add -l 2>/dev/null`;
+    if ($keys =~ /no identities/)
+    {
+        # Use print so user can't inadvertently keep us quiet about this.
+        print clr <<EOF;
+b[y[*] SSH Agent does not appear to be managing any keys.  This will lead to you
+  being prompted for every module update for your SSH passphrase.  So, we're
+  running g[ssh-add] for you.  Please type your passphrase at the prompt when
+  requested, (or simply Ctrl-C to abort the script).
+EOF
+        my $result = system('ssh-add');
+        if ($result) # Run this code for both death-by-signal and nonzero return
+        {
+            print "\nUnable to add SSH identity, aborting.\n";
+            print "If you don't want kdesvn-build to check in the future,\n";
+            print clr "Set the g[disable-agent-check] option to g[true] in your $rcfile.\n\n";
+
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+# Subroutine to update a list of Subversion modules.  The first
+# parameter is a reference of a list of the modules to update.
+# If the module has not already been checkout out, this subroutine
+# will do so for you.
+#
+# Returns 0 on success, non-zero on error.
+sub handle_updates
+{
+    my $update_ref = shift;
+    my $kdesvn = get_kdesvn_dir();
+    my $svnroot = get_option ('global', 'svn-server');
+    my $result = 0;
+    my $module;
+
+    # No reason to print out the text if we're not doing anything.
+    return 0 if get_option ('global', 'no-svn');
+    return 0 if scalar @$update_ref == 0;
+
+    return 1 if (not check_for_ssh_agent());
+
+    note "<<<  Updating Subversion Directories  >>>";
+    info " "; # Add newline for aesthetics unless in quiet mode.
+
+    if (not -e $kdesvn)
+    {
+        whisper "KDE Subversion download directory doesn't exist, creating.\n";
+        if (not super_mkdir ($kdesvn))
+        {
+            error "Unable to make directory r[$kdesvn]!";
+            @build_list = (); # Clear out the build list, since we can't build.
+            $install_flag = 0; # Can't install either.
+            return 1;
+        }
+    }
+
+    foreach $module (@{$update_ref})
+    {
+        my $fullpath = get_fullpath($module, 'source');
+
+        if (not exists $package_opts{$module})
+        {
+            warning "Unknown module y[$module], configure it in $rcfile.";
+
+            # Continue in case the user just needs default options, hopefully
+            # it isn't a misspelling.
+            $package_opts{$module} = { 'set-env' => { } };
+        }
+
+        next if get_option($module, 'no-svn');
+
+        my @options = split(' ', get_option($module, 'checkout-only'));
+        if (-e "$fullpath/.svn")
+        {
+            # Warn user if the current repo URL is different than expected.
+            check_module_validity($module);
+            $result = update_module_path($module, @options);
+        }
+        else
+        {
+            $result = checkout_module_path($module, @options);
+        }
+
+        if ($result)
+        {
+            error "Error updating r[$module], removing from list of packages to build.";
+            dont_build ($module);
+        }
+
+        print "\n";
+    }
+
+    info "<<<  Update Complete  >>>\n";
+    return $result;
+}
+
+# Subroutine to run the qt-copy apply_patches script.
+# Returns 0 on success, non-zero on failure.
+sub safe_apply_patches
+{
+    my %pathinfo = get_module_path_dir('qt-copy', 'build');
+    my $builddir = "$pathinfo{fullpath}";
+
+    if (pretending)
+    {
+        pretend "\tWould have run g[./apply_patches]";
+        return 0;
+    }
+
+    info "\tg[Applying recommended Qt patches].";
+    chdir ("$builddir");
+    return (log_command('qt-copy', 'apply-patches', [ "./apply_patches" ]));
+}
+
+# Subroutine to run and log the configure command.  First parameter is the
+# path to the configure script to run, the second parameter is a scalar
+# containing all of the configure flags to apply
+sub safe_configure
+{
+    my $module = shift;
+    my $fullpath = get_fullpath($module, 'source');
+    my $script = "$fullpath/configure";
+
+    my @commands = split (/\s+/, get_option($module, 'configure-flags'));
+
+    # Get the user's CXXFLAGS
+    my $cxxflags = get_option ($module, 'cxxflags');
+    setenv ('CXXFLAGS', $cxxflags);
+    setenv ('DO_NOT_COMPILE', get_option ($module, 'do-not-compile'));
+
+    if ($module ne 'qt-copy')
+    {
+        my $kdedir = get_option ('global', 'kdedir');
+        my $prefix = get_option ($module, 'prefix');
+
+        $prefix = $kdedir unless $prefix;
+
+        push @commands, "CXXFLAGS=$cxxflags" if $cxxflags;
+        push @commands, "--prefix=$prefix";
+
+        # We're special casing these modules because we're using the lndir
+        # hack for them.
+        if (module_needs_builddir_help($module))
+        {
+            $script = get_fullpath($module, 'build') . "/configure";
+        }
+    }
+    else
+    {
+        my $qtdir = get_fullpath('qt-copy', 'build');
+
+        if(not pretending)
+        {
+            # Copy the configure script to accept the GPL license.
+            open CONFIG, "<$script";
+            open NEWCONFIG, ">$qtdir/configure.new";
+            while(<CONFIG>)
+            {
+                s/read acceptance/acceptance=yes/;
+                print NEWCONFIG $_;
+            }
+            close NEWCONFIG;
+            close CONFIG;
+            chmod 0755, "$qtdir/configure.new";
+        }
+
+        $script = "$qtdir/configure.new";
+
+        note "\tb[r[GPL license selected for Qt].  See $fullpath/LICENSE.GPL";
+    }
+
+    info "\tRunning g[configure]...";
+    unshift @commands, $script;
+
+    return log_command($module, "configure", \@commands);
+}
+
+# Subroutine to try and see if we've already tried to update kde-common
+sub has_updated_kdecommon
+{
+    # Test fast case first.
+    return 1 if get_option('global', '#has-checked-for-admin');
+
+    # Double check that it wasn't in the update list.
+    if (grep(/^(KDE\/)?kde-common$/, @update_list))
+    {
+        set_option('global', '#has-checked-for-admin', 1);
+        return 1;
+    }
+
+    return 0;
+}
+
+# Subroutine to automatically create an admir dir for a module if it doesn't
+# have one.  The first parameter is the module name.  It is assumed that we
+# are already in the source directory, the current directory will not be
+# changed.
+#
+# Returns boolean true on success, boolean false on failure.
+#
+# NOTE: This subroutine might try to call an svn update, as long as #no-svn
+# isn't set.
+sub create_admin_dir
+{
+    my $module = shift;
+    my $fullpath = get_fullpath($module, 'source');
+
+    # Don't bother if it's qt-copy, or if we've already got an admin
+    # directory.
+    return 1 if $module eq 'qt-copy';
+    return 1 if -e "$fullpath/admin";
+
+    # Find kde-common
+    my $admindir = get_fullpath('kde-common', 'source') . '/admin';
+    if (not -e $admindir)
+    {
+        $admindir = get_fullpath('KDE/kde-common', 'source') . '/admin';
+    }
+
+    if (not -e $admindir)
+    {
+        # Can't find kde-common, it's apparently not installed.
+        if (not has_updated_kdecommon())
+        {
+            # We haven't tried downloading it, now would be a good time.
+            note "Can't find y[kde-common], going to try downloading it.";
+
+            if (get_option('global', 'no-svn'))
+            {
+                # Not allowed to update.
+                error "r[!!] Updating has been blocked, can't get y[kde-common].";
+                return 0;
+            }
+
+            # Checkout the directory.
+            $admindir = get_fullpath('kde-common', 'source') . '/admin';
+            if (pretending)
+            {
+                pretend "Would have checked out g[kde-common]\n";
+            }
+            elsif (checkout_module_path('kde-common', 'admin') != 0)
+            {
+                return 0;
+            }
+        }
+    }
+
+    chdir ($fullpath);
+
+    whisper "\tCreating symbolic link to g[/admin directory].";
+
+    return symlink $admindir, "$fullpath/admin";
+}
+
+# Subroutine to recursively symlink a directory into another location, in a
+# similar fashion to how the XFree/X.org lndir() program does it.  This is
+# reimplemented here since some systems lndir doesn't seem to work right.
+#
+# As a special exception to the GNU GPL, you may use and redistribute this
+# function however you would like (i.e. consider it public domain).
+#
+# The first parameter is the directory to symlink from.
+# The second parameter is the destination directory name.
+#
+# e.g. if you have $from/foo and $from/bar, lndir would create $to/foo and
+# $to/bar.
+#
+# All intervening directories will be created as needed.  In addition, you
+# may safely run this function again if you only want to catch additional files
+# in the source directory.
+#
+# Note that this function will unconditionally output the files/directories
+# created, as it is meant to be a close match to lndir.
+#
+# RETURN VALUE: Boolean true (non-zero) if successful, Boolean false (0, "")
+#               if unsuccessful.
+sub safe_lndir
+{
+    my ($from, $to) = @_;
+
+    # Create destination directory.
+    if (not -e $to)
+    {
+        print "$to\n";
+        mkdir ($to) unless pretending;
+    }
+
+    # Create closure callback subroutine.
+    my $wanted = sub {
+        my $dir = $File::Find::dir;
+        my $file = $File::Find::fullname;
+        $dir =~ s/$from/$to/;
+
+        # Ignore the .svn directory and files.
+        return if $dir =~ m,/\.svn,;
+
+        # Create the directory.
+        if (not -e $dir)
+        {
+            print "$dir\n";
+
+            if (not pretending)
+            {
+                mkdir ($dir) or die "Couldn't create directory $dir: $!";
+            }
+        }
+
+        # Symlink the file.  Check if it's a regular file because File::Find
+        # has no qualms about telling you you have a file called "foo/bar"
+        # before pointing out that it was really a directory.
+        if (-f $file and not -e "$dir/$_")
+        {
+            print "$dir/$_\n";
+
+            if (not pretending)
+            {
+                symlink $File::Find::fullname, "$dir/$_" or
+                    die "Couldn't create file $dir/$_: $!";
+            }
+        }
+    };
+
+    # Recursively descend from source dir using File::Find
+    eval {
+        find ({ 'wanted' => $wanted,
+                'follow_fast' => 1,
+                'follow_skip' => 2},
+              $from);
+    };
+
+    if ($@)
+    {
+        $! = 0; # sub error will use $! to display error message.
+        error "Unable to symlink $from to $to: $@";
+        return 0;
+    }
+
+    return 1;
+}
+
+# Subroutine to link a source directory into an alternate directory in order
+# to fake srcdir != builddir for modules that don't natively support it.
+# The first parameter is the module to prepare.
+# 
+# The return value is true (non-zero) if it succeeded, and 0 (false) if it
+# failed.
+# 
+# On return from the subroutine the current directory will be in the build
+# directory, since that's the only directory you should touch from then on.
+#
+# You may safely call this subroutine for modules that don't need it, they
+# will automatically be ignored.
+sub prepare_fake_builddir
+{
+    my $module = shift;
+    my $builddir = get_fullpath($module, 'build');
+    my $srcdir = get_fullpath($module, 'source');
+
+    # List reference, not a real list.  The initial kdesvn-build does *NOT*
+    # fork another kdesvn-build using exec, see sub log_command() for more
+    # info.
+    my $args = [ 'kdesvn-build', 'safe_lndir', $srcdir, $builddir ];
+
+    # Skip modules that don't need special treatment.
+    return 1 unless module_needs_builddir_help($module);
+
+    # Backwards compatibility hack.
+    # kdesvn-build 0.97 and earlier would physically copy the Qt source
+    # directory to the build directory.  kdesvn-build versions after that use
+    # the lndir program that is used for kdebindings and valgrind for
+    # portability reasons.  This will break for users who have a real copy of
+    # Qt, so check here if the qt-copy configure script file is a real file
+    # (not a symlink), and if so, use the old method (since presumably it
+    # worked earlier).
+    if ($module eq 'qt-copy' and -e "$builddir/configure" and not -l "$builddir/configure")
+    {
+        whisper "Using deprecated qt-copy builddir faking method.";
+
+        # Use old method of copying.
+        $args = [ 'cp', '-af', $srcdir, $builddir ];
+    }
+
+    # Use an internal routine to complete the directory symlinking (or the
+    # alternate routine in the case of old qt-copy).
+    if (log_command ($module, 'create-builddir', $args))
+    {
+        warning "\tUnable to setup special build system for r[$module].";
+        return 0;
+    }
+
+    return 1; # Success
+}
+
+# Subroutine to create the build system for a module.  This involves making
+# sure the directory exists and then running make -f Makefile.cvs.  This
+# subroutine assumes that the module is already downloaded.
+sub safe_create_build_system
+{
+    my $module = shift;
+    my $fullpath = get_fullpath($module, 'source');
+    my $builddir = get_fullpath($module, 'build');
+    my $instapps = get_option($module, 'inst-apps');
+
+    if (pretending)
+    {
+        pretend "\tWould have created g[$module]\'s build system.";
+        return 0;
+    }
+
+    chdir ($fullpath); # Run make -f Makefile.cvs in srcdir.
+
+    # These modules will run make -f Makefile.cvs in (fake) builddir to keep
+    # srcdir clean. Except for qt-copy when not using qt-builddir-hack.
+    if(module_needs_builddir_help($module))
+    {
+        chdir ($builddir);
+    }
+
+    return 0 if $module eq 'qt-copy'; # since 3.3.6
+
+    if ($instapps)
+    {
+        open (INSTAPPS, ">inst-apps") or do {
+            error "\tUnable to create inst-apps file for r[$module]!";
+            return 1;
+        };
+
+        print INSTAPPS "$instapps\n";
+        close INSTAPPS;
+    }
+    else
+    {
+        unlink ("$fullpath/inst-apps");
+    }
+
+    my $cmd_ref = [ 'make', '-f', 'Makefile.cvs' ];
+    $cmd_ref = [ './autogen.sh' ] if $module eq 'valgrind';
+
+    if (log_command ($module, "build-system", $cmd_ref))
+    {
+        error "\tUnable to create build system for r[$module]";
+        return 1;
+    }
+
+    return 0;
+}
+
+# Subroutine to determine if a given module needs to have the build system
+# recreated from scratch.
+# If so, it returns boolean true.
+sub needs_refreshed
+{
+    my $module = shift;
+    my $builddir = get_fullpath($module, 'build');
+    my $conf_file_key = "Makefile"; # File that exists after configure is run
+
+    # Use a different file to indicate configure has been run for qt-copy
+    $conf_file_key = "src/tools/qconfig.cpp" if $module eq 'qt-copy';
+
+    if (debugging)
+    {
+        debug "Build directory not setup for $module." if not -e "$builddir";
+        debug ".refresh-me exists for $module." if -e "$builddir/.refresh-me";
+        debug "refresh-build option set for $module." if get_option($module, 'refresh-build');
+        debug "Can't find configure key file for $module." if not -e "$builddir/$conf_file_key";
+    }
+
+    return 1 if ((not -e "$builddir") ||
+        (-e "$builddir/.refresh-me") ||
+        get_option($module, "refresh-build") ||
+        (not -e "$builddir/$conf_file_key"));
+
+    return 0;
+}
+
+# Run the svn command.  This is a special subroutine so that we can munge the
+# generated output to see what files have been added, and adjust the build
+# according.
+# First parameter is the module we're building.
+# Second parameter is the filename to use for the log file.
+# Third parameter is a reference to a list, which is the command ('svn') and all
+#       of its arguments.
+sub run_svn
+{
+    my ($module, $logfilename, $arg_ref) = @_;
+    my %hash_count;
+    my $result;
+    my $force_refresh = 0;
+    my $conflict = 0;
+    my $logdir = get_log_dir($module);
+
+    my $revision = get_option('global', 'revision');
+    if ($revision ne '0')
+    {
+        my @tmp = @{$arg_ref};
+
+        # Insert after first two entries, deleting 0 entries from the
+        # list.
+        splice @tmp, 2, 0, '-r', $revision;
+        $arg_ref = \@tmp;
+    }
+
+    # Do svn update.
+    $result = log_command($module, $logfilename, $arg_ref);
+
+    # There will be no result if we're pretending, so don't even
+    # bother.
+    return 0 if pretending;
+
+    $logfilename = "$logdir/$logfilename.log";
+
+    # We need to open the file and try to determine what the Subversion process
+    # did.
+    open SVN_LOG, "<$logfilename";
+    while (<SVN_LOG>)
+    {
+        # The check for capitalized letters in the second column is because
+        # svn can use the first six columns for updates (the characters will
+        # all be uppercase), which makes it hard to tell apart from normal
+        # sentences (like "At Revision foo"
+
+        # Count updates and patches together.
+        $hash_count{'updated'}++    if /^U[ A-Z]/;
+        $hash_count{'updated'}++    if /^P[ A-Z]/;
+        $hash_count{'deleted'}++    if /^D[ A-Z]/;
+        $hash_count{'added'}++      if /^A[ A-Z]/;
+        $hash_count{'removed'}++    if /^R[ A-Z]/;
+        $hash_count{'merged'}++     if /^G[ A-Z]/;
+        $hash_count{'modified'}++   if /^M[ A-Z]/;
+        $hash_count{'conflicted'}++ if /^C[ A-Z]/;
+
+        # Check if we need to force a refresh.
+        $force_refresh = 1 if /^A[ A-Z]/ and /Makefile\.am/;
+        $force_refresh = 1 if /^[PAMGU][ A-Z]/ and /configure\.in\.in/;
+
+        $conflict = 1 if /^C[ A-Z]/;
+    }
+
+    close SVN_LOG;
+
+    my %endings = (
+        'updated'     => 'files were updated',
+        '1updated'    => 'file was updated',
+        'added'       => 'files were added',
+        '1added'      => 'file was added',
+        'removed'     => 'files were removed',
+        '1removed'    => 'file was removed',
+        'modified'    => 'files were modified',
+        '1modified'   => 'file was modified',
+        'conflicted'  => 'files had conflicts',
+        '1conflicted' => 'file had conflicts',
+        'deleted'     => 'files were deleted',
+        '1deleted'    => 'file was deleted',
+        'merged'      => 'files had changes merged',
+        '1merged'     => 'file had changes merged',
+    );
+
+    my ($key, $value);
+    while (($key, $value) = each %hash_count)
+    {
+        next unless $value > 0;
+        my $ending_key = $value > 1 ? $key : ('1' . $key);
+        my $ending = $endings{$ending_key};
+        info "\t$value $ending.";
+    }
+
+    if ($conflict)
+    {
+        warning "Source code conflict exists in r[$module], this module will not";
+        warning "build until it is resolved.";
+        dont_build($module);
+
+        return $result;
+    }
+
+    if ($force_refresh and -e get_fullpath($module, 'build'))
+    {
+        info "File(s) related to the build system were updated, forcing a refresh.";
+        set_option($module, 'refresh-build', 1);
+        set_option($module, '#cancel-clean', 1);
+    }
+
+    return $result;
+}
+
+# Subroutine to clean the build system for the given module.  Works by
+# recursively deleting the directory and then recreating it.  Returns
+# 0 for failure, non-zero for success.
+sub clean_build_system
+{
+    my $module = shift;
+    my $moduledir = get_fullpath($module, 'source');
+    my $builddir = get_fullpath($module, 'build');
+
+    if (pretending)
+    {
+        pretend "\tWould have cleaned build system for g[$module]";
+        return 1;
+    }
+
+    if (not -e $moduledir)
+    {
+        warning "\tUnable to clean build system for r[$module], it's not been checked out!";
+        return 0;
+    }
+
+    # Clean qt-copy separately
+    if ($module eq 'qt-copy' and not get_option('qt-copy', 'use-qt-builddir-hack'))
+    {
+        chdir ("$builddir");
+
+        if (log_command ('qt-copy', 'clean', ['make', 'clean']))
+        {
+            warning "\tr[WARNING]: Error cleaning r[qt-copy].";
+        }
+
+        unlink ("$builddir/.qmake.cache");
+
+        return 1;
+    }
+
+    if (-e "$builddir")
+    {
+        if(safe_system ('rm', '-rf', "$builddir"))
+        {
+            # Remove build directory for normal module.
+            error "\tUnable to clean r[$builddir].";
+            return 0; # False for this function.
+        }
+
+        # Let users know we're done so they don't wonder why rm -rf is taking so
+        # long and oh yeah, why'd my HD so active?...
+        info "\tOld build system cleaned, starting new build system.";
+    }
+
+    # Now create the directory
+    if (not super_mkdir ("$builddir"))
+    {
+        error "\tUnable to create directory r[$builddir].";
+        return 0;
+    }
+
+    return 1;
+}
+
+# Subroutine to setup the build system in a directory.  The first parameter
+# is the module name.  Returns boolean true on success, boolean false (0)
+# on failure.
+sub setup_build_system
+{
+    my $module = shift;
+    my $fullpath = get_fullpath($module, 'source');
+    my $builddir = get_fullpath($module, 'build');
+    my $do_configure = get_option ($module, 'reconfigure');
+    my $do_makeconf = get_option ($module, 'recreate-configure');
+
+    if (needs_refreshed($module))
+    {
+        # The build system needs created, either because it doesn't exist, or
+        # because the user has asked that it be completely rebuilt.
+        info "\tPreparing build system for y[$module].";
+
+        # Define this option to tell later functions that we tried to rebuild
+        # this module.
+        set_option($module, '#was-rebuilt', 1);
+
+        # Check to see if we're actually supposed to go through the cleaning
+        # process.
+        if (not get_option($module, '#cancel-clean') and
+            not clean_build_system($module))
+        {
+            warning "\tUnable to clean r[$module]!";
+            return 0;
+        }
+
+        $do_makeconf = 1;
+    }
+
+    # Symlink source directory to build directory if module doesn't support
+    # srcdir != builddir.  If it's qt-copy only do so if use-qt-builddir-hack
+    # is on (true by default).  Note that module_needs_builddir_help() already
+    # takes care of that test.
+    if (module_needs_builddir_help($module))
+    {
+        whisper "\tFaking builddir for g[$module]";
+        if (not prepare_fake_builddir($module))
+        {
+            error "Error creating r[$module] build system!";
+            return 0;
+        }
+    }
+
+    # Check for admin dir, if it doesn't exist, create a softlink
+    if (not create_admin_dir($module))
+    {
+        warning "Unable to find /admin directory for y[$module], it probably";
+        warning "won't build.";
+        # But continue anyways, because in this case I'm just not sure that it
+        # won't work in the future. ;)
+    }
+
+    my $confpath = module_needs_builddir_help($module) ? $builddir : $fullpath;
+
+    if ($do_makeconf or not -e "$confpath/configure")
+    {
+        whisper "\ty[Recreating configure script].";
+
+        # Update the PATH and other important environment variables.
+        update_module_environment ($module);
+
+        if (safe_create_build_system ($module))
+        {
+            error "\tUnable to create configure system from checkout.";
+            return 0;
+        }
+
+        $do_configure = 1;
+
+        if ($module eq "qt-copy" and get_option($module, 'apply-qt-patches'))
+        {
+            # Run apply-patches script
+            return 0 if safe_apply_patches ();
+        }
+
+        # Check to see if we're supposed to stop here
+        return 1 if get_option ($module, 'build-system-only');
+    }
+
+    # File which exists after configure has been run.
+    my $conf_key_file = "$builddir/Makefile";
+    $conf_key_file = "$builddir/src/tools/qconfig.cpp" if $module eq 'qt-copy';
+
+    if ($do_configure or not -e $conf_key_file)
+    {
+        if (not -e "$builddir" and not super_mkdir("$builddir"))
+        {
+            error "\tUnable to create build directory for r[$module]!!";
+            return 0;
+        }
+
+        # Now we're in the checkout directory
+        # So, switch to the build dir.
+        # builddir is automatically set to the right value for qt-copy
+        chdir ("$builddir");
+
+        # configure the module (sh script return value semantics)
+        if (safe_configure ($module))
+        {
+            error "\tUnable to configure r[$module]!";
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+# Subroutine to setup the environment for a module.  First parameter is the name of
+# the module to set the environment for
+sub update_module_environment
+{
+    my $module = shift;
+    my $kdedir = get_option ($module, 'kdedir');
+    my $qtdir = get_option ($module, 'qtdir');
+    my $path = join(':', "$qtdir/bin", "$kdedir/bin", get_option ($module, 'binpath'));
+    my $libdir = join(':', "$qtdir/lib", "$kdedir/lib", get_option ($module, 'libpath'));
+
+    # Set up the children's environment.  We use setenv since it
+    # won't set an environment variable to nothing.  (e.g, setting
+    # QTDIR to a blank string might confuse Qt or KDE.
+
+    # Remove leading and trailing colons, just in case.
+    # Also remove more than one colon.
+    for ($path, $libdir)
+    {
+        s/:+/:/;
+        s/^:*//;
+        s/:*$//;
+    }
+
+    # Everyone loves unsermake.  It's a pity that not every module will compile with it.
+    # Benjamin Meyer has an excellent article about speeding up distributed builds using
+    # unsermake.  You should notice a much faster build using distcc, and
+    # a slightly faster build even with only one CPU.
+    if (get_option ($module, "use-unsermake"))
+    {
+        my $kdenonbeta = get_fullpath('kdenonbeta', 'source');
+        $path = "$kdenonbeta/unsermake:$path";
+    }
+    else
+    {
+        setenv ("UNSERMAKE", "no");
+    }
+
+    setenv ('LD_LIBRARY_PATH', $libdir);
+    setenv ('PATH', $path);
+    setenv ('KDEDIR', $kdedir);
+    setenv ('QTDIR', $qtdir);
+
+    # Qt has several defines of its own.  Special case qt-copy for this
+    # reason.
+    setenv ("YACC", 'byacc -d') if ($module eq "qt-copy");
+
+    # Read in user environment defines
+    setup_module_environment ($module);
+}
+
+# Subroutine to make sure the build directory for a module is setup.
+# The module to setup is the first parameter.
+#
+# Returns boolean true on success, boolean false on failure.
+sub setup_build_directory
+{
+    my $module = shift;
+    my $builddir = get_build_dir($module);
+
+    if (not -e "$builddir")
+    {
+        whisper "\ty[$builddir] doesn't exist, creating.";
+        if (not super_mkdir ("$builddir"))
+        {
+            error "\tUnable to create r[$builddir]!";
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+# Subroutine to return a string suitable for displaying an elapsed time, (like
+# a stopwatch) would.  The first parameter is the number of seconds elapsed.
+sub prettify_seconds
+{
+    my $elapsed = $_[0];
+    my $str = "";
+    my ($days,$hours,$minutes,$seconds,$fraction);
+
+    $fraction = int (100 * ($elapsed - int $elapsed));
+    $elapsed = int $elapsed;
+
+    $seconds = $elapsed % 60;
+    $elapsed = int $elapsed / 60;
+
+    $minutes = $elapsed % 60;
+    $elapsed = int $elapsed / 60;
+
+    $hours = $elapsed % 24;
+    $elapsed = int $elapsed / 24;
+
+    $days = $elapsed;
+
+    $seconds = "$seconds.$fraction" if $fraction;
+
+    my @str_list;
+
+    for (qw(days hours minutes seconds))
+    {
+        # Use a symbolic reference without needing to disable strict refs.
+        # I couldn't disable it even if I wanted to because these variables
+        # aren't global or localized global variables.
+        my $value = eval "return \$$_;";
+        my $text = $_;
+        $text =~ s/s$// if $value == 1; # Make singular
+
+        push @str_list, "$value $text" if $value or $_ eq 'seconds';
+    }
+
+    # Add 'and ' in front of last element if there was more than one.
+    push @str_list, ("and " . pop @str_list) if (scalar @str_list > 1);
+
+    $str = join (", ", @str_list);
+
+    return $str;
+}
+
+# Subroutine to determine if a given module can run make apidox.  Returns
+# boolean true if make apidox can be run.
+sub make_apidox_supported
+{
+    my $module = shift;
+
+    return $module =~ /^(KDE\/)?(kde(base|games|graphics|libs|pim|velop)|koffice)$/;
+}
+
+# Subroutine to build a given module.  The module to build is the first
+# parameter.  The second and third paramaters is the ordinal number of the
+# module being built (1 == first module, 2 == second, etc.), and the total
+# number of modules being built respectively.
+#
+# Returns boolean false on failure, boolean true on success.
+sub build_module
+{
+    my $module = shift;
+    my $cur_module_num = shift;
+    my $total_module_num = shift;
+    my $apidox = shift;
+    my $builddir = get_fullpath($module, 'build');
+    my $trynumber = 1;
+
+    # Do some tests to make sure we're ready to build.
+    if (not exists $package_opts{$module})
+    {
+        warning "Unknown module y[$module], configure it in $rcfile.";
+        $package_opts{$module} = { 'set-env' => { } };
+    }
+
+    update_module_environment($module);
+
+    if($module eq 'qt-copy' and $builddir ne get_option('global', 'qtdir'))
+    {
+        my $qtpath = $builddir;
+        $qtpath =~ s/$ENV{HOME}/~/;
+        warning <<EOF;
+
+b[y[!!] You're building qt-copy, but QTDIR isn't set to use qt-copy!
+b[y[!!] Please set your qtdir variable in the global section of your
+b[y[!!] $rcfile to g[$qtpath]
+
+EOF
+    }
+
+    my $start_time = time;
+    while (not defined $package_opts{$module}->{'#was-rebuilt'})
+    {
+        note "Building g[$module] ($cur_module_num/$total_module_num)";
+        return 0 if not setup_build_directory($module);
+        return 0 if not setup_build_system($module);
+        return 1 if (get_option ($module, 'build-system-only'));
+
+        if (safe_make ($module, $trynumber))
+        {
+            # Build failed
+            # There are several reasons why the build could fail.  If we're
+            # using unsermake for this module, then perhaps we just need to
+            # run make again.  After that, we can re-run make -f Makefile.cvs
+            # and etc and then try make again.  If that STILL doesn't work, we
+            # can try rm -rf $builddir/$module and rebuild.
+
+            my $elapsed = prettify_seconds (time - $start_time);
+            my $was_rebuilt = defined $package_opts{$module}{'#was-rebuilt'};
+            $start_time = time;
+
+            ++$trynumber;
+
+            if ($trynumber > 3 or $was_rebuilt or get_option ($module, 'no-rebuild-on-fail'))
+            {
+                # Well we tried, but it isn't going to happen.
+                note "\n\tUnable to build y[$module]!";
+                info "\tTook g[$elapsed].";
+                return 0;
+            }
+
+            if ($trynumber == 2)
+            {
+                # Just try again
+                info "\n\ty[Couldn't build, going to try again just in case].";
+                info "\tTook g[$elapsed].";
+                next;
+            }
+
+            # Don't remove the old modules, but re-run make -f
+            # Makefile.cvs and configure.
+            info "\n\tStill couldn't build, recreating build system (builddir is safe).";
+            info "\tTook g[$elapsed] of time.";
+
+            set_option($module, '#cancel-clean', 1);
+            set_option($module, 'refresh-build', 1);
+
+            # Loop again
+        }
+        else
+        {
+            # Build succeeded, build docs if necessary
+            my $apidox_result = 0;
+            my $build_apidox = make_apidox_supported($module) && get_option($module, 'apidox');
+            if ($build_apidox)
+            {
+                $apidox_result = safe_make ($module, $trynumber, 1);
+                error "\tCouldn't build API Documentation" if $apidox_result;
+            }
+
+            my $elapsed = prettify_seconds (time - $start_time);
+            my $do_install = get_option($module, 'install-after-build');
+
+            info "\tBuild done after g[$elapsed].";
+            if ($do_install)
+            {
+                handle_install($module, 0);
+                handle_install($module, 1) if $build_apidox and $apidox_result == 0;
+            }
+            else
+            {
+                info "\tSkipping install for y[$module]";
+            }
+
+            last; # Don't forget to exit the loop!
+        }
+    }
+
+    return 1;
+}
+
+# Subroutine to handle the build process.
+# First parameter is a reference of a list containing the packages
+# we are to build.
+# If the packages are not already checked-out and/or updated, this
+# subroutine WILL NOT do so for you.
+#
+# This subroutine assumes that the $kdesvn directory has already been
+# set up.  It will create $builddir if it doesn't already exist.
+#
+# If $builddir/$module/.refresh-me exists, the subroutine will
+# completely rebuild the module.
+#
+# Returns 0 for success, non-zero for failure.
+sub handle_build
+{
+    my @build_done;
+    my $build_ref = shift;
+    my $kdesvn = get_kdesvn_dir();
+    my $svnroot = get_option ('global', 'svn-server');
+    my $module;
+    my @modules = grep (!/^(KDE\/)?kde-common$/, @{$build_ref});
+    my $result;
+    my $outfile = get_output_file ();
+
+    # No reason to print building messages if we're not building.
+    return 0 if scalar @modules == 0;
+
+    note "<<<  Build Process  >>>";
+
+    # Save the environment to keep module's env changes from affecting other
+    # modules.
+    my %env_backup = %ENV;
+
+    if (pretending)
+    {
+        pretend "\tWould have opened status file g[$outfile].";
+        $outfile = undef; # Don't actually try it though.
+    }
+
+    if ($outfile)
+    {
+        open STATUS_FILE, ">$outfile" or do {
+            error <<EOF;
+	Unable to open output status file r[b[$outfile]
+	You won't be able to use the g[--resume] switch next run.\n";
+EOF
+            $outfile = undef;
+        };
+    }
+
+    my $num_modules = scalar @modules;
+    my $i = 1;
+
+    while ($module = shift @modules)
+    {
+        my $start_time = time;
+
+        if (build_module ($module, $i, $num_modules))
+        {
+            my $elapsed = prettify_seconds(time - $start_time);
+            print STATUS_FILE "$module: Succeeded after $elapsed.\n" if $outfile;
+
+            info "\tOverall time for g[$module] was g[$elapsed].";
+            push @build_done, $module;
+        }
+        else
+        {
+            my $elapsed = prettify_seconds(time - $start_time);
+            print STATUS_FILE "$module: Failed after $elapsed.\n" if $outfile;
+
+            info "\tOverall time for r[$module] was g[$elapsed].";
+            push @{$fail_lists{'build'}}, $module;
+
+            if (get_option($module, 'stop-on-failure'))
+            {
+                note "\n$module didn't build, stopping here.";
+                return 1; # Error
+            }
+        }
+
+        print "\n";
+        %ENV = %env_backup;
+        $i++;
+    }
+
+    # If we have packages that failed to update we should probably mention them
+    # in the build-status file as well.
+    if ($outfile)
+    {
+        for my $failure (@{$fail_lists{'update'}})
+        {
+            print STATUS_FILE "$failure: Failed on update.\n";
+        }
+
+        close STATUS_FILE;
+    }
+
+    info "<<<  Build Done  >>>\n";
+    info "\n<<<  g[PACKAGES SUCCESSFULLY BUILT]  >>>" if scalar @build_done > 0;
+
+    if (not pretending)
+    {
+        # Print out results, and output to a file
+        open BUILT_LIST, ">$kdesvn/successfully-built";
+        foreach $module (@build_done)
+        {
+            info "$module";
+            print BUILT_LIST "$module\n";
+        }
+        close BUILT_LIST;
+    }
+    else
+    {
+        # Just print out the results
+        info 'g[', join ("]\ng[", @build_done), ']';
+    }
+
+    info " "; # Add newline for aesthetics if not in quiet mode.
+    return scalar @{$fail_lists{'build'}};
+}
+
+# Subroutine to exit the script cleanly, including removing any
+# lock files created.  If a parameter is passed, it is interpreted
+# as an exit code to use
+sub finish
+{
+    my $exitcode = shift;
+    my $logdir = get_log_dir('global');
+    $exitcode = 0 unless $exitcode;
+
+    close_lock() unless pretending;
+
+    note "Your logs are saved in y[$logdir]";
+    exit $exitcode;
+}
+
+# Subroutine to determine the current repository URL for the current working
+# directory.
+sub get_repo_url
+{
+    my $output = `svn info | grep URL`;
+    $output =~ s/URL: (.*)$/$1/;
+    chomp $output;
+
+    return $output;
+}
+
+# Subroutine to determine whether or not the given module has the correct
+# URL.  If not, a warning is printed out.
+# First parameter: module to check.
+# Return: Nothing.
+sub check_module_validity
+{
+    # This test reads the HD so don't bother during pretend.
+    return if pretending;
+
+    my $module = shift;
+    my $source_dir = get_fullpath($module, 'source');
+    my $module_expected_url = svn_module_url($module);
+
+    chdir($source_dir); # Required for get_repo_url
+    my $module_actual_url = get_repo_url();
+
+    if($module_actual_url ne $module_expected_url)
+    {
+        warning <<EOF;
+ y[!!]
+ y[!!] g[$module] seems to be checked out from somewhere other than expected.
+ y[!!]
+
+kdesvn-build expects:        y[$module_expected_url]
+The module is actually from: y[$module_actual_url]
+
+If the module location is incorrect, you can fix it by either deleting the
+g[b[source] directory, or by changing to the source directory and running
+  svn switch $module_expected_url
+
+If the module is fine, please update your configuration file.
+EOF
+    }
+}
+
+# Subroutine to handle the installation process.  Simply calls
+# 'make install' in the directory.
+sub handle_install
+{
+    my $apidox = pop; # Take parameter off end of list (@_).
+    my @no_install_modules = qw/qt-copy kde-common/;
+    my $result = 0;
+
+    for my $module (@_)
+    {
+        if (list_has(@no_install_modules, $module))
+        {
+            info "\tg[$module] doesn't need to be installed.";
+            next;
+        }
+
+        my $builddir = get_fullpath($module, 'build');
+
+        if (not exists $package_opts{$module})
+        {
+            warning "\tUnknown module y[$module], configure it in $rcfile.";
+            $package_opts{$module} = { 'set-env' => { } };
+            next;
+        }
+
+        if (not -e "$builddir/Makefile")
+        {
+            warning "\tThe build system doesn't exist for r[$module].";
+            warning "\tTherefore, we can't install it. y[:-(].";
+            next;
+        }
+
+        # Just in case, I guess.
+        update_module_environment ($module);
+
+        # The /admin directory is needed for install as well, make sure it's
+        # there.
+        if (not create_admin_dir($module))
+        {
+            warning "Unable to find /admin directory for y[$module], it probably";
+            warning "won't install.";
+            # But continue anyways, because in this case I'm just not sure that it
+            # won't work in the future. ;)
+        }
+
+        # safe_make() evilly uses the "install" parameter to use installation
+        # mode instead of compile mode.  This is so we can get the subdirectory
+        # handling for free.
+        if (safe_make ($module, "install", $apidox))
+        {
+            error "\tUnable to install r[$module]!";
+            $result = 1;
+            push @{$fail_lists{'install'}}, $module;
+
+            if (get_option($module, 'stop-on-failure'))
+            {
+                note "y[Stopping here].";
+                return 1; # Error
+            }
+        }
+
+        if (pretending)
+        {
+            pretend "\tWould have installed g[$module]";
+            next;
+        }
+
+        next if $result != 0; # Don't delete anything if the build failed.
+
+        my $remove_setting = get_option($module, 'remove-after-install');
+
+        # Possibly remove the srcdir and builddir after install for users with
+        # a little bit of HD space.
+        if($remove_setting eq 'all')
+        {
+            # Remove srcdir
+            my $srcdir = get_fullpath($module, 'source');
+            note "\tRemoving b[r[$module source].";
+            system ('rm', '-rf', $srcdir);
+        }
+
+        if($remove_setting eq 'builddir' or $remove_setting eq 'all')
+        {
+            # Remove builddir
+            note "\tRemoving b[r[$module build directory].";
+            system ('rm', '-rf', $builddir);
+        }
+    }
+
+    return $result;
+}
+
+# This subroutine goes and makes sure that any entries in the update and build
+# lists that have a directory separator are faked into using the checkout-only
+# feature.  This doesn't really work for install mode though.
+sub munge_lists
+{
+    debug "Munging update and build list";
+    my $cleared = 0;
+
+    for my $list_ref ( ( \@update_list, \@build_list) ) {
+        my @temp;
+
+        while ($_ = shift @$list_ref) {
+            # Split at directory separators.
+            my ($modulename, @dirs) = split(/\//);
+
+            # For these modules, the first part of the directory separator
+            # actually belongs with the module name.
+            if (has_base_module($modulename))
+            {
+                $modulename .= "/" . shift @dirs;
+            }
+
+            if (scalar @dirs > 0)
+            {
+                # Only build the specified subdirs
+                if (not $cleared)
+                {
+                    debug "Clearing checkout-only option.";
+
+                    $cleared = 1;
+                    set_option($modulename, 'checkout-only', '');
+                }
+
+                # The user has included a directory separator in the module name, so
+                # let's fake the svn partial checkout
+                $_ = $modulename;
+
+                # Don't automatically add the /admin dir for this module now.
+                set_option($_, '#suppress-auto-admin', 1);
+
+                my $checkout_str = join ("/", @dirs);
+
+                debug "Adding $checkout_str to checkout-only for $_";
+
+                if (get_option($_, 'checkout-only') !~ /$checkout_str/)
+                {
+                    $package_opts{$_}{'checkout-only'} .= " $checkout_str";
+                }
+                else
+                {
+                    debug print "\tOption was already present.";
+                }
+            }
+            else
+            {
+                debug "Skipping $_ in munge process.";
+            }
+
+            # Don't add the modulename to the list twice.
+            push @temp, $_ if not list_has(@temp, $_);
+        }
+
+        @$list_ref = @temp;
+    }
+}
+
+# Subroutine to try an intelligently determine what caused the module to fail
+# to build/update/whatever.  The first parameter is the name of the module,
+# and the return value is the best guess at the error.  If no error is detected
+# the last 30 lines of the file are returned instead.
+sub whats_the_module_error
+{
+    my $module = shift;
+    my $file = get_option($module, '#error-log-file');
+
+    open ERRORFILE, "<$file" or return "Can't open logfile $file.\n";
+
+    my @lastlines;      # Used to buffer last lines read.
+    my @errors;         # Tracks errors and the file they were found in.
+    my $lastfile = '';  # Tracks last filename read in error log.
+    my $errorCount = 0;
+    my $output;
+
+    # TODO: This code is tested for gcc and GNU ld, as, etc, I'm not sure how
+    # effective it is at parsing the error output of other build toolchains.
+    while (<ERRORFILE>)
+    {
+        # Keep last 30 lines.
+        push @lastlines, $_;
+        shift @lastlines if scalar @lastlines > 30;
+
+        my ($file, $line, $msg) = /^([^:]*):(\d+):\s*(.*)$/;
+
+        next unless ($file and $line and $msg);
+        next if $msg =~ /warn/i;
+        next if $msg =~ /^in file included from/i;
+        next if $msg =~ /^\s*$/ or $file =~ /^\s*$/;
+        $msg =~ s/^error: ?//i;
+
+        if ($file eq $lastfile)
+        {
+            $errorCount++;
+            push @errors, $msg if $errorCount < 5;
+        }
+        else
+        {
+            # Check is because we print info on the last file read, so there
+            # should be a last file. ;)
+            if ($lastfile)
+            {
+                my $error = $errorCount == 1 ? "error" : "errors";
+                $output .= "$errorCount $error in $lastfile\n";
+                $output .= "Error: $_\n" foreach (@errors);
+                $output .= "\t<clipped>\n" if $errorCount > 5;
+                $output .= "\n";
+            }
+
+            $errorCount = 1;
+            @errors = ($msg);
+        }
+
+        $lastfile = $file;
+    }
+
+    close ERRORFILE;
+
+    if (not $lastfile)
+    {
+        # Print out last lines read, hopefully a more descriptive error
+        # message is in there.
+        $output .= "Can't find errors, last " . scalar @lastlines . " line(s) of the output are:\n";
+        $output .= $_ foreach (@lastlines);
+        return $output;
+    }
+
+    # Don't forget to display info on last file read since it won't be done in
+    # the loop.
+    my $error = $errorCount == 1 ? "error" : "errors";
+    $output .= "$errorCount $error in $lastfile\n";
+    $output .= "Error: $_\n" foreach (@errors);
+    $output .= "\t<clipped>\n" if $errorCount > 5;
+
+    return $output;
+}
+
+# Subroutine to get the e-mail address to send e-mail from.
+# It is pulled from the global email-address option by default.
+# The first parameter is a default e-mail address to use (may be left off, in
+# which case this function will create a default of its own if necessary.)
+sub get_email_address
+{
+    my $email = get_option('global', 'email-address');
+    my $default = shift;
+
+    # Use user's value if set.
+    return $email if $email;
+
+    # Let's use the provided default if set.
+    return $default if $default;
+
+    # Let's make a default of our own.  It's likely to suck, so oh well.
+    use Sys::Hostname;
+    my $username = getpwuid($>);
+    my $hostname = hostname; # From Sys::Hostname
+
+    debug "User has no email address, using $username\@$hostname";
+
+    return "$username\@$hostname";
+}
+
+# Subroutine to look through the various failed lists, and send an email to the
+# given email address with a description of the failures.  If the user has
+# selected no email address the subroutine does nothing.
+sub email_error_report
+{
+    my $email_addy = get_option('global', 'email-on-compile-error');
+    my $from_addy = get_email_address($email_addy);
+
+    return unless $email_addy;
+
+    # Initial e-mail header.
+    my $email_body = <<EOF;
+The following errors were detected in the kdesvn-build run just completed.
+
+EOF
+
+    # Loop through modules trying to find out what caused the errors.
+    my $had_error = 0;
+    for my $type (@fail_display_order)
+    {
+        for my $module (@{$fail_lists{$type}})
+        {
+            $email_body .= "$module failed to $type:\n";
+            $email_body .= "-------------------------------\n\n";
+            $email_body .= whats_the_module_error($module);
+            $email_body .= "-------------------------------\n\n";
+
+            $had_error = 1;
+        }
+    }
+
+    return unless $had_error;
+
+    # Detect Mail::Mailer.
+    my $mailer;
+    eval {
+        require Mail::Mailer;
+
+        $mailer = new Mail::Mailer;
+    } or do {
+        error " y[*] Can't open y[b[Mail::Mailer] module, so e-mailing is disabled.";
+        debug "Error was $@";
+        return;
+    };
+
+    # Sendeth the email.
+    $mailer->open({
+        'From'    => $from_addy,
+        'To'      => $email_addy,
+        'Subject' => 'KDE Subversion build compile error',
+    });
+
+    print $mailer $email_body;
+    $mailer->close;
+}
+
+# This subroutine sets up or removes the default branch option for a few
+# modules in order to build KDE 3.5 by default.  branch options in the
+# configuration file will still override these settings.
+sub setup_kde35_hack
+{
+    my @branched_modules = qw/kde-common kdeaccessibility kdeaddons kdeadmin
+        kdeartwork kdebase kdebindings kdeedu kdegames kdegraphics kdelibs
+        kdemultimedia kdenetwork kdepim kdesdk kdetoys kdeutils kdevelop
+        kdewebdev/;
+
+    # arts uses a different versioning scheme.
+    set_option('arts', 'branch', '1.5');
+
+    # koffice 1.5 is the last KDE 3 compatible release.
+    set_option('koffice', 'branch', '1.5');
+
+    # qt-copy is in branches/qt/3.3.  Due to the default option handling the
+    # handling is done in setup_default_modules().
+    # set_option('qt-copy', 'module-base-path', 'branches/qt/3.3');
+
+    for my $module (@branched_modules)
+    {
+        # Default to downloading from KDE 3.5 instead of KDE 4.
+        set_option($module, 'branch', '3.5');
+    }
+}
+
+# Script starts.
+
+# Use some exception handling to avoid ucky error messages
+eval
+{
+    # Note to self:  Quit changing the order around.
+    process_arguments();       # Process --help, --install, etc. first.
+    setup_kde35_hack();        # Add 'branch' options as appropriate.
+    read_options();            # If we're still here, read the options
+    initialize_environment();  # Initialize global env vars.
+
+    setup_logging_subsystem(); # Setup logging directories.
+
+    dump_options() if debugging;
+};
+
+if ($@)
+{
+    # We encountered an error.
+    print "Encountered an error in the execution of the script.\n";
+    print "The error reported was $@\n";
+    print "Please submit a bug against kdesvn-build on http://bugs.kde.org/\n";
+
+    # Don't finish, because we haven't attained the lock yet.
+    exit 99;
+}
+
+if (not pretending and not get_lock())
+{
+    print "$0 is already running!\n";
+    exit 0; # Don't finish(), it's not our lockfile!!
+}
+
+# Now use an exception trapping loop that calls finish().
+my $result;
+eval
+{
+    my $time = localtime;
+    info "Script started processing at g[$time]";
+
+    @update_list = get_update_list();
+    @build_list = get_build_list();
+
+    debug "Update list is ", join (', ', @update_list);
+    debug "Build list is ", join (', ', @build_list);
+
+    # Do some necessary adjusting. Right now this is used for supporting
+    # the command-line option shortcut to where you can enter e.g.
+    # kdelibs/khtml, and the script will only try to update that part of
+    # the module.
+    munge_lists();
+
+    # Make sure unsermake is checked out automatically if needed
+    adjust_update_list(\@update_list, \@build_list);
+
+    if (not $install_flag)
+    {
+        # No packages to install, we're in build mode
+        $result = handle_updates (\@update_list);
+        $result = handle_build (\@build_list) || $result;
+    }
+    else
+    {
+        # Installation mode (no apidox)
+        $result = handle_install (get_install_list(), 0);
+    }
+
+    output_failed_module_lists();
+    email_error_report();
+
+    $time = localtime;
+    my $color = '';
+    $color = 'r[' if $result;
+
+    info "${color}Script finished processing at g[$time]";
+};
+
+if ($@)
+{
+    # We encountered an error.
+    print "Encountered an error in the execution of the script.\n";
+    print "The error reported was $@\n";
+    print "Please submit a bug against kdesvn-build on http://bugs.kde.org/\n";
+
+    $result = 99;
+}
+
+finish($result);
+
+# vim: set et sw=4 ts=4:
