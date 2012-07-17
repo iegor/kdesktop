@@ -1249,7 +1249,7 @@ void QinxStyle::drawControl(ControlElement element,
                    group, flags & Style_Enabled, b->pixmap(), b->text());
 
           // only draw focus if content (forms on html won't)
-          if ((flags & Style_HasFocus) && ((b->text()) || b->pixmap())) {
+          if ((flags & Style_HasFocus) && ((b->text()) || (b->pixmap()))) {
               drawPrimitive(PE_FocusRect, painter,
                             visualRect(subRect(SR_RadioButtonFocusRect,
                                                widget), widget),
