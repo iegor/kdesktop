@@ -1109,7 +1109,7 @@ unsigned long KStartupInfoId::timestamp() const
 struct KStartupInfoDataPrivate
     {
     KStartupInfoDataPrivate() : desktop( 0 ), wmclass( "" ), hostname( "" ),
-	silent( KStartupInfoData::Unknown ), timestamp( -1U ), screen( -1 ) {}
+	silent( KStartupInfoData::Unknown ), timestamp( -1U ), screen( -1 ), xinerama( -1 ), launched_by( 0 ) {};
     QString bin;
     QString name;
     QString description;
@@ -1121,6 +1121,8 @@ struct KStartupInfoDataPrivate
     KStartupInfoData::TriState silent;
     unsigned long timestamp;
     int screen;
+    int xinerama;
+    WId launched_by;
     };
 
 QString KStartupInfoData::to_text() const
@@ -1151,6 +1153,10 @@ QString KStartupInfoData::to_text() const
         ret += QString::fromLatin1( " TIMESTAMP=%1" ).arg( d->timestamp );
     if( d->screen != -1 )
         ret += QString::fromLatin1( " SCREEN=%1" ).arg( d->screen );
+    if( d->xinerama != -1 )
+        ret += QString::fromLatin1( " XINERAMA=%1" ).arg( d->xinerama );
+    if( d->launched_by != 0 )
+        ret += QString::fromLatin1( " LAUNCHED_BY=%1" ).arg( d->launched_by );
     return ret;
     }
 
@@ -1169,6 +1175,8 @@ KStartupInfoData::KStartupInfoData( const QString& txt_P )
     const QString silent_str = QString::fromLatin1( "SILENT=" );
     const QString timestamp_str = QString::fromLatin1( "TIMESTAMP=" );
     const QString screen_str = QString::fromLatin1( "SCREEN=" );
+    const QString xinerama_str = QString::fromLatin1( "XINERAMA=" );
+    const QString launched_by_str = QString::fromLatin1( "LAUNCHED_BY=" );
     for( QStringList::Iterator it = items.begin();
          it != items.end();
          ++it )
@@ -1199,6 +1207,10 @@ KStartupInfoData::KStartupInfoData( const QString& txt_P )
             d->timestamp = get_unum( *it );
         else if( ( *it ).startsWith( screen_str ))
             d->screen = get_num( *it );
+        else if( ( *it ).startsWith( xinerama_str ))
+            d->xinerama = get_num( *it );
+        else if( ( *it ).startsWith( launched_by_str ))
+            d->launched_by = get_num( *it );
         }
     }
 
@@ -1242,6 +1254,10 @@ void KStartupInfoData::update( const KStartupInfoData& data_P )
         d->timestamp = data_P.timestamp();
     if( data_P.screen() != -1 )
         d->screen = data_P.screen();
+    if( data_P.xinerama() != -1 && xinerama() != -1 ) // don't overwrite
+        d->xinerama = data_P.xinerama();
+    if( data_P.launchedBy() != 0 && launchedBy() != 0 ) // don't overwrite
+        d->launched_by = data_P.launchedBy();
     }
 
 KStartupInfoData::KStartupInfoData()
@@ -1410,6 +1426,26 @@ void KStartupInfoData::setScreen( int screen )
 int KStartupInfoData::screen() const
     {
     return d->screen;
+    }
+
+void KStartupInfoData::setXinerama( int xinerama )
+    {
+    d->xinerama = xinerama;
+    }
+
+int KStartupInfoData::xinerama() const
+    {
+    return d->xinerama;
+    }
+
+void KStartupInfoData::setLaunchedBy( WId window )
+    {
+    d->launched_by = window;
+    }
+
+WId KStartupInfoData::launchedBy() const
+    {
+    return d->launched_by;
     }
 
 static

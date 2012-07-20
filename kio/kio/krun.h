@@ -111,6 +111,8 @@ public:
    */
   KRun( const KURL& url, QWidget* window, mode_t mode = 0,
 	bool isLocalFile = false, bool showProgressInfo = true );
+  KRun( const KURL& url, QWidget* window, const QCString& asn, mode_t mode = 0,
+	bool isLocalFile = false, bool showProgressInfo = true );
 
   /**
    * Destructor. Don't call it yourself, since a KRun object auto-deletes
@@ -210,6 +212,8 @@ public:
    * @since 3.5.2
    */
   static pid_t run( const KService& _service, const KURL::List& _urls, QWidget* window, bool tempFiles = false );
+  static pid_t run( const KService& _service, const KURL::List& _urls, QWidget* window,
+      const QCString& asn, bool tempFiles = false );
   /**
    * Open a list of URLs with a certain service (application).
    *
@@ -226,6 +230,8 @@ public:
   /// @since 3.5.3
   /// @internal
   static pid_t run( const KService& _service, const KURL::List& _urls, QWidget* window, bool tempFiles, const QString& suggestedFileName );
+  static pid_t run( const KService& _service, const KURL::List& _urls, QWidget* window,
+      const QCString& asn, bool tempFiles, const QString& suggestedFileName );
 
   /**
    * Open a list of URLs with.
@@ -269,6 +275,7 @@ public:
   static pid_t runURL( const KURL& _url, const QString& _mimetype );
   /// @since 3.5.3
   /// @internal
+  static pid_t runURL( const KURL& _url, const QString& _mimetype, QWidget* window, const QCString& asn, bool tempFile, bool runExecutables, const QString& suggestedFileName );
   static pid_t runURL( const KURL& _url, const QString& _mimetype, bool tempFile, bool runExecutables, const QString& suggestedFileName );
 
   /**
@@ -299,6 +306,8 @@ public:
    * of running command) if command was unsafe for map notification.
    */
   static pid_t runCommand( const QString& cmd, const QString & execName, const QString & icon );
+  static pid_t runCommand( const QString& cmd, const QString & execName, const QString & icon,
+      QWidget* window, const QCString& asn );
 
   /**
    * Display the Open-With dialog for those URLs, and run the chosen application.
@@ -438,7 +447,7 @@ protected:
   virtual void virtual_hook( int id, void* data );
 
 private:
-  void init (const KURL& url, QWidget* window, mode_t mode,
+  void init (const KURL& url, QWidget* window, const QCString& asn, mode_t mode,
              bool isLocalFile, bool showProgressInfo);
 private:
   class KRunPrivate;

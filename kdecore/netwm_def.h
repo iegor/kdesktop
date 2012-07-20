@@ -610,6 +610,7 @@ public:
         WM2WindowRole          = 1<<11, ///< @since 3.3
         WM2ClientMachine       = 1<<12, ///< @since 3.3
         WM2ShowingDesktop      = 1<<13, ///< @since 3.5
+         WM2FullPlacement       = 1<<14,
         WM2DesktopLayout       = 1<<15  ///< @since 3.5.8
     };
 
