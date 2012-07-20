@@ -87,7 +87,7 @@ KSMIMECryptoPrivate::KSMIMECryptoPrivate(KOpenSSLProxy *kossl): kossl(kossl) {
 
 
 STACK_OF(X509) *KSMIMECryptoPrivate::certsToX509(QPtrList<KSSLCertificate> &certs) {
-    STACK_OF(X509) *x509 = sk_new(NULL);
+    STACK_OF(X509) *x509 = sk_X509_new(NULL);
     KSSLCertificate *cert = certs.first();
     while(cert) {
 	sk_X509_push(x509, cert->getCert());

@@ -120,10 +120,10 @@ static void (*K_X509_STORE_CTX_set_chain) (X509_STORE_CTX *, STACK_OF(X509)*) = 
 static void (*K_X509_STORE_CTX_set_purpose) (X509_STORE_CTX *, int) = 0L;
 static void (*K_sk_free) (STACK*) = 0L;
 static int (*K_sk_num) (STACK*) = 0L;
-static char* (*K_sk_pop) (STACK*) = 0L;
-static char* (*K_sk_value) (STACK*, int) = 0L;
+static void* (*K_sk_pop) (STACK*) = 0L;
+static void* (*K_sk_value) (STACK*, int) = 0L;
 static STACK* (*K_sk_new) (int (*)()) = 0L;
-static int (*K_sk_push) (STACK*, char*) = 0L;
+static int (*K_sk_push) (STACK*, void*) = 0L;
 static STACK* (*K_sk_dup) (STACK *) = 0L;
 static char * (*K_i2s_ASN1_INTEGER) (X509V3_EXT_METHOD *, ASN1_INTEGER *) =0L;
 static ASN1_INTEGER * (*K_X509_get_serialNumber) (X509 *) = 0L;
@@ -180,8 +180,8 @@ static void (*K_SSL_SESSION_free)(SSL_SESSION*) = 0L;
 static int (*K_SSL_set_session)(SSL*,SSL_SESSION*) = 0L;
 static SSL_SESSION* (*K_d2i_SSL_SESSION)(SSL_SESSION**,unsigned char**, long) = 0L;
 static int (*K_i2d_SSL_SESSION)(SSL_SESSION*,unsigned char**) = 0L;
-static STACK *(*K_X509_get1_email)(X509 *x) = 0L;
-static void (*K_X509_email_free)(STACK *sk) = 0L;
+static KOSSL1_STACK_OF(OPENSSL_STRING) *(*K_X509_get1_email)(X509 *x) = 0L;
+static void (*K_X509_email_free)(KOSSL1_STACK_OF(OPENSSL_STRING) *sk) = 0L;
 static EVP_CIPHER *(*K_EVP_des_ede3_cbc)() = 0L;
 static EVP_CIPHER *(*K_EVP_des_cbc)() = 0L;
 static EVP_CIPHER *(*K_EVP_rc2_cbc)() = 0L;
@@ -424,10 +424,10 @@ KConfig *cfg;
       K_X509_STORE_CTX_set_purpose = (void (*)(X509_STORE_CTX *, int)) _cryptoLib->symbol("X509_STORE_CTX_set_purpose");
       K_sk_free = (void (*) (STACK *)) _cryptoLib->symbol("sk_free");
       K_sk_num = (int (*) (STACK *)) _cryptoLib->symbol("sk_num");
-      K_sk_pop = (char* (*) (STACK *)) _cryptoLib->symbol("sk_pop");
-      K_sk_value = (char* (*) (STACK *, int)) _cryptoLib->symbol("sk_value");
+      K_sk_pop = (void* (*) (STACK *)) _cryptoLib->symbol("sk_pop");
+      K_sk_value = (void* (*) (STACK *, int)) _cryptoLib->symbol("sk_value");
       K_sk_new = (STACK* (*) (int (*)())) _cryptoLib->symbol("sk_new");
-      K_sk_push = (int (*) (STACK*, char*)) _cryptoLib->symbol("sk_push");
+      K_sk_push = (int (*) (STACK*, void*)) _cryptoLib->symbol("sk_push");
       K_sk_dup = (STACK* (*) (STACK *)) _cryptoLib->symbol("sk_dup");
       K_i2s_ASN1_INTEGER = (char *(*) (X509V3_EXT_METHOD *, ASN1_INTEGER *)) _cryptoLib->symbol("i2s_ASN1_INTEGER");
       K_X509_get_serialNumber = (ASN1_INTEGER * (*) (X509 *)) _cryptoLib->symbol("X509_get_serialNumber");
@@ -478,8 +478,8 @@ KConfig *cfg;
       K_ERR_clear_error = (void (*)()) _cryptoLib->symbol("ERR_clear_error");
       K_ERR_get_error = (unsigned long (*)()) _cryptoLib->symbol("ERR_get_error");
       K_ERR_print_errors_fp = (void (*)(FILE*)) _cryptoLib->symbol("ERR_print_errors_fp");
-      K_X509_get1_email = (STACK *(*)(X509 *x)) _cryptoLib->symbol("X509_get1_email");
-      K_X509_email_free = (void (*)(STACK *sk)) _cryptoLib->symbol("X509_email_free");
+      K_X509_get1_email = (KOSSL1_STACK_OF(OPENSSL_STRING) *(*)(X509 *x)) _cryptoLib->symbol("X509_get1_email");
+      K_X509_email_free = (void (*)(KOSSL1_STACK_OF(OPENSSL_STRING) *sk)) _cryptoLib->symbol("X509_email_free");
       K_EVP_des_ede3_cbc = (EVP_CIPHER *(*)()) _cryptoLib->symbol("EVP_des_ede3_cbc");
       K_EVP_des_cbc = (EVP_CIPHER *(*)()) _cryptoLib->symbol("EVP_des_cbc");
       K_EVP_rc2_cbc = (EVP_CIPHER *(*)()) _cryptoLib->symbol("EVP_rc2_cbc");
@@ -568,7 +568,7 @@ KConfig *cfg;
       K_SSL_set_session = (int (*)(SSL*,SSL_SESSION*)) _sslLib->symbol("SSL_set_session");
       K_d2i_SSL_SESSION = (SSL_SESSION* (*)(SSL_SESSION**,unsigned char**, long)) _sslLib->symbol("d2i_SSL_SESSION");
       K_i2d_SSL_SESSION = (int (*)(SSL_SESSION*,unsigned char**)) _sslLib->symbol("i2d_SSL_SESSION");
-      K_SSL_get_ciphers = (STACK *(*)(const SSL*)) _sslLib->symbol("SSL_get_ciphers");
+      K_SSL_get_ciphers = (STACK_OF(SSL_CIPHER) *(*)(const SSL*)) _sslLib->symbol("SSL_get_ciphers");
 #endif
 
 
@@ -1075,13 +1075,13 @@ int KOpenSSLProxy::sk_num(STACK *s) {
 }
 
 
-char *KOpenSSLProxy::sk_pop(STACK *s) {
+void *KOpenSSLProxy::sk_pop(STACK *s) {
    if (K_sk_pop) return (K_sk_pop)(s);
    else return 0L;
 }
 
 
-char *KOpenSSLProxy::sk_value(STACK *s, int n) {
+void *KOpenSSLProxy::sk_value(STACK *s, int n) {
    if (K_sk_value) return (K_sk_value)(s, n);
    else return 0L;
 }
@@ -1102,13 +1102,13 @@ STACK* KOpenSSLProxy::sk_dup(STACK *s) {
 }
 
 
-STACK* KOpenSSLProxy::sk_new(int (*cmp)()) {
-   if (K_sk_new) return (K_sk_new)(cmp);
+STACK* KOpenSSLProxy::sk_new(int (*cmp)(const void*, const void*)) {
+  if (K_sk_new) return (K_sk_new)(reinterpret_cast<int (*)()>(cmp));
    else return 0L;
 }
 
 
-int KOpenSSLProxy::sk_push(STACK* s, char* d) {
+int KOpenSSLProxy::sk_push(STACK* s, void* d) {
    if (K_sk_push) return (K_sk_push)(s,d);
    else return -1;
 }
@@ -1407,12 +1407,12 @@ RSA* KOpenSSLProxy::RSA_generate_key(int bits, unsigned long e, void
    else return 0L;
 }
 
-STACK *KOpenSSLProxy::X509_get1_email(X509 *x) {
+KOSSL1_STACK_OF(OPENSSL_STRING) *KOpenSSLProxy::X509_get1_email(X509 *x) {
    if (K_X509_get1_email) return (K_X509_get1_email)(x);
    else return 0L;
 }
 
-void KOpenSSLProxy::X509_email_free(STACK *sk) {
+void KOpenSSLProxy::X509_email_free(KOSSL1_STACK_OF(OPENSSL_STRING) *sk) {
    if (K_X509_email_free) (K_X509_email_free)(sk);
 }
 

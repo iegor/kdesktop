@@ -225,9 +225,10 @@ void KSSLCertificate::getEmails(QStringList &to) const {
 	if (!d->m_cert)
 		return;
 	
-	STACK *s = d->kossl->X509_get1_email(d->m_cert);
+	KOSSL1_STACK_OF(OPENSSL_STRING) *s =
+		d->kossl->X509_get1_email(d->m_cert);
 	if (s) {
-		for(int n=0; n < s->num; n++) {
+		for(int n=0; n < d->kossl->sk_num(s); n++) {
 			to.append(d->kossl->sk_value(s,n));
 		}
 		d->kossl->X509_email_free(s);

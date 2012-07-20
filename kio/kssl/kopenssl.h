@@ -47,6 +47,51 @@ class KOpenSSLProxyPrivate;
 #include <openssl/evp.h>
 #include <openssl/stack.h>
 #include <openssl/bn.h>
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+typedef struct asn1_method_st
+	{
+	i2d_of_void *i2d;
+	d2i_of_void *d2i;
+	void *(*create)(void);
+	void (*destroy)(void *);
+	} ASN1_METHOD;
+typedef struct asn1_header_st
+	{
+	ASN1_OCTET_STRING *header;
+	void *data;
+	ASN1_METHOD *meth;
+	} ASN1_HEADER;
+typedef struct stack_st STACK;
+
+#include <openssl/safestack.h>
+
+template<class S> struct KOpenSSLElementType;
+template<class T> struct KOpenSSLStackType;
+
+#define KOSSL_DECLARE_STACK_OF(type)                            \
+  template<> struct KOpenSSLElementType<STACK_OF(type)> {        \
+    typedef type value_t;                                       \
+    typedef type* ptr_t;                                        \
+  };                                                            \
+  template<> struct KOpenSSLStackType<const type*> {             \
+    typedef STACK_OF(type) stack_t;                             \
+    typedef STACK_OF(type) *ptr_t;                              \
+  };
+
+KOSSL_DECLARE_STACK_OF(GENERAL_NAME)
+KOSSL_DECLARE_STACK_OF(SSL_CIPHER)
+KOSSL_DECLARE_STACK_OF(X509)
+
+template<> struct KOpenSSLElementType<STACK_OF(OPENSSL_STRING)> {
+  typedef char value_t;
+  typedef OPENSSL_STRING ptr_t;
+};
+
+#define KOSSL1_STACK_OF(type) STACK_OF(type)
+#else
+#define KOSSL1_STACK_OF(type) STACK
+#endif
+
 #undef crypt
 #endif
 
@@ -523,7 +568,7 @@ public:
    /* 
     *   Pop off the stack
     */
-   char *sk_pop(STACK *s);
+   void *sk_pop(STACK *s);
 
 
    /* 
@@ -541,25 +586,73 @@ public:
    /* 
     *  Value of element n in the stack
     */
-   char *sk_value(STACK *s, int n);
+   void *sk_value(STACK *s, int n);
 
 
    /* 
     *  Create a new stack
     */
-   STACK *sk_new(int (*cmp)());
+   STACK *sk_new(int (*cmp)(const void *, const void *));
 
 
    /* 
     *  Add an element to the stack
     */
-   int sk_push(STACK *s, char *d);
+   int sk_push(STACK *s, void *d);
 
 
    /* 
     *  Duplicate the stack
     */
    STACK *sk_dup(STACK *s);
+
+
+#if defined(KSSL_HAVE_SSL) && OPENSSL_VERSION_NUMBER >= 0x10000000L
+
+   /* Use some template magic to simulate the OpenSSL 1.0.0 safestack macros */
+
+   template<class S> typename KOpenSSLElementType<S>::ptr_t
+   sk_pop(S *s) {
+     return reinterpret_cast<typename KOpenSSLElementType<S>::ptr_t>
+       (sk_pop(reinterpret_cast<STACK*>(s)));
+   }
+
+   template<class S> void
+   sk_free(S *s) {
+     typedef typename KOpenSSLElementType<S>::ptr_t ensure_its_a_stack_type;
+     sk_free(reinterpret_cast<STACK*>(s));
+   }
+
+   template<class S> int
+   sk_num(S *s) {
+     typedef typename KOpenSSLElementType<S>::ptr_t ensure_its_a_stack_type;
+     return sk_num(reinterpret_cast<STACK*>(s));
+   }
+
+   template<class S> typename KOpenSSLElementType<S>::ptr_t
+   sk_value(S *s, int n) {
+     return reinterpret_cast<typename KOpenSSLElementType<S>::ptr_t>
+       (sk_value(reinterpret_cast<STACK*>(s), n));
+   }
+
+   template<class T> typename KOpenSSLStackType<T>::ptr_t
+   sk_new(int (*cmp)(T const *, T const *)) {
+     return reinterpret_cast<typename KOpenSSLStackType<T>::ptr_t>
+       (sk_new(reinterpret_cast<int (*)(const void *, const void *)>(cmp)));
+   }
+
+   template<class S> int
+   sk_push(S *s, typename KOpenSSLElementType<S>::ptr_t d) {
+     return sk_push(reinterpret_cast<STACK*>(s), reinterpret_cast<void*>(d));
+   }
+
+   template<class S> S*
+   sk_dup(S* s) {
+     typedef typename KOpenSSLElementType<S>::ptr_t ensure_its_a_stack_type;
+     return reinterpret_cast<S*>(sk_dup(reinterpret_cast<STACK*>(s)));
+   }
+
+#endif
 
 
    /*
@@ -825,8 +918,8 @@ public:
    int i2d_X509_REQ_fp(FILE *fp, X509_REQ *x);
 
    /* SMime support */
-   STACK *X509_get1_email(X509 *x);
-   void X509_email_free(STACK *sk);
+   KOSSL1_STACK_OF(OPENSSL_STRING) *X509_get1_email(X509 *x);
+   void X509_email_free(KOSSL1_STACK_OF(OPENSSL_STRING) *sk);
 
    /* Ciphers needed for SMime */
    EVP_CIPHER *EVP_des_ede3_cbc();
