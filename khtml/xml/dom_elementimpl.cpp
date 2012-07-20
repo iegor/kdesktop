@@ -66,6 +66,9 @@ AttrImpl::AttrImpl(ElementImpl* element, DocumentImpl* docPtr, NodeImpl::Id attr
     m_value = value;
     m_value->ref();
 
+    if (m_attrId == ATTR_ID)
+        m_element->addId(DOMString(m_value).string());
+
     m_prefix = prefix;
     if (m_prefix)
 	m_prefix->ref();
