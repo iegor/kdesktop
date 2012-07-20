@@ -450,12 +450,14 @@ QString KProtocolManager::defaultUserAgent( const QString &_modifiers )
      return d->useragent;
 
   QString supp;
+  int gentoo_append = 0;
   struct utsname nam;
   if( uname(&nam) >= 0 )
   {
     if( modifiers.contains('o') )
     {
       supp += QString("; %1").arg(nam.sysname);
+      gentoo_append = 1;
       if ( modifiers.contains('v') )
         supp += QString(" %1").arg(nam.release);
     }
@@ -485,6 +487,9 @@ QString KProtocolManager::defaultUserAgent( const QString &_modifiers )
   }
   d->modifiers = modifiers;
   d->useragent = CFG_DEFAULT_UAGENT(supp);
+
+  if (gentoo_append == 1)
+    d->useragent.append(" (Gentoo)");
   return d->useragent;
 }
 
