@@ -97,6 +97,19 @@ KService::init( KDesktopFile *config )
   m_bValid = true;
 
   bool absPath = !QDir::isRelativePath(entryPath());
+  QString kde4prefix = config->fileName();
+  QString kde4menusuffix = " (KDE4)";
+  int index = kde4prefix.find("/share/applications/kde4/");
+  bool kde4app = index != -1;
+  QString kdedir;
+  // get kdeprefix and kde version
+  if (kde4app)
+  {
+    kde4prefix.truncate(index);
+    kdedir = kde4prefix.section('/', -1, -1).upper();
+    if (kdedir != "USR")
+      kde4menusuffix = QString(" (KDE-%1)").arg(kdedir);
+  }
 
   config->setDesktopGroup();
 
@@ -133,6 +146,8 @@ KService::init( KDesktopFile *config )
     if (i != -1)
        m_strName = m_strName.left(i);
   }
+  if (kde4app)
+    m_strName += kde4menusuffix;
 
   m_strType = config->readEntry( "Type" );
   entryMap.remove("Type");
@@ -196,6 +211,18 @@ KService::init( KDesktopFile *config )
      name = name.left(pos);
 
   m_strExec = config->readPathEntry( "Exec" );
+  if (kde4app && !m_strExec.startsWith("/"))
+    m_strExec = kde4prefix + QString("/bin/") + m_strExec;
+  else if (config->readBoolEntry("X-KDE-SubstituteUID")) {
+    int space = m_strExec.find(" ");
+    if (space==-1)
+      m_strExec = KStandardDirs::findExe(m_strExec);
+    else {
+      const QString command = m_strExec.left(space);
+      m_strExec.replace(command,KStandardDirs::findExe(command));
+    }
+  }
+
   entryMap.remove("Exec");
 
   m_strIcon = config->readEntry( "Icon", "unknown" );
@@ -245,11 +272,15 @@ KService::init( KDesktopFile *config )
      m_DCOPServiceType = DCOP_None;
 
   m_strDesktopEntryName = name.lower();
+  if (kde4app)
+    m_strDesktopEntryName = QString("kde%1-").arg(kdedir.lower()) + m_strDesktopEntryName;
 
   m_bAllowAsDefault = config->readBoolEntry( "AllowDefault", true );
   entryMap.remove("AllowDefault");
 
   m_initialPreference = config->readNumEntry( "InitialPreference", 1 );
+  if (kde4app)
+    m_initialPreference = 1;
   entryMap.remove("InitialPreference");
 
   // Store all additional entries in the property map.
@@ -260,7 +291,10 @@ KService::init( KDesktopFile *config )
   for( ; it != entryMap.end();++it)
   {
      //qDebug("   Key = %s Data = %s", it.key().latin1(), it.data().latin1());
-     m_mapProps.insert( it.key(), QVariant( it.data()));
+     QString key = it.key();
+     if (kde4app && key == "OnlyShownIn" && it.data() == "KDE;")
+        key = "NotShowIn";
+     m_mapProps.insert(key, QVariant( it.data()));
   }
 }
 
