@@ -145,10 +145,7 @@ KSpellConfig::KSpellConfig( QWidget *parent, const char *name,
 
 
   clientcombo = new QComboBox( this, "Client" );
-  clientcombo->insertItem( i18n("International Ispell") );
   clientcombo->insertItem( i18n("Aspell") );
-  clientcombo->insertItem( i18n("Hspell") );
-  clientcombo->insertItem( i18n("Zemberek") );
   connect( clientcombo, SIGNAL (activated(int)), this,
 	   SLOT (sChangeClient(int)) );
   glay->addMultiCellWidget( clientcombo, 4, 4, 1, 2 );
@@ -188,7 +185,7 @@ KSpellConfig::readGlobalSettings()
   setDictionary    ( kc->readEntry("KSpell_Dictionary") );
   setDictFromList  ( kc->readNumEntry("KSpell_DictFromList", false) );
   setEncoding ( kc->readNumEntry ("KSpell_Encoding", KS_E_ASCII) );
-  setClient ( kc->readNumEntry ("KSpell_Client", KS_CLIENT_ISPELL) );
+  setClient ( kc->readNumEntry ("KSpell_Client", KS_CLIENT_ASPELL) );
 
   return true;
 }
@@ -222,27 +219,10 @@ KSpellConfig::sChangeEncoding( int i )
 void
 KSpellConfig::sChangeClient( int i )
 {
-  setClient( i );
+  setClient( 1 );
 
-  // read in new dict list
-  if ( dictcombo ) {
-    if ( iclient == KS_CLIENT_ISPELL )
-      getAvailDictsIspell();
-    else if ( iclient == KS_CLIENT_HSPELL )
-    {
-      langfnames.clear();
-      dictcombo->clear();
-      dictcombo->insertItem( i18n("Hebrew") );
-      sChangeEncoding( KS_E_CP1255 );
-    } else if ( iclient == KS_CLIENT_ZEMBEREK ) {
-      langfnames.clear();
-      dictcombo->clear();
-      dictcombo->insertItem( i18n("Turkish") );
-      sChangeEncoding( KS_E_UTF8 );
-    }
-    else
-      getAvailDictsAspell();
-  }
+  getAvailDictsAspell();
+
   emit configChanged();
 }
 
@@ -384,23 +364,7 @@ KSpellConfig::fillInDialog ()
   encodingcombo->setCurrentItem( encoding() );
   clientcombo->setCurrentItem( client() );
 
-  // get list of available dictionaries
-  if ( iclient == KS_CLIENT_ISPELL )
-    getAvailDictsIspell();
-  else if ( iclient == KS_CLIENT_HSPELL )
-  {
-    langfnames.clear();
-    dictcombo->clear();
-    langfnames.append(""); // Default
-    dictcombo->insertItem( i18n("Hebrew") );
-  } else if ( iclient == KS_CLIENT_ZEMBEREK ) {
-    langfnames.clear();
-    dictcombo->clear();
-    langfnames.append("");
-    dictcombo->insertItem( i18n("Turkish") );
-  }
-  else
-    getAvailDictsAspell();
+  getAvailDictsAspell();
 
   // select the used dictionary in the list
   int whichelement=-1;
@@ -588,81 +552,6 @@ KSpellConfig::fillDicts( QComboBox* box, QStringList* dictionaries )
 {
   langfnames.clear();
   if ( box ) {
-    if ( iclient == KS_CLIENT_ISPELL ) {
-      box->clear();
-      langfnames.append(""); // Default
-      box->insertItem( i18n("ISpell Default") );
-
-      // dictionary path
-      QFileInfo dir ("/usr/lib/ispell");
-      if (!dir.exists() || !dir.isDir())
-        dir.setFile ("/usr/local/lib/ispell");
-      if (!dir.exists() || !dir.isDir())
-        dir.setFile ("/usr/local/share/ispell");
-      if (!dir.exists() || !dir.isDir())
-        dir.setFile ("/usr/share/ispell");
-      if (!dir.exists() || !dir.isDir())
-        dir.setFile ("/usr/pkg/lib");
-      /* TODO get them all instead of just one of them.
-       * If /usr/local/lib exists, it skips the rest
-       if (!dir.exists() || !dir.isDir())
-       dir.setFile ("/usr/local/lib");
-      */
-      if (!dir.exists() || !dir.isDir()) return;
-
-      kdDebug(750) << "KSpellConfig::getAvailDictsIspell "
-                   << dir.filePath() << " " << dir.dirPath() << endl;
-
-      const QDir thedir (dir.filePath(),"*.hash");
-      const QStringList entryList = thedir.entryList();
-
-      kdDebug(750) << "KSpellConfig" << thedir.path() << "\n" << endl;
-      kdDebug(750) << "entryList().count()="
-                   << entryList.count() << endl;
-
-      QStringList::const_iterator entryListItr = entryList.constBegin();
-      const QStringList::const_iterator entryListEnd = entryList.constEnd();
-
-      for ( ; entryListItr != entryListEnd; ++entryListItr)
-      {
-        QString fname, lname, hname;
-        fname = *entryListItr;
-
-        // remove .hash
-        if (fname.endsWith(".hash")) fname.remove (fname.length()-5,5);
-
-        if (interpret (fname, lname, hname) && langfnames.first().isEmpty())
-        { // This one is the KDE default language
-          // so place it first in the lists (overwrite "Default")
-
-          langfnames.remove ( langfnames.begin() );
-          langfnames.prepend ( fname );
-
-          hname=i18n("default spelling dictionary"
-                     ,"Default - %1 [%2]").arg(hname).arg(fname);
-
-          box->changeItem (hname,0);
-        }
-        else
-        {
-          langfnames.append (fname);
-          hname=hname+" ["+fname+"]";
-
-          box->insertItem (hname);
-        }
-      }
-    } else if ( iclient == KS_CLIENT_HSPELL ) {
-      box->clear();
-      box->insertItem( i18n("Hebrew") );
-      langfnames.append(""); // Default
-      sChangeEncoding( KS_E_CP1255 );
-    } else if ( iclient == KS_CLIENT_ZEMBEREK ) {
-      box->clear();
-      box->insertItem( i18n("Turkish") );
-      langfnames.append("");
-      sChangeEncoding( KS_E_UTF8 );
-    }
-    else {
       box->clear();
       langfnames.append(""); // Default
       box->insertItem (i18n("ASpell Default"));
@@ -741,7 +630,7 @@ KSpellConfig::fillDicts( QComboBox* box, QStringList* dictionaries )
           }
         }
       }
-    }
+
     int whichelement = langfnames.findIndex(qsdict);
     if ( whichelement >= 0 ) {
       box->setCurrentItem( whichelement );

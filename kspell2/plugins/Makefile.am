@@ -6,4 +6,4 @@ if include_hspell_plugin
 LIBHSPELLPLUGIN = hspell
 endif
 
-SUBDIRS = $(LIBASPELLPLUGIN) $(LIBHSPELLPLUGIN) ispell 
+SUBDIRS = $(LIBASPELLPLUGIN)
