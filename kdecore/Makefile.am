@@ -169,7 +169,7 @@ kde_config_LDFLAGS = $(KDE_RPATH) $(KDE_MT_LDFLAGS)
 
 kgrantpty_SOURCES = kgrantpty.c
 kgrantpty_CFLAGS= $(KDE_USE_FPIE)
-kgrantpty_LDFLAGS = $(KDE_USE_PIE) $(KDE_RPATH) $(all_libraries)
+kgrantpty_LDFLAGS = $(KDE_USE_PIE) $(KDE_RPATH) $(all_libraries) $(BINDNOW_FLAGS)
 kgrantpty_LDADD = ./libkdefakes.la
 
 # kgrantpty needs to be installed setuid root
