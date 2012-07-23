@@ -77,8 +77,7 @@ class SDEntry
     }
 };
 
-SDSummaryWidget::SDSummaryWidget( Kontact::Plugin *plugin, QWidget *parent,
-                                    const char *name )
+SDSummaryWidget::SDSummaryWidget( Kontact::Plugin *plugin, QWidget *parent, const char *name )
   : Kontact::Summary( parent, name ), mPlugin( plugin ), mCalendar( 0 ), mHolidays( 0 )
 {
   // Create the Summary Layout
@@ -438,8 +437,7 @@ void SDSummaryWidget::updateView()
 
       //Muck with the year -- change to the year 'daysTo' days away
       int year = currentDate.addDays( (*addrIt).daysTo ).year();
-      QDate sD = QDate::QDate( year,
-                           (*addrIt).date.month(), (*addrIt).date.day() );
+      QDate sD = QDate( year, (*addrIt).date.month(), (*addrIt).date.day() );
 
       if ( (*addrIt).daysTo == 0 ) {
         datestr = i18n( "Today" );
