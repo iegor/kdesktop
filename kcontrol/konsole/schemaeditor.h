@@ -49,7 +49,7 @@ class SchemaEditor : public SchemaDialog
 	void schemaListChanged(const QStringList &titles, const QStringList &filenames);
 
   public slots:
-  	//void slotColorChanged(int);
+  	void colorsChanged();
   	void imageSelect();  	
 	void slotTypeChanged(int);
 	void readSchema(int);
@@ -78,7 +78,7 @@ class SchemaEditor : public SchemaDialog
 	bool schemaLoaded;
 	bool change;
 	int oldSchema;
-	int oldSlot;
+	//int oldSlot;
 	QString readSchemaTitle(const QString& filename);
 	void schemaListChanged();
 

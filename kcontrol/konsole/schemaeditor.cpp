@@ -66,7 +66,7 @@ SchemaEditor::SchemaEditor(QWidget * parent, const char *name)
     loaded = false;
     schemaLoaded = false;
     change = false;
-    oldSlot = 0;
+    //oldSlot = 0;
     oldSchema = -1;
     color.resize(20);
     type.resize(20);
@@ -397,22 +397,95 @@ void SchemaEditor::slotTypeChanged(int slot)
 }
 
 
-// void SchemaEditor::slotColorChanged(int slot)
-// {
-//     kdDebug(0) << slot << endl;
+void SchemaEditor::colorsChanged()
+{
+	kdDebug(0) << "colors changed." << endl;
+	type[0] = tcNorm0->currentItem(); color[0] = colorButtonNormal0->color(); transparent[0] = trcNormal0->isChecked(); bold[0] = bcNormal0->isChecked();
+	type[10] = tcInt0->currentItem(); color[10] = kColorButtonInt0->color(); transparent[10] = trcInt0->isChecked(); bold[10] = bcInt0->isChecked();
+	type[1] = tcNorm1->currentItem(); color[1] = colorButtonNormal1->color(); transparent[1] = trcNormal1->isChecked(); bold[1] = bcNormal1->isChecked();
+	type[11] = tcInt1->currentItem(); color[11] = kColorButtonInt1->color(); transparent[11] = trcInt1->isChecked(); bold[11] = bcInt1->isChecked();
+	type[2] = tcNorm2->currentItem(); color[2] = colorButtonNormal2->color(); transparent[2] = trcNormal2->isChecked(); bold[2] = bcNormal2->isChecked();
+	type[12] = tcInt2->currentItem(); color[12] = kColorButtonInt2->color(); transparent[12] = trcInt2->isChecked(); bold[12] = bcInt2->isChecked();
+	type[3] = tcNorm3->currentItem(); color[3] = colorButtonNormal3->color(); transparent[3] = trcNormal3->isChecked(); bold[3] = bcNormal3->isChecked();
+	type[13] = tcInt3->currentItem(); color[13] = kColorButtonInt3->color(); transparent[13] = trcInt3->isChecked(); bold[13] = bcInt3->isChecked();
+	type[4] = tcNorm4->currentItem(); color[4] = colorButtonNormal4->color(); transparent[4] = trcNormal4->isChecked(); bold[4] = bcNormal4->isChecked();
+	type[14] = tcInt4->currentItem(); color[14] = kColorButtonInt4->color(); transparent[14] = trcInt4->isChecked(); bold[14] = bcInt4->isChecked();
+	type[5] = tcNorm5->currentItem(); color[5] = colorButtonNormal5->color(); transparent[5] = trcNormal5->isChecked(); bold[5] = bcNormal5->isChecked();
+	type[15] = tcInt5->currentItem(); color[15] = kColorButtonInt5->color(); transparent[15] = trcInt5->isChecked(); bold[15] = bcInt5->isChecked();
+	type[6] = tcNorm6->currentItem(); color[6] = colorButtonNormal6->color(); transparent[6] = trcNormal6->isChecked(); bold[6] = bcNormal6->isChecked();
+	type[16] = tcInt6->currentItem(); color[16] = kColorButtonInt6->color(); transparent[16] = trcInt6->isChecked(); bold[16] = bcInt6->isChecked();
+	type[7] = tcNorm7->currentItem(); color[7] = colorButtonNormal7->color(); transparent[7] = trcNormal7->isChecked(); bold[7] = bcNormal7->isChecked();
+	type[17] = tcInt7->currentItem(); color[17] = kColorButtonInt7->color(); transparent[17] = trcInt7->isChecked(); bold[17] = bcInt7->isChecked();
+	type[8] = tcNorm8->currentItem(); color[8] = colorButtonNormal8->color(); transparent[8] = trcNormal8->isChecked(); bold[8] = bcNormal8->isChecked();
+	type[18] = tcInt8->currentItem(); color[18] = kColorButtonInt8->color(); transparent[18] = trcInt8->isChecked(); bold[18] = bcInt8->isChecked();
+	type[9] = tcNorm9->currentItem(); color[9] = colorButtonNormal9->color(); transparent[9] = trcNormal9->isChecked(); bold[9] = bcNormal9->isChecked();
+	type[19] = tcInt9->currentItem(); color[19] = kColorButtonInt9->color(); transparent[19] = trcInt9->isChecked(); bold[19] = bcInt9->isChecked();
+
 //     color[oldSlot] = colorButton->color();
 //     type[oldSlot] = typeCombo->currentItem();
 //     bold[oldSlot] = boldCheck->isChecked();
 //     transparent[oldSlot] = transparentCheck->isChecked();
 // 
-//     change = false; // Don't mark as modified
+	change = false; // Don't mark as modified
 //     transparentCheck->setChecked(transparent[slot]);
 //     boldCheck->setChecked(bold[slot]);
 //     typeCombo->setCurrentItem(type[slot]);
 //     colorButton->setColor(color[slot]);
 //     oldSlot = slot;
-//     change = true;
-// }
+
+	bool inactive = true;
+	tcNorm0->setCurrentItem(type[0]); colorButtonNormal0->setColor(color[0]); trcNormal0->setChecked(transparent[0]); bcNormal0->setChecked(bold[0]);
+	inactive = type[0] == 1 || type[0] == 2; colorButtonNormal0->setDisabled(inactive); trcNormal0->setDisabled(inactive); bcNormal0->setDisabled(inactive);
+	tcInt0->setCurrentItem(type[10]); kColorButtonInt0->setColor(color[10]); trcInt0->setChecked(transparent[10]); bcInt0->setChecked(bold[10]);
+	inactive = type[10] == 1 || type[10] == 2; kColorButtonInt0->setDisabled(inactive); trcInt0->setDisabled(inactive); bcInt0->setDisabled(inactive);
+
+	tcNorm1->setCurrentItem(type[1]); colorButtonNormal1->setColor(color[1]); trcNormal1->setChecked(transparent[1]); bcNormal1->setChecked(bold[1]);
+	inactive = type[1] == 1 || type[1] == 2; colorButtonNormal1->setDisabled(inactive); trcNormal1->setDisabled(inactive); bcNormal1->setDisabled(inactive);
+	tcInt1->setCurrentItem(type[11]); kColorButtonInt1->setColor(color[11]); trcInt1->setChecked(transparent[11]); bcInt1->setChecked(bold[11]);
+	inactive = type[11] == 1 || type[11] == 2; kColorButtonInt1->setDisabled(inactive); trcInt1->setDisabled(inactive); bcInt1->setDisabled(inactive);
+
+	tcNorm2->setCurrentItem(type[2]); colorButtonNormal2->setColor(color[2]); trcNormal2->setChecked(transparent[2]); bcNormal2->setChecked(bold[2]);
+	inactive = type[2] == 1 || type[2] == 2; colorButtonNormal2->setDisabled(inactive); trcNormal2->setDisabled(inactive); bcNormal2->setDisabled(inactive);
+	tcInt2->setCurrentItem(type[12]); kColorButtonInt2->setColor(color[12]); trcInt2->setChecked(transparent[12]); bcInt2->setChecked(bold[12]);
+	inactive = type[12] == 1 || type[12] == 2; kColorButtonInt2->setDisabled(inactive); trcInt2->setDisabled(inactive); bcInt2->setDisabled(inactive);
+
+	tcNorm3->setCurrentItem(type[3]); colorButtonNormal3->setColor(color[3]); trcNormal3->setChecked(transparent[3]); bcNormal3->setChecked(bold[3]);
+	inactive = type[3] == 1 || type[13] == 2; colorButtonNormal3->setDisabled(inactive); trcNormal3->setDisabled(inactive); bcNormal3->setDisabled(inactive);
+	tcInt3->setCurrentItem(type[13]); kColorButtonInt3->setColor(color[13]); trcInt3->setChecked(transparent[13]); bcInt3->setChecked(bold[13]);
+	inactive = type[13] == 1 || type[13] == 2; kColorButtonInt3->setDisabled(inactive); trcInt3->setDisabled(inactive); bcInt3->setDisabled(inactive);
+
+	tcNorm4->setCurrentItem(type[4]); colorButtonNormal4->setColor(color[4]); trcNormal4->setChecked(transparent[4]); bcNormal4->setChecked(bold[4]);
+	inactive = type[4] == 1 || type[4] == 2; colorButtonNormal4->setDisabled(inactive); trcNormal4->setDisabled(inactive); bcNormal4->setDisabled(inactive);
+	tcInt4->setCurrentItem(type[14]); kColorButtonInt4->setColor(color[14]); trcInt4->setChecked(transparent[14]); bcInt4->setChecked(bold[14]);
+	inactive = type[14] == 1 || type[14] == 2; kColorButtonInt4->setDisabled(inactive); trcInt4->setDisabled(inactive); bcInt4->setDisabled(inactive);
+
+	tcNorm5->setCurrentItem(type[5]); colorButtonNormal5->setColor(color[5]); trcNormal5->setChecked(transparent[5]); bcNormal5->setChecked(bold[5]);
+	inactive = type[5] == 1 || type[5] == 2; colorButtonNormal5->setDisabled(inactive); trcNormal5->setDisabled(inactive); bcNormal5->setDisabled(inactive);
+	tcInt5->setCurrentItem(type[15]); kColorButtonInt5->setColor(color[15]); trcInt5->setChecked(transparent[15]); bcInt5->setChecked(bold[15]);
+	inactive = type[15] == 1 || type[15] == 2; kColorButtonInt5->setDisabled(inactive); trcInt5->setDisabled(inactive); bcInt5->setDisabled(inactive);
+
+	tcNorm6->setCurrentItem(type[6]); colorButtonNormal6->setColor(color[6]); trcNormal6->setChecked(transparent[6]); bcNormal6->setChecked(bold[6]);
+	inactive = type[6] == 1 || type[6] == 2; colorButtonNormal6->setDisabled(inactive); trcNormal6->setDisabled(inactive); bcNormal6->setDisabled(inactive);
+	tcInt6->setCurrentItem(type[16]); kColorButtonInt6->setColor(color[16]); trcInt6->setChecked(transparent[16]); bcInt6->setChecked(bold[16]);
+	inactive = type[16] == 1 || type[16] == 2; kColorButtonInt6->setDisabled(inactive); trcInt6->setDisabled(inactive); bcInt6->setDisabled(inactive);
+
+	tcNorm7->setCurrentItem(type[7]); colorButtonNormal7->setColor(color[7]); trcNormal7->setChecked(transparent[7]); bcNormal7->setChecked(bold[7]);
+	inactive = type[7] == 1 || type[7] == 2; colorButtonNormal7->setDisabled(inactive); trcNormal7->setDisabled(inactive); bcNormal7->setDisabled(inactive);
+	tcInt7->setCurrentItem(type[17]); kColorButtonInt7->setColor(color[17]); trcInt7->setChecked(transparent[17]); bcInt7->setChecked(bold[17]);
+	inactive = type[17] == 1 || type[17] == 2; kColorButtonInt7->setDisabled(inactive); trcInt7->setDisabled(inactive); bcInt7->setDisabled(inactive);
+
+	tcNorm8->setCurrentItem(type[8]); colorButtonNormal8->setColor(color[8]); trcNormal8->setChecked(transparent[8]); bcNormal8->setChecked(bold[8]);
+	inactive = type[8] == 1 || type[8] == 2; colorButtonNormal8->setDisabled(inactive); trcNormal8->setDisabled(inactive); bcNormal8->setDisabled(inactive);
+	tcInt8->setCurrentItem(type[18]); kColorButtonInt8->setColor(color[18]); trcInt8->setChecked(transparent[18]); bcInt8->setChecked(bold[18]);
+	inactive = type[18] == 1 || type[18] == 2; kColorButtonInt8->setDisabled(inactive); trcInt8->setDisabled(inactive); bcInt8->setDisabled(inactive);
+
+	tcNorm9->setCurrentItem(type[9]); colorButtonNormal9->setColor(color[9]); trcNormal9->setChecked(transparent[9]); bcNormal9->setChecked(bold[9]);
+	inactive = type[9] == 1 || type[9] == 2; colorButtonNormal9->setDisabled(inactive); trcNormal9->setDisabled(inactive); bcNormal9->setDisabled(inactive);
+	tcInt9->setCurrentItem(type[19]); kColorButtonInt9->setColor(color[19]); trcInt9->setChecked(transparent[19]); bcInt9->setChecked(bold[19]);
+	inactive = type[19] == 1 || type[19] == 2; kColorButtonInt9->setDisabled(inactive); trcInt9->setDisabled(inactive); bcInt9->setDisabled(inactive);
+
+	change = true;
+}
 
 void SchemaEditor::removeCurrent()
 {
@@ -452,27 +525,7 @@ void SchemaEditor::saveCurrent()
 
     //This is to update the color table
     //colorCombo->setCurrentItem(0);
-    //slotColorChanged(0);
-	type[0] = tcNorm0->currentItem(); color[0] = colorButtonNormal0->color(); transparent[0] = trcNormal0->isChecked(); bold[0] = bcNormal0->isChecked();
-	type[10] = tcInt0->currentItem(); color[10] = kColorButtonInt0->color(); transparent[10] = trcInt0->isChecked(); bold[10] = bcInt0->isChecked();
-	type[1] = tcNorm1->currentItem(); color[1] = colorButtonNormal1->color(); transparent[1] = trcNormal1->isChecked(); bold[1] = bcNormal1->isChecked();
-	type[11] = tcInt1->currentItem(); color[11] = kColorButtonInt1->color(); transparent[11] = trcInt1->isChecked(); bold[11] = bcInt1->isChecked();
-	type[2] = tcNorm2->currentItem(); color[2] = colorButtonNormal2->color(); transparent[2] = trcNormal2->isChecked(); bold[2] = bcNormal2->isChecked();
-	type[12] = tcInt2->currentItem(); color[12] = kColorButtonInt2->color(); transparent[12] = trcInt2->isChecked(); bold[12] = bcInt2->isChecked();
-	type[3] = tcNorm3->currentItem(); color[3] = colorButtonNormal3->color(); transparent[3] = trcNormal3->isChecked(); bold[3] = bcNormal3->isChecked();
-	type[13] = tcInt3->currentItem(); color[13] = kColorButtonInt3->color(); transparent[13] = trcInt3->isChecked(); bold[13] = bcInt3->isChecked();
-	type[4] = tcNorm4->currentItem(); color[4] = colorButtonNormal4->color(); transparent[4] = trcNormal4->isChecked(); bold[4] = bcNormal4->isChecked();
-	type[14] = tcInt4->currentItem(); color[14] = kColorButtonInt4->color(); transparent[14] = trcInt4->isChecked(); bold[14] = bcInt4->isChecked();
-	type[5] = tcNorm5->currentItem(); color[5] = colorButtonNormal5->color(); transparent[5] = trcNormal5->isChecked(); bold[5] = bcNormal5->isChecked();
-	type[15] = tcInt5->currentItem(); color[15] = kColorButtonInt5->color(); transparent[15] = trcInt5->isChecked(); bold[15] = bcInt5->isChecked();
-	type[6] = tcNorm6->currentItem(); color[6] = colorButtonNormal6->color(); transparent[6] = trcNormal6->isChecked(); bold[6] = bcNormal6->isChecked();
-	type[16] = tcInt6->currentItem(); color[16] = kColorButtonInt6->color(); transparent[16] = trcInt6->isChecked(); bold[16] = bcInt6->isChecked();
-	type[7] = tcNorm7->currentItem(); color[7] = colorButtonNormal7->color(); transparent[7] = trcNormal7->isChecked(); bold[7] = bcNormal7->isChecked();
-	type[17] = tcInt7->currentItem(); color[17] = kColorButtonInt7->color(); transparent[17] = trcInt7->isChecked(); bold[17] = bcInt7->isChecked();
-	type[8] = tcNorm8->currentItem(); color[8] = colorButtonNormal8->color(); transparent[8] = trcNormal8->isChecked(); bold[8] = bcNormal8->isChecked();
-	type[18] = tcInt8->currentItem(); color[18] = kColorButtonInt8->color(); transparent[18] = trcInt8->isChecked(); bold[18] = bcInt8->isChecked();
-	type[9] = tcNorm9->currentItem(); color[9] = colorButtonNormal9->color(); transparent[9] = trcNormal9->isChecked(); bold[9] = bcNormal9->isChecked();
-	type[19] = tcInt9->currentItem(); color[19] = kColorButtonInt9->color(); transparent[19] = trcInt9->isChecked(); bold[19] = bcInt9->isChecked();
+    colorsChanged();
 
     QString fullpath;
     if (schemaList->currentText() == titleLine->text()) {
@@ -609,57 +662,6 @@ void SchemaEditor::schemaModified()
 	//color[19] = kColorButtonInt9->color(); transparent[19] = trcInt9->isChecked(); bold[19] = bcInt9->isChecked();
 
     if (change) {
-		bool inactive = true;
-		tcNorm0->setCurrentItem(type[0]); colorButtonNormal0->setColor(color[0]); trcNormal0->setChecked(transparent[0]); bcNormal0->setChecked(bold[0]);
-		inactive = type[0] == 1 || type[0] == 2; colorButtonNormal0->setDisabled(inactive); trcNormal0->setDisabled(inactive); bcNormal0->setDisabled(inactive);
-		tcInt0->setCurrentItem(type[10]); kColorButtonInt0->setColor(color[10]); trcInt0->setChecked(transparent[10]); bcInt0->setChecked(bold[10]);
-		inactive = type[10] == 1 || type[10] == 2; kColorButtonInt0->setDisabled(inactive); trcInt0->setDisabled(inactive); bcInt0->setDisabled(inactive);
-	
-		tcNorm1->setCurrentItem(type[1]); colorButtonNormal1->setColor(color[1]); trcNormal1->setChecked(transparent[1]); bcNormal1->setChecked(bold[1]);
-		inactive = type[1] == 1 || type[1] == 2; colorButtonNormal1->setDisabled(inactive); trcNormal1->setDisabled(inactive); bcNormal1->setDisabled(inactive);
-		tcInt1->setCurrentItem(type[11]); kColorButtonInt1->setColor(color[11]); trcInt1->setChecked(transparent[11]); bcInt1->setChecked(bold[11]);
-		inactive = type[11] == 1 || type[11] == 2; kColorButtonInt1->setDisabled(inactive); trcInt1->setDisabled(inactive); bcInt1->setDisabled(inactive);
-	
-		tcNorm2->setCurrentItem(type[2]); colorButtonNormal2->setColor(color[2]); trcNormal2->setChecked(transparent[2]); bcNormal2->setChecked(bold[2]);
-		inactive = type[2] == 1 || type[2] == 2; colorButtonNormal2->setDisabled(inactive); trcNormal2->setDisabled(inactive); bcNormal2->setDisabled(inactive);
-		tcInt2->setCurrentItem(type[12]); kColorButtonInt2->setColor(color[12]); trcInt2->setChecked(transparent[12]); bcInt2->setChecked(bold[12]);
-		inactive = type[12] == 1 || type[12] == 2; kColorButtonInt2->setDisabled(inactive); trcInt2->setDisabled(inactive); bcInt2->setDisabled(inactive);
-	
-		tcNorm3->setCurrentItem(type[3]); colorButtonNormal3->setColor(color[3]); trcNormal3->setChecked(transparent[3]); bcNormal3->setChecked(bold[3]);
-		inactive = type[3] == 1 || type[13] == 2; colorButtonNormal3->setDisabled(inactive); trcNormal3->setDisabled(inactive); bcNormal3->setDisabled(inactive);
-		tcInt3->setCurrentItem(type[13]); kColorButtonInt3->setColor(color[13]); trcInt3->setChecked(transparent[13]); bcInt3->setChecked(bold[13]);
-		inactive = type[13] == 1 || type[13] == 2; kColorButtonInt3->setDisabled(inactive); trcInt3->setDisabled(inactive); bcInt3->setDisabled(inactive);
-	
-		tcNorm4->setCurrentItem(type[4]); colorButtonNormal4->setColor(color[4]); trcNormal4->setChecked(transparent[4]); bcNormal4->setChecked(bold[4]);
-		inactive = type[4] == 1 || type[4] == 2; colorButtonNormal4->setDisabled(inactive); trcNormal4->setDisabled(inactive); bcNormal4->setDisabled(inactive);
-		tcInt4->setCurrentItem(type[14]); kColorButtonInt4->setColor(color[14]); trcInt4->setChecked(transparent[14]); bcInt4->setChecked(bold[14]);
-		inactive = type[14] == 1 || type[14] == 2; kColorButtonInt4->setDisabled(inactive); trcInt4->setDisabled(inactive); bcInt4->setDisabled(inactive);
-	
-		tcNorm5->setCurrentItem(type[5]); colorButtonNormal5->setColor(color[5]); trcNormal5->setChecked(transparent[5]); bcNormal5->setChecked(bold[5]);
-		inactive = type[5] == 1 || type[5] == 2; colorButtonNormal5->setDisabled(inactive); trcNormal5->setDisabled(inactive); bcNormal5->setDisabled(inactive);
-		tcInt5->setCurrentItem(type[15]); kColorButtonInt5->setColor(color[15]); trcInt5->setChecked(transparent[15]); bcInt5->setChecked(bold[15]);
-		inactive = type[15] == 1 || type[15] == 2; kColorButtonInt5->setDisabled(inactive); trcInt5->setDisabled(inactive); bcInt5->setDisabled(inactive);
-	
-		tcNorm6->setCurrentItem(type[6]); colorButtonNormal6->setColor(color[6]); trcNormal6->setChecked(transparent[6]); bcNormal6->setChecked(bold[6]);
-		inactive = type[6] == 1 || type[6] == 2; colorButtonNormal6->setDisabled(inactive); trcNormal6->setDisabled(inactive); bcNormal6->setDisabled(inactive);
-		tcInt6->setCurrentItem(type[16]); kColorButtonInt6->setColor(color[16]); trcInt6->setChecked(transparent[16]); bcInt6->setChecked(bold[16]);
-		inactive = type[16] == 1 || type[16] == 2; kColorButtonInt6->setDisabled(inactive); trcInt6->setDisabled(inactive); bcInt6->setDisabled(inactive);
-	
-		tcNorm7->setCurrentItem(type[7]); colorButtonNormal7->setColor(color[7]); trcNormal7->setChecked(transparent[7]); bcNormal7->setChecked(bold[7]);
-		inactive = type[7] == 1 || type[7] == 2; colorButtonNormal7->setDisabled(inactive); trcNormal7->setDisabled(inactive); bcNormal7->setDisabled(inactive);
-		tcInt7->setCurrentItem(type[17]); kColorButtonInt7->setColor(color[17]); trcInt7->setChecked(transparent[17]); bcInt7->setChecked(bold[17]);
-		inactive = type[17] == 1 || type[17] == 2; kColorButtonInt7->setDisabled(inactive); trcInt7->setDisabled(inactive); bcInt7->setDisabled(inactive);
-	
-		tcNorm8->setCurrentItem(type[8]); colorButtonNormal8->setColor(color[8]); trcNormal8->setChecked(transparent[8]); bcNormal8->setChecked(bold[8]);
-		inactive = type[8] == 1 || type[8] == 2; colorButtonNormal8->setDisabled(inactive); trcNormal8->setDisabled(inactive); bcNormal8->setDisabled(inactive);
-		tcInt8->setCurrentItem(type[18]); kColorButtonInt8->setColor(color[18]); trcInt8->setChecked(transparent[18]); bcInt8->setChecked(bold[18]);
-		inactive = type[18] == 1 || type[18] == 2; kColorButtonInt8->setDisabled(inactive); trcInt8->setDisabled(inactive); bcInt8->setDisabled(inactive);
-	
-		tcNorm9->setCurrentItem(type[9]); colorButtonNormal9->setColor(color[9]); trcNormal9->setChecked(transparent[9]); bcNormal9->setChecked(bold[9]);
-		inactive = type[9] == 1 || type[9] == 2; colorButtonNormal9->setDisabled(inactive); trcNormal9->setDisabled(inactive); bcNormal9->setDisabled(inactive);
-		tcInt9->setCurrentItem(type[19]); kColorButtonInt9->setColor(color[19]); trcInt9->setChecked(transparent[19]); bcInt9->setChecked(bold[19]);
-		inactive = type[19] == 1 || type[19] == 2; kColorButtonInt9->setDisabled(inactive); trcInt9->setDisabled(inactive); bcInt9->setDisabled(inactive);
-	
 		saveButton->setEnabled(titleLine->text().length() != 0);
 		schMod=true;
 		emit changed();
