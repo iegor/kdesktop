@@ -49,7 +49,7 @@ class SchemaEditor : public SchemaDialog
 	void schemaListChanged(const QStringList &titles, const QStringList &filenames);
 
   public slots:
-  	void slotColorChanged(int);
+  	//void slotColorChanged(int);
   	void imageSelect();  	
 	void slotTypeChanged(int);
 	void readSchema(int);
@@ -64,10 +64,13 @@ class SchemaEditor : public SchemaDialog
 	void updatePreview();
   private:
 	bool schMod;
+	// Settings for colors
   	QMemArray<QColor> color;
 	QMemArray<int> type; // 0= custom, 1= sysfg, 2=sysbg, 3=rcolor
 	QMemArray<bool> transparent;
 	QMemArray<bool> bold;
+
+	// Backroung pixmap
 	QPixmap pix;
 	KSharedPixmap *spix;
 	QString defaultSchema;	
