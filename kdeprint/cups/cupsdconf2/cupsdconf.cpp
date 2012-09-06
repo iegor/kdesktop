@@ -90,7 +90,7 @@ CupsdConf::CupsdConf()
 	printcap_ = "/etc/printcap";
 	printcapformat_ = PRINTCAP_BSD;
 	remoteroot_ = "remroot";
-	systemgroup_ = "sys";
+	systemgroup_ = "lpadmin";
 	encryptcert_ = serverfiles_+"/ssl/server.crt";
 	encryptkey_ = serverfiles_+"/ssl/server.key";
 	hostnamelookup_ = HOSTNAME_OFF;
@@ -115,7 +115,7 @@ CupsdConf::CupsdConf()
 	maxjobsperprinter_ = 0;
 	maxjobsperuser_ = 0;
 	user_ = "lp";
-	group_ = "sys";
+	group_ = "lpadmin";
 	ripcache_ = "8m";
 	filterlimit_ = 0;
 	browsing_ = true;

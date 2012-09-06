@@ -81,50 +81,33 @@ include_HEADERS = kprogress.h kcolordlg.h \
 # the files on the first line need to occur first when compiling
 # with --enable-final since they use X defines that get undefined
 # in ksharedpixmap.cpp
-libkdeui_la_SOURCES = \
-		qxembed.cpp ksharedpixmap.cpp kpixmapio.cpp \
-		kpopupmenu.cpp ktoolbar.cpp kaction.cpp kstdaction.cpp \
-		kactioncollection.cpp kactionclasses.cpp \
-		kurllabel.cpp kmenubar.cpp kinputdialog.cpp \
-		knuminput.cpp klineedit.cpp klistview.cpp kprogress.cpp \
-		kcolordialog.cpp kselect.cpp kdatepicker.cpp \
-		kdatetbl.cpp kfontrequester.cpp kfontdialog.cpp ktabctl.cpp \
-		kstatusbar.cpp kmainwindow.cpp \
-		keditlistbox.cpp kscrollview.cpp \
-		kseparator.cpp krestrictedline.cpp  \
-		kcolorbutton.cpp ksystemtray.cpp \
-		kbuttonbox.cpp keditcl1.cpp keditcl2.cpp kled.cpp \
-		kshortcutdialog_simple.ui kshortcutdialog_advanced.ui \
-		kshortcutdialog.cpp kkeybutton.cpp kkeydialog.cpp \
-		kruler.cpp kcursor.cpp klineeditdlg.cpp  \
-		kcharselect.cpp kcolordrag.cpp  \
-		knumvalidator.cpp kdialog.cpp kdialogbase.cpp \
-		kjanuswidget.cpp kaboutdialog.cpp \
-		kauthicon.cpp kmessagebox.cpp kdualcolorbutton.cpp \
-		ktoolbarradiogroup.cpp ktoolbarbutton.cpp \
-		ktextbrowser.cpp khelpmenu.cpp kswitchlanguagedialog.cpp \
-		kcmenumngr.cpp kpanelmenu.cpp \
-		kiconview.cpp klistbox.cpp kwordwrap.cpp kbugreport.cpp \
-		kcombobox.cpp kpassdlg.cpp kxmlguiclient.cpp kxmlguifactory.cpp \
-		kxmlguifactory_p.cpp kxmlguibuilder.cpp kedittoolbar.cpp \
-		kpanelappmenu.cpp kdockwidget.cpp kdockwidget_private.cpp \
-		kanimwidget.cpp krootpixmap.cpp kaboutkde.cpp \
-		kaboutapplication.cpp kpanelapplet.cpp kdcopactionproxy.cpp \
-		kcolorcombo.cpp kpushbutton.cpp kpanelextension.cpp \
-		kcompletionbox.cpp ksqueezedtextlabel.cpp kcmodule.cpp \
-		kcommand.cpp kwindowlistmenu.cpp kfontcombo.cpp ktip.cpp \
-		kdatewidget.cpp karrowbutton.cpp kmainwindowiface.cpp \
-                kmainwindowiface.skel kguiitem.cpp kstdguiitem.cpp \
-		kstringvalidator.cpp kactivelabel.cpp \
-		kwindowinfo.cpp ktextedit.cpp kwizard.cpp kpassivepopup.cpp \
-		ktoolbarhandler.cpp kdatetimewidget.cpp ktimewidget.cpp ktimezonewidget.cpp \
-		ksconfig.cpp kspelldlg.cpp \
-		kspell.cpp ksyntaxhighlighter.cpp ktabbar.cpp ktabwidget.cpp \
-		ksplashscreen.cpp kspellui.ui kconfigdialog.cpp \
-		kactionselector.cpp klanguagebutton.cpp klistviewsearchline.cpp \
-		kpixmapregionselectorwidget.cpp kpixmapregionselectordialog.cpp \
-		kwhatsthismanager.cpp kiconviewsearchline.cpp \
-		ktoolbarlabelaction.cpp
+libkdeui_la_SOURCES = kaboutapplication.cpp kaboutdialog.cpp kaboutkde.cpp \
+	kaction.cpp kactionclasses.cpp kactioncollection.cpp kactionselector.cpp \
+	kactivelabel.cpp kanimwidget.cpp karrowbutton.cpp kauthicon.cpp kbugreport.cpp \
+	kbuttonbox.cpp kcharselect.cpp kcmenumngr.cpp kcmodule.cpp kcolorbutton.cpp \
+	kcolorcombo.cpp kcolordialog.cpp kcolordrag.cpp kcombobox.cpp kcommand.cpp \
+	kcompletionbox.cpp kconfigdialog.cpp kcursor.cpp kdatepicker.cpp kdatetbl.cpp \
+	kdatetimewidget.cpp kdatewidget.cpp kdcopactionproxy.cpp kdialog.cpp kdialogbase.cpp \
+	kdockwidget.cpp kdockwidget_private.cpp kdualcolorbutton.cpp keditcl1.cpp keditcl2.cpp \
+	keditlistbox.cpp kedittoolbar.cpp kfontcombo.cpp kfontdialog.cpp kfontrequester.cpp \
+	kguiitem.cpp khelpmenu.cpp kiconview.cpp kiconviewsearchline.cpp kinputdialog.cpp \
+	kjanuswidget.cpp kkeybutton.cpp kkeydialog.cpp klanguagebutton.cpp kled.cpp \
+	klineedit.cpp klineeditdlg.cpp klistbox.cpp klistview.cpp klistviewsearchline.cpp \
+	kmainwindow.cpp kmainwindowiface.cpp kmainwindowiface_skel.cpp kmenubar.cpp \
+	kmessagebox.cpp knuminput.cpp knumvalidator.cpp kpanelapplet.cpp kpanelappmenu.cpp \
+	kpanelextension.cpp kpanelmenu.cpp kpassdlg.cpp kpassivepopup.cpp kpixmapio.cpp \
+	kpixmapregionselectordialog.cpp kpixmapregionselectorwidget.cpp kpopupmenu.cpp kprogress.cpp \
+	kpushbutton.cpp krestrictedline.cpp krootpixmap.cpp kruler.cpp ksconfig.cpp \
+	kscrollview.cpp kselect.cpp kseparator.cpp ksharedpixmap.cpp kshortcutdialog.cpp \
+	kshortcutdialog_advanced.cpp kshortcutdialog_advanced.ui kshortcutdialog_simple.cpp \
+	kshortcutdialog_simple.ui kspell.cpp kspelldlg.cpp kspellui.cpp kspellui.ui ksplashscreen.cpp \
+	ksqueezedtextlabel.cpp kstatusbar.cpp kstdaction.cpp kstdguiitem.cpp kstringvalidator.cpp \
+	kswitchlanguagedialog.cpp ksyntaxhighlighter.cpp ksystemtray.cpp ktabbar.cpp ktabctl.cpp \
+	ktabwidget.cpp ktextbrowser.cpp ktextedit.cpp ktimewidget.cpp ktimezonewidget.cpp \
+	ktip.cpp ktoolbar.cpp ktoolbarbutton.cpp ktoolbarhandler.cpp \
+	ktoolbarlabelaction.cpp ktoolbarradiogroup.cpp kurllabel.cpp kwhatsthismanager.cpp \
+	kwindowinfo.cpp kwindowlistmenu.cpp kwizard.cpp kwordwrap.cpp kxmlguibuilder.cpp \
+	kxmlguiclient.cpp kxmlguifactory.cpp kxmlguifactory_p.cpp qxembed.cpp
 
 noinst_HEADERS = kdockwidget_private.h kdockwidget_p.h klistviewlineedit.h \
 		kdialogbase_priv.h kaboutdialog_private.h kcursor_private.h \
