@@ -42,7 +42,7 @@ using namespace std;
 
 //Force-touch-embedded-revision: 2
 
-#include "keramikimage.h"
+#include "equinoximage.h"
 
 /**
 Need to generate something like this:
@@ -123,7 +123,7 @@ int main(int argc, char** argv)
 	QValueVector<KeramikEmbedImage> images;
 
 	cout<<"#include <qintdict.h>\n\n";
-	cout<<"#include \"keramikimage.h\"\n\n";
+	cout<<"#include \"equinoximage.h\"\n\n";
 
 	QMap<QString, int> assignID;
 	int nextID = 0;
