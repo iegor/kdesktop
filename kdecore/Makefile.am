@@ -83,32 +83,39 @@ noinst_HEADERS = kaccelaction.h kaccelbase.h kaccelprivate.h kckey.h \
 	kcalendarsystemhijri.h kcalendarsystemhebrew.h kcalendarsystemjalali.h \
 	kprotocolinfofactory.h kqiodevicegzip_p.h kiconloader_p.h
 
-libkdecore_la_SOURCES = fakes.c kaboutdata.cpp kaccel.cpp kaccelaction.cpp \
-	kaccelbase.cpp kaccelmanager.cpp kallocator.cpp kappdcopiface.cpp \
-	kappdcopiface_skel.cpp kapplication.cpp kasyncio.cpp kaudioplayer.cpp kbufferedio.cpp \
-	kcalendarsystem.cpp kcalendarsystemfactory.cpp kcalendarsystemgregorian.cpp \
-	kcalendarsystemhebrew.cpp kcalendarsystemhijri.cpp kcalendarsystemjalali.cpp kcatalogue.cpp \
-	kcharsets.cpp kcheckaccelerators.cpp kckey.cpp kclipboard.cpp kcmdlineargs.cpp \
-	kcompletion.cpp kcompletionbase.cpp kconfig.cpp kconfigbackend.cpp kconfigbase.cpp \
-	kconfigdialogmanager.cpp kconfigskeleton.cpp kcrash.cpp kdcoppropertyproxy.cpp kdebug.cpp \
-	kdebugdcopiface.cpp kdebugdcopiface_skel.cpp kdesktopfile.cpp kdeversion.cpp kextsock.cpp \
-	kglobal.cpp kglobalaccel.cpp kglobalaccel_x11.cpp kglobalsettings.cpp \
-	kiconeffect.cpp kiconloader.cpp kicontheme.cpp kidna.cpp kinstance.cpp kipc.cpp \
-	kkeynative_x11.cpp kkeyserver_x11.cpp klibloader.cpp klocale.cpp klockfile.cpp \
-	kmacroexpander.cpp kmanagerselection.cpp kmdcodec.cpp kmimesourcefactory.cpp \
-	kmountpoint.cpp kmultipledrag.cpp knotifyclient.cpp kpalette.cpp kpixmapprovider.cpp \
-	kprocctrl.cpp kprocess.cpp kprocio.cpp kprotocolinfo_kdecore.cpp \
-	kprotocolinfofactory.cpp kpty.cpp kqiodevicegzip_p.cpp krandomsequence.cpp kregexp.cpp \
-	krfcdate.cpp krootprop.cpp ksavefile.cpp kshell.cpp kshortcut.cpp kshortcutlist.cpp \
-	kshortcutmenu.cpp ksimpleconfig.cpp ksock.cpp ksockaddr.cpp ksocks.cpp kstandarddirs.cpp \
-	kstartupinfo.cpp kstaticdeleter.cpp kstdaccel.cpp kstringhandler.cpp ksycoca.cpp \
-	ksycoca_skel.cpp ksycocadict.cpp ksycocafactory.cpp ktempdir.cpp ktempfile.cpp \
-	ktimezones.cpp kuniqueapplication.cpp kurl.cpp kurldrag.cpp kuser.cpp kvmallocator.cpp \
-	kwin.cpp kwinmodule.cpp kxerrorhandler.cpp kxmessages.cpp libintl.cpp \
-	netsupp.cpp netwm.cpp vsnprintf.c
+libkdecore_la_SOURCES = libintl.cpp kapplication.cpp \
+	kdebug.cpp netwm.cpp kconfigbase.cpp kconfig.cpp  ksimpleconfig.cpp \
+	kconfigbackend.cpp kmanagerselection.cpp kdesktopfile.cpp \
+	kstandarddirs.cpp ksock.cpp kpty.cpp kprocess.cpp kprocctrl.cpp \
+	klocale.cpp krfcdate.cpp kiconeffect.cpp kicontheme.cpp \
+	kiconloader.cpp kwin.cpp kwinmodule.cpp krootprop.cpp kcharsets.cpp \
+	kckey.cpp kshortcut.cpp kkeynative_x11.cpp kkeyserver_x11.cpp \
+	kaccelaction.cpp kshortcutmenu.cpp kaccelbase.cpp kaccel.cpp \
+	kglobalaccel_x11.cpp kglobalaccel.cpp kstdaccel.cpp kshortcutlist.cpp \
+	kcrash.cpp kurl.cpp kregexp.cpp kglobal.cpp kglobalsettings.cpp \
+	kallocator.cpp kvmallocator.cpp kmimesourcefactory.cpp \
+	kinstance.cpp kpalette.cpp kipc.cpp klibloader.cpp ktempfile.cpp \
+	kuniqueapplication.cpp kaccelmanager.cpp \
+	ksavefile.cpp krandomsequence.cpp kstringhandler.cpp kcompletion.cpp \
+	kcmdlineargs.cpp kaboutdata.cpp kcompletionbase.cpp knotifyclient.cpp \
+	kaudioplayer.cpp kdcoppropertyproxy.cpp \
+	ksockaddr.cpp kextsock.cpp netsupp.cpp kprocio.cpp kbufferedio.cpp \
+	kpixmapprovider.cpp kurldrag.cpp \
+	kmdcodec.cpp ksocks.cpp fakes.c vsnprintf.c \
+	ksycoca.cpp ksycocadict.cpp ksycocafactory.cpp ksycoca.skel \
+	kxmessages.cpp kstartupinfo.cpp kcatalogue.cpp kasyncio.cpp \
+	kmultipledrag.cpp kstaticdeleter.cpp kappdcopiface.cpp \
+	kappdcopiface.skel kclipboard.cpp kcheckaccelerators.cpp \
+	kdeversion.cpp kdebugdcopiface.cpp kdebugdcopiface.skel \
+	kcalendarsystem.cpp kcalendarsystemgregorian.cpp \
+	kcalendarsystemhijri.cpp kcalendarsystemhebrew.cpp \
+	kcalendarsystemfactory.cpp kmacroexpander.cpp kidna.cpp \
+	ktempdir.cpp kshell.cpp kmountpoint.cpp kcalendarsystemjalali.cpp \
+	kprotocolinfo_kdecore.cpp kprotocolinfofactory.cpp kxerrorhandler.cpp \
+	kuser.cpp kconfigskeleton.cpp kconfigdialogmanager.cpp klockfile.cpp \
+	kqiodevicegzip_p.cpp ktimezones.cpp
 
-libkdecore_la_LDFLAGS = -no-undefined $(KDE_MT_LDFLAGS) $(KDE_RPATH) \
-	$(QT_LDFLAGS) $(USER_LDFLAGS) $(X_LDFLAGS) -version-info 6:0:2
+libkdecore_la_LDFLAGS = $(QT_LDFLAGS) $(KDE_RPATH) $(KDE_MT_LDFLAGS) $(X_LDFLAGS) $(USER_LDFLAGS) -version-info 6:0:2 -no-undefined
 libkdecore_la_LIBADD = malloc/libklmalloc.la network/libkdecorenetwork.la $(SVGICON_LIB) ../dcop/libDCOP.la ../libltdl/libltdlc.la $(LIB_XEXT) $(LIBRESOLV) $(LIBUTIL) $(LIBART_LIBS) $(LIB_IDN) ../kdefx/libkdefx.la
 libkdecore_la_NMCHECK = $(srcdir)/libkdecore.nmcheck
 libkdecore_la_NMCHECKWEAK = $(srcdir)/libkdecore_weak.nmcheck $(srcdir)/libqt-mt_weak.nmcheck \
@@ -157,7 +164,7 @@ parser: kentities.gperf
 bin_PROGRAMS = kde-config kgrantpty
 
 kde_config_SOURCES = kde-config.cpp
-kde_config_LDADD = $(top_builddir)/kdecore/libkdecore.la ./libkdecore.la
+kde_config_LDADD = ./libkdecore.la
 kde_config_LDFLAGS = $(KDE_RPATH) $(KDE_MT_LDFLAGS)
 
 kgrantpty_SOURCES = kgrantpty.c
