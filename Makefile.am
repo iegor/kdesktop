@@ -1,0 +1,5 @@
+AUTOMAKE_OPTIONS = foreign 1.6.1
+
+include admin/deps.am
+include admin/Doxyfile.am
+SUBDIRS=$(TOPSUBDIRS)
