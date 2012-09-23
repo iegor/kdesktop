@@ -1,0 +1,3 @@
+
+SUBDIRS = common kspell kdelibs
+

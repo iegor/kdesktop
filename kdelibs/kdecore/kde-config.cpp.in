@@ -1,0 +1,270 @@
+// -*- c++ -*-
+
+#include <kcmdlineargs.h>
+#include <klocale.h>
+#include <kinstance.h>
+#include <kstandarddirs.h>
+#include <kglobal.h>
+#include <kglobalsettings.h>
+#include <stdio.h>
+#include <kaboutdata.h>
+#include <config.h>
+#include <kapplication.h>
+
+static const char *description = I18N_NOOP("A little program to output installation paths");
+
+static KCmdLineOptions options[] =
+{
+    { "expandvars", I18N_NOOP("expand ${prefix} and ${exec_prefix} in output"), 0 },
+    { "prefix",	   I18N_NOOP("Compiled in prefix for KDE libraries"), 0 },
+    { "exec-prefix", I18N_NOOP("Compiled in exec_prefix for KDE libraries"), 0 },
+    { "libsuffix", I18N_NOOP("Compiled in library path suffix"), 0 },
+    { "localprefix", I18N_NOOP("Prefix in $HOME used to write files"), 0},
+    { "version",   I18N_NOOP("Compiled in version string for KDE libraries"), 0 },
+    { "types",     I18N_NOOP("Available KDE resource types"), 0 },
+    { "path type", I18N_NOOP("Search path for resource type"), 0 },
+    { "userpath type", I18N_NOOP("User path: desktop|autostart|trash|document"), 0 },
+    { "install type", I18N_NOOP("Prefix to install resource files to"), 0},
+    { 0,0,0 }
+};
+
+bool _expandvars = false;
+
+QString expandvars(const char *_input)
+{
+    QString result = QString::fromLatin1(_input);
+    if (!_expandvars)
+        return result;
+
+    bool changed = false;
+    int index = result.find("${prefix}");
+    if (index >= 0) {
+        result = result.replace(index, 9, "@prefix@");
+        changed = true;
+    }
+    index = result.find("$(prefix)");
+    if (index >= 0) {
+        result = result.replace(index, 9, "@prefix@");
+        changed = true;
+    }
+    index = result.find("${datadir}");
+    if (index >= 0) {
+        result = result.replace(index, 10, "@datadir@");
+        changed = true;
+    }
+    index = result.find("$(datadir)");
+    if (index >= 0) {
+        result = result.replace(index, 10, "@datadir@");
+        changed = true;
+    }
+    index = result.find("${exec_prefix}");
+    if (index >= 0) {
+        result = result.replace(index, 14, "@exec_prefix@");
+        changed = true;
+    }
+    index = result.find("$(exec_prefix)");
+    if (index >= 0) {
+        result = result.replace(index, 14, "@exec_prefix@");
+        changed = true;
+    }
+    index = result.find("${libdir}");
+    if (index >= 0) {
+        result = result.replace(index, 9, "@libdir@");
+        changed = true;
+    }
+    index = result.find("$(libdir)");
+    if (index >= 0) {
+        result = result.replace(index, 9, "@libdir@");
+        changed = true;
+    }
+    index = result.find("${includedir}");
+    if (index >= 0) {
+        result = result.replace(index, 20, "@includedir@");
+        changed = true;
+    }
+    index = result.find("$(includedir)");
+    if (index >= 0) {
+        result = result.replace(index, 20, "@includedir@");
+        changed = true;
+    }
+    index = result.find("${sysconfdir}");
+    if (index >= 0) {
+        result = result.replace(index, 13, "@sysconfdir@");
+        changed = true;
+    }
+    index = result.find("$(sysconfdir)");
+    if (index >= 0) {
+        result = result.replace(index, 13, "@sysconfdir@");
+        changed = true;
+    }
+    if (changed)
+        return expandvars(result.latin1());
+    else
+        return result;
+}
+
+void printResult(const QString &s)
+{
+    if (s.isEmpty())
+        printf("\n");
+    else
+        printf("%s\n", s.local8Bit().data());
+}
+
+int main(int argc, char **argv)
+{
+    KLocale::setMainCatalogue("kdelibs");
+    KAboutData about("kde-config", "kde-config", "1.0", description, KAboutData::License_GPL, "(C) 2000 Stephan Kulow");
+    KCmdLineArgs::init( argc, argv, &about);
+
+    KCmdLineArgs::addCmdLineOptions( options ); // Add my own options.
+
+    KInstance a("kde-config");
+    (void)KGlobal::dirs(); // trigger the creation
+    (void)KGlobal::config();
+
+    // Get application specific arguments
+    KCmdLineArgs *args = KCmdLineArgs::parsedArgs();
+
+    _expandvars = args->isSet("expandvars");
+
+    if (args->isSet("prefix"))
+    {
+        printResult(expandvars("@prefix@"));
+        return 0;
+    }
+
+    if (args->isSet("exec-prefix"))
+    {
+        printResult(expandvars("@exec_prefix@"));
+        return 0;
+    }
+
+    if (args->isSet("libsuffix"))
+    {
+        QString tmp(KDELIBSUFF);
+        tmp.remove('"');
+        printResult(expandvars(tmp.local8Bit()));
+        return 0;
+    }
+
+    if (args->isSet("localprefix"))
+    {
+        printResult(KGlobal::dirs()->localkdedir());
+        return 0;
+    }
+
+    if (args->isSet("version"))
+    {
+        printf("%s\n", KDE_VERSION_STRING);
+        return 0;
+    }
+
+    if (args->isSet("types"))
+    {
+        QStringList types = KGlobal::dirs()->allTypes();
+        types.sort();
+        const char *helptexts[] = {
+            "apps", I18N_NOOP("Applications menu (.desktop files)"),
+            "cgi", I18N_NOOP("CGIs to run from kdehelp"),
+            "config", I18N_NOOP("Configuration files"),
+            "data", I18N_NOOP("Where applications store data"),
+            "exe", I18N_NOOP("Executables in $prefix/bin"),
+            "html", I18N_NOOP("HTML documentation"),
+            "icon", I18N_NOOP("Icons"),
+            "kcfg", I18N_NOOP("Configuration description files"),
+            "lib", I18N_NOOP("Libraries"),
+            "include", I18N_NOOP("Includes/Headers"),
+            "locale", I18N_NOOP("Translation files for KLocale"),
+            "mime", I18N_NOOP("Mime types"),
+            "module", I18N_NOOP("Loadable modules"),
+            "qtplugins", I18N_NOOP("Qt plugins"),
+            "services", I18N_NOOP("Services"),
+            "servicetypes", I18N_NOOP("Service types"),
+            "sound", I18N_NOOP("Application sounds"),
+            "templates", I18N_NOOP("Templates"),
+            "wallpaper", I18N_NOOP("Wallpapers"),
+            "xdgdata-apps", I18N_NOOP("XDG Application menu (.desktop files)"),
+            "xdgdata-dirs", I18N_NOOP("XDG Menu descriptions (.directory files)"),
+            "xdgconf-menu", I18N_NOOP("XDG Menu layout (.menu files)"),
+            "tmp", I18N_NOOP("Temporary files (specific for both current host and current user)"),
+            "socket", I18N_NOOP("UNIX Sockets (specific for both current host and current user)"),
+            0, 0
+        };
+        for (QStringList::ConstIterator it = types.begin(); it != types.end(); ++it)
+        {
+            int index = 0;
+            while (helptexts[index] && *it != helptexts[index]) {
+                index += 2;
+            }
+            if (helptexts[index]) {
+                printf("%s - %s\n", helptexts[index], i18n(helptexts[index+1]).local8Bit().data());
+            } else {
+                printf("%s", i18n("%1 - unknown type\n").arg(*it).local8Bit().data());
+            }
+        }
+        return 0;
+    }
+
+    QString type = args->getOption("path");
+    if (!type.isEmpty())
+    {
+        printResult(KGlobal::dirs()->resourceDirs(type.latin1()).join(":"));
+        return 0;
+    }
+
+    type = args->getOption("userpath");
+    if (!type.isEmpty())
+    {
+        if ( type == "desktop" )
+            printResult(KGlobalSettings::desktopPath());
+        else if ( type == "autostart" )
+            printResult(KGlobalSettings::autostartPath());
+        else if ( type == "trash" )
+            printResult(KGlobalSettings::trashPath());
+        else if ( type == "document" )
+            printResult(KGlobalSettings::documentPath());
+        else
+            fprintf(stderr, "%s", i18n("%1 - unknown type of userpath\n").arg(type).local8Bit().data() );
+        return 0;
+    }
+
+    type = args->getOption("install");
+    if (!type.isEmpty())
+    {
+        const char *installprefixes[] = {
+            "apps",   "@kde_appsdir@",
+            "config", "@kde_confdir@",
+            "kcfg",   "@kde_kcfgdir@",
+            "data",   "@kde_datadir@",
+            "exe",    "@kde_bindir@",
+            "html",   "@kde_htmldir@",
+            "icon",   "@kde_icondir@",
+            "lib",    "@libdir@",
+            "module", "@kde_moduledir@",
+            "qtplugins", "@kde_moduledir@/plugins",
+            "locale", "@kde_locale@",
+            "mime",   "@kde_mimedir@",
+            "services", "@kde_servicesdir@",
+            "servicetypes", "@kde_servicetypesdir@",
+            "sound", "@kde_sounddir@",
+            "templates", "@kde_templatesdir@",
+            "wallpaper", "@kde_wallpaperdir@",
+            "xdgconf-menu", "@xdg_menudir@",
+            "xdgdata-apps", "@xdg_appsdir@",
+            "xdgdata-dirs", "@xdg_directorydir@",
+            "include", "@includedir@",
+            0, 0
+        };
+        int index = 0;
+        while (installprefixes[index] && type != installprefixes[index]) {
+            index += 2;
+        }
+        if (installprefixes[index]) {
+            printResult(expandvars(installprefixes[index+1]));
+        } else {
+            printResult("NONE"); // no i18n here as for scripts
+        }
+    }
+    return 0;
+}
