@@ -1,0 +1,1 @@
+SUBDIRS = programcatalog bookmarkcatalog documentcatalog calculatorcatalog amarokcatalog spellcatalog googlecatalog execcatalog
