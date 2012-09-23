@@ -1,0 +1,771 @@
+dnl =======================================================
+dnl FILE: ./admin/configure.in.min
+dnl =======================================================
+
+dnl    This file is part of the KDE libraries/packages
+dnl    Copyright (C) 2001 Stephan Kulow (coolo@kde.org)
+ 
+dnl    This file is free software; you can redistribute it and/or
+dnl    modify it under the terms of the GNU Library General Public
+dnl    License as published by the Free Software Foundation; either
+dnl    version 2 of the License, or (at your option) any later version.
+ 
+dnl    This library is distributed in the hope that it will be useful,
+dnl    but WITHOUT ANY WARRANTY; without even the implied warranty of
+dnl    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+dnl    Library General Public License for more details.
+ 
+dnl    You should have received a copy of the GNU Library General Public License
+dnl    along with this library; see the file COPYING.LIB.  If not, write to
+dnl    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+dnl    Boston, MA 02110-1301, USA.
+
+# Original Author was Kalle@kde.org
+# I lifted it in some mater. (Stephan Kulow)
+# I used much code from Janos Farkas
+
+dnl Process this file with autoconf to produce a configure script.
+
+AC_INIT(acinclude.m4) dnl a source file from your sub dir
+
+dnl This is so we can use kde-common
+AC_CONFIG_AUX_DIR(admin)
+
+dnl This ksh/zsh feature conflicts with `cd blah ; pwd`
+unset CDPATH
+
+dnl Checking host/target/build systems, for make, install etc.
+AC_CANONICAL_SYSTEM 
+dnl Perform program name transformation
+AC_ARG_PROGRAM
+
+dnl Automake doc recommends to do this only here. (Janos)
+AM_INIT_AUTOMAKE(kdeutils, "3.5.10") dnl searches for some needed programs
+
+KDE_SET_PREFIX
+
+dnl generate the config header
+AM_CONFIG_HEADER(config.h) dnl at the distribution this done
+
+dnl Checks for programs.
+AC_CHECK_COMPILERS
+AC_ENABLE_SHARED(yes)
+AC_ENABLE_STATIC(no)
+KDE_PROG_LIBTOOL
+
+dnl for NLS support. Call them in this order!
+dnl WITH_NLS is for the po files
+AM_KDE_WITH_NLS
+
+dnl KDE_USE_QT
+AC_PATH_KDE
+dnl =======================================================
+dnl FILE: configure.in.in
+dnl =======================================================
+
+#MIN_CONFIG
+KDE_ENABLE_HIDDEN_VISIBILITY
+KDE_INIT_DOXYGEN([KDE Utils API Reference], [Version $VERSION])
+
+AC_HEADER_DIRENT
+AC_HEADER_STDC
+AC_CHECK_HEADERS(fcntl.h sys/sysctl.h sys/param.h sys/time.h sys/types.h sys/user.h sys/vmmeter.h sys/resource.h vm/vmparam.h unistd.h)
+
+AC_CHECK_SETENV
+AC_CHECK_UNSETENV
+
+CXXFLAGS="$CXXFLAGS $KDE_DEFAULT_CXXFLAGS"
+dnl =======================================================
+dnl FILE: ./ark/configure.in.in
+dnl =======================================================
+
+AC_CHECK_KDEMAXPATHLEN
+
+KDE_CHECK_FUNC_EXT(statfs, [
+#include <sys/mount.h> 
+], [
+  char buffer[200];
+  struct statfs b;
+  statfs(buffer, &b);
+], [
+  int statfs(const char *path, struct statfs *buffer)
+], [STATFS])
+dnl =======================================================
+dnl FILE: ./kcalc/configure.in.in
+dnl =======================================================
+
+AC_CHECK_HEADERS(ieeefp.h)
+
+AC_CHECK_FUNCS(fabsl)
+
+AC_DEFUN([KDE_C_LONG_DOUBLE],
+[
+  AC_CACHE_CHECK(for long double, ac_cv_c_long_double,
+  [
+    ac_save_LIBS="$LIBS"
+    LIBS="-lm $LIBS"
+    AC_TRY_RUN(
+    [
+#define _ISOC99_SOURCE	1
+#define _GNU_SOURCE	1
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+
+int main() {
+/* The Stardent Vistra knows sizeof(long double), but does not support it.  */
+long double foo = 1.0;
+char buffer[10];
+/* On Ultrix 4.3 cc, long double is 4 and double is 8.  */
+int result = (sizeof(long double) <= sizeof(double));
+/* the following is needed for a broken printf in glibc2 */
+if (!result) {
+    foo = foo * 3;
+    sprintf(buffer,"%0.0Lf",foo);
+    result = strcmp(buffer, "3");
+/* and now something mean ;-) */
+    foo = powl(fabsl(foo), 1);
+}
+exit(result); }
+    ],
+    ac_cv_c_long_double=yes, ac_cv_c_long_double=no,
+    ac_cv_c_long_double=no
+    )
+    LIBS="$ac_save_LIBS"
+  ])
+  if test $ac_cv_c_long_double = yes; then
+    AC_DEFINE(HAVE_LONG_DOUBLE, 1, [Define if you have support for long double in printf])
+  fi
+])
+KDE_C_LONG_DOUBLE
+
+have_l_funcs=yes
+AC_CHECK_LIB(m, asinl,,have_l_funcs=no)
+AC_CHECK_LIB(m, sqrtl,,have_l_funcs=no)
+
+if test "xyes" = "x$have_l_funcs" ; then
+  AC_DEFINE(HAVE_L_FUNCS,1,[Define if you have *l math functions (absl, ...)])
+fi
+
+AC_LANG_C
+AC_CHECK_LIB(m, isinf, [
+  AC_DEFINE_UNQUOTED(HAVE_FUNC_ISINF, 1, [Define if you have isinf])
+])
+AC_CHECK_LIB(m, round, [
+  AC_DEFINE_UNQUOTED(HAVE_FUNC_ROUND, 1, [Define if you have round])
+])
+AC_CHECK_LIB(m, roundl, [
+  AC_DEFINE_UNQUOTED(HAVE_FUNC_ROUNDL, 1, [Define if you have round])
+])
+
+kcalc_gmp_found=yes
+LIBGMP=
+KDE_CHECK_HEADER([gmp.h], [
+  KDE_CHECK_LIB(gmp, main, [
+    LIBGMP="-lgmp"
+    AC_DEFINE(HAVE_GMP, 1, [Define if you have libgmp])
+  ])
+  ],[
+  DO_NOT_COMPILE="kcalc $DO_NOT_COMPILE"
+  kcalc_gmp_found=no
+  ]
+)
+AC_SUBST(LIBGMP)
+dnl =======================================================
+dnl FILE: ./kcalc/knumber/configure.in.in
+dnl =======================================================
+
+AC_DEFUN([KDE_C_LONG_DOUBLE],
+[
+  AC_CACHE_CHECK(for long double, ac_cv_c_long_double,
+  [
+    ac_save_LIBS="$LIBS"
+    LIBS="-lm $LIBS"
+    AC_TRY_RUN(
+    [
+#define _ISOC99_SOURCE	1
+#define _GNU_SOURCE	1
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+
+int main() {
+/* The Stardent Vistra knows sizeof(long double), but does not support it.  */
+long double foo = 1.0;
+char buffer[10];
+/* On Ultrix 4.3 cc, long double is 4 and double is 8.  */
+int result = (sizeof(long double) <= sizeof(double));
+/* the following is needed for a broken printf in glibc2 */
+if (!result) {
+    foo = foo * 3;
+    sprintf(buffer,"%0.0Lf",foo);
+    result = strcmp(buffer, "3");
+/* and now something mean ;-) */
+    foo = powl(fabsl(foo), 1);
+}
+exit(result); }
+    ],
+    ac_cv_c_long_double=yes, ac_cv_c_long_double=no,
+    ac_cv_c_long_double=no
+    )
+    LIBS="$ac_save_LIBS"
+  ])
+  if test $ac_cv_c_long_double = yes; then
+    AC_DEFINE(HAVE_LONG_DOUBLE, 1, [Define if you have support for long double in printf])
+  fi
+])
+KDE_C_LONG_DOUBLE
+
+have_l_funcs=yes
+AC_CHECK_LIB(m, sqrtl,,have_l_funcs=no)
+
+if test "xyes" = "x$have_l_funcs" ; then
+  AC_DEFINE(HAVE_L_FUNCS,1,[Define if you have *l math functions (absl, ...)])
+fi
+
+LIBGMP=
+KDE_CHECK_HEADER([gmp.h], [
+  AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+
+  kde_save_LIBS=$LIBS
+  LIBS="$all_libraries -lgmp"
+  AC_TRY_LINK(dnl
+  [
+    #include <gmp.h>
+  ],
+  [ 
+    mpz_t _mpz;
+    mpz_init_set_si(_mpz, 0);
+  ],
+  [LIBGMP="-lgmp"],
+  [
+    DO_NOT_COMPILE="$DO_NOT_COMPILE kcalc"
+  ])
+  LIBS=$kde_save_LIBS
+  AC_LANG_RESTORE
+
+])
+AC_SUBST(LIBGMP)
+dnl =======================================================
+dnl FILE: ./khexedit/configure.in.in
+dnl =======================================================
+
+# kossebau: copied from kdelibs/configure.in.in for khexedit
+AC_LANG_SAVE
+AC_LANG_C
+dnl AC_C_BIGENDIAN has a bug (one of its tests uses "main()" instead of
+dnl "int main()") so C++ compilers would break. Thats why we switch languages
+AC_C_BIGENDIAN
+AC_LANG_RESTORE
+# kossebau end
+dnl =======================================================
+dnl FILE: ./klaptopdaemon/configure.in.in
+dnl =======================================================
+
+KDE_FIND_PATH(tpctl, TPCTL, [$exec_prefix/bin $prefix/bin /usr/bin /usr/local/bin /opt/local/bin], [TPCTL=""])
+AC_DEFINE_UNQUOTED(PATH_TPCTL, "$TPCTL", [Defines the executable of tpctl])
+
+AC_CHECK_HEADERS(machine/apm_bios.h)
+
+if test "x$kde_use_qt_mac" = "xyes"; then
+  DO_NOT_COMPILE="$DO_NOT_COMPILE klaptopdaemon"
+fi
+
+
+xss_save_ldflags="$LDFLAGS"
+LDFLAGS="$X_LDFLAGS"
+
+LIB_XSS=
+
+AC_ARG_WITH([xscreensaver],
+  AC_HELP_STRING([--without-xscreensaver], [Disable XScreenSaver support (default: check)]) )
+
+if test "x$with_xscreensaver" != "xno"; then
+  KDE_CHECK_HEADER(X11/extensions/scrnsaver.h,
+    [
+    AC_CHECK_LIB(Xext,XScreenSaverQueryInfo,
+	[
+        AC_DEFINE(HAVE_XSCREENSAVER, 1, [Define if you have the XScreenSaver extension])
+	LIB_XSS="-lXext"
+        ],
+        [
+        ld_shared_flag=
+        xss_save_cxxflags="$CXXFLAGS"
+        CXXFLAGS="$CXXFLAGS $lt_prog_compiler_pic_CXX"
+        KDE_CHECK_COMPILER_FLAG(shared, [ld_shared_flag="-shared"])
+        AC_CHECK_LIB(Xss,XScreenSaverQueryInfo,
+            [
+            AC_DEFINE(HAVE_XSCREENSAVER, 1, [Define if you have the XScreenSaver extension])
+            LIB_XSS="-lXss"
+            ],
+            [],
+            [ $ld_shared_flag $X_PRE_LIBS -lXext -lX11 $X_EXTRA_LIBS ])
+        CXXFLAGS="$xss_save_cxxflags"
+        ],
+        [ $X_PRE_LIBS -lX11 $X_EXTRA_LIBS ])
+     ], [],
+     [
+     #include <X11/Xlib.h>
+     ] )
+fi
+
+AC_SUBST(LIB_XSS)
+LDFLAGS="$xss_save_ldflags"
+dnl =======================================================
+dnl FILE: ./kmilo/configure.in.in
+dnl =======================================================
+
+
+##################################################################
+## 
+##    KMilo configure script
+##    George Staikos <staikos@kde.org>
+##
+##################################################################
+
+dnl ---------------------------------------------------------------------
+dnl PowerBook IPC Library
+
+AC_ARG_WITH(powerbook,
+  [AC_HELP_STRING(--with-powerbook,
+    [enable support for PPC PowerBook @<:@default=check@:>@])],
+  [], with_powerbook=check)
+
+have_pbbipc=""
+have_pbb=""
+if test "x$with_powerbook" != xno; then
+
+KDE_CHECK_LIB(pbbipc, create_msgport,
+[
+KEYBOARD_LIBS="-lpbbipc $KEYBOARD_LIBS"
+AC_DEFINE(HAVE_POWERBOOK, 1, [If we have Apple PowerBook support])
+have_pbbipc=true
+])
+
+KDE_CHECK_LIB(pbb, init_libpbb,
+[
+KEYBOARD_LIBS="-lpbb $KEYBOARD_LIBS"
+AC_DEFINE(HAVE_POWERBOOK, 1, [If we have Apple PowerBook support])
+have_pbb=true
+])
+
+if test "x$with_powerbook" != xcheck && test -z "$have_pbbipc$have_pbb"; then
+  AC_MSG_ERROR([--with-powerbook was given, but test for libpbb failed])
+fi
+fi
+
+AM_CONDITIONAL(include_kmilo_powerbook, test x$have_pbbipc = xtrue)
+AM_CONDITIONAL(include_kmilo_pbb, test x$have_pbb = xtrue)
+
+dnl -----------------------------------------------------------------------
+dnl Check if Dell I8K module should be compiled (Linux systems only)
+AC_MSG_CHECKING([if dellI8k KMilo module should be compiled])
+case "$host" in
+  *-*-linux*) kmilo_delli8k_compile=yes; UNAME='Linux' ;;
+  *) kmilo_delli8k_compile=no; UNAME='' ;;
+esac
+
+AC_MSG_RESULT($kmilo_delli8k_compile)
+AM_CONDITIONAL(include_kmilo_delli8k, test x$kmilo_delli8k_compile = xyes)
+dnl -----------------------------------------------------------------------
+
+
+
+AC_CHECK_HEADER(linux/sonypi.h, [have_sonypi=true])
+AM_CONDITIONAL(include_kmilo_kvaio, test x$have_sonypi = xtrue)
+
+AC_SUBST(KEYBOARD_LIBS)
+dnl =======================================================
+dnl FILE: ./ksim/configure.in.in
+dnl =======================================================
+
+AC_CHECK_FUNCS(getloadavg)
+
+sysinfo_check=no
+case "$target" in
+  *-*-linux*)
+    sysinfo_check=yes
+    ;;
+esac
+
+if test x$sysinfo_check = xyes; then
+  sysinfo_ok=no
+  AC_MSG_CHECKING(for totalhigh and totalfree in sysinfo)
+  AC_TRY_COMPILE(
+  [
+    #include <linux/kernel.h>
+
+    static void check()
+    {
+      struct sysinfo system; /* dummy sysinfo */
+      int totalhigh = system.totalhigh;
+      int freehigh = system.freehigh;
+    }
+  ], [],
+  [
+    sysinfo_ok=yes
+    AC_DEFINE_UNQUOTED(HAVE_SYSINFO_HIGH, 1, [whether we have totalhigh and freehigh])
+  ])
+
+  AC_MSG_RESULT($sysinfo_ok)
+fi
+
+dnl Check for dell laptop support
+AM_CONDITIONAL(supports_i8k, test -f /proc/i8k)
+
+KDE_CHECK_HEADER(X11/extensions/extutil.h, AC_DEFINE(HAVE_EXTUTIL_H, 1, [If we have extutil.h]) have_extutil_h=yes, , )
+AM_CONDITIONAL(include_nv, test "x$have_extutil_h" = "xyes")
+dnl =======================================================
+dnl FILE: ./ksim/monitors/disk/configure.in.in
+dnl =======================================================
+
+AC_CHECK_LIB(devstat, selectdevs,
+[
+  LIB_DEVSTAT="-ldevstat"
+],
+[
+  AC_CHECK_LIB(devstat, devstat_selectdevs,
+      [
+        LIB_DEVSTAT="-ldevstat"
+      ]
+  )
+])
+
+AC_SUBST(LIB_DEVSTAT)
+dnl =======================================================
+dnl FILE: ./ksim/monitors/filesystem/configure.in.in
+dnl =======================================================
+
+AC_CHECK_HEADERS(sys/mnttab.h mntent.h sys/statvfs.h sys/statfs.h sys/vfs.h sys/mount.h sys/ucred.h sys/loadavg.h)
+AC_CHECK_FUNCS(statvfs)
+dnl =======================================================
+dnl FILE: ./ksim/monitors/snmp/configure.in.in
+dnl =======================================================
+
+AC_ARG_WITH(snmp,
+  [AC_HELP_STRING(--with-snmp,
+    [enable support for SNMP @<:@default=check@:>@])],
+  [], with_snmp=check)
+
+enable_snmp=no
+if test "x$with_snmp" != xno; then
+  KDE_CHECK_HEADER( net-snmp/library/snmp_api.h, 
+    [ have_netsnmp_h=yes ], [ have_netsnmp_h=no ],
+    [ #include <net-snmp/net-snmp-config.h>
+      #include <net-snmp/types.h>
+    ]
+  )
+
+  if test "$have_netsnmp_h" = yes; then
+    KDE_CHECK_LIB( netsnmp, snmp_sess_init, [
+        AC_SUBST( LIBSNMP, "-lnetsnmp" )
+        enable_snmp=yes
+    ], [], [] )
+  fi
+
+  if test "$enable_snmp" != yes; then
+    AC_MSG_CHECKING([if libnetsnmp needs -lcrypto])
+
+    dnl use a different symbol to prevent autoconf from caching
+    KDE_CHECK_LIB( netsnmp, snmp_open, [
+        AC_SUBST( LIBSNMP, "-lnetsnmp -lcrypto" )
+        enable_snmp=yes
+        AC_MSG_RESULT(yes)
+    ], [
+        AC_MSG_RESULT(no)
+    ], [-lcrypto] )
+  fi
+
+  if test "x$with_snmp" != xcheck && test "x$enable_snmp" != xyes; then
+    AC_MSG_ERROR([--with-snmp was given, but test for net-snmp failed])
+  fi
+fi
+
+AM_CONDITIONAL(include_ksim_monitors_snmp, test "x$enable_snmp" = xyes)
+dnl =======================================================
+dnl FILE: ./superkaramba/configure.in.in
+dnl =======================================================
+
+#MIN_CONFIG
+
+dnl PACKAGE set before
+AC_C_BIGENDIAN
+AC_CHECK_KDEMAXPATHLEN
+
+dnl AM_PATH_XMMS([1.0.0])
+dnl AC_PATH_PROG(XMMS_CONFIG, xmms-config, no)
+dnl AM_PATH_XMMS(1.0.0,,AC_MSG_ERROR([*** XMMS >= 1.0.0 not installed - please install first ***]))
+
+KDE_CHECK_PYTHON
+AC_DEFUN([AC_CHECK_XMMS],
+[
+  AC_MSG_CHECKING([for libxmms])
+  AC_CACHE_VAL(ac_cv_have_xmms,
+  [
+    ac_save_libs="$LIBS"
+    LIBS="`xmms-config --libs`"
+    ac_CPPFLAGS_save="$CPPFLAGS"
+    CPPFLAGS="$CPPFLAGS $all_includes `xmms-config --cflags`"
+    ac_LDFLAGS_save="$LDFLAGS"
+    LDFLAGS="$LDFLAGS $all_libraries"
+    AC_TRY_LINK(
+      [#include <xmms/xmmsctrl.h>],
+      [xmms_remote_stop(0);],
+      [ac_cv_have_xmms="yes"],
+      [ac_cv_have_xmms="no"]
+    )
+    LIBS="$ac_save_libs"
+    LDFLAGS="$ac_LDFLAGS_save"
+    CPPFLAGS="$ac_CPPFLAGS_save"
+  ])
+  AC_MSG_RESULT($ac_cv_have_xmms)
+  if test "$ac_cv_have_xmms" = "yes"; then
+    XMMS_INCLUDES="`xmms-config --cflags`"
+
+    for arg in `xmms-config --libs`; do
+	case $arg in
+	    -[[lL]]*)
+	    XMMS_LIBS="$XMMS_LIBS $arg"
+	    ;;
+	    *)
+	    XMMS_LDFLAGS="$XMMS_LDFLAGS $arg"
+	esac
+    done
+    AC_DEFINE(HAVE_XMMS, 1, [Define if you have xmms libraries and header files.])
+  fi
+])
+
+AC_ARG_WITH(xmms,
+  [AC_HELP_STRING(--with-xmms,
+    [enable support for XMMS @<:@default=check@:>@])],
+  [], with_xmms=check)
+
+if test "x$with_xmms" != xno; then
+  AC_CHECK_XMMS
+
+  if test "x$with_xmms" != xcheck && test "x$ac_cv_have_xmms" = xno; then
+    AC_MSG_ERROR([--with-xmms was given, but test for XMMS failed])
+  fi
+fi
+AC_SUBST(XMMS_LIBS)
+AC_SUBST(XMMS_LDFLAGS)
+AC_SUBST(XMMS_INCLUDES)
+
+kde_have_knewstuff=yes
+KDE_CHECK_LIB(knewstuff, main, [MY_LIBKNEWSTUFF="-lknewstuff"], kde_have_knewstuff=no)
+if test "$kde_have_knewstuff" = "yes"; then
+  AC_DEFINE(HAVE_KNEWSTUFF, 1, [Define if you have knewstuff])
+  AC_SUBST(MY_LIBKNEWSTUFF)
+fi
+
+AC_CHECK_LIB(kvm, main, [LIBKVM="-lkvm"])
+AC_SUBST(LIBKVM)
+if test -z "$PYTHONINC" ; then
+        DO_NOT_COMPILE="$DO_NOT_COMPILE superkaramba"
+fi
+KDE_CREATE_SUBDIRSLIST
+AM_CONDITIONAL(ark_SUBDIR_included, test "x$ark_SUBDIR_included" = xyes)
+AM_CONDITIONAL(charselectapplet_SUBDIR_included, test "x$charselectapplet_SUBDIR_included" = xyes)
+AM_CONDITIONAL(doc_SUBDIR_included, test "x$doc_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kcalc_SUBDIR_included, test "x$kcalc_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kcharselect_SUBDIR_included, test "x$kcharselect_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kdelirc_SUBDIR_included, test "x$kdelirc_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kdessh_SUBDIR_included, test "x$kdessh_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kdf_SUBDIR_included, test "x$kdf_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kedit_SUBDIR_included, test "x$kedit_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kfloppy_SUBDIR_included, test "x$kfloppy_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kgpg_SUBDIR_included, test "x$kgpg_SUBDIR_included" = xyes)
+AM_CONDITIONAL(khexedit_SUBDIR_included, test "x$khexedit_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kjots_SUBDIR_included, test "x$kjots_SUBDIR_included" = xyes)
+AM_CONDITIONAL(klaptopdaemon_SUBDIR_included, test "x$klaptopdaemon_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kmilo_SUBDIR_included, test "x$kmilo_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kregexpeditor_SUBDIR_included, test "x$kregexpeditor_SUBDIR_included" = xyes)
+AM_CONDITIONAL(ksim_SUBDIR_included, test "x$ksim_SUBDIR_included" = xyes)
+AM_CONDITIONAL(ktimer_SUBDIR_included, test "x$ktimer_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kwallet_SUBDIR_included, test "x$kwallet_SUBDIR_included" = xyes)
+AM_CONDITIONAL(superkaramba_SUBDIR_included, test "x$superkaramba_SUBDIR_included" = xyes)
+AC_CONFIG_FILES([ Makefile ])
+AC_CONFIG_FILES([ ark/Makefile ])
+AC_CONFIG_FILES([ ark/pics/Makefile ])
+AC_CONFIG_FILES([ charselectapplet/Makefile ])
+AC_CONFIG_FILES([ doc/Makefile ])
+AC_CONFIG_FILES([ doc/KRegExpEditor/Makefile ])
+AC_CONFIG_FILES([ doc/ark/Makefile ])
+AC_CONFIG_FILES([ doc/kcalc/Makefile ])
+AC_CONFIG_FILES([ doc/kcharselect/Makefile ])
+AC_CONFIG_FILES([ doc/kcontrol/Makefile ])
+AC_CONFIG_FILES([ doc/kcontrol/kcmlowbatcrit/Makefile ])
+AC_CONFIG_FILES([ doc/kcontrol/kcmlowbatwarn/Makefile ])
+AC_CONFIG_FILES([ doc/kcontrol/laptop/Makefile ])
+AC_CONFIG_FILES([ doc/kcontrol/powerctrl/Makefile ])
+AC_CONFIG_FILES([ doc/kdelirc/Makefile ])
+AC_CONFIG_FILES([ doc/kdelirc/irkick/Makefile ])
+AC_CONFIG_FILES([ doc/kdelirc/kcmlirc/Makefile ])
+AC_CONFIG_FILES([ doc/kdf/Makefile ])
+AC_CONFIG_FILES([ doc/kedit/Makefile ])
+AC_CONFIG_FILES([ doc/kfloppy/Makefile ])
+AC_CONFIG_FILES([ doc/kgpg/Makefile ])
+AC_CONFIG_FILES([ doc/khexedit/Makefile ])
+AC_CONFIG_FILES([ doc/kinfocenter/Makefile ])
+AC_CONFIG_FILES([ doc/kinfocenter/blockdevices/Makefile ])
+AC_CONFIG_FILES([ doc/kjots/Makefile ])
+AC_CONFIG_FILES([ doc/ksim/Makefile ])
+AC_CONFIG_FILES([ doc/ktimer/Makefile ])
+AC_CONFIG_FILES([ doc/kwallet/Makefile ])
+AC_CONFIG_FILES([ doc/superkaramba/Makefile ])
+AC_CONFIG_FILES([ kcalc/Makefile ])
+AC_CONFIG_FILES([ kcalc/knumber/Makefile ])
+AC_CONFIG_FILES([ kcalc/knumber/tests/Makefile ])
+AC_CONFIG_FILES([ kcharselect/Makefile ])
+AC_CONFIG_FILES([ kdelirc/Makefile ])
+AC_CONFIG_FILES([ kdelirc/icons/Makefile ])
+AC_CONFIG_FILES([ kdelirc/irkick/Makefile ])
+AC_CONFIG_FILES([ kdelirc/irkick/icons/Makefile ])
+AC_CONFIG_FILES([ kdelirc/kcmlirc/Makefile ])
+AC_CONFIG_FILES([ kdelirc/kdelirc/Makefile ])
+AC_CONFIG_FILES([ kdelirc/profiles/Makefile ])
+AC_CONFIG_FILES([ kdelirc/remotes/Makefile ])
+AC_CONFIG_FILES([ kdessh/Makefile ])
+AC_CONFIG_FILES([ kdf/Makefile ])
+AC_CONFIG_FILES([ kdf/pics/Makefile ])
+AC_CONFIG_FILES([ kedit/Makefile ])
+AC_CONFIG_FILES([ kedit/pixmaps/Makefile ])
+AC_CONFIG_FILES([ kfloppy/Makefile ])
+AC_CONFIG_FILES([ kgpg/Makefile ])
+AC_CONFIG_FILES([ kgpg/icons/Makefile ])
+AC_CONFIG_FILES([ khexedit/Makefile ])
+AC_CONFIG_FILES([ khexedit/lib/Makefile ])
+AC_CONFIG_FILES([ khexedit/lib/codecs/Makefile ])
+AC_CONFIG_FILES([ khexedit/lib/controller/Makefile ])
+AC_CONFIG_FILES([ khexedit/parts/Makefile ])
+AC_CONFIG_FILES([ khexedit/parts/kbytesedit/Makefile ])
+AC_CONFIG_FILES([ khexedit/parts/kpart/Makefile ])
+AC_CONFIG_FILES([ khexedit/pics/Makefile ])
+AC_CONFIG_FILES([ kjots/Makefile ])
+AC_CONFIG_FILES([ kjots/icons/Makefile ])
+AC_CONFIG_FILES([ klaptopdaemon/Makefile ])
+AC_CONFIG_FILES([ klaptopdaemon/applnk/Makefile ])
+AC_CONFIG_FILES([ klaptopdaemon/pics/Makefile ])
+AC_CONFIG_FILES([ klaptopdaemon/pics/actions/Makefile ])
+AC_CONFIG_FILES([ kmilo/Makefile ])
+AC_CONFIG_FILES([ kmilo/asus/Makefile ])
+AC_CONFIG_FILES([ kmilo/delli8k/Makefile ])
+AC_CONFIG_FILES([ kmilo/demo/Makefile ])
+AC_CONFIG_FILES([ kmilo/generic/Makefile ])
+AC_CONFIG_FILES([ kmilo/kmilo_kvaio/Makefile ])
+AC_CONFIG_FILES([ kmilo/kmilo_kvaio/kcmkvaio/Makefile ])
+AC_CONFIG_FILES([ kmilo/kmilod/Makefile ])
+AC_CONFIG_FILES([ kmilo/powerbook/Makefile ])
+AC_CONFIG_FILES([ kmilo/powerbook2/Makefile ])
+AC_CONFIG_FILES([ kmilo/thinkpad/Makefile ])
+AC_CONFIG_FILES([ kmilo/thinkpad/kcmthinkpad/Makefile ])
+AC_CONFIG_FILES([ kregexpeditor/Makefile ])
+AC_CONFIG_FILES([ kregexpeditor/KMultiFormListBox/Makefile ])
+AC_CONFIG_FILES([ kregexpeditor/KWidgetStreamer/Makefile ])
+AC_CONFIG_FILES([ kregexpeditor/picts/Makefile ])
+AC_CONFIG_FILES([ kregexpeditor/predefined/Makefile ])
+AC_CONFIG_FILES([ kregexpeditor/predefined/General/Makefile ])
+AC_CONFIG_FILES([ kregexpeditor/test-without-dl/Makefile ])
+AC_CONFIG_FILES([ ksim/Makefile ])
+AC_CONFIG_FILES([ ksim/library/Makefile ])
+AC_CONFIG_FILES([ ksim/monitors/Makefile ])
+AC_CONFIG_FILES([ ksim/monitors/cpu/Makefile ])
+AC_CONFIG_FILES([ ksim/monitors/disk/Makefile ])
+AC_CONFIG_FILES([ ksim/monitors/filesystem/Makefile ])
+AC_CONFIG_FILES([ ksim/monitors/i8k/Makefile ])
+AC_CONFIG_FILES([ ksim/monitors/lm_sensors/Makefile ])
+AC_CONFIG_FILES([ ksim/monitors/mail/Makefile ])
+AC_CONFIG_FILES([ ksim/monitors/net/Makefile ])
+AC_CONFIG_FILES([ ksim/monitors/snmp/Makefile ])
+AC_CONFIG_FILES([ ksim/pics/Makefile ])
+AC_CONFIG_FILES([ ksim/pics/misc/Makefile ])
+AC_CONFIG_FILES([ ksim/themes/Makefile ])
+AC_CONFIG_FILES([ ksim/themes/ksim/Makefile ])
+AC_CONFIG_FILES([ ksim/themes/ksim/host/Makefile ])
+AC_CONFIG_FILES([ ksim/themes/ksim/mail/Makefile ])
+AC_CONFIG_FILES([ ktimer/Makefile ])
+AC_CONFIG_FILES([ kwallet/Makefile ])
+AC_CONFIG_FILES([ kwallet/icons/Makefile ])
+AC_CONFIG_FILES([ kwallet/konfigurator/Makefile ])
+AC_CONFIG_FILES([ superkaramba/Makefile ])
+AC_CONFIG_FILES([ superkaramba/doc/Makefile ])
+AC_CONFIG_FILES([ superkaramba/icons/Makefile ])
+AC_CONFIG_FILES([ superkaramba/mimetypes/Makefile ])
+AC_CONFIG_FILES([ superkaramba/src/Makefile ])
+AC_OUTPUT
+if test "x$kcalc_gmp_found" = "xno"; then
+    cat << EOF
+
+KCalc will not be compiled as you are missing the GMP library. 
+Please install the libgmp packages
+or get GMP from http://www.swox.com/gmp/ 
+then run configure again
+
+EOF
+
+
+fi
+if test -z "$TPCTL"; then
+	echo ""
+	echo "You're missing tpctl. If you're using a ThinkPad, you may miss"
+	echo "some functionality of klaptopdaemon."
+	echo "You can get them from http://tpctl.sourceforge.net/tpctlhome.htm"
+	echo ""
+	all_tests=bad
+fi
+
+if test -z "$PYTHONINC"; then
+  echo ""
+  echo "Superkaramba can't be compiled"
+  echo "because of missing Python libraries/headers."
+  echo ""
+  all_tests=bad
+fi
+# Check if KDE_SET_PREFIX was called, and --prefix was passed to configure
+if test -n "$kde_libs_prefix" -a -n "$given_prefix"; then
+  # And if so, warn when they don't match
+  if test "$kde_libs_prefix" != "$given_prefix"; then
+    # And if kde doesn't know about the prefix yet
+    echo ":"`kde-config --path exe`":" | grep ":$given_prefix/bin/:" 2>&1 >/dev/null
+    if test $? -ne 0; then
+      echo ""
+      echo "Warning: you chose to install this package in $given_prefix,"
+      echo "but KDE was found in $kde_libs_prefix."
+      echo "For this to work, you will need to tell KDE about the new prefix, by ensuring"
+      echo "that KDEDIRS contains it, e.g. export KDEDIRS=$given_prefix:$kde_libs_prefix"
+      echo "Then restart KDE."
+      echo ""
+    fi
+  fi
+fi
+
+if test x$GXX = "xyes" -a x$kde_have_gcc_visibility = "xyes" -a x$kde_cv_val_qt_gcc_visibility_patched = "xno"; then
+  echo ""
+  echo "Your GCC supports symbol visibility, but the patch for Qt supporting visibility"
+  echo "was not included. Therefore, GCC symbol visibility support remains disabled."
+  echo ""
+  echo "For better performance, consider including the Qt visibility supporting patch"
+  echo "located at:"
+  echo ""
+  echo "http://bugs.kde.org/show_bug.cgi?id=109386"
+  echo ""
+  echo "and recompile all of Qt and KDE. Note, this is entirely optional and"
+  echo "everything will continue to work just fine without it."
+  echo ""
+fi
+
+if test "$all_tests" = "bad"; then
+  if test ! "$cache_file" = "/dev/null"; then
+    echo ""
+    echo "Please remove the file $cache_file after changing your setup"
+    echo "so that configure will find the changes next time."
+    echo ""
+  fi
+else
+  echo ""
+  echo "Good - your configure finished. Start make now"
+  echo ""
+fi
