@@ -1,0 +1,440 @@
+function printtoctor( aa )
+{
+    ctor = ctor aa
+}
+function printtodtor( aa )
+{
+    dtor = dtor aa
+}
+function printtofunc( aa )
+{
+    fun = fun aa
+}
+function printp( a )
+{
+    #printf a >>  "PRIVATE"
+    private = private a
+}
+function printg( a )
+{
+    printf a >> FILENAME "Impl.h"
+}
+function printh( a )
+{
+    printf a >> FILENAME "Impl.cc"
+}
+function doFuncCC( a, class )
+{
+    gsub("attribute", "", $0)
+    nr = split($0, b, " ")
+    # do method
+    i = 1
+    while ( i  < nr && b[i + 1] != "(" )
+    {
+        var = b[i++]
+        if(match(var, "SVG") != 0 )
+            printtofunc( var "Impl " )
+	else
+            printtofunc( var " " )
+    }
+    printtofunc( class "::" );
+    while ( i  < nr && b[i + 1] != ");"  )
+    {
+        if( b[i] == "in" )
+        {
+	    if(b[i + 1] != "float" && b[i + 1] != "unsigned" && b[i+1] != "short" && b[i+1] != "bool" )
+	    #if(b[i + 1] != "float" && match(b[i + 1], "unsigned") == 0)
+	    {
+	        float = "ok"
+	        printtofunc( "const " )
+            }
+	    else
+	    {
+	        float = "bad"
+	    }
+            i++
+            while ( i + 1 < nr && b[i + 1] != "in" && b[i + 1] != ");" )
+            {
+	        var =  b[i++]
+                if(match(var, "SVG") != 0 )
+                    printtofunc( var "Impl " )
+	        else
+                    printtofunc( var " " )
+            }
+	    if( float == "ok")
+	    {
+	        printtofunc( "&" b[i++]  )
+	    }
+            else
+            {
+	        printtofunc( b[i++]  )
+            }
+            if( i < nr ) printtofunc( " " )
+        }
+        else
+            printtofunc( b[i++] )
+    }
+    printtofunc( ")\n{\n}\n\n" );
+}
+
+function doFunc( a )
+{
+    gsub("attribute", "", $0)  
+    nr = split($0, b, " ")
+    printg( "\t" )
+    # do method
+    i = 1
+    while ( i  < nr && b[i + 1] != "(" )
+    {
+        var = b[i++]
+        if(match(var, "SVG") != 0 )
+            printg( var "Impl " )
+	else
+            printg( var " " )
+    }    
+    while ( i  < nr && b[i + 1] != ");"  )
+    {
+        if( b[i] == "in" )
+	{
+	    if(b[i + 1] != "float" && b[i + 1] != "unsigned" && b[i+1] != "short" && b[i+1] != "bool" )
+	    {
+	        float = "ok"
+	        printg( "const " )
+            }
+	    else
+	    {
+	        float = "bad"
+	    }
+	    i++
+	    while ( i + 1 < nr && b[i + 1] != "in" && b[i + 1] != ");" )
+	    {
+	        var =  b[i++]
+                if(match(var, "SVG") != 0 )
+                    printg( var "Impl " )
+	        else
+                    printg( var " " )
+	    }
+	    if( float == "ok")
+	    {
+	        if( b[ i ] != "in" ) printg( "&" b[i++]  )
+	    }
+            else
+            {
+	        if( b[ i ] != "in" ) printg( b[i++]  )
+            }
+            if( i < nr ) printg( " " )
+	}
+	else
+            printg( b[i++] )
+    }
+    printg( ");\n" );
+}
+
+function doAttr( a, class )
+{
+    sub( ";", "", a)
+    sub( "\r", "", a)
+    gsub("attribute", "", a)  
+    nr = split(a, b, " ")
+
+    # do put method
+    printg( "\tvoid set" )
+    printg( toupper( substr( b[nr], 1, 1) ) )
+    printg( substr( b[nr], 2) "(" )
+    i = 1
+    if(b[i] != "float" && b[i] != "unsigned" && b[i] != "short" && b[i] != "bool" )
+    {
+        float = "ok"
+        printg( "const " )
+    }
+    else
+    {
+        float = "bad"
+    }
+    while ( i  < nr  )
+    {
+        var = b[i++]
+        if(match(var, "SVG") != 0 )
+            printg( var "Impl" )
+	else
+            printg( var )
+	if( i < nr ) printg( " " )
+    }
+    if( float == "ok")
+        printg( " &" )
+    else
+        printg( " " )n
+    printg( b[nr] ");\n" )
+
+    # do put method .cc
+    printtofunc( "void " clas "::set" )
+    printtofunc( toupper( substr( b[nr], 1, 1) ) )
+    printtofunc( substr( b[nr], 2) "(" )
+    i = 1
+    if(b[i] != "float" && b[i] != "unsigned" && b[i] != "short" && b[i] != "bool" )
+    {
+        float = "ok"
+        printtofunc( "const " )
+    }
+    else
+    {
+        float = "bad"
+    }
+    while ( i  < nr  )
+    {
+        var = b[i++]
+        if(match(var, "SVG") != 0 )
+            printtofunc( var "Impl" )
+	else
+            printtofunc( var )
+	if( i < nr ) printtofunc( " " )
+    }
+    if( float == "ok")
+        printtofunc( " &" )
+    else
+        printtofunc( " " )
+    printtofunc( b[nr] ")\n{\n\tm_" b[nr] " = " b[nr] ";\n}\n\n" )
+
+
+    # do get method .h
+    i = 1
+    printg( "\t" )
+    while ( i  < nr  )
+    {
+        var = b[i++]
+        if(match(var, "SVG") != 0 )
+            printg( var "Impl *" )
+	else
+            printg( var " " )
+    }
+    sub( ";", "", b[nr])
+    sub( "\r", "", b[nr])
+    $temp = b[nr]
+    printg( $temp "() const;\n" )
+
+    # do get method .cc
+    i = 1
+    while ( i  < nr  )
+    {
+        var = b[i++]
+        if(match(var, "SVG") != 0 )
+            printtofunc( var "Impl *" )
+	else
+            printtofunc( var " " )
+    }
+    sub( ";", "", b[nr])
+    sub( "\r", "", b[nr])
+    $temp = b[nr]
+    printtofunc( clas "::" $temp "() const\n{\n\treturn m_" $temp )
+    printtofunc( ";\n}\n\n" )
+    
+    # do var
+    i = 1
+    printp( "\t" )
+    while ( i  < nr  )
+    {
+        var = b[i++]
+        if(match(var, "SVG") != 0 )
+        {
+            var = var "Impl"
+            printp( var  " *" )
+        }
+        else
+            printp( var " " )
+    }
+    printp( "m_" )
+    #printp( toupper( substr( b[nr], 1, 1) ) )
+    printp( substr( b[nr], 1) ";\n" )
+
+    #add to ctor + dtor
+    if(match(var, "SVG") != 0)
+    {
+        printtoctor("\tm_" substr( b[nr], 1) " = new " var "();\n" )
+        printtoctor("\tm_" substr( b[nr], 1) "->ref();\n\n" )
+        printtodtor("\tif(m_" substr( b[nr], 1) ")\n" )
+        printtodtor("\t\tm_" substr( b[nr], 1) "->deref();\n\n" )
+    }
+}
+
+function doReadonlyAttr( a, class )
+{
+    gsub("readonly attribute", "", $0)  
+    nr = split($0, b, " ")
+    
+    # do get method .h
+    i = 1
+    printg( "\t" )
+    while ( i  < nr  )
+    {
+        var = b[i++]
+        if(match(var, "SVG") != 0 )
+            printg( var "Impl *" )
+	else
+            printg( var " " )
+    }
+    sub( ";", "", b[nr])
+    sub( "\r", "", b[nr])
+    $temp = b[nr]
+    printg( $temp "() const;\n" )
+
+    # do get method .cc
+    i = 1
+    while ( i  < nr  )
+    {
+        var = b[i++]
+        if(match(var, "SVG") != 0 )
+            printtofunc( var "Impl *" )
+	else
+            printtofunc( var " " )
+    }
+    sub( ";", "", b[nr])
+    sub( "\r", "", b[nr])
+    $temp = b[nr]
+    printtofunc( clas "::" $temp "() const\n{\n\treturn m_" $temp )
+    printtofunc( ";\n}\n\n" )
+    
+    # do var
+    i = 1
+    printp( "\t" )
+    while ( i  < nr  )
+    {
+        var = b[i++]
+        if(match(var, "SVG") != 0 )
+        {
+            var = var "Impl"
+            printp( var  " *" )
+        }
+        else
+            printp( var " " )
+    }
+    printp( "m_" )
+    printp( substr( b[nr], 1) ";\n" )
+
+    #add to ctor + dtor
+    if(match(var, "SVG") != 0)
+    {
+        printtoctor("\tm_" substr( b[nr], 1) " = new " var "();\n" )
+        printtoctor("\tm_" substr( b[nr], 1) "->ref();\n\n" )
+        printtodtor("\tif(m_" substr( b[nr], 1) ")\n" )
+        printtodtor("\t\tm_" substr( b[nr], 1) "->deref();\n\n" )
+    }
+}
+{
+ sub("boolean", "bool", $0); # to shut up frerich :P
+                             # Frerich: Thank you :-)
+ if(/interface /)
+ {
+   private = "\nprivate:\n";
+   gsub("  interface ", "", $0) 
+   gsub(": ", ": public ", $0) 
+   gsub(",", ", public", $0) 
+   gsub("{", "\n{", $0) 
+   sub( ";", "", $0 )
+   sub( "\r", "", $0 )
+   printg( "\nclass " )
+   #printg( $0 )
+   #printg( "\npublic:\n" )   
+   nr = split($0, b, " ")
+   clas = b[1] "Impl"
+   printg( clas " " )
+   i = 2
+   while ( i  < nr  )
+   {
+      if(match(b[i], "SVG") != 0 )
+      {
+          if(match(b[i], ",") != 0)
+              sub( ",", "Impl," , b[i]) 
+          else
+	      b[i] = b[i] "Impl"
+      }
+      printg( b[i++] " " ) 
+   }
+   printg( "\n{\npublic:\n" )
+   printg( "\t"  clas "();\n" )
+   #printg( "\t"  clas "(const " clas " &other)" )
+   #if( nr > 2 )
+   #{
+   #    i = 2
+   #    sub( ":", " : ", b[i] )
+   #    while ( i  < nr  )
+   #    {
+   #       sub( "public", "", b[i] )
+   #       sub( ",", "(), ", b[i] )
+   #       printg( b[i++] ) 
+   #    }
+   #    printg( "()" )
+   #}
+   #printg( " { *this = other; }\n" )
+
+   printg( "\tvirtual ~" clas "();\n\n" )
+   #printg( "\t"  clas " &operator=(const " clas " &other);\n\n" )
+
+   # CC part
+   #printh( "// " b[1] " implementation \n\n" )
+   printtoctor( clas "::" clas "()" )
+   if( nr > 2 )
+   {
+       i = 2
+       sub( ":", " : ", b[i] )
+       while ( i  < nr  )
+       {
+          sub( "public", "",b[i] )
+          sub( ",", "(), ", b[i] )
+          printtoctor( b[i++] ) 
+       }	
+
+       printtoctor( "()" )
+   }
+   printtoctor( "\n{\n" )
+
+   printtodtor( clas "::~" clas "()\n{\n" )
+   #printh( clas " &" clas "::operator =(const " clas " &other)\n{\n\treturn *this;\n}\n\n" )
+
+ }
+ else if(/readonly attribute/)
+ {
+     doReadonlyAttr( $0, $class )
+ }
+ else if(/attribute /)
+ {
+     doAttr( $0, $class )
+ }
+ else if(/raises/)
+ { 
+ }
+ else if(/\)/)
+ { 
+    doFuncCC( $0, clas );
+    doFunc( $0 );
+ }
+ else if(/};/)
+ { 
+    printg(private)
+    printg( "};\n\n" );
+
+    printh( "\n" ctor )
+    printh( "}\n\n" )
+    ctor = ""
+
+    printh( dtor )
+    printh( "}\n\n" )
+    dtor = ""
+
+    printh( fun )
+    fun = ""
+ }
+ else if(/ = /)
+ { 
+#    sub( "\r", "", $0 )
+#    printg( $0 "\n" );
+ }
+ #else  if(//)
+ #{
+ #  # end of class
+ #  printf $0;
+ #}
+}
+# END
+# {
+#    print "};";
+# }
