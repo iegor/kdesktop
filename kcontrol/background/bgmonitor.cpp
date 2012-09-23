@@ -183,8 +183,6 @@ void BGMonitorLabel::resizeEvent( QResizeEvent * e )
 }
 //END class BGMonitorLabel
 
-
-
 //BEGIN class BGMonitor
 BGMonitor::BGMonitor(QWidget *parent, const char *name)
     : QLabel(parent, name)
