@@ -1,0 +1,68 @@
+
+
+
+Frames
+======
+
+
+Frames are needed for passing data between decoders around.
+A decoder gets an mpeg audio encoded frame as input and
+writes data to an audioFrame (pcm/float)
+
+                            frame
+                              |
+                         audioFrame
+                        /          \
+                    pcmFrame      floatFrame
+
+
+FrameQueues
+===========
+
+FrameQueues are needed for storing some frames. (For example
+you store 100 pre-decoded pcmFrames.)
+A FrameQueue is a queue, simply not more.
+
+IOFrameQueues
+=============
+
+IOFrameQueues deal with the problem, that you first start
+with an empty  FrameQueue (this is a FrameQueue which contains
+prealloceated data, but the data is empty (eg:all pcm samples zero)
+Only after converting an "empty" Frame by a decoder (mp3decoder)
+the frame if "full" (== Frame with data)
+So: IOFrameQueues mark frames with 
+
+i)  empty
+ii) data
+
+You can get an empty Frame from the empty-frame-queue and
+then enqueue it in the data-frame-queue.
+After the frame was used (played) we dequeue it from the
+data queue and put them back in the empty queue.
+You can see IOFrameQueues as a ringbuffer.
+(get free space. write to it. read data. mark space as free,....)
+
+
+                   FrameQueue
+                       |
+                   IOFrameQueue
+                  /
+            audioFrameQueue
+
+
+AudioFrameQueue
+===============
+
+A IOFrameQueue, which allows converting "dataFrames back to continous
+stream".
+What is this?
+Lets say an application wants only 20 byte from a dataFrame which
+contains 3KB of data?
+There must be some mechanism to read less or more data from the
+queue. And the data should be written to a continus memory
+segment.
+AudioFrameQueue deals with this problem.You can read data from
+the queue to a given pointer location.
+
+

@@ -1,0 +1,52 @@
+if test "x$build_arts" = "xno"; then
+  DO_NOT_COMPILE="$DO_NOT_COMPILE audiofile_artsplugin"
+fi
+
+dnl libaudiofile is used for loading wave files
+AC_DEFUN([AC_CHECK_LIBAUDIOFILE],
+[
+  ac_ldflags_save="$LDFLAGS"
+  ac_CPPFLAGS_save="$CPPFLAGS"
+  LDFLAGS="$all_libraries $LDFLAGS"
+  CPPFLAGS="$CPPFLAGS $all_includes"
+  arts_audiolib_found=no
+  dnl WAV reading
+  AC_LANG_SAVE
+  AC_LANG_C
+  kde_has_audio_lib=no
+  AC_CHECK_HEADER(audiofile.h,
+  [ 
+     kde_has_audio_lib=yes
+    ])
+  if test "x$kde_has_audio_lib" = "xyes"; then
+      KDE_CHECK_LIB(audiofile,afOpenFile,[
+      dnl LDFLAGS in case it's in KDEDIR/lib
+      LIBAUDIOFILE="$LDFLAGS -laudiofile"
+      AC_DEFINE(HAVE_LIBAUDIOFILE, 1,
+        [Define if you have libaudiofile (required for playing wavs with aRts)])
+      arts_audiolib_found=yes
+      ])
+  fi
+  AC_SUBST(LIBAUDIOFILE)
+  AC_LANG_RESTORE
+  CPPFLAGS="$ac_CPPFLAGS_save"
+  LDFLAGS="$ac_ldflags_save"
+])
+
+AC_ARG_WITH(audiofile,
+  [AC_HELP_STRING(--with-audiofile,
+    [enable support for audiofile @<:@default=check@:>@])],
+  [], with_audiofile=check)
+
+arts_audiolib_found=no
+if test "x$with_audiofile" != xno; then
+  AC_CHECK_LIBAUDIOFILE
+
+  if test "x$with_audiofile" != xcheck && test "x$arts_audiolib_found" != xyes; then
+    AC_MSG_ERROR([--with-audiofile was given, but test for audiofile failed])
+  fi
+fi
+
+if test x$arts_audiolib_found = xno; then
+  DO_NOT_COMPILE="$DO_NOT_COMPILE audiofile_artsplugin"
+fi

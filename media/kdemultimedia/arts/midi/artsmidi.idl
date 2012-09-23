@@ -1,0 +1,379 @@
+	/*
+
+    Copyright (C) 2000 Stefan Westerfeld
+                       stefan@space.twc.de
+
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Library General Public
+    License as published by the Free Software Foundation; either
+    version 2 of the License, or (at your option) any later version.
+  
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Library General Public License for more details.
+   
+    You should have received a copy of the GNU Library General Public License
+    along with this library; see the file COPYING.LIB.  If not, write to
+    the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+    Boston, MA 02111-1307, USA.
+
+    */
+
+/*
+ * DISCLAIMER: The interfaces in artsmidi.idl (and the derived .cc/.h files)
+ *             DO NOT GUARANTEE BINARY COMPATIBILITY YET.
+ *
+ * They are intended for developers. You shouldn't expect that applications in
+ * binary form will be fully compatibile with further releases of these
+ * interfaces.
+ */
+
+#include <artsflow.idl>
+
+module Arts {
+
+/* This is modelled somewhat after
+    - the AudioManager concept
+	- the aRts-0.3.4.1 MidiPort concept
+	- libkmid
+
+   It adds timing as new feature compared to older implementation, and also
+   tries to do the full set of midi operations.
+
+   It's current state is "experimental", and "binary compatibility not kept".
+ */
+
+/**
+ * an absolute timestamp
+ */
+struct TimeStamp {
+	long sec,usec;
+};
+
+/**
+ * different status of a midi command
+ */
+enum MidiCommandStatus {
+// Masks:
+	mcsCommandMask		= 0xf0,
+	mcsChannelMask		= 0x0f,
+
+// Commands:
+	mcsNoteOff			= 0x80,
+	mcsNoteOn			= 0x90,
+	mcsKeyPressure		= 0xa0,
+	mcsParameter		= 0xb0,
+	mcsProgram			= 0xc0,
+	mcsChannelPressure	= 0xd0,
+	mcsPitchWheel		= 0xe0
+};
+
+/**
+ * the following are to be used once status is (mcsParameter|channel):
+ */
+enum MidiCommandParameter {
+	mcpSustain			= 0x40,
+	mcpAllNotesOff		= 0x7b
+};
+
+/**
+ * a midi command
+ */
+struct MidiCommand {
+	byte status;
+	byte data1;
+	byte data2;
+};
+
+/**
+ * a midi event
+ */
+
+struct MidiEvent {
+	TimeStamp time;
+	MidiCommand command;
+};
+
+/**
+ * a midi port
+ */
+interface MidiPort {
+	/**
+	 * the current absolute time (since the existence of the midi device)
+	 */
+	readonly attribute TimeStamp time;
+
+	/**
+	 * the current play time 
+	 *
+	 * Some midi devices, for instance synthetic audio devices, have a certain
+	 * amount of internal buffering. This causes a time difference between
+	 * where events are currently being rendered, which is the timestamp
+	 * obtained by "time", and the events that the listener is hearing right
+	 * now, which is this timestamp, the "playTime".
+	 */
+	readonly attribute TimeStamp playTime;
+
+	/**
+	 * processes a midi command
+	 */
+	oneway void processCommand(MidiCommand command);
+
+	/**
+	 * processes a midi event
+	 */
+	oneway void processEvent(MidiEvent event);
+};
+
+enum MidiClientDirection { mcdPlay, mcdRecord }; 
+enum MidiClientType { mctDestination, mctApplication }; 
+
+/**
+ * information about a midi client
+ */
+struct MidiClientInfo {
+	long ID;
+	sequence<long> connections;
+
+	MidiClientDirection direction;
+	MidiClientType type;
+	string title, autoRestoreID;
+};
+
+/**
+ * a midi manager client
+ */
+interface MidiClient {
+    readonly attribute MidiClientInfo info;
+
+	/**
+	 * you can change the title of your client on the fly - everything else
+	 * (besides the actual assignment) is static
+	 */
+    attribute string title;
+ 
+	/**
+	 * creates a new port through which the client can receive data from
+	 * the midi manager
+	 */
+	void addInputPort(MidiPort port);
+
+	/**
+	 * creates a new port through which the client can send data to the
+	 * midi manager
+	 */
+	MidiPort addOutputPort();
+
+	/**
+	 * removes a port
+	 */
+	void removePort(MidiPort port);
+};
+
+interface AudioSync;
+
+/**
+ * this synchronizes multiple midi clients - it also allows synchronization
+ * with audio events
+ */
+interface MidiSyncGroup {
+	/**
+	 * adds a midi client to the synchronization group
+	 *
+	 * hint: during adding the client, the timestamps related to that
+	 * client will jump
+	 */
+	void addClient(MidiClient client);
+
+	/**
+	 * deletes a midi client from the synchronization group
+	 */
+	void removeClient(MidiClient client);
+
+	/**
+	 * adds an AudioSync object to the synchronization group
+	 *
+	 * hint: during adding the AudioSync object, the timestamps related to
+	 * that object might jump
+	 */
+	void addAudioSync(AudioSync audioSync);
+
+	/**
+	 * deletes an AudioSync object from the synchronization group
+	 */
+	void removeAudioSync(AudioSync audioSync);
+};
+
+/**
+ * Some general notes to the understanding of the midi manager. The midi
+ * manager has the task to intelligently assign applications to destinations.
+ *
+ * It is important to understand what it actually does to understand the
+ * distinction first, which is expressed through the "MidiClientType" of
+ * each client.
+ *
+ * APPLICATIONS: An application is a user visible application, that produces
+ *    or records midi data. It is important for the understanding of an
+ *    application, that an application actually *wants* to be supplied with
+ *    data, or wants to get its data played. Thus, adding an application to
+ *    the midi manager is an implicit request: "go and find a place where to
+ *    put the events to (or get the events from)".
+ *
+ *    Examples for applications would be games or midi players.
+ *
+ * DESTINATIONS: A destination is a system service that plays or supplies
+ *    midi data. The characteristic here is that a destination is something
+ *    that is there if you need it.
+ *
+ *    Examples for destinations might be might be a hardware device or an
+ *    emulation of a hardware device (such as a virtual sampler).
+ *
+ * So the process is as follows:
+ *  - destinations register themselves at the midi manager, and provide
+ *    system services in that way
+ *
+ *  - when the user starts an application (such as a midi player), the midi
+ *    manager's task is to assign it to a suitable destination
+ *
+ *  - the user can interact with the process by changing the way applications
+ *    are assigned to destinations - the midi manager will try to learn
+ *    what the user wants, and next time do a better job while assigning
+ *
+ * To actually record or play some data, you need to register a client first,
+ * and after that, you can add Input or Output "MidiPort"s to your client,
+ * so that you can actually send or receive events with them.
+ */
+interface MidiManager { // SINGLETON: Arts_MidiManager
+    /**
+     * a list of clients
+     */
+    readonly attribute sequence<MidiClientInfo> clients;
+
+	/**
+	 * add a client
+     *
+	 * this creates a new MidiManagerClient
+	 */ 
+	MidiClient addClient(MidiClientDirection direction, MidiClientType type,
+							string title, string autoRestoreID);
+
+	/**
+	 * connect two clients
+	 */
+	void connect(long clientID, long destinationID);
+
+	/**
+	 * disconnect two clients
+	 */
+	void disconnect(long clientID, long destinationID);
+
+	/**
+	 * add a synchronization group
+	 *
+	 * this creates a new MidiSyncGroup
+	 */
+	MidiSyncGroup addSyncGroup();
+};                                                                              
+
+interface MidiTest : MidiPort {
+};
+
+interface RawMidiPort : MidiPort {
+	attribute string device;
+	attribute boolean input, output;
+	attribute boolean running;
+	boolean open();
+};
+
+interface AlsaMidiGateway {
+	boolean rescan();
+};
+
+interface AlsaMidiPort : MidiPort {
+	attribute long client;
+	attribute long port;
+	boolean open();
+};
+
+/**
+ * EXPERIMENTAL interface for audio synchronization - this allows multiple
+ * objects to be started and stopped at a precisely defined timestamp
+ */
+interface AudioSync {
+	/**
+	 * the current time
+	 */
+	readonly attribute TimeStamp time;
+
+	/**
+	 * the current play time 
+	 *
+	 * Since aRts has internal buffering, there is a time difference between
+	 * where events are currently being rendered, which is the timestamp
+	 * obtained by "time", and the events that the listener is hearing right
+	 * now, which is this timestamp, the "playTime".
+	 */
+	readonly attribute TimeStamp playTime;
+
+    /**
+     * queues calling synthModule.start() later
+     *
+     * (will keep a reference on the module until executed)
+     */
+    void queueStart(SynthModule synthModule);
+
+    /**
+     * queues calling synthModule.stop() later
+     *
+     * (will keep a reference on the module until executed)
+     */
+    void queueStop(SynthModule synthModule);
+
+    /**
+     * atomically executes all queued modification to the flow system
+     */
+    void execute();
+
+	/**
+	 * atomically executes all queued modifications to the flow system
+	 * at a given time
+	 */
+	void executeAt(TimeStamp timeStamp);
+};
+
+/**
+ * Midi Timer - can be used to provide timing for midi ports that have
+ * no "native" timing.
+ */
+interface MidiTimer
+{
+	/**
+	 * the current time
+	 */
+	readonly attribute TimeStamp time;
+
+	/**
+	 * this will put the event into an event queue and send it to the port
+	 * once the time for the event has been reached
+	 */
+	oneway void queueEvent(MidiPort port, MidiEvent event);
+};
+
+/**
+ * Uses the system time (i.e. gettimeofday() and similar) to provide midi
+ * timing
+ */
+interface SystemMidiTimer : MidiTimer
+{
+};
+
+/**
+ * Uses the audio time (i.e. samples rendered to /dev/dsp) to provide midi
+ * timing
+ */
+interface AudioMidiTimer : MidiTimer
+{
+};
+
+};

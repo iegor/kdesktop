@@ -1,0 +1,241 @@
+dnl ***** end of KDE specific configure things *********
+dnl [START]   for mpeglib checks
+
+
+THIS_LIB_MAJOR_VERSION=0
+THIS_LIB_MINOR_VERSION=3
+THIS_LIB_MICRO_VERSION=0
+THIS_LIB_NAME=mpeglib
+THIS_LIB_VERSION=$THIS_LIB_MAJOR_VERSION.$THIS_LIB_MINOR_VERSION.$THIS_LIB_MICRO_VERSION
+
+AC_SUBST(THIS_LIB_MAJOR_VERSION)
+AC_SUBST(THIS_LIB_MINOR_VERSION)
+AC_SUBST(THIS_LIB_MICRO_VERSION)
+AC_SUBST(THIS_LIB_VERSION)
+AC_SUBST(THIS_LIB_NAME)
+dnl this does not work, but to have no errors we subst it
+
+
+
+dnl Checks for header files.
+AC_CHECK_HEADERS(pthread.h pthread/mit/pthread.h)
+AC_CHECK_HEADERS(sys/soundcard.h soundcard.h)
+
+
+AC_C_BIGENDIAN
+
+
+
+
+dnl AC_C_ATTRIBUTE_ALIGNED
+dnl define ATTRIBUTE_ALIGNED_MAX to the maximum alignment if this is supported
+AC_DEFUN([AC_C_ATTRIBUTE_ALIGNED],
+    [AC_CACHE_CHECK([__attribute__ ((aligned ())) support],
+	[ac_cv_c_attribute_aligned],
+	[ac_cv_c_attribute_aligned=0
+	for ac_cv_c_attr_align_try in 2 4 8 16 32 64; do
+	    AC_TRY_COMPILE([],
+		[static char c __attribute__ ((aligned($ac_cv_c_attr_align_try))) = 0; return c;],
+		[ac_cv_c_attribute_aligned=$ac_cv_c_attr_align_try])
+	done])
+    if test x"$ac_cv_c_attribute_aligned" != x"0"; then
+	AC_DEFINE_UNQUOTED([ATTRIBUTE_ALIGNED_MAX],
+	    [$ac_cv_c_attribute_aligned],[maximum supported data alignment])
+    fi])
+
+AC_C_ATTRIBUTE_ALIGNED
+
+
+
+
+
+
+# later AC_CHECK_LIB is used, which uses ac_save_*, so don't use them
+# here
+mpg_save_CPPFLAGS="$CPPFLAGS"
+mpg_save_LDFLAGS="$LDFLAGS"
+mpg_save_LIBS="$LIBS"
+CPPFLAGS="$CPPFLAGS $X_INCLUDES $USER_INCLUDES"
+LDFLAGS="$LDFLAGS $X_LDFLAGS $USER_LDFLAGS"
+LIBS="$LIBS $LIB_XEXT -lX11 $X_EXTRA_LIBS"
+
+AC_MSG_CHECKING(for X11 shared mem extension)
+x11_shared_mem=no
+AC_TRY_COMPILE([
+                #include <X11/Xlib.h>
+                #include <X11/extensions/XShm.h>
+                #include <sys/ipc.h>
+                #include <sys/shm.h>
+                ],[
+                ],[
+                x11_shared_mem=yes
+                ])
+AC_MSG_RESULT($x11_shared_mem)
+if test x$x11_shared_mem = xyes; then
+   AC_DEFINE(X11_SHARED_MEM,1,[Define if you have X11 shared mem])
+fi
+
+
+AC_MSG_CHECKING(for X11 DGA2.0 extension)
+x11_dga2=no
+AC_TRY_COMPILE([
+                #include <X11/Xlib.h>
+                #include <X11/extensions/xf86dga1.h>
+                ],[
+                ],[
+                x11_dga2=yes
+                ])
+AC_MSG_RESULT($x11_dga2)
+if test x$x11_dga2 = xyes; then
+   AC_DEFINE(X11_DGA2,1,[Define if you have XFree4.0 DGA 2.0])
+   DGALIBS="-lXxf86dga"
+fi
+
+AC_MSG_CHECKING(for X11 video extension)
+x11_xv=no
+AC_TRY_COMPILE([
+                #include <X11/Xlib.h>
+                #include <X11/extensions/Xvlib.h>
+                ],[
+                ],[
+                x11_xv=yes
+                ])
+AC_MSG_RESULT($x11_xv)
+if test x$x11_xv = xyes; then
+   AC_DEFINE(X11_XV,1,[Define if you have XFree4.0 XV extension])
+   XVLIBS="-lXv"
+fi
+
+AC_MSG_CHECKING(for X11 videomode extension)
+x11_xvidmode=no
+AC_TRY_COMPILE([
+                #include <X11/Xlib.h>
+                #include <X11/extensions/xf86vmode.h>
+                ],[
+                ],[
+                x11_xvidmode=yes
+                ])
+AC_MSG_RESULT($x11_xvidmode)
+if test x$x11_xvidmode = xyes; then
+   AC_DEFINE(X11_XVIDMODE,1,[Define if you have XVidModeextension])
+   XVIDMODELIBS="-lXxf86vm"
+fi
+
+
+dnl
+dnl if we do an SDL build we remove now all determined X11 dependencies
+dnl
+
+X11_LIBS="-lX11 -lXext"
+
+if test x$disable_x11 = xyes; then
+   DGALIBS=""
+   XVLIBS=""
+   X11_LIBS=""
+fi
+
+LIBS="$mpg_save_LIBS"
+LDFLAGS="$mpg_save_LDFLAGS"
+CPPFLAGS="$mpg_save_CPPFLAGS"
+
+AC_MSG_CHECKING(checking OS)
+AC_SUBST(OS_TYPE)
+OS_TYPE=`uname -s`
+AC_MSG_RESULT($OS_TYPE)
+
+INTELCPPFLAG=
+dnl MMX_SUPPORT is set as variable in main configure.in.in
+dnl now make it a config.h entry
+if test x$MMX_SUPPORT = xyes; then
+   AC_DEFINE(INTEL,1,[Define if you have MMX support on x86 with gcc])
+   INTELCPPFLAG="-DINTEL"
+fi
+AC_SUBST(INTELCPPFLAG)
+
+AC_DEFUN([KDE_MPEGLIB_COMPILES],
+[
+dnl disable everything which is not supported
+kde_mpeglib_compiles=no
+
+case "$OS_TYPE" in
+  FreeBSD)
+    kde_mpeglib_compiles=yes
+    ;;
+  NetBSD)
+    kde_mpeglib_compiles=yes
+    ;;
+  Linux)
+    kde_mpeglib_compiles=yes
+    ;;
+  AIX)
+    kde_mpeglib_compiles=yes
+    ;;
+  SunOS)
+    kde_mpeglib_compiles=yes
+    ;;
+  DragonFly)
+    kde_mpeglib_compiles=yes
+    ;;
+  *)
+    AC_MSG_RESULT([*** We disable mpeglib for this platform ***])
+    DO_NOT_COMPILE="$DO_NOT_COMPILE mpeglib mpeglib_artsplug"
+    ;;
+esac
+
+
+KDE_CHECK_LIBPTHREAD
+case "$OS_TYPE" in
+  AIX)
+    AC_MSG_RESULT([AIX :Unknown hardware. You will have problems!!])
+    AC_DEFINE(OS_AIX,1,[Define if you have AIX for sound])
+    ;;
+
+  Linux)
+    AC_DEFINE(OS_Linux,1,[Define if you have linux pthread])
+    ;;
+
+  FreeBSD | DragonFly)
+    OS_TYPE="BSD"
+    AC_DEFINE(OS_BSD,1,[Define if you have BSD pthread])
+    ;;
+
+  BSD/OS)
+    OS_TYPE="BSD"
+    AC_DEFINE(OS_BSD,1,[Define if you have BSD pthread in -lc])
+    ;;
+
+  NetBSD)
+    AC_MSG_RESULT([NetBSD :Unknown hardware. You will have problems!!])
+    OS_TYPE="BSD"
+    AC_DEFINE(OS_BSD,1,[Define if you have BSD pthread in -lc_r])
+    ;;
+
+  SunOS)
+    OS_TYPE="SunOS"
+    AC_DEFINE(OS_SunOS,1,[Define if you have solaris -lpthread]) 
+    ;;
+
+  IRIX)
+    AC_MSG_RESULT([IRIX :Unknown hardware. You will have problems!!])
+    AC_DEFINE(OS_IRIX,1,[Define if you have iris])
+    ;;
+
+  HPUX)
+    AC_MSG_RESULT([HPUX :Unknown hardware. You will have problems!!])
+    AC_DEFINE(OS_HPUX,1,[Define if you have HP_UX])
+    ;;
+
+  *)
+    AC_MSG_RESULT([Very Unknown hardware. **Better give up!**])
+    ;;
+
+esac
+
+])
+
+KDE_MPEGLIB_COMPILES
+
+THIS_LIB_LIBS="-lX11 -lXext -lm ${XVLIBS} ${DGALIBS} "
+THIS_LIB_LIBS="${THIS_LIB_LIBS} ${XVIDMODELIBS} ${SDLLIB} ${CDDALIBS} "
+THIS_LIB_LIBS="${THIS_LIB_LIBS} ${OGG_VORBISLIBS} ${LIBPTHREAD}"
+AC_SUBST(THIS_LIB_LIBS)

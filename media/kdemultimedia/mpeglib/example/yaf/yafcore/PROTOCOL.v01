@@ -1,0 +1,243 @@
+
+This text describes how the interactive interface for mpg123 works.
+******************************************************************
+
+
+Interaction means, that the user can enters commands during
+the mpg123 decoder is running.
+For example, he can stops decoding and can jump to a special
+framenumber.
+
+The current frontends (e.g. tk3play) already allow this, but they are 
+a bit difficult for a user because he must enter
+numbers for special command instead of a more
+readable command like "open xyz.mp3"
+
+Then the tk3 interface can't produce return codes for the commands
+In this interface every command the user 
+sends to the decoder produces a return Message.
+(for now this messages always defaults to "success")
+
+Why the return codes?
+This allows a controlling GUI (which is a "user" in some way)
+to get a notification if e.g. the file cannot be opened
+by the decoder (wrong format, etc...)
+
+How does it work?
+****************
+Every command the user enters on stdin (cin) produces a return code.
+Thus if the user (or a GUI) sends "open xyz" he gets 
+a message whether this succeded or not.
+ 
+
+E.g:
+
+The user starts mpg123 in interacive mode and enters the first command:
+
+>open foo.mp3
+
+This command and is internally converted to the string:
+
+"Command:101 Msg:open foo.mp3"
+
+The control then writes to stdout :
+"Command:101 Ret:(file not found) Msg:open foo.mp3"
+
+
+The brackets behind "Ret:" belongs to the protocol
+they are delimeters for the return string. 
+
+Or, in the case the command was successfull, the user enters :
+play
+
+is translated to 
+"Command:102 Msg:play"
+return is:
+"Command:102 Ret:(ok) Msg:play"
+
+
+For what is the "Command:xyz" string good for?
+**********************************************
+
+This string is the current Command number. If a controlling
+GUI sends "Command:x Msg:open foo.mp3" it can search the outout
+from mpg123 for a string : "Command:x ........" This
+ist the return value of the decoder for the command "open foo.mp3"
+
+The command-number must be unique >= 40.
+All Command < 40 are runtime Commands.
+Runtime Commands always have the format :
+
+Command:<nr> Msg: <...>
+
+Example for runtime Commands:
+++++++++++++++++++++++++++++
+
+In the output stream of mpg123 there may be different message.
+For example mpg123 produces runtime information (time, currentframe or
+something like this).
+
+"Command:0 Msg:info1 p I 2.0 III 22050 Joint-Stereo 2 64 209"
+"Command:0 Msg:info1 p I 2.0 III 22050 Joint-Stereo 2 64 209"
+"Command:0 Msg:info1 p I 2.0 III 22050 Joint-Stereo 2 64 209"
+
+The Command number zero means that this output does not belong
+to any special input command.(The part after Msg: is decoder specific)
+
+There are more pre-definied Command Numbers:
+Nr    Description                  Example
+
+0 : Runtime info in general        Command:0 Msg:live long and prosper->SIGSEV
+1 : Debug info                     Command:1 Msg:search the bug
+
+Note:
+The debug Command is the only command which has *no* identifer
+after Msg: All other Commands < 40 needs a Message-identifer after
+Msg.
+In the example for Command 0 the Message identifer is "life"
+and the "real" Message is "long and prosper->SIGSEV".
+This mechanism allows to extend the runtime info sytem only
+with identifiers and not with numbers 
+Why? 
+Because the protocol should be easy to read. 
+(One of the ideas behind this protocol)
+Eg:
+
+Command:0 Msg:currentFrame 23
+is more "readable" than an extension with numbers 
+eg:
+Command:0 Msg:2 23
+
+In this example "2" mean that the 23 is the currentFrame Number.
+
+
+
+
+Runtime Commands may be processed by the frontend:
++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Maybe there are errors during playing:
+
+"Command:0 Msg:exception p internal error- ignoring RIFF Header"
+
+The frontend checks the kind of runtime command:
+
+Frontend knows that there was an error(exception) but the status says (p)
+that the decoder continues playing (p)
+and for a more precise description (for the user)
+"error- ignoring RIFF Header"
+
+
+Back to the question:
+++++++++++++++++++++
+The frontend cannot be sure that the next message by the decoder
+is the return message of the previous sended command "open foo.mp3"
+This is the reason for the command number. They synchonise the 
+input (open foo.mp3) with the output.
+With a command number the GUI can filter the output for the return code.
+
+
+
+Restriction of the proctocol:
+****************************
+You cannot send binary data because a "\n" is interpreted as
+something like "end of input"
+This means that you cannot open a file in the mpg decoder
+which has "\n" in its name.
+Hm. Is this a restriction? Yes.
+An alternative would be to extend the Protocol to something
+like :
+
+Size:<Integer> Command:... Msg....
+
+(Maybe in the future)
+
+
+
+How is  this implemented?
+*************************
+
+
+In the source there are two classes:
+
+* InputInterface
+* OutputInterface
+
+
+First Example
+*************
+
+Let's say we want to write a Command-Line-Frontend for mpg123,
+which is included in the mpg123 source.
+(see the file: mpg123_control.c)
+
+What we must do?
+The Input for the decoder is the command by the user and
+the output is the output by the decoder.
+
+The user should not have to write the real syntax of the
+protocol. Thus he should not write:
+
+Command:1 Msg:open file.mp3
+
+But simply : open file.mp3
+
+The Inputinterface must translate the wrong input
+(in the view of the protocol) into the right
+protocolSyntax.
+(here: Command:<xyz> Msg:open file.mp3)
+
+This input is then passed to the decoder.
+The decoder translates the part after "Msg:" and 
+trys to open file.mp3, but in this example he cannot find it.
+Now he can send the return value with the valid Command number.
+Command:<xyz> Ret:(file not found) Msg:open file.mp3
+
+When the decoder returns from the "translations"
+we send the return-Msg (stored in the decoder)
+to the outputstream.
+For this we set in the Outputinterface the current Command number
+And then we send the return message and again the command
+which produced the return message.
+
+"Command:<Number> Ret:(file not found) Msg:eopn foo.mp3"
+
+Second Example
+**************
+
+Write a Gui frontend which starts mpg123 as a seperate process
+(how kmpg does).
+kmpg starts a new mpg123 with the compiled in yaf-interface.
+the yaf-interface is a commandline interface, but this is
+not what we want. We need another behaviour. 
+mpg123 must expect protocol data and not "user written" inputs.
+Thus kmpg must set the mpg123 frontend in another internal state 
+which expects protocol data.
+The first command which kmpg sends to the mpg123 frontend
+is : "protocol"
+This sets the InputInterface of mpg123 in a protocol-raw-modus.
+A user can type this on the command line as well, but
+then he must also generate the right protocol syntax.
+
+Then kmpg opens a file and send 
+e.g:
+Command:1 Msg:open abc.mp3
+
+Then the mpg123 output is sent back:
+
+Command:1 Ret:(ok) Msg:open abc.mp3
+
+
+DEBUGGING
+*********
+
+In the file InputInterface and OutputInterface are debug switches.
+If they are set the incoming/outgoing
+stream is copied to the files 
+instream.dbg
+outstream.dbg
+
+tail -f instream.dbg outstream.dbg
+
+monitors the interaction between a frontend and the decoder.
+

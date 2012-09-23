@@ -1,0 +1,396 @@
+    /*
+
+    Copyright (C) 2000 Stefan Westerfeld
+                       stefan@space.twc.de
+                  2001, 2002 Matthias Kretz <kretz@kde.org>
+                  2003 Arnold Krille <arnold@arnoldarts.de>
+
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Library General Public
+    License as published by the Free Software Foundation; either
+    version 2 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Library General Public License for more details.
+
+    You should have received a copy of the GNU Library General Public License
+    along with this library; see the file COPYING.LIB.  If not, write to
+    the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+    Boston, MA 02111-1307, USA.
+
+    */
+
+/*
+ * DISCLAIMER: The interfaces in artsgui.idl (and the derived .cc/.h files)
+ *             DO NOT GUARANTEE BINARY COMPATIBILITY YET.
+ *
+ * They are intended for developers. You shouldn't expect that applications in
+ * binary form will be fully compatibile with further releases of these
+ * interfaces.
+ */
+
+module Arts {
+	// MayGrow = 1,
+	// ExpMask = 2,
+	// MayShrink = 4
+	enum SizePolicy {
+		spFixed = 0,
+		spMinimum = 1,
+		spMaximum = 4,
+		spPreferred = 5,
+		spMinimumExpanding = 3,
+		spExpanding = 7,
+		spIgnored = 2
+	};
+
+	interface Widget {
+		readonly attribute long widgetID;
+
+		attribute Widget parent;
+		attribute long x,y,width,height;
+		attribute boolean visible;
+		attribute SizePolicy hSizePolicy;
+		attribute SizePolicy vSizePolicy;
+
+		void show();
+		void hide();
+	};
+
+	enum Shape {
+		NoFrame = 0,
+		Box = 0x0001,
+		Panel = 0x0002,
+		WinPanel = 0x0003,
+		HLine = 0x0004,
+		VLine = 0x0005,
+		StyledPanel = 0x0006,
+		PopupPanel = 0x0007,
+		MenuBarPanel = 0x0008,
+		ToolBarPanel = 0x0009,
+		LineEditPanel = 0x000a,
+		TabWidgetPanel = 0x000b,
+		MShape = 0x000f
+	};
+
+	enum Shadow {
+		Plain = 0x0010,
+		Raised = 0x0020,
+		Sunken = 0x0030,
+		MShadow = 0x00f0
+	};
+
+	interface Frame : Widget {
+		void constructor( Widget parent );
+
+		attribute long margin;
+		attribute long linewidth;
+		attribute long midlinewidth;
+
+		attribute long framestyle;
+		attribute Shape frameshape;
+		attribute Shadow frameshadow;
+	};
+
+	/**
+		Some alignmentflags used by various widgets.
+		Taken from Qt. (akrille)
+		*/
+	enum Align {
+		AlignAuto=0,
+		AlignLeft=1,
+		AlignRight=2,
+		AlignHCenter=4,
+		AlignJustify=8,
+		AlignTop=16,
+		AlignBottom=32,
+		AlignVCenter=64,
+		AlignCenter=68
+	};
+
+	/**
+		Directions. From Qt. (akrille)
+	*/
+	enum Direction { LeftToRight, RightToLeft, TopToBottom, BottomToTop };
+
+	/** The LayoutBox. - Arrange your widgets vertical or horizontal.
+
+		Usage is quite simple: Add the widgets you have in the right order
+		to the layoutbox by calling addWidget().
+		Thats it, no ._addChild or .parent with this widget.
+
+		For more information see QBoxLayout.
+		(akrille)
+		*/
+	interface LayoutBox : Frame {
+		/// Sets the direction of the widgets. Can be changed on-the-fly.
+		attribute Direction direction;
+		/// Adds a widget with the stretch-factor and the alignment.
+		void addWidget( Widget widget, long stretch, long align );
+		void addWidget( Widget widget, long stretch );
+		void addWidget( Widget widget );
+		/// Inserts the Widget at the given position
+		void insertWidget( long position, Widget widget, long stretch, long align );
+		void insertWidget( long position, Widget widget, long stretch );
+		void insertWidget( long position, Widget widget );
+		/// Adds a stretch with stretch-factor.
+		void addStretch( long stretch );
+		void addStretch();
+		/// Adds a Spacer the given width or height according your direction.
+		void addSpace( long space );
+		/** [From QBoxLayout]
+		    Limits the perpendicular dimension of the box (e.g. height if the
+		    box is LeftToRight) to a minimum of size. Other constraints may
+		    increase the limit.
+		*/
+		void addStrut( long size );
+		/// Adds a separator (a horizontal/vertical line)
+		void addSeparator(long stretch, long align);
+		void addSeparator(long stretch);
+		void addSeparator();
+		/// Adds a line with width and space left/right (top/bottom)
+		void addLine(long width, long space, long stretch, long align);
+		void addLine(long width, long space, long stretch);
+		void addLine(long width, long space);
+		/// The spacing between all widgets.
+		attribute long spacing;
+		/// The margin at the outsideborder.
+		attribute long layoutmargin;
+	};
+
+	/** IMHO (akrille) this should be removed and everywhere replaced with the LayoutBox... */
+	interface HBox : Frame {
+		attribute long spacing;
+	};
+
+	interface VBox : Frame {
+		attribute long spacing;
+	};
+
+	/** The PopupBox. - It can hide the widgets inside or show them as an own window.
+
+		Usage is quite simple: Create the Widget you want to be hidable inside
+		a container like LayoutBox or a normal widget. Then create the PopupBox
+		and call <Name_of_PopupBox>.widget( <Name_of_your_Container> ).
+		Thats it, no ._addChild or .parent with this widget.
+		(akrille)
+		*/
+	interface PopupBox : Frame {
+		/// The direction of the PopupBox.
+		attribute Direction direction;
+		/// The name of the box, this gets shown inside the titlebar if its not inside but an own toplevel-widget.
+		attribute string name;
+		/// Sets the widget that is shown/hidden.
+		attribute Widget widget;
+	};
+
+	interface Button : Widget {
+		void constructor( Widget parent );
+		void constructor( string text, Widget parent );
+
+		attribute string text;
+		attribute boolean toggle;
+		readonly attribute boolean pressed;
+		readonly attribute boolean clicked; //clicked( true ) is emitted whenever the button
+		                                    //is pressed an released with the mouse cursor
+		                                    //still above the button
+	};
+
+	interface Poti : Frame {
+		attribute string caption, color;
+		attribute float min, max, value;
+		attribute float logarithmic;
+		attribute long range;
+	};
+
+	interface Fader : Widget {
+		void constructor( Widget parent );
+
+		attribute string caption, color;
+		attribute float min, max, value;
+		attribute float logarithmic;
+	};
+
+	interface LineEdit : Widget {
+		void constructor( Widget parent );
+
+		attribute string caption;
+		attribute string text;
+	};
+
+	interface SpinBox : Widget {
+		void constructor( Widget parent );
+
+		attribute string caption;
+		attribute long min, max, value;
+	};
+
+	interface ComboBox : Widget {
+		void constructor( Widget parent );
+
+		attribute string caption;
+		attribute sequence<string> choices;
+		attribute string value;
+	};
+
+	interface Graph : Widget {
+		void constructor( Widget parent );
+
+		attribute string caption;
+		attribute float minx, maxx, miny, maxy;
+	};
+
+	struct GraphPoint {
+		float x, y;
+	};
+	interface GraphLine {
+		attribute Graph graph;
+		attribute boolean editable;
+		attribute string color;
+		attribute sequence<GraphPoint> points;
+	};
+
+	enum TextBottom { South, North, West, East };
+
+	interface Label : Frame {
+		/// The text to show.
+		attribute string text;
+		/// The alignment of the text. See enum Align
+		attribute long align;
+		/// Fontsize [pixel]
+		/*writeonly*/ attribute long fontsize;
+		/// Fontfamily
+		/*writeonly*/ attribute string fontfamily;
+		/// Direction of the text in normal L-R-mode. Is used to rotate the text accordingly.
+		attribute TextBottom bottom;
+	};
+
+/// Some Notes:
+//   - The calculation of the peak is very easy, but it can be changed without changing all styles..
+
+	/** * Styles for the LevelMeter. *
+		In Detail:
+			- lmNormalBars: <count> colored Bars.
+			- lmFireBars: One Bar moving up and down.
+			- lmLineBars: One Bar moving up and down, color depends on the invalue.
+				substyle:
+					- 0: various colors
+					- 1: one color (blue) with clipping (red). The old aRtsControl style.
+			- lmLEDs: <count> but not more than [height|width]/15 LEDs. (not yet implemented)
+				So minimum size of the LED's is 15 pixel.
+				substyle (first tree belong together others are to be or'ed):
+					- 1: Flat
+					- 2: Raised
+					- 3: Sunken
+					- 4: Circular (otherwise Rectangular)
+					- 8: SingleColor (otherwise in colors green/yellow/red)
+			- lmAnalog: An old-style analog VU-Meter. (not yet implemented)
+			- lmSmall: One Bar with the color depending on the invalue.
+	 */
+	enum LevelMeterStyle { lmNormalBars, lmFireBars, lmLineBars, lmLEDs, lmAnalog, lmSmall };
+
+	/**
+		One LevelMeter
+	*/
+	interface LevelMeter : Frame {
+		/**
+			The Style of the LevelMeter.
+		*/
+		attribute LevelMeterStyle style;
+		/**
+			A substyle. Is different on every style;-)
+		*/
+		attribute long substyle;
+		/**
+			How many Bars/LEDs it should have. If the size is smaller than
+			this count it will have only that many Bars. So set Count to something
+			very high for smooth vu-meters.
+			Note: not every Style will honor this.
+			Note2: Perhaps this could be integrated into substyle.
+		*/
+		attribute long count;
+		/**
+			Sets the peakfalloff. Set to 0 to deactivate peaks.
+			Is used for weighting the average.
+			Peak is evaluated: ( peakfalloff * oldpeak + invalue ) / ( peakfalloff + 1 )
+		*/
+		attribute long peakfalloff;
+		/**
+			Minimum and minimum dB for the LevelMeter.
+			Maximum should always be 0dB.
+		*/
+		attribute float mindB, maxdB;
+		/**
+			The incomming signal...
+			This attribute always returns 0.0, altough it processes all its input.
+		*/
+		/*writeonly*/ attribute float invalue;
+		/**
+			The Direction of the levelmeter from null-value to highest value.
+		*/
+		attribute Direction direction;
+	};
+
+	/// Some positions.
+	enum Position { posLeft=0x0001, posRight=0x0002, posTop=0x0004, posBottom=0x0008 };
+
+	/// Tickmarks for LevelMeter / Fader / etc.
+	interface Tickmarks : Frame {
+		void constructor( float min, float max, Direction dir, long pos );
+		/// Minimum/Maximum shown value.
+		attribute float min, max;
+		/// The minimal stepsize for numbers, and substep for smaller marks.
+		attribute float minstep, substep;
+		/// Direction from min to max.
+		attribute Direction direction;
+		/**
+		 * The position of the levelmeter/fader/etc which gets the marks.
+		 * Only Left/Right are needed. As if direction is Up/Down...
+		 * For stereotickmarks set this to posLeft|posRight.
+		*/
+		attribute long position;
+	};
+
+	/// A Fader specially for volumes
+	//     Maybe something can be ported to the normal Fader.
+	interface VolumeFader : Frame {
+		void constructor( float dbmin, float dbmax, Direction dir );
+		/// Minimum/Maximum values in dB
+		attribute float dbmin, dbmax;
+		/// Direction from min to max
+		attribute Direction direction;
+		/**
+		 *The actual volume (calling this value only changes the gui and not the
+		 * underlying/connected objects ie. doesn't send a change notification.)
+		 */
+		attribute float volume;
+		/// The actual volume in dB (no change notification)
+		attribute float dbvolume;
+	};
+
+	/**
+	 * A gui factory is an object that can create a Widget which provides a
+	 * user interface for a running object (for instance, you might have an
+	 * effect running somewhere, and a gui factory 
+	 *
+	 * TODO: do we need another argument (or other arguments) to specify
+	 * style or other parameters?
+	 */
+	interface GuiFactory {
+		Widget createGui(object runningObject);
+	};
+
+	/**
+	 * Convenience gui factory, which knows how and whether to
+	 *
+	 *  - build a gui out of hints?
+	 *  - create an artsbuilder built gui?
+	 *  - create a gui composed of other widgets?
+	 *  - create a completely custom gui?
+	 */
+	interface GenericGuiFactory : GuiFactory {
+	};
+};
+
+// vim: sw=4 ts=4

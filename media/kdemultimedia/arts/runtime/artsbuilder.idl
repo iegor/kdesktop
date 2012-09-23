@@ -1,0 +1,228 @@
+/*
+ * DISCLAIMER: The interfaces in artsbuilder.idl (and the derived .cc/.h files)
+ *             DO NOT GUARANTEE BINARY COMPATIBILITY YET.
+ *
+ * They are intended for developers. You shouldn't expect that applications in
+ * binary form will be fully compatibile with further releases of these
+ * interfaces.
+ */
+
+#include <core.idl>
+#include <artsflow.idl>
+module Arts {
+	/*
+	 * incoming or outgoing port?
+	 */
+	enum PortDirection {input, output};
+
+	/**
+	 * ConnType (maybe obsolete)
+	 *
+	 * ConnType: (connection type) this is wether this value is used
+	 *
+	 * - once (such as a filename of a waveplugin)  -> property
+	 *   this implies that the allowed connection is only value
+	 *
+	 * - event based (such as midi events)          -> event
+	 *   when events arrive, they are processed, when no events arrive,
+	 *	 don't care
+	 *
+	 * - stream based (such as audio streams)       -> stream
+	 *   every calculation of the module consumes/creates a sample
+     *   that means: no data = no calculation possible
+	 *
+	 * WARNING: This is part of the artsbuilder dynamic programming interface 
+	 * as the MCOP port isn't there yet, this stuff may change
+	 */ 
+	enum PortConnType { conn_stream, conn_event, conn_property};
+
+	/**
+	 * PortType (maybe obsolete)
+	 *
+	 * isMultiPort specifies if the port can take multiple incoming
+	 * connections or not. This is only relevant/allowed for input ports,
+	 * the output of all output ports may be connected to any amount of
+	 * receivers.
+	 *
+	 * Ports which can take multiple connections are handled differently
+	 * internally. (Also, artsbuilder needs to know whether to allow multi-
+	 * connections or not).
+	 *
+	 * WARNING: This is part of the artsbuilder dynamic programming interface 
+	 * as the MCOP port isn't there yet, this stuff may change
+	 */
+	struct PortType {
+		PortDirection direction;
+		string dataType;
+		PortConnType connType;
+		boolean isMultiPort;
+	};
+
+	struct ModuleInfo {
+		string name;
+
+		//--- internal information:
+		// ports, first the input ports, then the output ports
+		sequence<PortType> ports;
+		sequence<string>   portnames;
+		boolean isInterface;
+		boolean isStructure;
+	};
+
+	interface PortDesc;
+	interface ModuleDesc;
+	interface StructureDesc;
+	interface StructurePortDesc;
+
+	interface PortDesc {
+		// internal:
+		void constructor(ModuleDesc parent, string name, PortType type);
+
+		// ID is guaranteed to be unique in the structure the port belongs to
+		readonly attribute long ID;
+		readonly attribute ModuleDesc parent;
+
+		// Name is guaranteed to be unique for each module (no two in/out-
+		// ports with the same name allowed)
+		readonly attribute string name;
+		readonly attribute PortType type;
+
+		/*
+		 * - for input channels, one of those must be true (only event
+		 *   channels may remain unconnected),
+		 * - for output channels, only isConnected may be set
+		 *
+		 * only one of them may be set, not both
+		 */
+		readonly attribute boolean isConnected;
+		attribute boolean hasValue;	// set to false is only allowed writing
+
+		// connections, used when isConnected is true
+		readonly attribute sequence<PortDesc> connections;
+
+		// to be used as const value when hasValue is true
+		attribute float  floatValue;
+		attribute string stringValue;
+
+		// the value as "any"
+		attribute Any	 value;
+
+		boolean connectTo(PortDesc port);
+		void disconnectFrom(PortDesc port);
+		void disconnectAll();
+
+		sequence<string> saveToList();
+		void loadFromList(sequence<string> list);
+
+		// never call this by hand, it will only be used by the module:
+		void internalConnectInput(PortDesc port);
+		void internalReConnect(sequence<PortDesc> allports);
+
+		readonly attribute long internalOldID;
+	};
+
+	interface ModuleDesc {
+		// internal
+		void constructor(StructureDesc parent, ModuleInfo info);
+
+		// ID is guaranteed to be unique in the structure the module belongs to
+		readonly attribute long ID;
+		readonly attribute StructureDesc parent;
+
+		readonly attribute string name;
+		readonly attribute sequence<PortDesc> ports;
+		readonly attribute long x, y, width, height;
+		readonly attribute boolean isInterface, isStructure;
+
+		boolean moveTo(long x, long y);	// returns true when successful
+
+		PortDesc findPort(string name);
+		sequence<string> saveToList();
+		void loadFromList(sequence<string> list);
+	};
+
+	interface StructureDesc {
+		// internal:
+		long obtainID();	// only to be used as module or port
+
+		// public:
+		readonly attribute boolean valid;
+		attribute string name;
+		readonly attribute sequence<ModuleDesc> modules;
+		readonly attribute sequence<StructurePortDesc> ports;
+		readonly attribute sequence<string> inheritedInterfaces;
+
+		sequence<string> saveToList();
+		void loadFromList(sequence<string> list);
+
+		/**
+		 * deletes all components in the structure
+		 */
+		void clear();
+
+		ModuleDesc createModuleDesc(ModuleInfo info);
+		void freeModuleDesc(ModuleDesc moduledesc);
+
+		/**
+		 * publishing (HMM)
+		 */
+		readonly attribute ModuleInfo externalInterface;
+
+		// External Interface Ports:
+		StructurePortDesc createStructurePortDesc(PortType type,
+														string name);
+		void freeStructurePortDesc(StructurePortDesc portdesc);
+		void moveStructurePortDesc(StructurePortDesc portdesc,
+												long newposition);
+
+		// you will need to add the structure ports yourself
+		void addInheritedInterface(string iface);
+
+		// this will remove the associated structure ports
+		void removeInheritedInterface(string iface);
+	};
+
+	interface StructurePortDesc : PortDesc {
+		// internal
+		void constructor(StructureDesc parent, string name, PortType type);
+
+		// Position: how the port is positioned when the structure is used
+		// as module - 0 is leftmost, higher numbers are more right
+		readonly attribute long x, y, position;
+		readonly attribute StructureDesc parentStructure;
+
+		// if the port is associated with an inherited interface of the
+		// parent structure, then it should be setup here
+		attribute string inheritedInterface;
+	
+		boolean moveTo(long x, long y);	// returns true when successful
+
+		void lowerPosition();			// will move the port more left
+		void raisePosition();			// will move the port more right
+		void rename(string newname);
+
+		// only used by the structure to reorder the ports
+		void internalSetPosition(long position);
+	};
+
+	interface ObjectFactory {
+		object createObject(string name);
+	};
+
+	interface LocalFactory : ObjectFactory {
+	};
+
+	interface StructureBuilder {
+		void addFactory(ObjectFactory factory);
+		object createObject(StructureDesc structure);
+		ModuleDef createTypeInfo(StructureDesc structure);
+	};
+
+	interface ArtsBuilderLoader : Loader {
+	};
+
+	interface Structure : SynthModule {
+		void run();
+		void halt();
+	};
+};
