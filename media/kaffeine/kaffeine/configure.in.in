@@ -1,0 +1,283 @@
+dnl -----------
+dnl basic stuff
+dnl -----------
+
+KDE_ENABLE_HIDDEN_VISIBILITY
+
+AC_ARG_VAR([PKG_CONFIG], [Path to pkg-config])
+
+if test -z "$PKG_CONFIG" ; then
+	PKG_CONFIG="pkg-config"
+fi
+
+AC_MSG_CHECKING([for pkg-config])
+
+if ! "$PKG_CONFIG" --version ; then
+	echo ""
+	echo "---------------------------------------------------------------------"
+	echo "ERROR: Could not find pkg-config. Make sure it is in your path or set"
+	echo "the PKG_CONFIG environment variable to the full path to pkg-config."
+	echo "---------------------------------------------------------------------"
+	echo ""
+	AC_MSG_ERROR([could not find pkg-config])
+fi
+
+AC_ARG_WITH([xinit-workaround],
+  [AS_HELP_STRING([--with-xinit-workaround],
+    [use this flag if Kaffeine hangs at startup and you are using XFree86 4.4 or X.Org 6.7.0])],,
+  [with_xinit_workaround=no])
+
+if test "$with_xinit_workaround" = "yes" ; then
+	AC_DEFINE([XINIT_WKRND],,[workaround buggy X server])
+fi
+
+dnl ------------------------
+dnl check for DPMS extension
+dnl ------------------------
+
+AC_ARG_WITH([dpms], [AS_HELP_STRING([--without-dpms], [build without DPMS support])],,
+  [with_dpms=yes])
+
+CFLAGS_DPMS=""
+LIB_DPMS=""
+
+if test "$with_dpms" != "no" ; then
+	AC_MSG_CHECKING([for DPMS extension])
+
+	if "$PKG_CONFIG" --exists xext ; then
+		with_dpms=yes
+		CFLAGS_DPMS=`"$PKG_CONFIG" --cflags xext`
+		LIB_DPMS=`"$PKG_CONFIG" --libs xext`
+		AC_DEFINE([HAVE_DPMS],,[DPMS extension available])
+		AC_MSG_RESULT([yes])
+	else
+		with_dpms=no
+		AC_MSG_RESULT([no])
+	fi
+fi
+
+AC_SUBST([CFLAGS_DPMS])
+AC_SUBST([LIB_DPMS])
+
+dnl -------------------------
+dnl check for XTest extension
+dnl -------------------------
+
+AC_ARG_WITH([xtest], [AS_HELP_STRING([--without-xtest], [build without XTest support])],,
+  [with_xtest=yes])
+
+CFLAGS_XTEST=""
+LIB_XTEST=""
+
+if test "$with_xtest" != "no" ; then
+	AC_MSG_CHECKING([for XTest extension])
+
+	if "$PKG_CONFIG" --exists xtst ; then
+		with_xtest=yes
+		CFLAGS_XTEST=`"$PKG_CONFIG" --cflags xtst`
+		LIB_XTEST=`"$PKG_CONFIG" --libs xtst`
+		AC_DEFINE([HAVE_XTEST],,[XTest extension available])
+		AC_MSG_RESULT([yes])
+	else
+		with_xtest=no
+		AC_MSG_RESULT([no])
+	fi
+fi
+
+AC_SUBST([CFLAGS_XTEST])
+AC_SUBST([LIB_XTEST])
+
+dnl ----------------------------
+dnl check for Xinerama extension
+dnl ----------------------------
+
+AC_ARG_WITH([xinerama], [AS_HELP_STRING([--without-xinerama], [build without Xinerama support])],,
+  [with_xinerama=yes])
+
+CFLAGS_XINERAMA=""
+LIB_XINERAMA=""
+
+if test "$with_xinerama" != "no" ; then
+	AC_MSG_CHECKING([for Xinerama extension])
+
+	if "$PKG_CONFIG" --exists xinerama ; then
+		with_xinerama=yes
+		CFLAGS_XINERAMA=`"$PKG_CONFIG" --cflags xinerama`
+		LIB_XINERAMA=`"$PKG_CONFIG" --libs xinerama`
+		AC_DEFINE([HAVE_XINERAMA],,[Xinerama extension available])
+		AC_MSG_RESULT([yes])
+	else
+		with_xinerama=no
+		AC_MSG_RESULT([no])
+	fi
+fi
+
+AC_SUBST([CFLAGS_XINERAMA])
+AC_SUBST([LIB_XINERAMA])
+
+dnl ------------------
+dnl check for xine-lib
+dnl ------------------
+
+AC_MSG_CHECKING([for xine-lib])
+
+CFLAGS_XINE=""
+LIB_XINE=""
+
+if "$PKG_CONFIG" --exists "libxine >= 1.1.9" ; then
+	CFLAGS_XINE=`"$PKG_CONFIG" --cflags libxine`
+	LIB_XINE=`"$PKG_CONFIG" --libs libxine`
+	AC_MSG_RESULT([yes])
+else
+	AC_MSG_RESULT([no])
+
+	echo ""
+	echo "---------------------------------------"
+	echo "ERROR: Could not find xine-lib >= 1.1.9"
+	echo "---------------------------------------"
+	echo ""
+
+	AC_MSG_ERROR([could not find xine-lib])
+fi
+
+AC_SUBST([CFLAGS_XINE])
+AC_SUBST([LIB_XINE])
+
+dnl -------------
+dnl check for xcb
+dnl -------------
+
+AC_ARG_WITH([xcb], [AS_HELP_STRING([--without-xcb], [disable xcb support (not recommended)])],,
+  [with_xcb=yes])
+
+AC_MSG_CHECKING([for xcb and xine-lib >= 1.1.9])
+
+CFLAGS_XCB=""
+LIB_XCB=""
+
+if test "$with_xcb" != "no" ; then
+	if "$PKG_CONFIG" --exists "xcb >= 1.0" ; then
+		with_xcb=yes
+		CFLAGS_XCB=`"$PKG_CONFIG" --cflags xcb`
+		LIB_XCB=`"$PKG_CONFIG" --libs xcb`
+		AC_DEFINE([HAVE_XCB],,[xcb available])
+		AC_MSG_RESULT([yes])
+	else
+		with_xcb=no
+		AC_MSG_RESULT([no])
+	fi
+fi
+
+AC_SUBST([CFLAGS_XCB])
+AC_SUBST([LIB_XCB])
+
+AM_CONDITIONAL([with_xcb], [test "$with_xcb" = "yes"])
+
+dnl ---------------------
+dnl check for DVB headers
+dnl ---------------------
+
+AC_ARG_WITH([dvb], [AS_HELP_STRING([--without-dvb], [build without DVB support])],,
+  [with_dvb=yes])
+
+if test "$with_dvb" != "no" ; then
+	KDE_CHECK_HEADER([linux/dvb/frontend.h], [with_dvb=yes]
+	  [AC_DEFINE([HAVE_DVB],,[DVB headers installed])], [with_dvb=no])
+fi
+
+AM_CONDITIONAL([with_dvb], [test "$with_dvb" = "yes"])
+
+dnl -------------------
+dnl check for gstreamer
+dnl -------------------
+
+AC_ARG_WITH([gstreamer], [AS_HELP_STRING([--without-gstreamer], [disable GStreamer player part])],,
+  [with_gstreamer=yes])
+
+CFLAGS_GSTREAMER=""
+LIB_GSTREAMER=""
+
+if test "$with_gstreamer" != "no" ; then
+	AC_MSG_CHECKING([for GStreamer])
+
+	if "$PKG_CONFIG" --exists "gstreamer-0.10 gstreamer-plugins-base-0.10"; then
+		with_gstreamer=yes
+		CFLAGS_GSTREAMER=`"$PKG_CONFIG" --cflags gstreamer-0.10 gstreamer-plugins-base-0.10`
+		LIB_GSTREAMER=`"$PKG_CONFIG" --libs gstreamer-0.10 gstreamer-plugins-base-0.10`
+		AC_MSG_RESULT([yes])
+	else
+		with_gstreamer=no
+		AC_MSG_RESULT([no])
+	fi
+fi
+
+AC_SUBST([CFLAGS_GSTREAMER])
+AC_SUBST([LIB_GSTREAMER])
+
+AM_CONDITIONAL([with_gstreamer], [test "$with_gstreamer" = "yes"])
+
+dnl --------------------
+dnl check for cdparanoia
+dnl --------------------
+
+KDE_CHECK_HEADER([cdio/cdda.h], [with_cdparanoia=yes], [with_cdparanoia=no])
+
+if test "$with_cdparanoia" != "yes" ; then
+	echo ""
+	echo "-----------------------------------------"
+	echo "ERROR: Could not find cdparanoia headers."
+	echo "-----------------------------------------"
+	echo ""
+
+	AC_MSG_ERROR([could not find cdparanoia headers])
+fi
+
+dnl ----------------------------
+dnl check for Ogg Vorbis encoder
+dnl ----------------------------
+
+AC_ARG_WITH([oggvorbis], [AS_HELP_STRING([--without-oggvorbis], [build without Ogg Vorbis support])],,
+  [with_oggvorbis=yes])
+
+CFLAGS_OGGVORBIS=""
+LIB_OGGVORBIS=""
+
+if test "$with_oggvorbis" != "no" ; then
+	AC_MSG_CHECKING([for Ogg/Vorbis encoder])
+
+	if "$PKG_CONFIG" --exists vorbisenc ; then
+		with_oggvorbis=yes
+		CFLAGS_OGGVORBIS=`"$PKG_CONFIG" --cflags vorbisenc`
+		LIB_OGGVORBIS=`"$PKG_CONFIG" --libs vorbisenc`
+		AC_MSG_RESULT([yes])
+	else
+		with_oggvorbis=no
+		AC_MSG_RESULT([no])
+	fi
+fi
+
+AC_SUBST([CFLAGS_OGGVORBIS])
+AC_SUBST([LIB_OGGVORBIS])
+
+AM_CONDITIONAL([with_oggvorbis], [test "$with_oggvorbis" = "yes"])
+
+dnl --------------
+dnl check for LAME
+dnl --------------
+
+AC_ARG_WITH([lame], [AS_HELP_STRING([--without-lame], [build without LAME support])],,
+  [with_lame=yes])
+
+LIB_LAME=""
+
+if test "$with_lame" != "no" ; then
+	KDE_CHECK_HEADER([lame/lame.h], [with_lame=yes], [with_lame=no])
+fi
+
+if test "$with_lame" = "yes" ; then
+	KDE_CHECK_LIB([mp3lame], [lame_init], [LIB_LAME="-lmp3lame"], [with_lame=no], [-lm])
+fi
+
+AC_SUBST([LIB_LAME])
+
+AM_CONDITIONAL([with_lame], [test "$with_lame" = "yes"])

@@ -1,0 +1,1 @@
+#define KAFFEINE_VERSION "0.8.8"

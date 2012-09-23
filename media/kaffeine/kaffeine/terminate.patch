@@ -1,0 +1,269 @@
+diff -ru kaffeine-0.8.4.cvs.orig/kaffeine/src/input/dvb/dvbout.cpp kaffeine-0.8.4.cvs/kaffeine/src/input/dvb/dvbout.cpp
+--- kaffeine-0.8.4.cvs.orig/kaffeine/src/input/dvb/dvbout.cpp	2007-11-25 12:57:46.000000000 +0200
++++ kaffeine-0.8.4.cvs/kaffeine/src/input/dvb/dvbout.cpp	2007-11-26 00:35:52.000000000 +0200
+@@ -19,6 +19,7 @@
+  */
+
+ #include <fcntl.h>
++#include <errno.h>
+
+ #include <kstandarddirs.h>
+
+@@ -47,7 +48,6 @@
+ 		plugHandle = plug->init( chan.sid, anum, tnum, chan.fta );
+ 	}
+
+-	fdPipe=0;
+ 	channel = chan;
+ 	thWrite = 0;
+ 	rtp = 0;
+@@ -58,7 +58,7 @@
+ 	for ( i=0; i<channel.nsubpid && i<MAX_DVBSUB; i++ )
+ 		pids.append( channel.subpid[i].pid );
+ 	wBuf = NULL;
+-	timeShifting = beginLive = false;
++	timeShifting = false;
+ 	haveRec = haveLive = instantRec = haveBroadcast = false;
+ 	patpmt = wpatpmt = false;
+ 	connect( &stopRecTimer, SIGNAL(timeout()), this, SLOT(stopRec()) );
+@@ -232,7 +232,7 @@
+
+ bool DVBout::hasLive() const
+ {
+-	if ( haveLive || fdPipe || timeShifting )
++	if ( haveLive || timeShifting )
+ 		return true;
+ 	return false;
+ }
+@@ -248,6 +248,7 @@
+
+ bool DVBout::doPause( const QString &name ) // called from dvbstream::run()
+ {
++	fprintf(stderr,"DVBout::doPause\n");
+ 	if ( !haveLive )
+ 		return false;
+
+@@ -255,23 +256,13 @@
+ 		liveFile.setName( name );
+ 		liveFile.open( IO_WriteOnly|IO_Truncate );
+ 		liveFile.writeBlock( (char*)tspat, TS_SIZE );
+-		liveFile.writeBlock( (char*)tspmt, TS_SIZE );
++		liveFile.writeBlock( (char*)tspmt, TS_SIZE );
+ 		mutex.lock();
+ 		haveLive = false;
+-		mutex.unlock();
+-		if ( !wait(100) ) {
+-			terminate();
+-			wait();
+-		}
+-		mutex.lock();
+-		haveLive = true;
+-		if ( close( fdPipe )<0 )
+-			perror("close out pipe: ");
+-		else
+-			fprintf(stderr,"out pipe closed\n");
+-		fdPipe = 0;
+-		mutex.unlock();
+ 		timeShifting = true;
++		mutex.unlock();
++		fprintf(stderr,"doPause: starting timeshift, waiting live thread to finish\n");
++		wait();
+ 		//emit shifting( timeShifting );
+ 	}
+ 	return true;
+@@ -288,11 +279,10 @@
+
+ bool DVBout::goLive( const QString &name )
+ {
+-	if ( fdPipe ) return false;
+-
++	fprintf(stderr,"goLive\n");
++	if (haveLive) return false;
+ 	haveLive = true;
+ 	pipeName = name;
+-	beginLive = true;
+ 	//activeApid = napid;
+
+ 	writePat();
+@@ -310,31 +300,26 @@
+
+ void DVBout::preStopLive()
+ {
+-	mutex.lock();
+-	haveLive = false;
+-	mutex.unlock();
++	// FIXME: maybe some way to tell the thread that it can stop?
++	//        or maybe not. It won't make things much faster.
+ }
+
+
+-
+ void DVBout::stopLive()
+ {
++	fprintf(stderr,"stopLive\n");
+ 	mutex.lock();
+ 	if ( timeShifting ) {
+ 		liveFile.close();
+ 		timeShifting = false;
+ 		emit shifting( timeShifting );
+ 	}
+-	mutex.unlock();
+-	if ( !wait(500) ) {
+-		terminate();
+-		wait();
+-	}
+-	if ( fdPipe ) {
+-		close( fdPipe );
+-		fprintf( stderr, "pipe closed\n" );
+-		fdPipe = 0;
+-	}
++	if (haveLive) {
++		    haveLive=false;
++		    mutex.unlock();
++		    fprintf(stderr,"stopLive: Waiting live thread to finish\n");
++		    wait();
++	} else mutex.unlock();
+ 	delete [] wBuf;
+ 	wBuf = NULL;
+ }
+@@ -464,11 +449,7 @@
+ 				if ( plug && plugHandle )
+ 					plug->process( plugHandle, thBuf, TS_SIZE*NTS );
+ 				mutex.lock();
+-				if ( haveLive && fdPipe ) {
+-					if ( beginLive ) {
+-						beginLive = !beginLive;
+-						start();
+-					}
++				if ( haveLive ) {
+ 					if ( wDist<95 ) {
+ 						memcpy( wBuf+(wWrite*TS_SIZE*NTS), thBuf, TS_SIZE*NTS );
+ 						wpatpmt = patpmt;
+@@ -525,40 +506,67 @@
+ 	}
+ }
+
+-
++bool DVBout::writeBytes(int fd, const unsigned char *buf, int bytes) {
++	int w=0;
++	mutex.lock();
++	while (haveLive && w<bytes) {
++		mutex.unlock();
++		int r=write(fd, buf+w, bytes-w);
++		if (r>=0) w+=r;
++		else {
++			if ( errno != EAGAIN ) {
++				perror("DVBout: pipe writeBytes");
++				return false;
++			}
++			usleep( 100 );
++		}
++		mutex.lock();
++	}
++	mutex.unlock();
++	return haveLive;
++}
+
+ void DVBout::run()
+ {
+-	if ( haveLive && fdPipe ) {
+-		while ( haveLive && fdPipe ) {
+-			if ( wDist>0 ) {
+-				if ( wpatpmt ) {
+-					write( fdPipe, tspat, TS_SIZE );
+-					write( fdPipe, tspmt, TS_SIZE );
+-					wpatpmt = false;
+-				}
+-				write( fdPipe, wBuf+(wRead*TS_SIZE*NTS), TS_SIZE*NTS );
+-				--wDist;
+-				++wRead;
+-				if ( wRead>99 )
+-					wRead = 0;
+-			}
+-			else
+-				usleep( 100 );
++	int fd=-1;
++ 	fprintf(stderr,"DVBout::run started\n");
++
++	while (haveLive && (fd=open( pipeName.ascii(), O_WRONLY | O_NONBLOCK )) == -1 ) {
++		if (errno!=ENXIO) {
++			perror("DVBout::run open pipe");
++			return;
+ 		}
+-		return;
++		usleep ( 100 );
+ 	}
++ 	fprintf(stderr,"DVBout::run write pipe %s opened\n",pipeName.ascii());
++	emit playDvb();
++ 	fprintf(stderr,"DVBout::run signal emitted\n");
+
+-	if ( (fdPipe=open( pipeName.ascii(), O_WRONLY))<0 ) {
+-		perror("PIPE FILE: ");
+-		return;
++	mutex.lock();
++	while (haveLive) {
++		mutex.unlock();
++		if (wpatpmt) {
++			if (writeBytes(fd, tspat, TS_SIZE) && writeBytes(fd, tspmt, TS_SIZE) ) {
++				wpatpmt = false;
++			} else goto fail;
++		}
++		if (wDist>0) {
++			if ( writeBytes (fd, wBuf+(wRead*TS_SIZE*NTS), TS_SIZE*NTS ) ) {
++				mutex.lock();
++				--wDist;
++				++wRead;
++				if (wRead>99) wRead=0;
++				mutex.unlock();
++			} else goto fail;
++		} else usleep ( 100 );
++		mutex.lock();
+ 	}
+-	fprintf(stderr,"pipe opened\n");
+-	emit playDvb();
++	mutex.unlock();
++fail:
++	if(fd>=0) close(fd);
++	fprintf(stderr,"DVBout::run finished\n");
+ }
+
+-
+-
+ DVBout::~DVBout()
+ {
+ 	if ( plug )
+diff -ru kaffeine-0.8.4.cvs.orig/kaffeine/src/input/dvb/dvbout.h kaffeine-0.8.4.cvs/kaffeine/src/input/dvb/dvbout.h
+--- kaffeine-0.8.4.cvs.orig/kaffeine/src/input/dvb/dvbout.h	2007-11-25 12:57:46.000000000 +0200
++++ kaffeine-0.8.4.cvs/kaffeine/src/input/dvb/dvbout.h	2007-11-25 23:09:58.000000000 +0200
+@@ -35,7 +35,7 @@
+
+ class KaffeineDvbPlugin;
+
+-class DVBout : public QObject, public QThread
++class DVBout : public QObject, private QThread
+ {
+ 	Q_OBJECT
+
+@@ -77,13 +77,13 @@
+ 	void writePat();
+ 	void calculateCRC( unsigned char *p_begin, unsigned char *p_end );
+ 	void renameFile( QString &name, const QString &ext );
++	bool writeBytes(int fd, const unsigned char *buf, int bytes);
+
+ 	int pmtpid;
+ 	bool patpmt, wpatpmt;
+ 	bool timeShifting;
+ 	QString pipeName;
+ 	QFile outFile, liveFile;
+-	int fdPipe;
+ 	Ts2Rtp *rtp;
+ 	unsigned char thBuf[188*100];
+ 	unsigned char *wBuf;
+@@ -92,7 +92,6 @@
+ 	unsigned char tspmt[188];
+ 	unsigned int CRC32[256];
+ 	int thWrite;
+-	bool beginLive;
+ 	bool haveRec, haveLive, instantRec, haveBroadcast;
+ 	QTimer stopRecTimer, timerPatPmt;
+ 	QMutex mutex;
