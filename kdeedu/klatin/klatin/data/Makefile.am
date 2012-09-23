@@ -1,0 +1,1 @@
+SUBDIRS = . vocab grammar verbs
