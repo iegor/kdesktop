@@ -1,0 +1,143 @@
+AC_ARG_WITH(berkeley-db,
+  [AC_HELP_STRING(--with-berkeley-db,
+    [enable the dictionary plugin based on Berkeley DB IV @<:@default=check@:>@])],
+  [], with_berkeley_db=check)
+
+LIB_DBIV=""
+if test "x$with_berkeley_db" != xno; then
+
+AC_MSG_CHECKING([for Berkeley Database IV])
+
+db_libraries=""
+db_includes=""
+db_name=""
+ac_db_name="db"
+ac_db_includes=""
+ac_db_libraries=""
+ac_db_include_file="db.h"
+
+AC_ARG_WITH(db-dir,
+    AC_HELP_STRING([--with-db-dir=DIR],[where the root of Berkeley DB IV is installed]),
+    [  ac_db_includes=-I"$withval"/include
+       ac_db_libraries=-L"$withval"/lib
+    ])
+AC_ARG_WITH(db-include-dir,
+    AC_HELP_STRING([--with-db-include-dir=DIR],[where the includes of Berkeley DB IV are installed]),
+    [  ac_db_includes=-I"$withval"
+    ])
+AC_ARG_WITH(db-include,
+    AC_HELP_STRING([--with-db-include=FILE],[path to the Berkeley DB IV header file]),
+    [  ac_db_include_file=-I"$withval"
+    ])
+AC_ARG_WITH(db-lib-dir,
+    AC_HELP_STRING([--with-db-lib-dir=DIR],[where the libs of Berkeley DB IV are installed]),
+    [  ac_db_libraries=-L"$withval"
+    ])
+AC_ARG_WITH(db-name,
+    AC_HELP_STRING([--with-db-name=NAME],[name of the Berkeley DB IV library (default db)]),
+    [  ac_db_name="$withval"
+    ])
+
+AC_DEFUN([KDE_CHECK_DB_VERSION],
+[
+ifelse($3,,,[LIBS="$kde_db_safe -l$3"])
+AC_TRY_LINK([
+#include <$2>
+],
+[
+#if DB_VERSION_MAJOR == 4
+DB *db;
+#if DB_VERSION_MINOR > 0
+db->open( db, NULL, "test.db", NULL, DB_BTREE, DB_CREATE, 0644 );
+#else
+db->open( db, "test.db", NULL, DB_BTREE, DB_CREATE, 0644 );
+#endif
+#else
+error
+#endif
+],
+kde_cv_berk_database=$1
+)
+])
+
+AC_CACHE_VAL(kde_cv_berk_database,
+[
+kde_safe_LDFLAGS=$LDFLAGS
+kde_db_safe_LIBS=$LIBS
+LDFLAGS="$LDFLAGS $X_LDFLAGS $USER_LDFLAGS $all_libraries $ac_db_libraries $all_includes $ac_db_includes"
+
+kde_cv_berk_database=NO
+if test "xNO" = "x$kde_cv_berk_database" ; then
+	KDE_CHECK_DB_VERSION($ac_db_name, $ac_db_include_file, $ac_db_name)
+fi
+if test "xNO" = "x$kde_cv_berk_database" ; then
+	KDE_CHECK_DB_VERSION(db4, db4/db.h, db4)
+fi
+if test "xNO" = "x$kde_cv_berk_database" ; then
+	KDE_CHECK_DB_VERSION(db4-db, db.h, db4)
+fi
+if test "xNO" = "x$kde_cv_berk_database" ; then
+	KDE_CHECK_DB_VERSION(db, db.h, db)
+fi
+
+LIBS=$kde_db_safe_LIBS
+LDFLAGS=$kde_safe_LDFLAGS
+
+])
+
+kde_db_header=""
+DBSEARCHENGINE=dbsearchengine
+
+case "$kde_cv_berk_database" in
+ NO)
+   AC_MSG_RESULT(no)
+   LIB_DBIV=""
+   DBSEARCHENGINE=""
+   ;;
+ db)
+   LIB_DBIV="-l$ac_db_name"
+   kde_db_header=db.h
+   AC_MSG_RESULT(-l$ac_db_name)   
+   AC_DEFINE_UNQUOTED(HAVE_DB_DB_H, 1, [DB 4 header location] )
+   ;;
+ db4-db)
+   LIB_DBIV='-ldb4'
+   kde_db_header=db.h
+   AC_MSG_RESULT("flag is -ldb4 and header is db.h")   
+   AC_DEFINE_UNQUOTED(HAVE_DB_DB_H, 1, [DB 4 header location] )
+   ;;
+ db4)
+   LIB_DBIV='-ldb4'
+   kde_db_header=db4/db.h
+   AC_MSG_RESULT(-ldb4) 
+   AC_DEFINE_UNQUOTED(HAVE_DB4_DB_H, 1, [DB 4 header location] )
+   ;;
+ $ac_db_name)
+   LIB_DBIV="-l$ac_db_name"
+   kde_db_header="$ac_db_include_file"
+   AC_MSG_RESULT(user specified $ac_db_name)
+   if test "x$ac_db_include_file" = "xdb.h" ; then
+       AC_DEFINE_UNQUOTED(HAVE_DB_DB_H, 1, [DB 4 header location] )
+   else
+       AC_DEFINE_UNQUOTED(USE_DB_H_PATH, <$ac_db_include_file>, [DB 4 header path])
+   fi
+
+   ;;
+esac
+
+DBIV_LDFLAGS="$ac_db_libraries"
+DBIV_INCLUDES="$ac_db_includes"
+DBIV_NAME="$ac_db_name"
+
+if test "x$with_berkeley_db" != xcheck && test -z "$LIB_DBIV"; then
+  AC_MSG_ERROR([--with-berkeley-db was given, but test for Berkeley DB IV failed])
+fi
+fi
+
+AC_SUBST(DBIV_INCLUDES)
+AC_SUBST(DBIV_LDFLAGS)
+AC_SUBST(DBIV_NAME)
+
+AC_SUBST(LIB_DBIV) 
+
+AM_CONDITIONAL(include_DBSEARCHENGINE, test -n "$DBSEARCHENGINE")
