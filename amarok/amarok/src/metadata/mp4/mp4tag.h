@@ -21,9 +21,11 @@ email                : andrew.leadbetter@gmail.com
 #ifndef TAGLIB_MP4TAG_H
 #define TAGLIB_MP4TAG_H
 
+//#include <mp4v2/itmf_tags.h>
+
 #include <tag.h>
 #include "mp4file.h"
-#include <mp4.h>
+// #include <mp4.h>
 
 namespace TagLib {
 

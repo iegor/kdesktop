@@ -72,56 +72,34 @@ void MP4::Tag::duplicate(const Tag *source, Tag *target, bool overwrite) {
 
 void MP4::Tag::readTags( MP4FileHandle mp4file )
 {
-    // Now parse tag.
-    char *value;
+    //char *value;
     uint8_t boolvalue;
     uint16_t numvalue, numvalue2;
-    uint8_t *image;
-    uint32_t imageSize;
-    if (MP4GetMetadataName(mp4file, &value) && value != NULL) {
-        m_title = String(value, String::UTF8);
-        free(value);
-    }
-    if (MP4GetMetadataArtist(mp4file, &value) && value != NULL) {
-        m_artist = String(value, String::UTF8);
-        free(value);
-    }
+    //uint8_t *image;
+    //uint32_t imageSize;
 
-    if (MP4GetMetadataComment(mp4file, &value) && value != NULL) {
-        m_comment = String(value, String::UTF8);
-        free(value);
-    }
+		// Alloc our tags
+		const MP4Tags *tags = MP4TagsAlloc();
+		if(MP4TagsFetch(tags, mp4file)) {
 
-    if (MP4GetMetadataYear(mp4file, &value) && value != NULL) {
-        m_year = strtol(value, NULL,0);
-        free(value);
-    }
-    if (MP4GetMetadataAlbum(mp4file, &value) && value != NULL) {
-        m_album  =  String(value, String::UTF8);
-        free(value);
-    }
-    if (MP4GetMetadataTrack(mp4file, &numvalue, &numvalue2)) {
-        m_track = numvalue;
-    }
-    if (MP4GetMetadataDisk(mp4file, &numvalue, &numvalue2)) {
-        m_disk = numvalue;
-    }
-    if (MP4GetMetadataTempo(mp4file, &numvalue)) {
-        m_bpm = numvalue;
-    }
-    if (MP4GetMetadataCompilation(mp4file, &boolvalue)) {
-        m_compilation = boolvalue;
-    }
-    if (MP4GetMetadataGenre(mp4file, &value) && value != NULL) {
-        m_genre = String(value, String::UTF8);
-        free(value);
-    }
-    if (MP4GetMetadataWriter(mp4file, &value) && value != NULL) {
-        m_composer = String(value, String::UTF8);
-        free(value);
-    }
-    if (MP4GetMetadataCoverArt(mp4file, &image, &imageSize) && image && imageSize) {
-        m_image.setData(reinterpret_cast<const char *>( image ), imageSize);
-        free(image);
-    }
+			// Now parse tags.
+			m_title = String(tags->name, String::UTF8);
+			m_artist = String(tags->artist, String::UTF8);
+			m_comment = String(tags->comments, String::UTF8);
+			m_composer = String(tags->composer, String::UTF8);
+			m_year = strtol(tags->releaseDate, NULL,0);
+			m_album  =  String(tags->album, String::UTF8);
+			m_genre = String(tags->genre, String::UTF8);
+			setTrack(tags->track->index);
+			setDisk(tags->disk->index);
+			m_bpm = tags->tempo;
+			m_compilation = String(tags->compilation, String::UTF8);
+
+			if(tags->artworkCount > 0) {
+				m_image.setData(reinterpret_cast<const char *>( tags->artwork[0].data ), tags->artwork[0].size);
+			}
+			
+			MP4TagsFree(tags);
+			tags = NULL;
+		}
 }
