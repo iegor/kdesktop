@@ -28,9 +28,9 @@ email                : andrew.leadbetter@gmail.com
 #ifdef HAVE_SYSTEMS_H
 #include <systems.h>
 #endif
-
+#include <string.h>
 #include <stdint.h>
-
+#include <sys/types.h>
 #ifndef UINT64_TO_DOUBLE
 #define UINT64_TO_DOUBLE(a) ((double)((int64_t)(a)))
 #endif

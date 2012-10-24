@@ -99,86 +99,9 @@ bool MP4::File::save()
         return false;
     }
 
-		//allocate tags
-		const MP4Tags *tags = MP4TagsAlloc();
-		if(tags == NULL) return false;
-
-		// Fetch tags
-		if(MP4TagsFetch(tags, handle)) {
-
-			bool has_metadata = false;
-			if(MP4TagsHasMetadata(tags, &has_metadata)) {
-				return false;
-			}
-
-#ifdef MP4V2_HAS_WRITE_BUG
-			/* according to gtkpod we have to delete all meta data before modifying it,
-				save the stuff we would not touch */
-	
-			// need to fetch/rewrite this only if we aren't going to anyway
-			uint8_t compilation = 0;
-			bool has_compilation = mp4tag->compilation() == MP4::Tag::Undefined ? MP4TagsSetCompilation(tags, &compilation) : false;
-	
-			if(has_metadata) {
-				char *tool = NULL;
-				MP4GetMetadataTool(handle, &tool);
-				MP4MetadataDelete(handle);
-			}
-#endif
-
-#define setmeta(val, tag) \
-    if(mp4tag->val().isNull()) { \
-        /*MP4DeleteMetadata##tag(handle);*/ \
-        MP4TagsSet##tag(handle, ""); \
-    } else { \
-        MP4SetMetadata##tag(handle, mp4tag->val().toCString(true)); \
-    }
-
-			MP4TagsSetName(tags, mp4tag->title()); //setmeta(title, Name);
-			MP4TagsSetArtist(tags, mp4tag->artist()); //setmeta(artist, Artist);
-			MP4TagsSetAlbum(tags, mp4tag->album()); //setmeta(album, Album);
-			MP4TagsSetComments(tags, mp4tag->comment()); //setmeta(comment, Comment);
-			MP4TagsSetGenre(tags, mp4tag->genre()); //setmeta(genre, Genre);
-	
-			//char buf[100] = "";
-			if(mp4tag->year()) {
-					//snprintf(buf, sizeof(buf), "%u", mp4tag->year());
-			//}
-				MP4TagsSetReleaseDate(tags, mp4tag->year());
-			}
-	
-			//u_int16_t t1, t2;
-			MP4GetMetadataTrack(handle, &t1, &t2);
-
-			//MP4SetMetadataTrack(handle, mp4tag->track(), t2);
-			MP4TagsSetTrack(tags, mp4tag->track());
-			MP4TagsSetDisk(tags, mp4tag->disk());
-
-			if(mp4tag->bpm() != 0)
-				//MP4SetMetadataTempo(handle, mp4tag->bpm());
-				MP4TagsSetTempo(tags, mp4tag->bpm());
-			if(mp4tag->compilation() != MP4::Tag::Undefined) {
-				//MP4SetMetadataCompilation(handle, mp4tag->compilation());
-				MP4TagsSetCompilation(tags, mp4tag->compilation());
-			}
-	
-			MP4SetMetadataCoverArt(handle, mp4tag->cover().size() ? const_cast<u_int8_t *>( reinterpret_cast<const u_int8_t *>( mp4tag->cover().data() ) ) : 0, mp4tag->cover().size());
-
-#ifdef MP4V2_HAS_WRITE_BUG
-			// set the saved data again
-	
-			if(has_compilation)
-				MP4SetMetadataCompilation(handle, compilation);
-			if(tool)
-			{
-				MP4SetMetadataTool(handle, tool);
-				free(tool);
-			}
-#endif
-		} // Tags fetched and written
+		mp4tag->writeTags(mp4file);
 
     MP4Close(handle);
-
     mp4file = MP4Read(name());
     if(mp4file == MP4_INVALID_FILE_HANDLE)
     {

@@ -21,11 +21,12 @@ email                : andrew.leadbetter@gmail.com
 #ifndef TAGLIB_MP4TAG_H
 #define TAGLIB_MP4TAG_H
 
-//#include <mp4v2/itmf_tags.h>
+#include <mp4v2/mp4v2.h>
 
 #include <tag.h>
 #include "mp4file.h"
-// #include <mp4.h>
+#include <stdlib.h>
+#include <sys/types.h>
 
 namespace TagLib {
 
@@ -37,13 +38,18 @@ namespace TagLib {
         {
             public:
                 static const int Undefined = -1;
-                
+
                 Tag();
 
                 /*!
                  * read tags from the mp4 file.
                  */
-                void readTags( MP4FileHandle mp4file);
+                void readTags(MP4FileHandle mp4file);
+
+								/*!
+								 * write tags into file.
+								 */
+								void writeTags(MP4FileHandle mp4file);
 
                 /*!
                  * Destroys this MP4Tag instance.
@@ -54,95 +60,127 @@ namespace TagLib {
                  * Returns the track name; if no track name is present in the tag
                  * String::null will be returned.
                  */
-                virtual String title() const { return m_title; }
+                virtual String title() const {
+									return String(m_track->name);
+								}
 
                 /*!
                  * Returns the artist name; if no artist name is present in the tag
                  * String::null will be returned.
                  */
-                virtual String artist() const { return m_artist; }
+                virtual String artist() const {
+									return m_artist;
+								}
 
                 /*!
                  * Returns the album name; if no album name is present in the tag
                  * String::null will be returned.
                  */
-                virtual String album() const { return m_album; }
+                virtual String album() const {
+									return m_album;
+								}
 
                 /*!
                  * Returns the track comment; if no comment is present in the tag
                  * String::null will be returned.
                  */
-                virtual String comment() const { return m_comment; }
+                virtual String comment() const {
+									return m_comment;
+								}
 
                 /*!
                  * Returns the genre name; if no genre is present in the tag String::null
                  * will be returned.
                  */
-                virtual String genre() const { return m_genre; }
+                virtual String genre() const {
+									return m_genre;
+								}
 
                 /*!
                  * Returns the composer name; if no composer is present in the tag String::null
                  * will be returned.
                  */
-                virtual String composer() const { return m_composer; }
+                virtual String composer() const {
+									return m_composer;
+								}
 
                 /*!
                  * Returns the year; if there is no year set, this will return 0.
                  */
-                virtual uint year() const { return m_year; }
+                virtual uint year() const {
+									return m_year;
+								}
 
                 /*!
                  * Returns the track number; if there is no track number set, this will
                  * return 0.
                  */
-                virtual uint track() const { return m_track; }
+                virtual uint track() const {
+									return m_track;
+								}
 
                 /*!
                  * Returns the disc number; if there is no disc number set, this will
                  * return 0.
                  */
-                virtual uint disk() const { return m_disk; }
+                virtual uint disk() const {
+									return m_disk;
+								}
 
                 /*!
                  * Returns the BPM (tempo);  if there is no BPM, this will return 0.
                  */
-                virtual uint bpm() const { return m_bpm; }
+                virtual uint bpm() const {
+									return m_bpm;
+								}
 
                 /*!
                 * Returns the embedded cover image; if there is no cover set, this will
                 * return an empty ByteVector.
                 */
-                virtual const ByteVector &cover() const { return m_image; }
+                virtual const ByteVector &cover() const {
+									return m_image;
+								}
 
                 /*!
                  * Returns whether this is part of a compilation; if this flag is not set,
                  * this will return the Undefined constant.
                  */
-                virtual int compilation() const { return m_compilation; }
+                virtual int compilation() const {
+									return m_compilation;
+								}
 
                 /*!
                  * Sets the title to \a s.  If \a s is String::null then this value will be
                  * cleared.
                  */
-                virtual void setTitle(const String &s) { m_title = s; }
+                virtual void setTitle(const String &s) {
+									m_title = s;
+								}
 
                 /*!
                  * Sets the artist to \a s.  If \a s is String::null then this value will be
                  * cleared.
                  */
-                virtual void setArtist(const String &s) { m_artist = s; }
+                virtual void setArtist(const String &s) {
+									m_artist = s;
+								}
 
                 /*!
                  * Sets the album to \a s.  If \a s is String::null then this value will be
                  * cleared.
                  */
-                virtual void setAlbum(const String &s) { m_album = s; } 
+                virtual void setAlbum(const String &s) {
+									m_album = s;
+								} 
 
                 /*!
                  * Sets the album to \a s.  If \a s is String::null then this value will be
                  * cleared.
                  */
-                virtual void setComment(const String &s) { m_comment = s; }
+                virtual void setComment(const String &s) {
+									m_comment = s;
+								}
 
                 /*!
                  * Sets the genre to \a s.  If \a s is String::null then this value will be
@@ -151,44 +189,60 @@ namespace TagLib {
                  * genres for those formats should be available in that type's
                  * implementation.
                  */
-                virtual void setGenre(const String &s) { m_genre = s; }
+                virtual void setGenre(const String &s) {
+									m_genre = s;
+								}
 
                 /*!
                  * Sets the year to \a i.  If \a s is 0 then this value will be cleared.
                  */
-                virtual void setYear(uint i) { m_year = i; }
+                virtual void setYear(uint i) {
+									m_year = i;
+								}
 
                 /*!
                  * Sets the track to \a i.  If \a i is 0 then this value will be cleared.
                  */
-                virtual void setTrack(uint i) { m_track = i; }
+                virtual void setTrack(uint i) {
+									m_track = i;
+								}
 
                 /*!
                  * Sets the disc to \a i.  If \a i is 0 then this value will be cleared.
                  */
-                virtual void setDisk(uint i) { m_disk = i; }
+                virtual void setDisk(uint i) {
+									m_disk = i;
+								}
 
                 /*!
                  * Sets the BPM (tempo) to \a i.  It \a i is 0 then this value will be cleared.
                  */
-                virtual void setBpm(uint i) { m_bpm = i; }
+                virtual void setBpm(uint i) {
+									m_bpm = i;
+								}
 
                 /*!
                  * Sets whether this is part of a compilation.
                  */
-                virtual void setCompilation(bool compilation) { m_compilation = compilation ? 1 : 0; }
+                virtual void setCompilation(bool compilation) {
+									m_compilation = compilation ? 1 : 0;
+								}
 
                 /*!
                  * Sets the composer to \a s.  If \a s is String::null then this value will
                  * be cleared.
                  */
-                virtual void setComposer(const String &s) { m_composer = s; }
+                virtual void setComposer(const String &s) {
+									m_composer = s;
+								}
 
                 /*!
                  * Sets the embedded cover image to \a i. If \a i is empty then this value
                  * will be cleared.
                  */
-                virtual void setCover(const ByteVector &i) { m_image = i; }
+                virtual void setCover(const ByteVector &i) {
+									m_image = i;
+								}
 
                 /*!
                  * Returns true if the tag does not contain any data.  This should be
@@ -211,18 +265,7 @@ namespace TagLib {
                 static void duplicate(const Tag *source, Tag *target, bool overwrite = true);
 
             protected:
-                String m_title;
-                String m_artist;
-                String m_album;
-                String m_comment;
-                String m_genre;
-                String m_composer;
-                uint m_year;
-                uint m_track;
-                uint m_disk;
-                uint m_bpm;
-                int m_compilation;
-                ByteVector m_image;
+								MP4Tags *tags;
         };
     }
 }

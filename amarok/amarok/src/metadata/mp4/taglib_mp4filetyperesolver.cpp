@@ -35,7 +35,7 @@ TagLib::File *MP4FileTypeResolver::createFile(const char *fileName,
                 || !strcasecmp(ext, ".mp4")
                 || !strcasecmp(ext, ".m4v") || !strcasecmp(ext, ".mp4v")))
     {
-        MP4FileHandle h = MP4Read(fileName, 0);
+        MP4FileHandle h = MP4Read(fileName);
         if(MP4_INVALID_FILE_HANDLE == h)
         {
             return 0;

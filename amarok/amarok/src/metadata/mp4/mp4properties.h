@@ -24,7 +24,7 @@ email                : andrew.leadbetter@gmail.com
 
 #include <audioproperties.h>
 #include <tstring.h>
-#include <mp4.h>
+#include <mp4v2/mp4v2.h>
 // mp4.h drags in mp4_config.h that defines these
 // get rid of them so they don't conflict with our config.h
 #undef VERSION
