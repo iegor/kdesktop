@@ -2634,11 +2634,10 @@ void KXineWidget::getAutoplayPlugins(QStringList& autoPlayList) const
 
 bool KXineWidget::getAutoplayPluginURLS(const QString& plugin, QStringList& list)
 {
-	char** urls = NULL;
 	int num;
 	int i = 0;
 
-	urls = xine_get_autoplay_mrls(m_xineEngine, plugin.ascii(), &num);
+	const char **urls = xine_get_autoplay_mrls(m_xineEngine, plugin.ascii(), &num);
 
 	if (urls)
 	{
