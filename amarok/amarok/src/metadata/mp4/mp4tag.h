@@ -61,7 +61,7 @@ namespace TagLib {
                  * String::null will be returned.
                  */
                 virtual String title() const {
-									return String(m_track->name);
+									return String(m_tags->name);
 								}
 
                 /*!
@@ -69,7 +69,7 @@ namespace TagLib {
                  * String::null will be returned.
                  */
                 virtual String artist() const {
-									return m_artist;
+									return String(m_tags->artist);
 								}
 
                 /*!
@@ -77,7 +77,7 @@ namespace TagLib {
                  * String::null will be returned.
                  */
                 virtual String album() const {
-									return m_album;
+									return String(m_tags->album);
 								}
 
                 /*!
@@ -85,7 +85,7 @@ namespace TagLib {
                  * String::null will be returned.
                  */
                 virtual String comment() const {
-									return m_comment;
+									return String(m_tags->comments);
 								}
 
                 /*!
@@ -93,7 +93,7 @@ namespace TagLib {
                  * will be returned.
                  */
                 virtual String genre() const {
-									return m_genre;
+									return String(m_tags->genre);
 								}
 
                 /*!
@@ -101,14 +101,15 @@ namespace TagLib {
                  * will be returned.
                  */
                 virtual String composer() const {
-									return m_composer;
+									return String(m_tags->composer);
 								}
 
                 /*!
                  * Returns the year; if there is no year set, this will return 0.
                  */
                 virtual uint year() const {
-									return m_year;
+ 									//return String(m_tags->release_date);
+									return 0;
 								}
 
                 /*!
@@ -116,7 +117,7 @@ namespace TagLib {
                  * return 0.
                  */
                 virtual uint track() const {
-									return m_track;
+									return m_tags->track->index;
 								}
 
                 /*!
@@ -124,14 +125,14 @@ namespace TagLib {
                  * return 0.
                  */
                 virtual uint disk() const {
-									return m_disk;
+									return m_tags->disk->index;
 								}
 
                 /*!
                  * Returns the BPM (tempo);  if there is no BPM, this will return 0.
                  */
                 virtual uint bpm() const {
-									return m_bpm;
+									return (uint)*(m_tags->tempo);
 								}
 
                 /*!
@@ -139,7 +140,7 @@ namespace TagLib {
                 * return an empty ByteVector.
                 */
                 virtual const ByteVector &cover() const {
-									return m_image;
+									return ByteVector();
 								}
 
                 /*!
@@ -147,7 +148,7 @@ namespace TagLib {
                  * this will return the Undefined constant.
                  */
                 virtual int compilation() const {
-									return m_compilation;
+									return (int)m_tags->compilation;
 								}
 
                 /*!
@@ -155,7 +156,7 @@ namespace TagLib {
                  * cleared.
                  */
                 virtual void setTitle(const String &s) {
-									m_title = s;
+									MP4TagsSetName(m_tags, s.toCString());
 								}
 
                 /*!
@@ -163,7 +164,7 @@ namespace TagLib {
                  * cleared.
                  */
                 virtual void setArtist(const String &s) {
-									m_artist = s;
+									MP4TagsSetArtist(m_tags, s.toCString());
 								}
 
                 /*!
@@ -171,7 +172,7 @@ namespace TagLib {
                  * cleared.
                  */
                 virtual void setAlbum(const String &s) {
-									m_album = s;
+									MP4TagsSetAlbum(m_tags, s.toCString());
 								} 
 
                 /*!
@@ -179,7 +180,7 @@ namespace TagLib {
                  * cleared.
                  */
                 virtual void setComment(const String &s) {
-									m_comment = s;
+									MP4TagsSetComments(m_tags, s.toCString());
 								}
 
                 /*!
@@ -190,42 +191,49 @@ namespace TagLib {
                  * implementation.
                  */
                 virtual void setGenre(const String &s) {
-									m_genre = s;
+									MP4TagsSetGenre(m_tags, s.toCString());
 								}
 
                 /*!
                  * Sets the year to \a i.  If \a s is 0 then this value will be cleared.
                  */
-                virtual void setYear(uint i) {
-									m_year = i;
+                virtual void setYear(uint /*i*/) {
+									String s = "Unknown release date";
+									MP4TagsSetReleaseDate(m_tags, s.toCString());
 								}
 
                 /*!
                  * Sets the track to \a i.  If \a i is 0 then this value will be cleared.
                  */
                 virtual void setTrack(uint i) {
-									m_track = i;
+									MP4TagTrack dtrack;
+									dtrack.index = i;
+									dtrack.total = i;
+									MP4TagsSetTrack(m_tags, &dtrack);
 								}
 
                 /*!
                  * Sets the disc to \a i.  If \a i is 0 then this value will be cleared.
                  */
                 virtual void setDisk(uint i) {
-									m_disk = i;
+									MP4TagDisk ddisk;
+									ddisk.index = i;
+									ddisk.total = i;
+									MP4TagsSetDisk(m_tags, &ddisk);
 								}
 
                 /*!
                  * Sets the BPM (tempo) to \a i.  It \a i is 0 then this value will be cleared.
                  */
-                virtual void setBpm(uint i) {
-									m_bpm = i;
+                virtual void setBpm(const uint16_t i) {
+									MP4TagsSetTempo(m_tags, &i);
 								}
 
                 /*!
                  * Sets whether this is part of a compilation.
                  */
-                virtual void setCompilation(bool compilation) {
-									m_compilation = compilation ? 1 : 0;
+                virtual void setCompilation(const uint8_t compilation) {
+									MP4TagsSetCompilation(m_tags, &compilation);
 								}
 
                 /*!
@@ -233,7 +241,7 @@ namespace TagLib {
                  * be cleared.
                  */
                 virtual void setComposer(const String &s) {
-									m_composer = s;
+									MP4TagsSetComposer(m_tags, s.toCString());
 								}
 
                 /*!
@@ -241,7 +249,11 @@ namespace TagLib {
                  * will be cleared.
                  */
                 virtual void setCover(const ByteVector &i) {
-									m_image = i;
+									MP4TagArtwork art;
+									art->data = i.data();
+									art->size = i.size();
+									art->type = MP4TagArtworkType::MP4_ART_PNG;
+									MP4TagsAddArtwork(m_tags, &art);
 								}
 
                 /*!
@@ -265,7 +277,7 @@ namespace TagLib {
                 static void duplicate(const Tag *source, Tag *target, bool overwrite = true);
 
             protected:
-								MP4Tags *tags;
+								MP4Tags *m_tags;
         };
     }
 }

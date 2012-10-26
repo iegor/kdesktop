@@ -57,12 +57,12 @@ void MP4::Tag::duplicate(const Tag *source, Tag *target, bool overwrite) {
 
 void MP4::Tag::readTags( MP4FileHandle mp4file ) {
 	if(m_tags != NULL) {
-		MP4TagsFetch(tags, mp4file);
+		MP4TagsFetch(m_tags, mp4file);
 	}
 }
 
 void MP4::Tag::writeTags( MP4FileHandle mp4file ) {
 	if(m_tags != NULL) {
-		MP4TagsStore(tags, mp4file);
+		MP4TagsStore(m_tags, mp4file);
 	}
 }
