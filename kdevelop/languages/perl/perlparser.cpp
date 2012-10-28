@@ -464,7 +464,7 @@ void perlparser::getPerlINC() {
             return;
         }
         array.setRawData(buffer, n);
-        result=QString::QString(array);
+        result=QString(array);
         array.resetRawData(buffer, n);
  }
  pclose(fd);
