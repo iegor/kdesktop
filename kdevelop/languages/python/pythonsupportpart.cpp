@@ -328,7 +328,7 @@ void PythonSupportPart::startApplication(const QString &program)
 {
     bool inTerminal = DomUtil::readBoolEntry(*projectDom(), "/kdevpythonsupport/run/terminal");
     if (KDevAppFrontend *appFrontend = extension<KDevAppFrontend>("KDevelop/AppFrontend"))
-        appFrontend->startAppCommand(QString::QString(), program, inTerminal);
+        appFrontend->startAppCommand("", program, inTerminal);
 }
 
 
