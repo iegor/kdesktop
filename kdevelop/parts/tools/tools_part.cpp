@@ -154,7 +154,7 @@ void ToolsPart::startCommand(QString cmdline, bool captured, QString fileName)
     if (captured)
     {
        if (KDevAppFrontend *appFrontend = extension<KDevAppFrontend>("KDevelop/AppFrontend"))
-            appFrontend->startAppCommand(QString::QString(), cmdline, false);
+            appFrontend->startAppCommand(QString(), cmdline, false);
     }
     else 
     {
