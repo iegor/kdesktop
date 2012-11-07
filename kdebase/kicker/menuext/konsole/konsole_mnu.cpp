@@ -299,12 +299,19 @@ void KonsoleMenu::newSession(const QString& sURL, const QString& title)
     {
         QString protocol = url.protocol();
         QString host = url.host();
+        bool isSSH = (protocol == "ssh");
         args << "-T" << title;
         args << "-e" << protocol.latin1(); /* argv[0] == command to run. */
+        if (url.port() && isSSH) {
+            args << "-p" << QCString().setNum(url.port());
+        }
         if (url.hasUser()) {
             args << "-l" << url.user().latin1();
         }
         args << host.latin1();
+        if (url.port() && !isSSH) {
+            args << QCString().setNum(url.port());
+        }
         KApplication::kdeinitExec("konsole", args);
         return;
     }
