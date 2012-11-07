@@ -170,7 +170,6 @@ void TaskBarExtension::setBackgroundTheme()
     }
 
     unsetPalette();
-    m_container->unsetPalette();
 
     if (KickerSettings::useBackgroundTheme())
     {
@@ -215,17 +214,17 @@ void TaskBarExtension::setBackgroundTheme()
                 KickerLib::colorize(bgImage);
             }
             setPaletteBackgroundPixmap(bgImage);
-            m_container->setPaletteBackgroundPixmap(bgImage);
         }
     }
+    
+    m_container->setBackground();
 }
 
 void TaskBarExtension::updateBackground(const QPixmap& bgImage)
 {
     unsetPalette();
     setPaletteBackgroundPixmap(bgImage);
-    m_container->unsetPalette();
-    m_container->setPaletteBackgroundPixmap(bgImage);
+    m_container->setBackground();
 }
 
 void TaskBarExtension::resizeEvent(QResizeEvent *e)

@@ -304,6 +304,7 @@ void TaskBar::resizeEvent( QResizeEvent* e )
 
     Panner::resizeEvent(e);
     reLayoutEventually();
+    setViewportBackground();
 }
 
 void TaskBar::add(Task::Ptr task)
