@@ -39,6 +39,7 @@
 #endif
 
 #include <stdlib.h>
+#include <stdio.h>
 
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
