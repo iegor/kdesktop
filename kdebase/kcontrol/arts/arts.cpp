@@ -214,7 +214,7 @@ KArtsModule::KArtsModule(QWidget *parent, const char *name)
 	config = new KConfig("kcmartsrc");
 	load();
 
-	suspendTime->setRange( 0, 999, 1, true );
+	suspendTime->setRange( 1, 999, 1, true );
 
 	connect(startServer,SIGNAL(clicked()),this,SLOT(slotChanged()));
 	connect(networkTransparent,SIGNAL(clicked()),this,SLOT(slotChanged()));
