@@ -85,6 +85,8 @@ Atoms::Atoms()
     Atom fake;
     atoms[n] = &fake;
     names[n++] = (char *) "_DT_SM_WINDOW_INFO";
+    atoms[n] = &fake;
+    names[n++] = (char *) "_MOTIF_WM_INFO"; // #172028
     
     atoms[n] = &xdnd_aware;
     names[n++] = (char*) "XdndAware";
