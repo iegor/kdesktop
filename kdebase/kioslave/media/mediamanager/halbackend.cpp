@@ -853,13 +853,6 @@ QStringList HALBackend::mountoptions(const QString &name)
         result << tmp;
     }
 
-	if ( valids.contains("locale") )
-	{
-		value = config.readBoolEntry( "locale", true );
-		tmp = QString( "locale=%1" ).arg( value ? "true" : "false" );
-		result << tmp;
-	}
-
     if (valids.contains("utf8"))
     {
         value = config.readBoolEntry("utf8", true);
@@ -878,6 +871,17 @@ QStringList HALBackend::mountoptions(const QString &name)
             result << "shortname=mixed";
         else
             result << "shortname=lower";
+    }
+
+    // pass our locale to the ntfs-3g driver so it can translate local characters
+    if (valids.contains("locale") && fstype == "ntfs-3g")
+    {
+        // have to obtain LC_CTYPE as returned by the `locale` command
+        // check in the same order as `locale` does
+        char *cType;
+        if ( (cType = getenv("LC_ALL")) || (cType = getenv("LC_CTYPE")) || (cType = getenv("LANG")) ) {
+            result << QString("locale=%1").arg(cType);
+        }
     }
 
     if (valids.contains("sync"))
@@ -933,7 +937,7 @@ bool HALBackend::setMountoptions(const QString &name, const QStringList &options
 
     QMap<QString,QString> valids = MediaManagerUtils::splitOptions(options);
 
-    const char *names[] = { "ro", "quiet", "atime", "uid", "utf8", "flush", "sync", "locale", 0 };
+    const char *names[] = { "ro", "quiet", "atime", "uid", "utf8", "flush", "sync", 0 };
     for (int index = 0; names[index]; ++index)
         if (valids.contains(names[index]))
             config.writeEntry(names[index], valids[names[index]] == "true");
@@ -952,10 +956,6 @@ bool HALBackend::setMountoptions(const QString &name, const QStringList &options
         config.setGroup(drive_udi);
         config.writeEntry("automount", valids["automount"]);
     }
-
-	if (valids.contains("locale") ) {
-		config.writeEntry("locale", valids["locale"]);
-	}
 
     return true;
 }
@@ -1155,11 +1155,6 @@ QString HALBackend::mount(const Medium *medium)
         soptions << QString("uid=%1").arg(getuid());
     }
 
-    if (valids["locale"] == "true")
-	{
-		soptions << QString("locale=%1").arg( KGlobal::locale()->language() ); 
-	}
-
     if (valids["ro"] == "true")
         soptions << "ro";
 
@@ -1182,6 +1177,11 @@ QString HALBackend::mount(const Medium *medium)
     if (valids.contains("shortname"))
     {
         soptions << QString("shortname=%1").arg(valids["shortname"]);
+    }
+
+    if (valids.contains("locale"))
+    {
+        soptions << QString("locale=%1").arg(valids["locale"]);
     }
 
     if (valids.contains("journaling"))

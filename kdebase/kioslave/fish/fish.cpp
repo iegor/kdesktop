@@ -2,7 +2,7 @@
                           fish.cpp  -  a FISH kioslave
                              -------------------
     begin                : Thu Oct  4 17:09:14 CEST 2001
-    copyright            : (C) 2001-2003 by Jörg Walter
+    copyright            : (C) 2001-2003 by Jï¿½rg Walter
     email                : jwalt-kde@garni.ch
  ***************************************************************************/
 
@@ -1430,7 +1430,7 @@ void fishProtocol::run() {
                     sent();
                 }
             }
-            if (FD_ISSET(childFd,&rfds)) {
+            else if (FD_ISSET(childFd,&rfds)) {
                 rc = read(childFd,buf+offset,32768-offset);
                 //myDebug( << "read " << rc << " bytes" << endl);
                 if (rc > 0) {
