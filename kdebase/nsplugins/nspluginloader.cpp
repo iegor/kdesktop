@@ -69,7 +69,7 @@ void NSPluginInstance::init(const QCString& app, const QCString& obj)
     if (cfg.readBoolEntry("demandLoad", false)) {
         _button = new QPushButton(i18n("Start Plugin"), dynamic_cast<EMBEDCLASS*>(this));
         _layout->addWidget(_button, 0, 0);
-        connect(_button, SIGNAL(clicked()), this, SLOT(doLoadPlugin()));
+        connect(_button, SIGNAL(clicked()), this, SLOT(loadPlugin()));
         show();
     } else {
         _button = 0L;
@@ -84,11 +84,15 @@ void NSPluginInstance::init(const QCString& app, const QCString& obj)
     }
 }
 
+void NSPluginInstance::loadPlugin()
+{
+    delete _button;
+    _button = 0;
+    doLoadPlugin();
+}
 
 void NSPluginInstance::doLoadPlugin() {
-    if (!inited) {
-        delete _button;
-        _button = 0L;
+    if (!inited && !_button) {
         _loader = NSPluginLoader::instance();
         setBackgroundMode(QWidget::NoBackground);
         WId winid = stub->winId();

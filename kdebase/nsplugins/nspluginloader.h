@@ -55,6 +55,7 @@ public: // wrappers
     void javascriptResult( int id, QString result ) { stub->javascriptResult( id, result ); }
 
 private slots:
+    void loadPlugin();
     void doLoadPlugin();
 
 protected:
