@@ -21,7 +21,7 @@
 
 
 KSysTrayCmd::KSysTrayCmd()
-  : QLabel( 0, "systray_cmd" ),
+  : KSystemTray( 0, "systray_cmd" ),
     isVisible(true), lazyStart( false ), noquit( false ), quitOnHide( false ), onTop(false), ownIcon(false),
     win(0), client(0), kwinmodule(0), top(0), left(0)
 {
@@ -154,7 +154,7 @@ void KSysTrayCmd::refresh()
     }
     else
     {
-      setPixmap( KWin::icon( win, iconWidth, iconWidth, true ) );
+      setPixmap(KWin::icon( win, iconWidth, iconWidth, true ));
     }
 
     QToolTip::add( this, KWin::windowInfo( win ).name() );

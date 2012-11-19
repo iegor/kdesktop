@@ -3,7 +3,7 @@
 #ifndef KSYSTRAYCMD_H
 #define KSYSTRAYCMD_H
 
-#include <qlabel.h>
+#include <ksystemtray.h>
 #include <kwin.h>
 
 class KShellProcess;
@@ -14,7 +14,7 @@ class KWinModule;
  *
  * @author Richard Moore, rich@kde.org
  */
-class KSysTrayCmd : public QLabel
+class KSysTrayCmd : public KSystemTray
 {
   Q_OBJECT
 public:
