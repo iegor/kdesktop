@@ -86,6 +86,10 @@ KScreenSaver::KScreenSaver(QWidget *parent, const char *name, const QStringList&
                                      KGlobal::dirs()->kde_default("apps") +
                                      "apps/ScreenSavers/");
 
+    // Add path for Gentoo (bug #168540)
+    KGlobal::dirs()->addResourceType("scrsav",
+                                     "share/applications/");
+
     setQuickHelp( i18n("<h1>Screen Saver</h1> This module allows you to enable and"
        " configure a screen saver. Note that you can enable a screen saver"
        " even if you have power saving features enabled for your display.<p>"

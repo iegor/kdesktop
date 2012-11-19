@@ -104,6 +104,15 @@
 	DEF( I18N_NOOP("Window One Desktop to the Left"),      0, 0, slotWindowToDesktopLeft() );
 	DEF( I18N_NOOP("Window One Desktop Up"),               0, 0, slotWindowToDesktopUp() );
 	DEF( I18N_NOOP("Window One Desktop Down"),             0, 0, slotWindowToDesktopDown() );
+	DEF( I18N_NOOP("Window to Screen 0"),                  0, 0, slotWindowToScreen(int) );
+	DEF( I18N_NOOP("Window to Screen 1"),                  0, 0, slotWindowToScreen(int) );
+	DEF( I18N_NOOP("Window to Screen 2"),                  0, 0, slotWindowToScreen(int) );
+	DEF( I18N_NOOP("Window to Screen 3"),                  0, 0, slotWindowToScreen(int) );
+	DEF( I18N_NOOP("Window to Screen 4"),                  0, 0, slotWindowToScreen(int) );
+	DEF( I18N_NOOP("Window to Screen 5"),                  0, 0, slotWindowToScreen(int) );
+	DEF( I18N_NOOP("Window to Screen 6"),                  0, 0, slotWindowToScreen(int) );
+	DEF( I18N_NOOP("Window to Screen 7"),                  0, 0, slotWindowToScreen(int) );
+	DEF( I18N_NOOP("Window to Next Screen"),               0, 0, slotWindowToNextScreen() );
 
 	keys->insert( "Group:Desktop Switching", i18n("Desktop Switching") );
 	DEF( I18N_NOOP("Switch to Desktop 1"),  CTRL+Qt::Key_F1, WIN+Qt::Key_F1, slotSwitchToDesktop(int) );
@@ -132,6 +141,15 @@
 	DEF( I18N_NOOP("Switch One Desktop to the Left"),      0, 0, slotSwitchDesktopLeft() );
 	DEF( I18N_NOOP("Switch One Desktop Up"),               0, 0, slotSwitchDesktopUp() );
 	DEF( I18N_NOOP("Switch One Desktop Down"),             0, 0, slotSwitchDesktopDown() );
+	DEF( I18N_NOOP("Switch to Screen 0"),                  0, 0, slotSwitchToScreen(int) );
+	DEF( I18N_NOOP("Switch to Screen 1"),                  0, 0, slotSwitchToScreen(int) );
+	DEF( I18N_NOOP("Switch to Screen 2"),                  0, 0, slotSwitchToScreen(int) );
+	DEF( I18N_NOOP("Switch to Screen 3"),                  0, 0, slotSwitchToScreen(int) );
+	DEF( I18N_NOOP("Switch to Screen 4"),                  0, 0, slotSwitchToScreen(int) );
+	DEF( I18N_NOOP("Switch to Screen 5"),                  0, 0, slotSwitchToScreen(int) );
+	DEF( I18N_NOOP("Switch to Screen 6"),                  0, 0, slotSwitchToScreen(int) );
+	DEF( I18N_NOOP("Switch to Screen 7"),                  0, 0, slotSwitchToScreen(int) );
+	DEF( I18N_NOOP("Switch to Next Screen"),               0, 0, slotSwitchToNextScreen() );
 
 	keys->insert( "Group:Miscellaneous", i18n("Miscellaneous") );
 	DEF( I18N_NOOP("Mouse Emulation"),                     ALT+Qt::Key_F12, 0, slotMouseEmulation() );

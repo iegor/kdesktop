@@ -57,6 +57,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <global.h> // libkickermain
 
+#include "kickerSettings.h"
 #include "clock.h"
 #include "datepicker.h"
 #include "zone.h"
@@ -219,6 +220,7 @@ ClockWidget::~ClockWidget()
 PlainClock::PlainClock(ClockApplet *applet, Prefs *prefs, QWidget *parent, const char *name)
     : QLabel(parent, name), ClockWidget(applet, prefs)
 {
+    setWFlags(WNoAutoErase);
     setBackgroundOrigin(AncestorOrigin);
     loadSettings();
     updateClock();
@@ -228,7 +230,7 @@ PlainClock::PlainClock(ClockApplet *applet, Prefs *prefs, QWidget *parent, const
 int PlainClock::preferedWidthForHeight(int ) const
 {
     QString maxLengthTime = KGlobal::locale()->formatTime( QTime( 23, 59 ), _prefs->plainShowSeconds());
-    return fontMetrics().width( maxLengthTime+2 );
+    return fontMetrics().width( maxLengthTime ) + 8;
 }
 
 
@@ -244,7 +246,7 @@ void PlainClock::updateClock()
 
     if (_force || newStr != _timeStr) {
         _timeStr = newStr;
-        setText(_timeStr);
+        update();
     }
 }
 
@@ -264,6 +266,32 @@ bool PlainClock::showDate()
 bool PlainClock::showDayOfWeek()
 {
     return _prefs->plainShowDayOfWeek();
+}
+
+void PlainClock::paintEvent(QPaintEvent *)
+{
+    QPainter p;
+    QPixmap buf(size());
+    buf.fill(this, 0, 0);
+    p.begin(&buf);
+    p.setFont(font());
+    p.setPen(paletteForegroundColor());
+    drawContents(&p);
+    drawFrame(&p);
+    p.end();
+    p.begin(this);
+    p.drawPixmap(0, 0, buf);
+    p.end();
+}
+
+void PlainClock::drawContents(QPainter *p)
+{
+    QRect tr(0, 0, width(), height());
+    
+    if (!KickerSettings::transparent())
+        p->drawText(tr, AlignCenter, _timeStr);
+    else
+        _applet->shadowEngine()->drawText(*p, tr, AlignCenter, _timeStr, size());
 }
 
 //************************************************************
@@ -834,12 +862,22 @@ void FuzzyClock::drawContents(QPainter *p)
 
     p->setFont(_prefs->fuzzyFont());
     p->setPen(_prefs->fuzzyForegroundColor());
-    if (_applet->getOrientation() == Vertical) {
+    
+    QRect tr;
+    
+    if (_applet->getOrientation() == Vertical)
+    {
         p->rotate(90);
-        p->drawText(4, -2, height() - 8, -(width()) + 2, AlignCenter, _timeStr);
-    } else {
-        p->drawText(4, 2, width() - 8, height() - 4, AlignCenter, _timeStr);
+        tr = QRect(4, -2, height() - 8, -(width()) + 2);
     }
+    else
+        tr = QRect(4, 2, width() - 8, height() - 4);
+        
+    if (!KickerSettings::transparent())
+        p->drawText(tr, AlignCenter, _timeStr);
+    else
+        _applet->shadowEngine()->drawText(*p, tr, AlignCenter, _timeStr, size());
+    
     alreadyDrawing = false;
 }
 
@@ -872,7 +910,8 @@ ClockApplet::ClockApplet(const QString& configFile, Type t, int actions,
       _prefs(new Prefs(sharedConfig())),
       zone(new Zone(config())),
       menu(0),
-      m_tooltip(this)
+      m_tooltip(this),
+      m_shadowEngine(0)
 {
     DCOPObject::setObjId("ClockApplet");
     _prefs->readConfig();
@@ -910,6 +949,7 @@ ClockApplet::ClockApplet(const QString& configFile, Type t, int actions,
 
 ClockApplet::~ClockApplet()
 {
+    delete m_shadowEngine;
     //reverse for the moment
     KGlobal::locale()->removeCatalogue("clockapplet");
     KGlobal::locale()->removeCatalogue("timezones"); // For time zone translations
@@ -928,6 +968,16 @@ ClockApplet::~ClockApplet()
     delete menu; menu = 0;
     config()->sync();
 }
+
+
+KTextShadowEngine *ClockApplet::shadowEngine()
+{
+    if (!m_shadowEngine)
+        m_shadowEngine = new KTextShadowEngine();
+
+    return m_shadowEngine;
+}
+
 
 int ClockApplet::widthForHeight(int h) const
 {

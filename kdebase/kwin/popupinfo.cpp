@@ -25,7 +25,6 @@ License. See the file "COPYING" for the exact licensing terms.
 #include <klocale.h>
 #include <qapplication.h>
 #include <qdesktopwidget.h>
-#include <qcursor.h>
 #include <kstringhandler.h>
 #include <kglobalsettings.h>
 
@@ -34,8 +33,8 @@ License. See the file "COPYING" for the exact licensing terms.
 namespace KWinInternal
 {
 
-PopupInfo::PopupInfo( const char *name )
-    : QWidget( 0, name )
+PopupInfo::PopupInfo( Workspace* ws, const char *name )
+    : QWidget( 0, name ), workspace( ws )
     {
     m_infoString = "";
     m_shown = false;
@@ -60,7 +59,7 @@ PopupInfo::~PopupInfo()
  */
 void PopupInfo::reset()
     {
-    QRect r = KGlobalSettings::desktopGeometry(QCursor::pos());
+    QRect r = workspace->screenGeometry( workspace->activeScreen());
 
     int w = fontMetrics().width( m_infoString ) + 30;
 

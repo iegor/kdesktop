@@ -32,6 +32,8 @@
 #include <kipc.h>
 #include <kstandarddirs.h>
 
+#define BUTTON_MARGIN KDialog::spacingHint()
+
 SimpleButton::SimpleButton(QWidget *parent, const char *name)
     : QButton(parent, name),
       m_highlight(false),
@@ -70,7 +72,7 @@ QSize SimpleButton::sizeHint() const
     if (!pm)
         return QButton::sizeHint();
     else
-        return QSize(pm->width() + KDialog::spacingHint(), pm->height() + KDialog::spacingHint());
+        return QSize(pm->width() + BUTTON_MARGIN, pm->height() + BUTTON_MARGIN);
 }
 
 QSize SimpleButton::minimumSizeHint() const
@@ -107,7 +109,7 @@ void SimpleButton::drawButtonLabel( QPainter *p )
     int w = width();
     int ph = pix.height();
     int pw = pix.width();
-    int margin = KDialog::spacingHint();
+    int margin = BUTTON_MARGIN;
     QPoint origin(margin / 2, margin / 2);
 
     if (ph < (h - margin))

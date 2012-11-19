@@ -694,7 +694,7 @@ static const char def_session2[] =
 "    exec xterm -geometry 80x24-0-0\n"
 "    ;;\n"
 "  custom)\n"
-"    exec $HOME/.xsession\n"
+"    exec /bin/sh $HOME/.xsession\n"
 "    ;;\n"
 "  default)\n"
 "    exec " KDE_BINDIR "/startkde\n"
@@ -2819,7 +2819,7 @@ int main( int argc, char **argv )
 	if (!stat( "/etc/debian_version", &st )) { /* debian */
 		defminuid = "1000";
 		defmaxuid = "29999";
-	} else if (!stat( "/usr/portage", &st )) { /* gentoo */
+	} else if (!stat( "/etc/gentoo-release", &st )) { /* gentoo */
 		defminuid = "1000";
 		defmaxuid = "65000";
 	} else if (!stat( "/etc/mandrake-release", &st )) { /* mandrake - check before redhat! */

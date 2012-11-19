@@ -369,6 +369,17 @@ int Minicli::runCommand()
     cmd = uri.path();
   else
     cmd = uri.url();
+    
+  QCString asn;
+  if( qApp->desktop()->isVirtualDesktop())
+  {
+    asn = KStartupInfo::createNewStartupId();
+    KStartupInfoId id;
+    id.initId( asn );
+    KStartupInfoData data;
+    data.setXinerama( qApp->desktop()->screenNumber( this ));
+    KStartupInfo::sendChange( id, data );
+  }
 
   // Determine whether the application should be run through
   // the command line (terminal) interface...
@@ -504,7 +515,7 @@ int Minicli::runCommand()
         case KURIFilterData::HELP:
         {
           // No need for kfmclient, KRun does it all (David)
-          (void) new KRun( m_filterData->uri(), parentWidget());
+          (void) new KRun( m_filterData->uri(), parentWidget(), asn );
           return 0;
         }
         case KURIFilterData::EXECUTABLE:
@@ -516,7 +527,7 @@ int Minicli::runCommand()
             if (service && service->isValid() && service->type() == "Application")
             {
               notifyServiceStarted(service);
-              KRun::run(*service, KURL::List());
+              KRun::run(*service, KURL::List(), parentWidget(), asn );
               return 0;
             }
           }
@@ -551,7 +562,7 @@ int Minicli::runCommand()
           if (service && service->isValid() && service->type() == "Application")
           {
             notifyServiceStarted(service);
-            KRun::run(*service, KURL::List(), this);
+            KRun::run(*service, KURL::List(), parentWidget(), asn );
             return 0;
           }
 
@@ -559,7 +570,7 @@ int Minicli::runCommand()
           if (service && service->isValid() && service->type() == "Application")
           {
             notifyServiceStarted(service);
-            KRun::run(*service, KURL::List(), this);
+            KRun::run(*service, KURL::List(), parentWidget(), asn );
             return 0;
           }
 
@@ -571,7 +582,7 @@ int Minicli::runCommand()
       }
     }
 
-    if ( KRun::runCommand( cmd, exec, m_iconName ) )
+    if ( KRun::runCommand( cmd, exec, m_iconName, parentWidget(), asn ) )
       return 0;
     else
     {

@@ -330,6 +330,54 @@ void MediaManager::slotMediumChanged(const QString &/*id*/, const QString &name,
     emit mediumChanged(name);
 }
 
+QString MediaManager::unmountAllSuspend()
+{
+    QPtrList<Medium> list = m_mediaList.list();
+
+    QPtrList<Medium>::const_iterator it = list.begin();
+    QPtrList<Medium>::const_iterator end = list.end();
+
+    QString result;
+
+    for (; it!=end; ++it)
+    {
+        if ( (*it)->isMounted() && (*it)->isHotplug() )
+        {
+            QString tmp = unmount( (*it)->id() );
+            if ( !tmp.isEmpty() ) // umount failed
+                result = tmp;
+            else
+                m_suspendResumeMountList.append( (*it)->id() );
+        }
+    }
+
+    // return last error
+    return result;
+}
+
+QString MediaManager::remountAllResume()
+{
+    QString result;
+
+    for (QStringList::const_iterator it = m_suspendResumeMountList.begin();
+         it != m_suspendResumeMountList.end();
+         ++it)
+    {
+        const Medium *m = m_mediaList.findById(*it);
+
+        if ( m && m->needMounting() )
+        {
+            QString tmp = mount( *it );
+            if ( !tmp.isEmpty() ) // mount failed
+                result = tmp;
+        }
+    }
+
+    m_suspendResumeMountList.clear();
+
+    // return last error
+    return result;
+}
 
 extern "C" {
     KDE_EXPORT KDEDModule *create_mediamanager(const QCString &obj)

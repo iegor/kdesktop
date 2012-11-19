@@ -10,7 +10,7 @@ kcheckpass_SOURCES = kcheckpass.c \
 	checkpass_etcpasswd.c checkpass_pam.c checkpass_shadow.c \
 	checkpass_osfc2passwd.c checkpass_aix.c
 kcheckpass_LDADD = -lkdefakes $(PASSWDLIBS) $(LIBSOCKET)
-kcheckpass_LDFLAGS = $(KDE_USE_PIE) $(all_libraries)
+kcheckpass_LDFLAGS = $(KDE_USE_PIE) $(all_libraries) $(BINDNOW_FLAGS)
 
 noinst_HEADERS = kcheckpass.h
 

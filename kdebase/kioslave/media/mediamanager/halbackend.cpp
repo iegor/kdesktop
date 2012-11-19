@@ -451,6 +451,8 @@ void HALBackend::setVolumeProperties(Medium* medium)
         libhal_volume_get_fstype(halVolume),			/* Filesystem type */
         libhal_volume_is_mounted(halVolume) );			/* Mounted ? */
 
+    medium->setIsHotplug( libhal_drive_is_hotpluggable(halDrive) );
+
     char* name = libhal_volume_policy_compute_display_name(halDrive, halVolume, m_halStoragePolicy);
     QString volume_name = QString::fromUtf8(name);
     QString media_name = volume_name;

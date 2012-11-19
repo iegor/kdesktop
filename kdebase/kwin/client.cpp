@@ -1255,6 +1255,20 @@ bool Client::isOnCurrentDesktop() const
     return isOnDesktop( workspace()->currentDesktop());
     }
 
+int Client::screen() const
+    {
+    if( !options->xineramaEnabled )
+        return 0;
+    return workspace()->screenNumber( geometry().center());
+    }
+
+bool Client::isOnScreen( int screen ) const
+    {
+    if( !options->xineramaEnabled )
+        return screen == 0;
+    return workspace()->screenGeometry( screen ).intersects( geometry());
+    }
+
 // performs activation and/or raising of the window
 void Client::takeActivity( int flags, bool handled, allowed_t )
     {

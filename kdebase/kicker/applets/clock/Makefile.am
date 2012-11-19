@@ -1,7 +1,7 @@
 pic_DATA = lcd.png
 picdir = $(kde_datadir)/clockapplet/pics
 
-INCLUDES = -I$(top_srcdir)/kicker/libkicker $(all_includes)
+INCLUDES = -I$(top_srcdir)/kicker/libkicker -I../../libkicker $(all_includes)
 
 kde_module_LTLIBRARIES = clock_panelapplet.la
 

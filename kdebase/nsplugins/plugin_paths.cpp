@@ -55,6 +55,8 @@ QStringList getSearchPaths()
         paths.append("/usr/lib/mozilla/plugins");
         paths.append("/usr/lib64/netscape/plugins");
         paths.append("/usr/lib64/mozilla/plugins");
+        paths.append("/usr/lib/nsbrowser/plugins");
+        paths.append("/usr/lib64/nsbrowser/plugins");
         paths.append("$MOZILLA_HOME/plugins");
         config->writeEntry( "scanPaths", paths );
     }

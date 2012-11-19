@@ -360,6 +360,8 @@ void Workspace::takeActivity( Client* c, int flags, bool handled )
         return;
         }
     c->takeActivity( flags, handled, Allowed );
+    if( !c->isOnScreen( active_screen ))
+        active_screen = c->screen();
     }
 
 void Workspace::handleTakeActivity( Client* c, Time /*timestamp*/, int flags )
@@ -413,6 +415,13 @@ bool Workspace::activateNextClient( Client* c )
                 {
                 if( !(*it)->isShown( false ) || !(*it)->isOnCurrentDesktop())
                     continue;
+                if( options->separateScreenFocus )
+                    {
+                    if( c != NULL && !(*it)->isOnScreen( c->screen()))
+                        continue;
+                    if( c == NULL && !(*it)->isOnScreen( activeScreen()))
+                        continue;
+                    }
                 if( mainwindows.contains( *it ))
                     {
                     get_focus = *it;
@@ -438,6 +447,31 @@ bool Workspace::activateNextClient( Client* c )
     return true;
     }
 
+void Workspace::setCurrentScreen( int new_screen )
+    {
+    if (new_screen < 0 || new_screen > numScreens())
+        return;
+    if ( !options->focusPolicyIsReasonable())
+        return;
+    closeActivePopup();
+    Client* get_focus = NULL;
+    for( ClientList::ConstIterator it = focus_chain[currentDesktop()].fromLast();
+         it != focus_chain[currentDesktop()].end();
+         --it )
+        {
+        if( !(*it)->isShown( false ) || !(*it)->isOnCurrentDesktop())
+            continue;
+        if( !(*it)->screen() == new_screen )
+            continue;
+        get_focus = *it;
+        break;
+        }
+    if( get_focus == NULL )
+        get_focus = findDesktop( true, currentDesktop());
+    if( get_focus != NULL && get_focus != mostRecentlyActivatedClient())
+        requestFocus( get_focus );
+    active_screen = new_screen;
+    }
 
 void Workspace::gotFocusIn( const Client* c )
     {
@@ -860,6 +894,8 @@ void Client::startupIdChanged()
         desktop = asn_data.desktop();
     if( !isOnAllDesktops())
         workspace()->sendClientToDesktop( this, desktop, true );
+    if( asn_data.xinerama() != -1 )
+        workspace()->sendClientToScreen( this, asn_data.xinerama());
     Time timestamp = asn_id.timestamp();
     if( timestamp == 0 && asn_data.timestamp() != -1U )
         timestamp = asn_data.timestamp();

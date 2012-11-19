@@ -482,27 +482,33 @@ bool Client::performMouseCommand( Options::MouseCommand command, QPoint globalPo
         case Options::MouseActivateAndRaise:
             replay = isActive(); // for clickraise mode
             workspace()->takeActivity( this, ActivityFocus | ActivityRaise, handled && replay );
+            workspace()->setActiveScreenMouse( globalPos );
             break;
         case Options::MouseActivateAndLower:
             workspace()->requestFocus( this );
             workspace()->lowerClient( this );
+            workspace()->setActiveScreenMouse( globalPos );
             break;
         case Options::MouseActivate:
             replay = isActive(); // for clickraise mode
             workspace()->takeActivity( this, ActivityFocus, handled && replay );
+            workspace()->setActiveScreenMouse( globalPos );
             break;
         case Options::MouseActivateRaiseAndPassClick:
             workspace()->takeActivity( this, ActivityFocus | ActivityRaise, handled );
+            workspace()->setActiveScreenMouse( globalPos );
             replay = TRUE;
             break;
         case Options::MouseActivateAndPassClick:
             workspace()->takeActivity( this, ActivityFocus, handled );
+            workspace()->setActiveScreenMouse( globalPos );
             replay = TRUE;
             break;
         case Options::MouseActivateRaiseAndMove:
         case Options::MouseActivateRaiseAndUnrestrictedMove:
             workspace()->raiseClient( this );
             workspace()->requestFocus( this );
+            workspace()->setActiveScreenMouse( globalPos );
             if( options->moveMode == Options::Transparent && isMovable())
                 move_faked_activity = workspace()->fakeRequestedActivity( this );
         // fallthrough
@@ -707,6 +713,40 @@ void Workspace::slotWindowToDesktop( int i )
         && !c->isDock()
         && !c->isTopMenu())
             sendClientToDesktop( c, i, true );
+    }
+
+void Workspace::slotSwitchToScreen( int i )
+    {
+    setCurrentScreen( i );
+    }
+
+void Workspace::slotSwitchToNextScreen()
+    {
+    slotSwitchToScreen(( activeScreen() + 1 ) % numScreens());
+    }
+
+void Workspace::slotWindowToScreen( int i )
+    {
+    Client* c = active_popup_client ? active_popup_client : active_client;
+    if( i >= 0 && i <= numScreens() && c
+        && !c->isDesktop()
+        && !c->isDock()
+        && !c->isTopMenu())
+        {
+        sendClientToScreen( c, i );
+        }
+    }
+
+void Workspace::slotWindowToNextScreen()
+    {
+    Client* c = active_popup_client ? active_popup_client : active_client;
+    if( c
+        && !c->isDesktop()
+        && !c->isDock()
+        && !c->isTopMenu())
+        {
+        sendClientToScreen( c, ( c->screen() + 1 ) % numScreens());
+        }
     }
 
 /*!

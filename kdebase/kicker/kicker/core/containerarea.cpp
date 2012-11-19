@@ -90,15 +90,12 @@ ContainerArea::ContainerArea(KConfig* _c,
       m_addAppletDialog(0)
 {
     setBackgroundOrigin( WidgetOrigin );
-    viewport()->setBackgroundOrigin( AncestorOrigin );
 
-    m_contents = new QWidget(viewport());
-    m_contents->setBackgroundOrigin(AncestorOrigin);
+    m_contents = viewport();
     
     m_layout = new ContainerAreaLayout(m_contents);
     
-    // Install an event filter to propagate layout hints coming from
-    // m_contents.
+    // Install an event filter to propagate layout hints coming from m_contents.
     m_contents->installEventFilter(this);
 
     setBackground();

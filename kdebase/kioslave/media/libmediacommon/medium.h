@@ -82,18 +82,22 @@ public:
 	void setHalMounted(bool flag) const { m_halmounted = flag; }
 	bool halMounted() const { return m_halmounted; }
 
+    void setIsHotplug( bool state ) { m_isHotplug = state; }
+    bool isHotplug() const { return m_isHotplug; }
+
 private:
 	Medium();
 	void loadUserLabel();
 
 	QStringList m_properties;
 	mutable bool m_halmounted;
-	
+    bool m_isHotplug;
+
 friend class QValueListNode<const Medium>;
 };
 
 namespace MediaManagerUtils {
-  static inline QMap<QString,QString> splitOptions(const QStringList & options) 
+  static inline QMap<QString,QString> splitOptions(const QStringList & options)
     {
       QMap<QString,QString> valids;
 

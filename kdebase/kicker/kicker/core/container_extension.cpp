@@ -126,6 +126,7 @@ void ExtensionContainer::init()
     connect(Kicker::the()->kwinModule(), SIGNAL(currentDesktopChanged(int)),
             this, SLOT( currentDesktopChanged(int)));
 
+    setBackgroundOrigin(AncestorOrigin);
     setFrameStyle(NoFrame);
     setLineWidth(0);
     setMargin(0);
@@ -163,7 +164,7 @@ void ExtensionContainer::init()
     {
         _userHidden = static_cast<UserHidden>(tmp);
     }
-
+    
     if (m_extension)
     {
         // if we have an extension, we need to grab the extension-specific

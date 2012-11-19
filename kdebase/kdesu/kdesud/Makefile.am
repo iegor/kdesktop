@@ -6,7 +6,7 @@ KDE_CXXFLAGS = $(KDE_USE_FPIE)
 
 bin_PROGRAMS = kdesud
 kdesud_SOURCES = kdesud.cpp repo.cpp lexer.cpp handler.cpp secure.cpp 
-kdesud_LDFLAGS = $(KDE_USE_PIE) $(all_libraries) $(KDE_RPATH)
+kdesud_LDFLAGS = $(KDE_USE_PIE) $(all_libraries) $(KDE_RPATH) $(BINDNOW_FLAGS)
 kdesud_LDADD = $(LIB_KDECORE) -lkdesu $(LIBSOCKET)
 noinst_HEADERS = repo.h handler.h lexer.h secure.h
 

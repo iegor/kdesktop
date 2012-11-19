@@ -202,6 +202,8 @@ void TaskContainer::iconChanged()
         }
         return;
     }
+    
+    KickerTip::Client::updateKickerTip();
     QToolButton::update();
 }
 
@@ -1524,86 +1526,90 @@ void TaskContainer::updateKickerTip(KickerTip::Data& data)
     }
 
     QPixmap pixmap;
-    if (TaskBarSettings::showThumbnails() &&
-        m_filteredTasks.count() == 1)
-    {
-        Task::Ptr t = m_filteredTasks.first();
-
-        pixmap = t->thumbnail(TaskBarSettings::thumbnailMaxDimension());
-    }
-
-    if (pixmap.isNull() && tasks.last())
-    {
-        // try to load icon via net_wm
-        pixmap = KWin::icon(tasks.last()->window(),
-                            KIcon::SizeMedium,
-                            KIcon::SizeMedium,
-                            true);
-    }
-
-    // Collect all desktops the tasks are on. Sort naturally.
-    QMap<int, QString> desktopMap;
-    bool demandsAttention = false;
-    bool modified = false;
-    bool allDesktops = false;
-    Task::List::const_iterator itEnd = m_filteredTasks.constEnd();
-    for (Task::List::const_iterator it = m_filteredTasks.constBegin(); it != itEnd; ++it)
-    {
-        Task::Ptr t = *it;
-        if (t->demandsAttention())
-        {
-            demandsAttention = true;
-        }
-
-        if (t->isModified())
-        {
-            modified = true;
-        }
-
-        if (t->isOnAllDesktops())
-        {
-            allDesktops = true;
-            desktopMap.clear();
-        }
-        else if (!allDesktops)
-        {
-            desktopMap.insert(t->desktop(),
-                              TaskManager::the()->desktopName(t->desktop()));
-        }
-    }
-
+    QString name;
     QString details;
-
-    if (TaskBarSettings::showAllWindows() && KWin::numberOfDesktops() > 1)
+    
+    if (m_filteredTasks.count() > 0)
     {
-        if (desktopMap.isEmpty())
+        if (TaskBarSettings::showThumbnails() &&
+            m_filteredTasks.count() == 1)
         {
-            details.append(i18n("On all desktops"));
+            Task::Ptr t = m_filteredTasks.first();
+    
+            pixmap = t->thumbnail(TaskBarSettings::thumbnailMaxDimension());
         }
-        else
+    
+        if (pixmap.isNull() && tasks.count())
         {
-            QStringList desktopNames = desktopMap.values();
-            details.append(i18n("On %1").arg(QStyleSheet::escape(desktopNames.join(", "))) + "<br>");
+            // try to load icon via net_wm
+            pixmap = KWin::icon(tasks.last()->window(),
+                                KIcon::SizeMedium,
+                                KIcon::SizeMedium,
+                                true);
         }
-    }
-
-    if (demandsAttention)
-    {
-        details.append(i18n("Requesting attention") + "<br>");
-    }
-
-    QString name = this->name();
-    if (modified)
-    {
-        details.append(i18n("Has unsaved changes"));
-
-        static QString modStr = "[" + i18n( "modified" ) + "]";
-        int modStrPos = name.find(modStr);
-
-        if (modStrPos >= 0)
+    
+        // Collect all desktops the tasks are on. Sort naturally.
+        QMap<int, QString> desktopMap;
+        bool demandsAttention = false;
+        bool modified = false;
+        bool allDesktops = false;
+        Task::List::const_iterator itEnd = m_filteredTasks.constEnd();
+        for (Task::List::const_iterator it = m_filteredTasks.constBegin(); it != itEnd; ++it)
         {
-            // +1 because we include a space after the closing brace.
-            name.remove(modStrPos, modStr.length() + 1);
+            Task::Ptr t = *it;
+            if (t->demandsAttention())
+            {
+                demandsAttention = true;
+            }
+    
+            if (t->isModified())
+            {
+                modified = true;
+            }
+    
+            if (t->isOnAllDesktops())
+            {
+                allDesktops = true;
+                desktopMap.clear();
+            }
+            else if (!allDesktops)
+            {
+                desktopMap.insert(t->desktop(),
+                                TaskManager::the()->desktopName(t->desktop()));
+            }
+        }
+    
+        if (TaskBarSettings::showAllWindows() && KWin::numberOfDesktops() > 1)
+        {
+            if (desktopMap.isEmpty())
+            {
+                details.append(i18n("On all desktops"));
+            }
+            else
+            {
+                QStringList desktopNames = desktopMap.values();
+                details.append(i18n("On %1").arg(QStyleSheet::escape(desktopNames.join(", "))) + "<br>");
+            }
+        }
+    
+        if (demandsAttention)
+        {
+            details.append(i18n("Requesting attention") + "<br>");
+        }
+    
+        name = this->name();
+        if (modified)
+        {
+            details.append(i18n("Has unsaved changes"));
+    
+            static QString modStr = "[" + i18n( "modified" ) + "]";
+            int modStrPos = name.find(modStr);
+    
+            if (modStrPos >= 0)
+            {
+                // +1 because we include a space after the closing brace.
+                name.remove(modStrPos, modStr.length() + 1);
+            }
         }
     }
 

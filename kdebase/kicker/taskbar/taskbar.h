@@ -63,12 +63,11 @@ public:
 
     QImage* blendGradient(const QSize& size);
     
-    void setBackground();
-    
     KTextShadowEngine *textShadowEngine();
 
 public slots:
     void configure();
+    void setBackground();
 
 signals:
     void containerCountChanged();
@@ -98,7 +97,6 @@ protected:
     void viewportMouseReleaseEvent( QMouseEvent* );
     void viewportMouseDoubleClickEvent( QMouseEvent* );
     void viewportMouseMoveEvent( QMouseEvent* );
-    void viewportResizeEvent( QResizeEvent * );
     void wheelEvent(QWheelEvent*);
     void propagateMouseEvent( QMouseEvent* );
     void resizeEvent( QResizeEvent* );

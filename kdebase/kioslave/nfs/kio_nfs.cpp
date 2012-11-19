@@ -401,7 +401,7 @@ void NFSProtocol::openConnection()
    closeConnection();
    server_addr.sin_port = 0;
    m_sock = RPC_ANYSOCK;
-   m_client=clnttcp_create(&server_addr,MOUNTPROG, MOUNTVERS, &m_sock, 0, 0);
+   m_client=clnttcp_create(&server_addr,MOUNTPROG, MOUNTVERS, &m_sock, 2048, 1024);
    if (m_client==0)
    {
       server_addr.sin_port = 0;
@@ -488,7 +488,7 @@ void NFSProtocol::openConnection()
    //first get rid of the old one
    closeConnection();
    m_sock = RPC_ANYSOCK;
-   m_client = clnttcp_create(&server_addr,NFSPROG,NFSVERS,&m_sock,0,0);
+   m_client = clnttcp_create(&server_addr,NFSPROG,NFSVERS,&m_sock, 2048, 1024);
    if (m_client == 0)
    {
       server_addr.sin_port = 0;

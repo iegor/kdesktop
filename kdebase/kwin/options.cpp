@@ -71,6 +71,9 @@ unsigned long Options::updateSettings()
     altTabStyle = KDE; // what a default :-)
     if ( val == "CDE" )
         altTabStyle = CDE;
+        
+    separateScreenFocus = config->readBoolEntry( "SeparateScreenFocus", false );
+    activeMouseScreen = config->readBoolEntry( "ActiveMouseScreen", focusPolicy != ClickToFocus );
 
     rollOverDesktops = config->readBoolEntry("RollOverDesktops", TRUE);
     
@@ -91,9 +94,10 @@ unsigned long Options::updateSettings()
     delete gc;
 
     placement = Placement::policyFromString( config->readEntry("Placement"), true );
+    xineramaPlacementScreen = KCLAMP( config->readNumEntry( "XineramaPlacementScreen", -1 ),
+        -1, qApp->desktop()->numScreens() - 1 );
 
     animateShade = config->readBoolEntry("AnimateShade", TRUE );
-
     animateMinimize = config->readBoolEntry("AnimateMinimize", TRUE );
     animateMinimizeSpeed = config->readNumEntry("AnimateMinimizeSpeed", 5 );
 

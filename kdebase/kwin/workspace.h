@@ -91,6 +91,7 @@ class Workspace : public QObject, public KWinInterface, public KDecorationDefine
 
         QRect clientArea( clientAreaOption, const QPoint& p, int desktop ) const;
         QRect clientArea( clientAreaOption, const Client* c ) const;
+        QRect clientArea( clientAreaOption, int screen, int desktop ) const;
 
         /**
          * @internal
@@ -161,6 +162,13 @@ class Workspace : public QObject, public KWinInterface, public KDecorationDefine
          */
         int numberOfDesktops() const;
         void setNumberOfDesktops( int n );
+        
+        int activeScreen() const;
+        int numScreens() const;
+        void checkActiveScreen( const Client* c );
+        void setActiveScreenMouse( QPoint mousepos );
+        QRect screenGeometry( int screen ) const;
+        int screenNumber( QPoint pos ) const;
 
         QWidget* desktopWidget();
 
@@ -186,6 +194,7 @@ class Workspace : public QObject, public KWinInterface, public KDecorationDefine
         void sendClientToDesktop( Client* c, int desktop, bool dont_activate );
         void windowToPreviousDesktop( Client* c );
         void windowToNextDesktop( Client* c );
+        void sendClientToScreen( Client* c, int screen );
 
     // KDE4 remove me - and it's also in the DCOP interface :(
         void showWindowMenuAt( unsigned long id, int x, int y );
@@ -224,6 +233,7 @@ class Workspace : public QObject, public KWinInterface, public KDecorationDefine
         void nextDesktop();
         void previousDesktop();
         void circulateDesktopApplications();
+        void setCurrentScreen( int new_screen );
 
         QString desktopName( int desk ) const;
         virtual void setDesktopLayout(int , int , int );
@@ -301,6 +311,10 @@ class Workspace : public QObject, public KWinInterface, public KDecorationDefine
     //void slotSwitchToWindow( int );
         void slotWindowToDesktop( int );
     //void slotWindowToListPosition( int );
+        void slotSwitchToScreen( int );
+        void slotWindowToScreen( int );
+        void slotSwitchToNextScreen();
+        void slotWindowToNextScreen();
 
         void slotWindowMaximize();
         void slotWindowMaximizeVertical();
@@ -481,6 +495,7 @@ class Workspace : public QObject, public KWinInterface, public KDecorationDefine
         int current_desktop;
         int number_of_desktops;
         QMemArray<int> desktop_focus_chain;
+        int active_screen;
 
         QWidget* active_popup;
         Client* active_popup_client;

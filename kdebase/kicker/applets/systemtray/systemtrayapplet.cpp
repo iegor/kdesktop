@@ -54,6 +54,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <X11/Xlib.h>
 
+#define ICON_MARGIN 1
+
 extern "C"
 {
     KDE_EXPORT KPanelApplet* init(QWidget *parent, const QString& configFile)
@@ -459,9 +461,9 @@ void SystemTrayApplet::embedWindow( WId w, bool kde_tray )
         delete emb;
         return;
     }
-
+    
     connect(emb, SIGNAL(embeddedWindowDestroyed()), SLOT(updateTrayWindows()));
-    emb->setMinimumSize(m_iconSize, m_iconSize);
+    emb->getIconSize(m_iconSize);
 
     if (shouldHide(w))
     {
@@ -471,7 +473,7 @@ void SystemTrayApplet::embedWindow( WId w, bool kde_tray )
     }
     else
     {
-        emb->hide();
+        //emb->hide();
         emb->setBackground();
         emb->show();
         m_shownWins.append(emb);
@@ -515,7 +517,7 @@ void SystemTrayApplet::updateVisibleWins()
     {
         for (; emb != lastEmb; ++emb)
         {
-            (*emb)->hide();
+            //(*emb)->hide();
             (*emb)->setBackground();
             (*emb)->show();
         }
@@ -744,8 +746,7 @@ int SystemTrayApplet::widthForHeight(int h) const
     }
 
     int currentHeight = height();
-    int minHeight = m_iconSize + 4;
-    if (currentHeight != h && currentHeight != minHeight)
+    if (currentHeight != h)
     {
         SystemTrayApplet* me = const_cast<SystemTrayApplet*>(this);
         me->setMinimumSize(0, 0);
@@ -764,8 +765,7 @@ int SystemTrayApplet::heightForWidth(int w) const
     }
 
     int currentWidth = width();
-    int minSize = m_iconSize + 4;
-    if (currentWidth != w && currentWidth != minSize)
+    if (currentWidth != w)
     {
         SystemTrayApplet* me = const_cast<SystemTrayApplet*>(this);
         me->setMinimumSize(0, 0);
@@ -782,10 +782,8 @@ void SystemTrayApplet::moveEvent( QMoveEvent* )
 }
 
 
-void SystemTrayApplet::resizeEvent( QResizeEvent* e )
+void SystemTrayApplet::resizeEvent( QResizeEvent* )
 {
-    KPanelApplet::resizeEvent(e);
-    
     layoutTray();
     // we need to give ourselves a chance to adjust our size before calling this
     QTimer::singleShot(0, this, SIGNAL(updateLayout()));
@@ -808,7 +806,7 @@ void SystemTrayApplet::layoutTray()
     int i = 0, line, nbrOfLines, heightWidth;
     bool showExpandButton = m_expandButton && m_expandButton->isVisibleTo(this);
     delete m_layout;
-    m_layout = new QGridLayout(this, 1, 1, 2, 2);
+    m_layout = new QGridLayout(this, 1, 1, ICON_MARGIN, ICON_MARGIN);
 
     if (m_expandButton)
     {
@@ -828,18 +826,18 @@ void SystemTrayApplet::layoutTray()
 
     // 
     // The margin and spacing specified in the layout implies that:
-    // [-- 2 pixels --] [-- first icon --] [-- 2 pixels --] ... [-- 2 pixels --] [-- last icon --] [-- 2 pixels --]
+    // [-- ICON_MARGIN pixels --] [-- first icon --] [-- ICON_MARGIN pixels --] ... [-- ICON_MARGIN pixels --] [-- last icon --] [-- ICON_MARGIN pixels --]
     //
-    // So, if we say that iconWidth is the icon width plus the 2 pixels spacing, then the available width for the icons
-    // is the widget width minus 2 pixels margin. Forgetting these 2 pixels broke the layout algorithm in KDE <= 3.5.9.
+    // So, if we say that iconWidth is the icon width plus the ICON_MARGIN pixels spacing, then the available width for the icons
+    // is the widget width minus ICON_MARGIN pixels margin. Forgetting these ICON_MARGIN pixels broke the layout algorithm in KDE <= 3.5.9.
     //
-    // This fix makes the workaround in the heightForWidth() and widthForHeight() methods unneeded.
+    // This fix makes the workarounds in the heightForWidth() and widthForHeight() methods unneeded.
     //
 
     if (orientation() == Vertical)
     {
-        int iconWidth = maxIconWidth() + 2; // +2 for the margins that implied by the layout
-        heightWidth = width() - 2;
+        int iconWidth = maxIconWidth() + ICON_MARGIN; // +2 for the margins that implied by the layout
+        heightWidth = width() - ICON_MARGIN;
         // to avoid nbrOfLines=0 we ensure heightWidth >= iconWidth!
         heightWidth = heightWidth < iconWidth ? iconWidth : heightWidth;
         nbrOfLines = heightWidth / iconWidth;
@@ -860,12 +858,12 @@ void SystemTrayApplet::layoutTray()
                  emb != lastEmb; ++emb)
             {
                 line = i % nbrOfLines;
-                (*emb)->hide();
+                //(*emb)->hide();
                 (*emb)->show();
                 m_layout->addWidget(*emb, col, line,
                                     Qt::AlignHCenter | Qt::AlignVCenter);
 
-                if (line + 1 == nbrOfLines)
+                if ((line + 1) == nbrOfLines)
                 {
                     ++col;
                 }
@@ -879,12 +877,12 @@ void SystemTrayApplet::layoutTray()
              emb != lastEmb; ++emb)
         {
             line = i % nbrOfLines;
-            (*emb)->hide();
+            //(*emb)->hide();
             (*emb)->show();
             m_layout->addWidget(*emb, col, line,
                                 Qt::AlignHCenter | Qt::AlignVCenter);
 
-            if (line + 1 == nbrOfLines)
+            if ((line + 1) == nbrOfLines)
             {
                 ++col;
             }
@@ -894,8 +892,8 @@ void SystemTrayApplet::layoutTray()
     }
     else // horizontal
     {
-        int iconHeight = maxIconHeight() + 2; // +2 for the margins that implied by the layout
-        heightWidth = height() - 2;
+        int iconHeight = maxIconHeight() + ICON_MARGIN; // +2 for the margins that implied by the layout
+        heightWidth = height() - ICON_MARGIN;
         heightWidth = heightWidth < iconHeight ? iconHeight : heightWidth; // to avoid nbrOfLines=0
         nbrOfLines = heightWidth / iconHeight;
 
@@ -914,12 +912,12 @@ void SystemTrayApplet::layoutTray()
             for (TrayEmbedList::const_iterator emb = m_hiddenWins.begin(); emb != lastEmb; ++emb)
             {
                 line = i % nbrOfLines;
-                (*emb)->hide();
+                //(*emb)->hide();
                 (*emb)->show();
                 m_layout->addWidget(*emb, line, col,
                                     Qt::AlignHCenter | Qt::AlignVCenter);
 
-                if (line + 1 == nbrOfLines)
+                if ((line + 1) == nbrOfLines)
                 {
                     ++col;
                 }
@@ -933,12 +931,12 @@ void SystemTrayApplet::layoutTray()
              emb != lastEmb; ++emb)
         {
             line = i % nbrOfLines;
-            (*emb)->hide();
+            //(*emb)->hide();
             (*emb)->show();
             m_layout->addWidget(*emb, line, col,
                                 Qt::AlignHCenter | Qt::AlignVCenter);
 
-            if (line + 1 == nbrOfLines)
+            if ((line + 1) == nbrOfLines)
             {
                 ++col;
             }
@@ -975,6 +973,21 @@ TrayEmbed::TrayEmbed( bool kdeTray, QWidget* parent )
     : QXEmbed( parent ), kde_tray( kdeTray )
 {
     hide();
+}
+
+void TrayEmbed::getIconSize(int defaultIconSize)
+{
+    QSize minSize = minimumSizeHint();
+    
+    int width = minSize.width();
+    int height = minSize.height();
+    
+    if (width < 1 || width > defaultIconSize)
+        width = defaultIconSize;
+    if (height < 1 || height > defaultIconSize)
+        height = defaultIconSize;
+    
+    setFixedSize(width, height);
     setBackground();
 }
 
@@ -994,9 +1007,7 @@ void TrayEmbed::setBackground()
     
     if (!isHidden())
     {
-        hide(); 
-        show();
+        XClearArea(x11Display(), embeddedWinId(), 0, 0, 0, 0, True);
     }
-    //XClearArea(x11Display(), embeddedWinId(), 0, 0, 0, 0, True);
 }
 

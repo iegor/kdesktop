@@ -42,6 +42,7 @@ Medium::Medium(const QString &id, const QString &name)
 	loadUserLabel();
 
 	m_halmounted = false;
+    m_isHotplug = false;
 }
 
 Medium::Medium()
@@ -59,8 +60,9 @@ Medium::Medium()
 	m_properties+= QString::null; /* BASE_URL */
 	m_properties+= QString::null; /* MIME_TYPE */
 	m_properties+= QString::null; /* ICON_NAME */
-	
+
 	m_halmounted = false;
+    m_isHotplug = false;
 }
 
 const Medium Medium::create(const QStringList &properties)

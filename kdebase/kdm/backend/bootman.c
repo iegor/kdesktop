@@ -82,7 +82,7 @@ getGrub( char ***opts, int *def, int *cur )
 	int len;
 	char line[1000];
 
-	if (!grub && !(grub = locate( "grub" )))
+	if (!grub && !(grub = locate( "grub-set-default" )))
 		return BO_NOMAN;
 
 	*def = 0;
@@ -132,19 +132,14 @@ setGrub( const char *opt, SdRec *sdr )
 static void
 commitGrub( void )
 {
-	FILE *f;
-	int pid;
-	static const char *args[] = { 0, "--batch", "--no-floppy", 0 };
+	char command[256];
 
 	if (sdRec.bmstamp != mTime( GRUB_MENU ) &&
 	    setGrub( sdRec.osname, &sdRec ) != BO_OK)
 		return;
 
-	args[0] = grub;
-	if ((f = pOpen( (char **)args, 'w', &pid ))) {
-		fprintf( f, "savedefault --default=%d --once\n", sdRec.osindex );
-		pClose( f, pid );
-	}
+	sprintf(command, "%s %d", grub, sdRec.osindex);
+	system(command);
 }
 
 static char *lilo;

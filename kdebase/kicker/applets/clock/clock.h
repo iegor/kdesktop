@@ -41,6 +41,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <kickertip.h>
 #include "settings.h"
+#include "kshadowengine.h"
 
 class QTimer;
 class QBoxLayout;
@@ -152,6 +153,9 @@ class PlainClock : public QLabel, public ClockWidget
         bool showDayOfWeek();
     
     protected:
+        void paintEvent(QPaintEvent *e);
+        void drawContents(QPainter *p);
+    
         QString _timeStr;
 };
 
@@ -279,6 +283,8 @@ class ClockApplet : public KPanelApplet, public KickerTip::Client, public DCOPOb
         QDate clockGetDate();
 
         virtual void updateKickerTip(KickerTip::Data&);
+    
+        KTextShadowEngine *shadowEngine();
 
     k_dcop:
         void reconfigure();
@@ -335,6 +341,7 @@ class ClockApplet : public KPanelApplet, public KickerTip::Client, public DCOPOb
         QStringList _remotezonelist;
         KPopupMenu* menu;
         ClockAppletToolTip m_tooltip;
+        KTextShadowEngine *m_shadowEngine;
 };
 
 

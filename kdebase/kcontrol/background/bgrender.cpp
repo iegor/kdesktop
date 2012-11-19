@@ -1163,9 +1163,8 @@ void KVirtualBGRenderer::desktopResized()
         m_pPixmap = new QPixmap(m_size);
         m_pPixmap->fill(Qt::black);
     }
-    
-    for (unsigned i=0; i<m_numRenderers; ++i)
-        m_renderer[i]->desktopResized();
+
+    initRenderers();    
 }
 
 

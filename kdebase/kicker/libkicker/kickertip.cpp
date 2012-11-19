@@ -128,8 +128,10 @@ void KickerTip::display()
     // Tickle the information out of the bastard.
     client->updateKickerTip(data);
 
+    // Hide the tip if there is nothing to show
     if (data.message.isEmpty() && data.subtext.isEmpty() && data.icon.isNull())
     {
+        hide();
         return;
     }
 
@@ -137,7 +139,7 @@ void KickerTip::display()
     m_richText = new QSimpleRichText("<qt><h3>" + data.message + "</h3><p>" +
                                      data.subtext + "</p></qt>", font(), QString::null, 0,
                                      m_mimeFactory);
-    m_richText->setWidth(400);
+    m_richText->setWidth(640);
     m_direction = data.direction;
 
     if (KickerSettings::mouseOversShowIcon())
@@ -193,9 +195,79 @@ void KickerTip::paintEvent(QPaintEvent * e)
 void KickerTip::mousePressEvent(QMouseEvent * /*e*/)
 {
     QToolTip::setGloballyEnabled(m_toolTipsEnabled);
-    m_timer.stop();
-    m_frameTimer.stop();
     hide();
+}
+
+static void drawRoundRect(QPainter &p, const QRect &r)
+{
+    static int line[8] = { 1, 3, 4, 5, 6, 7, 7, 8 };
+    static int border[8] = { 1, 2, 1, 1, 1, 1, 1, 1 };
+    int xl, xr, y1, y2;
+    QPen pen = p.pen();
+    bool drawBorder = pen.style() != QPen::NoPen;
+    
+    if (r.width() < 16 || r.height() < 16)
+    {
+        p.drawRect(r);
+        return;
+    }
+    
+    p.fillRect(r.x(), r.y() + 8, r.width(), r.height() - 16, p.brush());
+    p.fillRect(r.x() + 8, r.y(), r.width() - 16, r.height(), p.brush());
+    
+    p.setPen(p.brush().color());
+        
+    for (int i = 0; i < 8; i++)
+    {
+        xl = i;
+        xr = r.width() - i - 1;
+        y1 = 7;
+        y2 = 7 - (line[i] - 1);
+        
+        p.drawLine(xl, y1, xl, y2);
+        p.drawLine(xr, y1, xr, y2);
+        
+        y1 = r.height() - y1 - 1;
+        y2 = r.height() - y2 - 1;
+        
+        p.drawLine(xl, y1, xl, y2);
+        p.drawLine(xr, y1, xr, y2);
+        
+    }
+    
+    if (drawBorder)
+    {
+        p.setPen(pen);
+        
+        if (r.height() > 16)
+        {
+            p.drawLine(r.x(), r.y() + 8, r.x(), r.y() + r.height() - 9);
+            p.drawLine(r.x() + r.width() - 1, r.y() + 8, r.x() + r.width() - 1, r.y() + r.height() - 9);
+        }
+        if (r.width() > 16)
+        {
+            p.drawLine(r.x() + 8, r.y(), r.x() + r.width() - 9, r.y());
+            p.drawLine(r.x() + 8, r.y() + r.height() - 1, r.x() + r.width() - 9, r.y() + r.height() - 1);
+        }
+    
+        for (int i = 0; i < 8; i++)
+        {
+            xl = i;
+            xr = r.width() - i - 1;
+            y2 = 7 - (line[i] - 1);
+            y1 = y2 + (border[i] - 1);
+            
+            p.drawLine(xl, y1, xl, y2);
+            p.drawLine(xr, y1, xr, y2);
+            
+            y1 = r.height() - y1 - 1;
+            y2 = r.height() - y2 - 1;
+            
+            p.drawLine(xl, y1, xl, y2);
+            p.drawLine(xr, y1, xr, y2);
+            
+        }
+    }
 }
 
 void KickerTip::plainMask()
@@ -205,9 +277,9 @@ void KickerTip::plainMask()
     m_mask.fill(Qt::black);
 
     maskPainter.setBrush(Qt::white);
-    maskPainter.setPen(Qt::white);
-    maskPainter.drawRoundRect(m_mask.rect(), 1600 / m_mask.rect().width(),
-                              1600 / m_mask.rect().height());
+    maskPainter.setPen(Qt::NoPen);
+    //maskPainter.drawRoundRect(m_mask.rect(), 1600 / m_mask.rect().width(), 1600 / m_mask.rect().height());
+    drawRoundRect(maskPainter, m_mask.rect());
     setMask(m_mask);
     m_frameTimer.stop();
 }
@@ -219,9 +291,9 @@ void KickerTip::dissolveMask()
     m_mask.fill(Qt::black);
 
     maskPainter.setBrush(Qt::white);
-    maskPainter.setPen(Qt::white);
-    maskPainter.drawRoundRect(m_mask.rect(), 1600 / m_mask.rect().width(),
-                              1600 / m_mask.rect().height());
+    maskPainter.setPen(Qt::NoPen);
+    //maskPainter.drawRoundRect(m_mask.rect(), 1600 / m_mask.rect().width(), 1600 / m_mask.rect().height());
+    drawRoundRect(maskPainter, m_mask.rect());
 
     m_dissolveSize += m_dissolveDelta;
 
@@ -235,7 +307,7 @@ void KickerTip::dissolveMask()
         for (y = 0; y < height() + size; y += size)
         {
             x = width();
-            s = m_dissolveSize * x / 128;
+            s = 4 * m_dissolveSize * x / 128;
             for (; x > -size; x -= size, s -= 2)
             {
                 if (s < 0)
@@ -311,10 +383,10 @@ void KickerTip::displayInternal()
 
     // draw background
     QPainter bufferPainter(&m_pixmap);
-    bufferPainter.setPen(Qt::black);
+    bufferPainter.setPen(colorGroup().foreground());
     bufferPainter.setBrush(colorGroup().background());
-    bufferPainter.drawRoundRect(0, 0, width, height,
-                                1600 / width, 1600 / height);
+    //bufferPainter.drawRoundRect(0, 0, width, height, 1600 / width, 1600 / height);
+    drawRoundRect(bufferPainter, QRect(0, 0, width, height));
 
     // draw icon if present
     if (!m_icon.isNull())
@@ -331,11 +403,11 @@ void KickerTip::displayInternal()
         QColorGroup cg = colorGroup();
         cg.setColor(QColorGroup::Text, cg.background().dark(115));
         int shadowOffset = QApplication::reverseLayout() ? -1 : 1;
-        m_richText->draw(&bufferPainter, 5 + textX + shadowOffset, textY + 1, QRect(), cg);
+        m_richText->draw(&bufferPainter, textX + shadowOffset, textY + 1, QRect(), cg);
 
         // draw text
         cg = colorGroup();
-        m_richText->draw(&bufferPainter, 5 + textX, textY, rect(), cg);
+        m_richText->draw(&bufferPainter, textX, textY, rect(), cg);
     }
 }
 
@@ -359,11 +431,7 @@ void KickerTip::tipFor(const QWidget* w)
 void KickerTip::untipFor(const QWidget* w)
 {
     if (isTippingFor(w))
-    {
-        tipFor(0);
-        m_timer.stop();
         hide();
-    }
 }
 
 bool KickerTip::isTippingFor(const QWidget* w) const
@@ -408,7 +476,8 @@ bool KickerTip::tippingEnabled()
 
 void KickerTip::hide()
 {
-    m_tippingFor = 0;
+    tipFor(0);
+    m_timer.stop();
     m_frameTimer.stop();
     QWidget::hide();
 }
@@ -476,8 +545,6 @@ bool KickerTip::eventFilter(QObject *object, QEvent *event)
             break;
         case QEvent::MouseButtonPress:
             QToolTip::setGloballyEnabled(m_toolTipsEnabled);
-            m_timer.stop();
-            m_frameTimer.stop();
             hide();
         default:
             break;

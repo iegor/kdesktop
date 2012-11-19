@@ -8,7 +8,7 @@ use Getopt::Long;
 use open IO => ':utf8';
 use open ':std';
 
-my $htsearchpath="/srv/www/cgi-bin/htsearch";
+my $htsearchpath="/usr/bin/htsearch";
 
 my $config;
 my $format;

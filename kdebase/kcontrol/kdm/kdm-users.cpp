@@ -53,7 +53,7 @@ KDMUsersWidget::KDMUsersWidget(QWidget *parent, const char *name)
     if (!stat( "/etc/debian_version", &st )) {	/* debian */
 	defminuid = "1000";
 	defmaxuid = "29999";
-    } else if (!stat( "/usr/portage", &st )) {	/* gentoo */
+    } else if (!stat( "/etc/gentoo-release", &st )) {	/* gentoo */
 	defminuid = "1000";
 	defmaxuid = "65000";
     } else if (!stat( "/etc/mandrake-release", &st )) {	/* mandrake - check before redhat! */

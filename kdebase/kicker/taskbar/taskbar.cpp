@@ -61,8 +61,6 @@ TaskBar::TaskBar( QWidget *parent, const char *name )
       m_textShadowEngine(0),
       m_ignoreUpdates(false)
 {
-    setFrameStyle( NoFrame );
-
     arrowType = LeftArrow;
     blocklayout = true;
     
@@ -80,6 +78,8 @@ TaskBar::TaskBar( QWidget *parent, const char *name )
 
     connect(&m_relayoutTimer, SIGNAL(timeout()),
             this, SLOT(reLayout()));
+
+		connect(this, SIGNAL(contentsMoving(int, int)), SLOT(setBackground()));
 
     // connect manager
     connect(TaskManager::the(), SIGNAL(taskAdded(Task::Ptr)),
@@ -648,7 +648,7 @@ void TaskBar::reLayoutEventually()
 
     if (!blocklayout && !m_ignoreUpdates)
     {
-        m_relayoutTimer.start(100, true);
+        m_relayoutTimer.start(25, true);
     }
 }
 
@@ -815,24 +815,16 @@ void TaskBar::reLayout()
     QTimer::singleShot(100, this, SLOT(publishIconGeometry()));
 }
 
-void TaskBar::viewportResizeEvent( QResizeEvent* e )
-{
-    Panner::viewportResizeEvent(e);
-    setViewportBackground();
-}
-
 void TaskBar::setViewportBackground()
 {
     const QPixmap *bg = parentWidget()->backgroundPixmap();
-    
-    viewport()->unsetPalette();
     
     if (bg)
     {
         QPixmap pm(parentWidget()->size());
         pm.fill(parentWidget(), pos() + viewport()->pos());
         viewport()->setPaletteBackgroundPixmap(pm);
-        viewport()->setBackgroundOrigin( WidgetOrigin );
+        viewport()->setBackgroundOrigin(WidgetOrigin);
     }
     else
         viewport()->setPaletteBackgroundColor(paletteBackgroundColor());

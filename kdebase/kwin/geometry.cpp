@@ -211,14 +211,11 @@ void Workspace::updateClientArea()
 
   \sa geometry()
  */
-QRect Workspace::clientArea( clientAreaOption opt, const QPoint& p, int desktop ) const
+QRect Workspace::clientArea( clientAreaOption opt, int screen, int desktop ) const
     {
     if( desktop == NETWinInfo::OnAllDesktops || desktop == 0 )
         desktop = currentDesktop();
     QDesktopWidget *desktopwidget = KApplication::desktop();
-    int screen = desktopwidget->isVirtualDesktop() ? desktopwidget->screenNumber( p ) : desktopwidget->primaryScreen();
-    if( screen < 0 )
-        screen = desktopwidget->primaryScreen();
     QRect sarea = screenarea // may be NULL during KWin initialization
         ? screenarea[ desktop ][ screen ]
         : desktopwidget->screenGeometry( screen );
@@ -263,10 +260,20 @@ QRect Workspace::clientArea( clientAreaOption opt, const QPoint& p, int desktop 
     return QRect();
     }
 
+QRect Workspace::clientArea( clientAreaOption opt, const QPoint& p, int desktop ) const
+    {
+    QDesktopWidget *desktopwidget = KApplication::desktop();
+    int screen = desktopwidget->screenNumber( p );
+    if( screen < 0 )
+        screen = desktopwidget->primaryScreen();
+    return clientArea( opt, screen, desktop );
+    }
+
 QRect Workspace::clientArea( clientAreaOption opt, const Client* c ) const
     {
     return clientArea( opt, c->geometry().center(), c->desktop());
     }
+
 
 /*!
   Client \a c is moved around to position \a pos. This gives the
@@ -896,10 +903,6 @@ void Client::checkWorkspacePosition()
             setGeometry( area );
         return;
         }
-    if( maximizeMode() != MaximizeRestore )
-	// TODO update geom_restore?
-        changeMaximize( false, false, true ); // adjust size
-
     if( isFullScreen())
         {
         QRect area = workspace()->clientArea( FullScreenArea, this );
@@ -925,6 +928,10 @@ void Client::checkWorkspacePosition()
             }
         return;
         }
+
+    if( maximizeMode() != MaximizeRestore )
+	// TODO update geom_restore?
+        changeMaximize( false, false, true ); // adjust size
 
     if( !isShade()) // TODO
         {
@@ -1722,6 +1729,7 @@ void Client::setGeometry( int x, int y, int w, int h, ForceGeometry_t force )
     sendSyntheticConfigureNotify();
     updateWindowRules();
     checkMaximizeGeometry();
+    workspace()->checkActiveScreen( this );
     }
 
 void Client::plainResize( int w, int h, ForceGeometry_t force )
@@ -1775,6 +1783,7 @@ void Client::plainResize( int w, int h, ForceGeometry_t force )
     sendSyntheticConfigureNotify();
     updateWindowRules();
     checkMaximizeGeometry();
+    workspace()->checkActiveScreen( this );
     }
 
 /*!
@@ -1795,6 +1804,7 @@ void Client::move( int x, int y, ForceGeometry_t force )
     sendSyntheticConfigureNotify();
     updateWindowRules();
     checkMaximizeGeometry();
+    workspace()->checkActiveScreen( this );
     }
 
 

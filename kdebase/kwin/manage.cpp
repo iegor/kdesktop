@@ -166,7 +166,7 @@ bool Client::manage( Window w, bool isMapped )
                  it != mainclients.end();
                  ++it )
                 {
-                if( (*it)->isSpecialWindow())
+                if( mainclients.count() > 1 && (*it)->isSpecialWindow())
                     continue; // don't consider toolbars etc when placing
                 maincl = *it;
                 if( (*it)->isOnCurrentDesktop())
@@ -202,9 +202,14 @@ bool Client::manage( Window w, bool isMapped )
     if( isMapped || session )
         area = workspace()->clientArea( FullArea, geom.center(), desktop());
     else if( options->xineramaPlacementEnabled )
-        area = workspace()->clientArea( PlacementArea, QCursor::pos(), desktop());
+        {
+        int screen = options->xineramaPlacementScreen;
+        if( screen == -1 ) // active screen
+            screen = asn_data.xinerama() == -1 ? workspace()->activeScreen() : asn_data.xinerama();
+        area = workspace()->clientArea( PlacementArea, workspace()->screenGeometry( screen ).center(), desktop());
+        }
     else
-        area = workspace()->clientArea( PlacementArea, geom.center(), desktop());
+        area = workspace()->clientArea( PlacementArea, QCursor::pos(), desktop());
 
     if( int type = checkFullScreenHack( geom ))
         {

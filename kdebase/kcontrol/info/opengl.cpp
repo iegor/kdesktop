@@ -608,7 +608,6 @@ static QListViewItem *get_gl_info(Display *dpy, int scrnum, Bool allowDirect,QLi
    }
    else {
       kdDebug() << "Error: glXMakeCurrent failed\n";
-      glXDestroyContext(dpy, ctx);
    }
 
    glXDestroyContext(dpy, ctx);

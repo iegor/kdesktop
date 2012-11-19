@@ -118,6 +118,7 @@ public:
     TrayEmbed( bool kdeTray, QWidget* parent = NULL );
     bool kdeTray() const { return kde_tray; }
     void setBackground();
+    void getIconSize(int defaultIconSize);
 private:
     bool kde_tray;
 };

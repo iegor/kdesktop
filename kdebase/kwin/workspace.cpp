@@ -71,6 +71,7 @@ Workspace::Workspace( bool restore )
     QObject           (0, "workspace"),
     current_desktop   (0),
     number_of_desktops(0),
+    active_screen     (0),
     active_popup( NULL ),
     active_popup_client( NULL ),
     desktop_widget    (0),
@@ -191,7 +192,7 @@ Workspace::Workspace( bool restore )
     client_keys = new KGlobalAccel( this );
     initShortcuts();
     tab_box = new TabBox( this );
-    popupinfo = new PopupInfo( );
+    popupinfo = new PopupInfo( this );
 
     init();
 
@@ -290,6 +291,7 @@ void Workspace::init()
         NET::WM2ExtendedStrut |
         NET::WM2KDETemporaryRules |
         NET::WM2ShowingDesktop |
+         NET::WM2FullPlacement |
         NET::WM2DesktopLayout |
         0
         ,
@@ -1521,6 +1523,80 @@ void Workspace::sendClientToDesktop( Client* c, int desk, bool dont_activate )
          ++it )
         sendClientToDesktop( *it, desk, dont_activate );
     updateClientArea();
+    }
+
+int Workspace::numScreens() const
+    {
+    if( !options->xineramaEnabled )
+        return 0;
+    return qApp->desktop()->numScreens();
+    }
+
+int Workspace::activeScreen() const
+    {
+    if( !options->xineramaEnabled )
+        return 1;
+    if( !options->activeMouseScreen )
+        {
+        if( activeClient() != NULL && !activeClient()->isOnScreen( active_screen ))
+            return qApp->desktop()->screenNumber( activeClient()->geometry().center());
+        return active_screen;
+        }
+    return qApp->desktop()->screenNumber( QCursor::pos());
+    }
+
+// check whether a client moved completely out of what's considered the active screen,
+// if yes, set a new active screen
+void Workspace::checkActiveScreen( const Client* c )
+    {
+    if( !options->xineramaEnabled )
+        return;
+    if( !c->isActive())
+        return;
+    if( !c->isOnScreen( active_screen ))
+        active_screen = c->screen();
+    }
+
+// called e.g. when a user clicks on a window, set active screen to be the screen
+// where the click occured
+void Workspace::setActiveScreenMouse( QPoint mousepos )
+    {
+    if( !options->xineramaEnabled )
+        return;
+    active_screen = qApp->desktop()->screenNumber( mousepos );
+    }
+
+QRect Workspace::screenGeometry( int screen ) const
+    {
+    if( !options->xineramaEnabled )
+        return qApp->desktop()->geometry();
+    return qApp->desktop()->screenGeometry( screen );
+    }
+
+int Workspace::screenNumber( QPoint pos ) const
+    {
+    if( !options->xineramaEnabled )
+        return 0;
+    return qApp->desktop()->screenNumber( pos );
+    }
+
+void Workspace::sendClientToScreen( Client* c, int screen )
+    {
+    if( c->screen() == screen ) // don't use isOnScreen(), that's true even when only partially
+        return;
+    GeometryUpdatesPostponer blocker( c );
+    QRect old_sarea = clientArea( MaximizeArea, c );
+    QRect sarea = clientArea( MaximizeArea, screen, c->desktop());
+    c->setGeometry( sarea.x() - old_sarea.x() + c->x(), sarea.y() - old_sarea.y() + c->y(),
+        c->size().width(), c->size().height());
+    c->checkWorkspacePosition();
+    ClientList transients_stacking_order = ensureStackingOrder( c->transients());
+    for( ClientList::ConstIterator it = transients_stacking_order.begin();
+         it != transients_stacking_order.end();
+         ++it )
+        sendClientToScreen( *it, screen );
+    if( c->isActive())
+        active_screen = screen;
     }
 
 void Workspace::setDesktopLayout( int, int, int )

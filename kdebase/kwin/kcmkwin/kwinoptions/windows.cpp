@@ -76,6 +76,8 @@
 #define KWIN_SHADEHOVER_INTERVAL   "ShadeHoverInterval"
 #define KWIN_FOCUS_STEALING        "FocusStealingPreventionLevel"
 #define KWIN_HIDE_UTILITY          "HideUtilityWindowsForInactive"
+#define KWIN_SEPARATE_SCREEN_FOCUS "SeparateScreenFocus"
+#define KWIN_ACTIVE_MOUSE_SCREEN   "ActiveMouseScreen"
 
 // kwm config keywords
 #define KWM_ELECTRIC_BORDER                  "ElectricBorders"
@@ -209,6 +211,27 @@ KFocusConfig::KFocusConfig (bool _standAlone, KConfig *_config, QWidget * parent
     QWhatsThis::add( delayFocus, i18n("This is the delay after which the window the mouse pointer is over"
                                        " will automatically receive focus.") );
 
+    separateScreenFocus = new QCheckBox( i18n( "S&eparate screen focus" ), fcsBox );
+    fLay->addWidget( separateScreenFocus );
+    wtstr = i18n( "When this option is enabled, focus operations are limited only to the active Xinerama screen" );
+    QWhatsThis::add( separateScreenFocus, wtstr );
+
+    activeMouseScreen = new QCheckBox( i18n( "Active &mouse screen" ), fcsBox );
+    fLay->addWidget( activeMouseScreen );
+    wtstr = i18n( "When this option is enabled, active Xinerama screen (where for example new windows appear)"
+                  " is the screen with the mouse pointer. When disabled, the active Xinerama screen is the screen"
+                  " with the focused window. This option is by default disabled for Click to focus and"
+                  " enabled for other focus policies." );
+    QWhatsThis::add( activeMouseScreen, wtstr );
+    connect(focusCombo, SIGNAL(activated(int)), this, SLOT(updateActiveMouseScreen()));
+
+    if (!QApplication::desktop()->isVirtualDesktop() ||
+        QApplication::desktop()->numScreens() == 1) // No Ximerama 
+    {
+        separateScreenFocus->hide();
+        activeMouseScreen->hide();
+    }
+
     lay->addWidget(fcsBox);
 
     kbdBox = new QButtonGroup(i18n("Navigation"), this);
@@ -260,6 +283,8 @@ KFocusConfig::KFocusConfig (bool _standAlone, KConfig *_config, QWidget * parent
     connect(fcsBox, SIGNAL(clicked(int)), SLOT(changed()));
     connect(autoRaise, SIGNAL(valueChanged(int)), SLOT(changed()));
     connect(delayFocus, SIGNAL(valueChanged(int)), SLOT(changed()));
+    connect(separateScreenFocus, SIGNAL(clicked()), SLOT(changed()));
+    connect(activeMouseScreen, SIGNAL(clicked()), SLOT(changed()));
     connect(altTabPopup, SIGNAL(clicked()), SLOT(changed()));
     connect(traverseAll, SIGNAL(clicked()), SLOT(changed()));
     connect(rollOverDesktops, SIGNAL(clicked()), SLOT(changed()));
@@ -366,6 +391,22 @@ void KFocusConfig::delayFocusOnTog(bool a) {
 void KFocusConfig::clickRaiseOnTog(bool ) {
 }
 
+void KFocusConfig::setSeparateScreenFocus(bool s) {
+    separateScreenFocus->setChecked(s);
+}
+
+void KFocusConfig::setActiveMouseScreen(bool a) {
+    activeMouseScreen->setChecked(a);
+}
+
+void KFocusConfig::updateActiveMouseScreen()
+{
+    // on by default for non click to focus policies
+    KConfigGroup cfg( config, "Windows" );
+    if( !cfg.hasKey( KWIN_ACTIVE_MOUSE_SCREEN ))
+        setActiveMouseScreen( focusCombo->currentItem() != 0 );
+}
+
 void KFocusConfig::setAltTabMode(bool a) {
     altTabPopup->setChecked(a);
 }
@@ -412,6 +453,10 @@ void KFocusConfig::load( void )
     setClickRaise(key != "off");
     setAutoRaiseEnabled();      // this will disable/hide the auto raise delay widget if focus==click
     setDelayFocusEnabled();
+    
+    setSeparateScreenFocus( config->readBoolEntry(KWIN_SEPARATE_SCREEN_FOCUS, false));
+    // on by default for non click to focus policies
+    setActiveMouseScreen( config->readBoolEntry(KWIN_ACTIVE_MOUSE_SCREEN, focusCombo->currentItem() != 0 ));
 
     key = config->readEntry(KWIN_ALTTABMODE, "KDE");
     setAltTabMode(key == "KDE");
@@ -467,6 +512,9 @@ void KFocusConfig::save( void )
     else
         config->writeEntry(KWIN_CLICKRAISE, "off");
 
+    config->writeEntry(KWIN_SEPARATE_SCREEN_FOCUS, separateScreenFocus->isChecked());
+    config->writeEntry(KWIN_ACTIVE_MOUSE_SCREEN, activeMouseScreen->isChecked());
+
     if (altTabPopup->isChecked())
         config->writeEntry(KWIN_ALTTABMODE, "KDE");
     else
@@ -500,6 +548,9 @@ void KFocusConfig::defaults()
     setAutoRaise(false);
     setDelayFocus(false);
     setClickRaise(true);
+    setSeparateScreenFocus( false );
+    // on by default for non click to focus policies
+    setActiveMouseScreen( focusCombo->currentItem() != 0 );
     setAltTabMode(true);
     setTraverseAll( false );
     setRollOverDesktops(true);

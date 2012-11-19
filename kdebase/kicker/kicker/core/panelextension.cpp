@@ -74,7 +74,6 @@ PanelExtension::PanelExtension(const QString& configFile, QWidget *parent, const
     connect(_containerArea, SIGNAL(maintainFocus(bool)), this, SIGNAL(maintainFocus(bool)));
     _layout->addWidget(_containerArea);
 
-    _containerArea->setFrameStyle(QFrame::NoFrame);
     _containerArea->viewport()->installEventFilter(this);
     _containerArea->configure();
 

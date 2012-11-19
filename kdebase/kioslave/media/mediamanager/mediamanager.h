@@ -58,6 +58,20 @@ k_dcop:
 	bool removableUnplug(const QString &devNode);
 	bool removableCamera(const QString &devNode);
 
+        /**
+         * Unmount manually all partitions when going to suspend
+         *
+         * @return last error if any
+         */
+        QString unmountAllSuspend();
+
+        /**
+         * Remount previously unmounted partitions in unmountAllSuspend()
+         *
+         * @return last error if any
+         */
+        QString remountAllResume();
+
 k_dcop_signals:
 	void mediumAdded(const QString &name, bool allowNotification);
 	void mediumRemoved(const QString &name, bool allowNotification);
@@ -70,7 +84,7 @@ k_dcop_signals:
 
 private slots:
 	void loadBackends();
-	
+
 	void slotMediumAdded(const QString &id, const QString &name,
 	                     bool allowNotification);
 	void slotMediumRemoved(const QString &id, const QString &name,
@@ -85,6 +99,7 @@ private:
 	HALBackend *m_halbackend;
 	MediaDirNotify m_dirNotify;
 	FstabBackend *m_fstabbackend;
+        QStringList m_suspendResumeMountList;
 };
 
 #endif

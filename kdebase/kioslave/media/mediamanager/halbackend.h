@@ -86,6 +86,8 @@ public:
 	QString mount(const Medium *medium);
 	QString unmount(const QString &id);
 
+    static bool isHotplug( const QString & id );
+
 private:
 	/**
 	* Append a device in the media list. This function will check if the device
