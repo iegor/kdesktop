@@ -132,6 +132,7 @@ Time to start a requirement list.
 #include <ktip.h>
 #include <kprocctrl.h>
 #include <ktabwidget.h>
+#include <qwidgetstack.h>
 #include <kregexpeditorinterface.h>
 #include <kparts/componentfactory.h>
 #include <kcharsets.h>
@@ -320,6 +321,9 @@ Konsole::Konsole(const char* name, int histon, bool menubaron, bool tabbaron, bo
 
   makeTabWidget();
   setCentralWidget(tabwidget);
+
+  QBoxLayout* lay = (QBoxLayout*)this->layout();
+  lay->setSpacing(-1);
 
   if (b_dynamicTabHide || n_tabbar==TabNone)
     tabwidget->setTabBarHidden(true);
@@ -894,6 +898,9 @@ void Konsole::makeTabWidget()
   tabwidget->setTabReorderingEnabled(true);
   tabwidget->setAutomaticResizeTabs( b_autoResizeTabs );
   tabwidget->setTabCloseActivatePrevious( true );
+
+  QWidgetStack* stack = (QWidgetStack*)tabwidget->child("tab pages");
+  stack->setLineWidth(0);
 
   if (n_tabbar==TabTop)
     tabwidget->setTabPosition(QTabWidget::Top);
