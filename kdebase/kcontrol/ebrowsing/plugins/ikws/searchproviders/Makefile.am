@@ -30,7 +30,7 @@ services_DATA = \
 		en2it.desktop \
 		es2en.desktop \
 		excite.desktop \
-		exua_secure \
+		exua_secure.desktop \
 		feedster.desktop \
 		foldoc.desktop \
 		fr2de.desktop \
@@ -44,7 +44,7 @@ services_DATA = \
 		Gentoo_Packages.desktop \
 		google_advanced.desktop \
 		google.desktop \
-		google_secure \
+		google_secure.desktop \
 		google_groups.desktop \
 		google_images.desktop \
 		google_lucky.desktop \
@@ -92,6 +92,6 @@ services_DATA = \
 		wikipedia.desktop \
 		wiktionary.desktop \
 		wordref.desktop \
-		youtube_secure
+		youtube_secure.desktop
 
 servicesdir = $(kde_servicesdir)/searchproviders
