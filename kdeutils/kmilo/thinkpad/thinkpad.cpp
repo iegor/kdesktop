@@ -443,11 +443,11 @@ void ThinkPadMonitor::reconfigure(KConfig* config) {
 	m_softwareVolume = config->readBoolEntry("softwareVolume", true);
 	m_run = config->readBoolEntry("run", false);
 	m_volumeStep = config->readNumEntry("volumeStep", defaultVolumeStep);
-	m_buttonThinkpad = config->readEntry("buttonThinkpad", "/usr/bin/konsole");
-	m_buttonHome = config->readEntry("buttonHome", "/usr/bin/konqueror");
-	m_buttonSearch = config->readEntry("buttonSearch", "/usr/bin/kfind");
-	m_buttonMail = config->readEntry("buttonMail", "/usr/bin/kmail");
-	m_buttonZoom = config->readEntry("buttonZoom", "/usr/bin/ksnapshot");
+	m_buttonThinkpad = config->readEntry("buttonThinkpad", "/usr/kde/3.5/bin/konsole");
+	m_buttonHome = config->readEntry("buttonHome", "/usr/kde/3.5/bin/konqueror");
+	m_buttonSearch = config->readEntry("buttonSearch", "/usr/kde/3.5/bin/kfind");
+	m_buttonMail = config->readEntry("buttonMail", "/usr/kde/3.5/bin/kmail");
+	m_buttonZoom = config->readEntry("buttonZoom", "/usr/kde/3.5/bin/ksnapshot");
 }
 
 bool ThinkPadMonitor::retrieveVolume() {
