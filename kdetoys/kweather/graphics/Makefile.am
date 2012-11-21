@@ -1,0 +1,2 @@
+wdir = $(kde_datadir)/kweather
+w_DATA = overcast.png sunny.png dunno.png cloudy1.png cloudy2.png cloudy3.png cloudy4.png cloudy5.png fog.png hail.png light_rain.png mist.png shower1.png shower2.png shower3.png sleet.png snow1.png snow2.png snow3.png snow4.png snow5.png tstorm1.png tstorm2.png tstorm3.png cloudy1_night.png cloudy2_night.png cloudy3_night.png cloudy4_night.png fog_night.png mist_night.png shower1_night.png shower2_night.png snow1_night.png snow2_night.png snow3_night.png sunny_night.png tstorm1_night.png tstorm2_night.png
