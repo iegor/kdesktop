@@ -1,0 +1,70 @@
+AC_DEFUN([KDE_CHECK_XSREENSAVER],
+[
+     XSCREENSAVER_CONFIG=NO
+     AC_FIND_FILE($1/flame.xml, [ $xscreensaver_prefixes ], XSCREENSAVER_CONFIG)
+     if test "$XSCREENSAVER_CONFIG" != NO; then
+	XSCREENSAVER_CONFIG="$XSCREENSAVER_CONFIG/$1"
+     fi
+])
+
+
+xscreensaver_prefixes="$exec_prefix $prefix /usr /usr/local /opt/local /usr/X11R6 /usr/X11R6 /opt/kde /opt/kde3 /usr/kde /usr/local/kde /usr/local/xscreensaver /usr/openwin/lib/xscreensaver /etc"
+
+old_IFS=$IFS
+IFS=:
+for path in $PATH; do 
+   case $path in
+      */bin)
+	path=`echo $path | sed -e 's,/bin$,,'`
+	xscreensaver_prefixes="$path $xscreensaver_prefixes"
+        ;;
+   esac
+done
+IFS=$old_IFS
+
+AC_ARG_WITH(xscreensaver,
+  [AC_HELP_STRING(--with-xscreensaver,
+    [enable support for xscreensaver @<:@default=check@:>@])],
+  [], with_xscreensaver=check)
+
+XSCREENSAVER=''
+echo "Searching in $xscreensaver_prefixes"
+if test "x$with_xscreensaver" != xno; then
+  for xsdir in lib$kdelibsuff/xscreensaver lib/xscreensaver \
+               lib$kdelibsuff/misc/xscreensaver lib/misc/xscreensaver \
+               libexec$kdelibsuff/xscreensaver libexec/xscreensaver \
+               bin/xscreensaver-hacks hacks; do
+    test -n "$XSCREENSAVER" && break
+    KDE_FIND_PATH("$xsdir/flame", XSCREENSAVER, [ $xscreensaver_prefixes ])
+  done
+
+  if test "x$with_xscreensaver" != xcheck && test "x$XSCREENSAVER" = x; then
+    AC_MSG_ERROR([--with-xscreensaver was given, but test for xscreensaver failed])
+  fi
+fi
+
+XSCREENSAVER_HACKS_DIR=
+
+if test -n "$XSCREENSAVER"; then
+     XSCREENSAVER_HACKS_DIR=`echo $XSCREENSAVER | sed -e 's,/flame$,,'`
+     AC_DEFINE_UNQUOTED(XSCREENSAVER_HACKS_DIR, "$XSCREENSAVER_HACKS_DIR", [Defines where xscreensaver stores its graphic hacks])
+
+     AC_MSG_CHECKING([for flame.xml])
+     for subdir in lib/xscreensaver/config \
+		   lib/X11/xscreensaver/config \
+		   share/control-center/screensavers \
+		   share/xscreensaver/config \
+                   xscreensaver \
+		   config/control-center-2.0; do
+         KDE_CHECK_XSREENSAVER($subdir)
+         if test "$XSCREENSAVER_CONFIG" != NO; then
+		break
+         fi
+     done
+     AC_MSG_RESULT([$XSCREENSAVER_CONFIG])
+     AC_DEFINE_UNQUOTED(XSCREENSAVER_CONFIG_DIR, "$XSCREENSAVER_CONFIG", 
+	[Defines where xscreensaver stores it's config files])
+fi
+
+AM_CONDITIONAL(include_XSCREENSAVER, test -n "$XSCREENSAVER")
+AC_SUBST(XSCREENSAVER_HACKS_DIR)
