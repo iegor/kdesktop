@@ -88,11 +88,11 @@ void MapLoader::load(unsigned int width, const QString &theme, unsigned int heig
   // find the closest (bigger) size
   uint size=0;
   for (uint i=0; i<sizes.count(); ++i)
-    if (sizes[i] >= width)
-      {
-	size = sizes[i];
+    {
+      size = sizes[i];
+      if (size >= width)
 	break;
-      }
+    }
   
   QImage image;
   if (size == 0)
