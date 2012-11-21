@@ -30,7 +30,7 @@
 #include <sys/types.h>
 #include <sys/param.h>
 
-#if defined(HAVE_SYS_STATVFS_H) && !defined(__DragonFly__)
+#if defined(HAVE_SYS_STATVFS_H) && !defined(__FreeBSD__) && !defined(__DragonFly__)
 #include <sys/statvfs.h>
 #elif defined( HAVE_SYS_STATFS_H )
 #include <sys/statfs.h>
@@ -59,7 +59,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#if defined(HAVE_STATVFS) && !defined(__DragonFly__)
+#if defined(HAVE_STATVFS) && !defined(__FreeBSD__) && !defined(__DragonFly__)
 typedef struct statvfs ksim_statfs;
 #define ksim_getfsstat getvfsstat
 #elif defined( HAVE_STATFS ) || defined( Q_OS_FREEBSD )
@@ -75,7 +75,7 @@ typedef struct // fall back for (possibly) non-supported systems
 
 int fsystemStats( const char * file, ksim_statfs & stats )
 {
-#if defined(HAVE_STATVFS) && !defined(__DragonFly__)
+#if defined(HAVE_STATVFS) && !defined(__FreeBSD__) && !defined(__DragonFly__)
   return statvfs( file, &stats );
 #elif defined( HAVE_STATFS ) || defined( Q_OS_FREEBSD )
   return statfs( file, &stats );
