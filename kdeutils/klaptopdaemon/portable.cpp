@@ -1973,7 +1973,7 @@ laptop_portable::get_button(LaptopButton l)	// true if a button is pressed
 		}
 		if (!name.isEmpty()) {
 			QFile f(name);
-			if (f.exist() && f.open(IO_ReadOnly)) {
+			if (f.exists() && f.open(IO_ReadOnly)) {
 				while (!f.atEnd()) {
 					QString l;
 					f.readLine(l, 500);
