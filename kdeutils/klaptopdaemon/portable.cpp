@@ -177,7 +177,7 @@ pmu_read(apm_info *ap)
 	int bcnt = 0;
 	memset(ap, 0, sizeof(apm_info));
 	QFile f("/proc/pmu/info");
-	if (!f.open(IO_ReadOnly))
+	if (!f.exists() || !f.open(IO_ReadOnly))
 		return 1;
 
 	while (!f.atEnd()) {
@@ -200,7 +200,7 @@ pmu_read(apm_info *ap)
 	int maxcharge = 0;
 	for (int i = 0; i < bcnt; i++) {
 		QFile bf(QString("/proc/pmu/battery_%1").arg(i));
-		if (!bf.open(IO_ReadOnly))
+		if (!bf.exists() || !bf.open(IO_ReadOnly))
 			continue;
 
 		while(!bf.atEnd()) {
@@ -331,7 +331,7 @@ static void acpi_read_batteries() {
 		bool present = false;
 		if ((test_count==0 || acpi_last_known != last_seed) && !bat.info_file.isNull()) {
 			f = new QFile(bat.info_file);
-			if (f && f->open(IO_ReadOnly)) {
+			if (f && f->exists() && f->open(IO_ReadOnly)) {
 				while(f->readLine(buff,1024) > 0) {
 					if (buff.contains("design capacity low:", false)) {
 						QRegExp rx("(\\d*)\\D*$");
@@ -361,7 +361,7 @@ static void acpi_read_batteries() {
 		}
 		if (!bat.state_file.isNull()) {
 			f = new QFile(bat.state_file);
-			if (f && f->open(IO_ReadOnly)) {
+			if (f && f->exists() && f->open(IO_ReadOnly)) {
 				while(f->readLine(buff,1024) > 0) {
 					if (buff.contains("present rate:", false)) {
 						QRegExp rx("(\\d*)\\D*$");
@@ -577,8 +577,9 @@ has_software_suspend(int type)
 		available = 0;
 		present = (((::access("/proc/sys/kernel/swsusp", F_OK) == 0) ||
                             (::access("/proc/software_suspend", F_OK) == 0) ||
-                            (::access("/proc/suspend2", F_OK) == 0)) &&
-		           ::access("/usr/sbin/hibernate", F_OK) == 0);
+                            (::access("/proc/suspend2", F_OK) == 0) ||
+                            (::access("/sys/power/suspend2", F_OK) == 0)) &&
+                           ::access("/usr/sbin/hibernate", F_OK) == 0);
 		if (present) {
 			if (::getuid() == 0) {	// running as root
 				available = ::access("/usr/sbin/hibernate", X_OK) == 0 && acpi_helper_ok(1);
@@ -692,7 +693,7 @@ has_acpi_sleep(int state)
 		QFile p("/sys/power/state");
 		QFile f("/proc/acpi/sleep");
 
-		if (p.open(IO_ReadOnly)) {
+		if (p.exists() && p.open(IO_ReadOnly)) {
 			QString l;
 			QTextStream t(&p);
 			l = t.readLine();
@@ -709,7 +710,7 @@ has_acpi_sleep(int state)
 			}
 			p.close();
 		}
-		else if (f.open(IO_ReadOnly)) {
+		else if (f.exists() && f.open(IO_ReadOnly)) {
 			QString l;
 			QTextStream t(&f);
 			l = t.readLine();
@@ -1256,7 +1257,7 @@ static bool has_lav()
 	if (!lav_inited) {
 		lav_inited =1;
 		lav_file.setName("/proc/loadavg");
-		lav_openok = lav_file.open( IO_ReadOnly );
+		lav_openok = lav_file.exists() && lav_file.open( IO_ReadOnly );
 		if (lav_openok)
 			lav_file.close();
 	}
@@ -1305,7 +1306,7 @@ QString laptop_portable::cpu_frequency() {
 	QFile cf("/proc/cpufreq");
 	bool haveProfile = false;
 	
-	if (cf.open(IO_ReadOnly)) {
+	if (cf.exists() && cf.open(IO_ReadOnly)) {
 		while (!cf.atEnd()) {
 			QString l;
 		       	cf.readLine(l, 500);
@@ -1320,7 +1321,7 @@ QString laptop_portable::cpu_frequency() {
 	}
 	if (haveProfile) {
 		QFile ci("/proc/cpuinfo");
-		if (ci.open(IO_ReadOnly)) {
+		if (ci.exists() && ci.open(IO_ReadOnly)) {
 			while (!ci.atEnd()) {
 				QString l;
 	       			ci.readLine(l, 500);
@@ -1538,7 +1539,7 @@ get_acpi_list(char p, int *map, const char *dev, QStringList &list, int &index, 
  	                    !(::access(name.latin1(), R_OK)==0 && ::acpi_helper_ok(0))) 
 				continue;
 			QFile f(name);
-			if (f.open(IO_ReadOnly)) {
+			if (f.exists() && f.open(IO_ReadOnly)) {
 				while (!f.atEnd() && i < MAP_SIZE) {
 					QString l;
       					f.readLine(l, 500);
@@ -1576,7 +1577,7 @@ get_acpi_list(char p, int *map, const char *dev, QStringList &list, int &index, 
 				if (get_enable) {
 					name = QString("/proc/acpi/processor/")+dp->d_name+"/limit";
 					f.setName(name);
-					if (f.open(IO_ReadOnly)) {
+					if (f.exists() && f.open(IO_ReadOnly)) {
 						while (!f.atEnd() && i < MAP_SIZE) {
 							QString l;
 							f.readLine(l, 500);
@@ -1619,7 +1620,7 @@ static int get_cpufreq_sysfs_state(QStringList &states, int &current, const QStr
 
 	// read current scaling policy
 	QFile f("/sys/devices/system/cpu/" + cpu + "/cpufreq/scaling_governor");
-	if(!f.open(IO_ReadOnly) || f.atEnd())
+	if(!f.exists() || !f.open(IO_ReadOnly) || f.atEnd())
 		return CPUFREQ_NONE;
 	f.readLine(buffer, 256);
 	cur = buffer.stripWhiteSpace();
@@ -1628,7 +1629,7 @@ static int get_cpufreq_sysfs_state(QStringList &states, int &current, const QStr
 	// read available scaling policies
 	states.clear();
 	f.setName("/sys/devices/system/cpu/" + cpu + "/cpufreq/scaling_available_governors");
-	if(!f.open(IO_ReadOnly))
+	if(!f.exists() || !f.open(IO_ReadOnly))
 		return CPUFREQ_NONE;
 	int count = 0;
 	if(!f.atEnd()) {
@@ -1654,7 +1655,7 @@ static int get_cpufreq_25_state(QStringList &states, int &current) {
 	states.clear();
 
 	QFile f("/proc/cpufreq");
-	if (f.open(IO_ReadOnly)) {
+	if (f.exists() && f.open(IO_ReadOnly)) {
 		while (!f.atEnd()) {
 			QString l;
 			f.readLine(l, 1024);
@@ -1690,7 +1691,7 @@ static int get_cpufreq_24_state(QStringList &states, int &current, const QString
 
 	// current frequency
 	QFile f("/proc/sys/cpu/" + cpu + "/speed");
-	if(!f.open(IO_ReadOnly) || f.atEnd())
+	if(!f.exists() || !f.open(IO_ReadOnly) || f.atEnd())
 		return CPUFREQ_NONE;
 	f.readLine(buffer, 16);
 	f.close();
@@ -1700,7 +1701,7 @@ static int get_cpufreq_24_state(QStringList &states, int &current, const QString
 	const char* files[] = { "max", "min" };
 	for(int i = 0; i <= 1; ++i) {
 		f.setName("/proc/sys/cpu/" + cpu + "/speed-" + files[i]);
-		if(!f.open(IO_ReadOnly) || f.atEnd())
+		if(!f.exists() || !f.open(IO_ReadOnly) || f.atEnd())
 			return CPUFREQ_NONE;
 		f.readLine(buffer, 16);
 		f.close();
@@ -1905,7 +1906,7 @@ acpi_check_button(const char *prefix, QString &result)
  	                if (::access(name.latin1(), R_OK)!=0)
 				continue;
 			QFile f(name);
-			if (f.open(IO_ReadOnly)) {
+			if (f.exists() && f.open(IO_ReadOnly)) {
 				while (!f.atEnd()) {
 					QString l;
       					f.readLine(l, 500);
@@ -1972,7 +1973,7 @@ laptop_portable::get_button(LaptopButton l)	// true if a button is pressed
 		}
 		if (!name.isEmpty()) {
 			QFile f(name);
-			if (f.open(IO_ReadOnly)) {
+			if (f.exist() && f.open(IO_ReadOnly)) {
 				while (!f.atEnd()) {
 					QString l;
 					f.readLine(l, 500);
