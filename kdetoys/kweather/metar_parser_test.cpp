@@ -19,6 +19,7 @@
  ****************************************************************************/
 
 #include <iostream>
+#include <cstdlib>
 using namespace std;
 
 #include <qdatetime.h>
