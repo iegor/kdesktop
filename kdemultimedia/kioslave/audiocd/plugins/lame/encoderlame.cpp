@@ -17,7 +17,11 @@
 */
 
 #include <config.h>
+#ifdef HAVE_MACHINE_ENDIAN_H
+#include <machine/endian.h>
+#else
 #include <endian.h>
+#endif
 #include "encoderlame.h"
 #include "encoderlameconfig.h"
 #include "audiocd_lame_encoder.h"
@@ -221,6 +225,12 @@ long EncoderLame::readInit(long /*size*/){
 	// -x bitswap
 	// -r raw/pcm
 	// -s 44.1 (because it is raw you have to specify this)
+#if !defined(__BYTE_ORDER) && defined(_BYTE_ORDER)
+#define __BYTE_ORDER _BYTE_ORDER
+#endif
+#if !defined(__LITTLE_ENDIAN) && defined(_LITTLE_ENDIAN)
+#define __LITTLE_ENDIAN _LITTLE_ENDIAN
+#endif
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 	*(d->currentEncodeProcess)	<< "lame" << "--verbose" << "-x" << "-r" << "-s" << "44.1";
 #else
