@@ -25,13 +25,13 @@ kmix_la_SOURCES = main.cpp kmix.cpp kmixdockwidget.cpp kmixprefdlg.cpp \
 	volume.cpp kledbutton.cpp verticaltext.cpp mixerIface.skel \
 	kmixtoolbox.cpp mixertoolbox.cpp dialogviewconfiguration.cpp KMixApp.cpp dialogselectmaster.cpp
 
-kmix_la_LIBADD = $(LIB_KDEUI) $(LIB_KUTILS) $(LIBALIB) $(LIBOSSAUDIO) $(LIBASOUND)
+kmix_la_LIBADD = $(LIB_KDEUI) $(LIB_KUTILS) $(LIBALIB) $(LIBOSSAUDIO) $(ALSA_LIBS)
 kmix_la_LDFLAGS = $(all_libraries) -module $(KDE_PLUGIN) -avoid-version
 
 kmixctrl_la_SOURCES = kmixctrl.cpp mixer.cpp mixset.cpp mixdevice.cpp volume.cpp mixerIface.skel \
 	mixertoolbox.cpp mixer_backend.cpp
 
-kmixctrl_la_LIBADD = $(LIB_KDECORE) $(LIBALIB) $(LIBOSSAUDIO) $(LIBASOUND)
+kmixctrl_la_LIBADD = $(LIB_KDECORE) $(LIBALIB) $(LIBOSSAUDIO) $(ALSA_LIBS)
 kmixctrl_la_LDFLAGS = $(all_libraries) -module -avoid-version
 
 kmix_panelapplet_la_SOURCES = kmixapplet.cpp \
@@ -42,7 +42,7 @@ kmix_panelapplet_la_SOURCES = kmixapplet.cpp \
 	kmixtoolbox.cpp mixertoolbox.cpp dialogselectmaster.cpp
 
 kmix_panelapplet_la_LDFLAGS = $(all_libraries) $(KDE_PLUGIN) -module
-kmix_panelapplet_la_LIBADD = $(LIB_KDEUI) $(LIB_KUTILS) $(LIBALIB) $(LIBOSSAUDIO) $(LIBASOUND)
+kmix_panelapplet_la_LIBADD = $(LIB_KDEUI) $(LIB_KUTILS) $(LIBALIB) $(LIBOSSAUDIO) $(ALSA_LIBS)
 
 xdg_apps_DATA = kmix.desktop
 
