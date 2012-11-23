@@ -108,7 +108,7 @@ KSCD::KSCD( QWidget *parent, const char *name )
 #if defined(BUILD_CDDA)
   audio_systems_list
                      << "arts"
-#if defined(HAVE_ARTS_LIBASOUND2)
+#if defined(HAVE_LIBASOUND2)
                      << "alsa"
 #endif
 #ifdef USE_SUN_AUDIO
