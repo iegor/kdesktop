@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <iostream>
 #include <cstring>
+#include <cstdlib>
 #include <sys/mman.h>
 
 using namespace std;

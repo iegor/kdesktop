@@ -1131,7 +1131,7 @@ bool XineEngine::metaDataForUrl(const KURL &url, Engine::SimpleMetaBundle &b)
 
 bool XineEngine::getAudioCDContents(const QString &device, KURL::List &urls)
 {
-    char **xine_urls = NULL;
+    const char **xine_urls = NULL;
     int num;
     int i = 0;
 
@@ -1148,7 +1148,7 @@ bool XineEngine::getAudioCDContents(const QString &device, KURL::List &urls)
 
     emit statusText(i18n("Getting AudioCD contents..."));
 
-    xine_urls = xine_get_autoplay_mrls(m_xine, "CD", &num);
+    xine_urls = (const char**)xine_get_autoplay_mrls(m_xine, "CD", &num);
 
     if (xine_urls) {
         while (xine_urls[i]) {

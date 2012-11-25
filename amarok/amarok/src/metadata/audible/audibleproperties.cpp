@@ -31,6 +31,8 @@
 
 #include <netinet/in.h> // ntohl
 
+#include <stdio.h>
+
 using namespace TagLib;
 
 

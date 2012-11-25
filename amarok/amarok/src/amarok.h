@@ -340,6 +340,6 @@ namespace Amarok
 
 
 /// Update this when necessary
-#define APP_VERSION "1.4.10"
+#define APP_VERSION "1.4.10p20090130"
 
 #endif
