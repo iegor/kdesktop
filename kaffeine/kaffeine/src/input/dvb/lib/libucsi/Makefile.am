@@ -16,4 +16,3 @@ libucsi_la_LIBADD   = ./mpeg/libdvbmpeg.la \
 	./dvb/libdvbdvb.la \
 	./atsc/libdvbatsc.la
 
-CFLAGS  = -g -O2 -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -fPIC

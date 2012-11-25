@@ -21,4 +21,4 @@ libdvben50221_la_SOURCES = asn_1.c \
            en50221_stdcam_llci.c \
            en50221_stdcam_hlci.c
 
-CFLAGS  = -g -O2 -DLOG_LEVEL=1 -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -fPIC
+AM_CFLAGS  = -DLOG_LEVEL=1

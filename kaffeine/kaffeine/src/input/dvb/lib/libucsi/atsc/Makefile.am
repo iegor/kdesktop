@@ -14,4 +14,3 @@ libdvbatsc_la_SOURCES = atsc_text.c \
 		tvct_section.c \
 		types.c
 
-CFLAGS  = -g -O2 -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -fPIC

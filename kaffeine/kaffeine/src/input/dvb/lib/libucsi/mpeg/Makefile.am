@@ -8,5 +8,3 @@ libdvbmpeg_la_SOURCES = cat_section.c \
            pat_section.c \
            pmt_section.c \
            tsdt_section.c
-
-CFLAGS  = -g -O2 -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -fPIC

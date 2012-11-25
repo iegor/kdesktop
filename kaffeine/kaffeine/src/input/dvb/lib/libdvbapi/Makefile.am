@@ -8,5 +8,3 @@ libdvbapi_la_SOURCES = dvbaudio.c \
            dvbfe.c \
            dvbnet.c \
            dvbvideo.c
-
-CFLAGS  = -g -O2 -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -fPIC
