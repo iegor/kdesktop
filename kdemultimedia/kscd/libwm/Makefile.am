@@ -10,7 +10,7 @@ INCLUDES = $(all_includes)
 noinst_LTLIBRARIES  = libworkman.la
 
 libworkman_la_LDFLAGS = $(ARTSC_LIBS) $(all_libraries)
-libworkman_la_LIBADD = audio/libworkmanaudio.la $(ARTS_LIBASOUND)
+libworkman_la_LIBADD = audio/libworkmanaudio.la $(ALSA_LIBS)
 
 libworkman_la_SOURCES = cddb.c cdinfo.c cdrom.c wm_helpers.c cdtext.c\
 database.c index.c scsi.c cdda.c plat_linux_cdda.c plat_sun_cdda.c\

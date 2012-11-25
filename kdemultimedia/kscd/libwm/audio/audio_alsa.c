@@ -18,7 +18,7 @@
 
 #include <config.h>
 
-#if defined(HAVE_ARTS_LIBASOUND2)
+#if defined(HAVE_LIBASOUND2)
 
 #include <alsa/asoundlib.h>
 #include "audio.h"
