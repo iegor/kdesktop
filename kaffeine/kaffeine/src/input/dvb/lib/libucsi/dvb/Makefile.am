@@ -15,5 +15,3 @@ libdvbdvb_la_SOURCES = bat_section.c \
            tot_section.c \
            tva_container_section.c \
            types.c
-
-CFLAGS  = -g -O2 -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes -fPIC
