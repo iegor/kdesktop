@@ -250,9 +250,9 @@ namespace TagLib {
                  */
                 virtual void setCover(const ByteVector &i) {
 									MP4TagArtwork art;
-									art->data = i.data();
-									art->size = i.size();
-									art->type = MP4TagArtworkType::MP4_ART_PNG;
+									art.data = i.data();
+									art.size = i.size();
+									art.type = MP4TagArtworkType::MP4_ART_PNG;
 									MP4TagsAddArtwork(m_tags, &art);
 								}
 
