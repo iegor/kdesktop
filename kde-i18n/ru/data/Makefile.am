@@ -1,0 +1,4 @@
+
+TOPLEVEL_LANG = ru
+SUBDIRS = $(AUTODIRS)
+

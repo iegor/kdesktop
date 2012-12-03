@@ -1,0 +1,1566 @@
+<?xml version="1.0"  encoding="UTF-8" ?>
+
+<chapter id="new_parserdocs">
+<chapterinfo>
+<title
+>&kommander;s nya tolk</title>
+<authorgroup>
+<author
+><firstname
+>Michal</firstname
+> <othername
+></othername
+> <surname
+>Rudolf</surname
+> <affiliation
+> <address
+><email
+>mrudolf@kdewebdev.org</email
+></address>
+</affiliation>
+</author>
+<author
+><firstname
+>Eric</firstname
+> <othername
+></othername
+> <surname
+>Laffoon</surname
+> <affiliation
+> <address
+><email
+>eric@kdewebdev.org</email
+></address>
+</affiliation>
+</author>
+</authorgroup>
+<copyright
+> <year
+>2005-2008</year
+> <holder
+>Michal Rudolf</holder
+> <holder
+>Eric Laffoon</holder
+> </copyright
+> <legalnotice
+>&FDLNotice;</legalnotice
+>
+<othercredit role="translator"
+> <firstname
+>Stefan</firstname
+> <surname
+>Asserhäll</surname
+> <affiliation
+><address
+><email
+>stefan.asserhall@comhem.se</email
+></address
+></affiliation
+> <contrib
+>Översättare</contrib
+></othercredit
+> 
+ </chapterinfo>
+
+<title
+>Dokumentation av ny tolk</title>
+<para
+>Den nya tolken introducerades i &kommander; med version 1.2, utgiven tillsammans med KDE 3.4. Detta dokumentet gavs ursprungligen ut för att visa alla funktioner i den nya tolken. Den nya tolken är förval från och med &kommander; 1.3, utgiven med KDE 3.5.9, utom för program med huvudfönster skapade i &Qt; Designer. Eftersom den nya tolken har så mycket rikare möjligheter, saknar den gamla tolkens begränsning av nästling och lägger till så många nya funktioner, rekommenderar vi starkt att den används. </para>
+<para
+>&kommander; själv beskrivs inte här. Se övriga dokument för att ta reda på vad &kommander; är till för, hur man skapar dialogrutor och hur grafiska komponenter hanteras under körning. </para>
+<!--
+</chapter>
+
+
+
+<chapter id="two_parsers">
+<title
+>New parser vs. old parser</title>
+-->
+<sect1 id="two_parsers">
+<title
+>Gammal tolk</title>
+<para
+>Här jämför vi de två tolkarna. Även om vi förordar den nya för nästan alla syften, stöds den gamla fortfarande och är användbar, i synnerhet vid arbete med andra skriptspråk. </para>
+
+<sect2 id="old_parser">
+<title
+>Gammal tolk</title>
+<para
+>Den gamla tolken var i själva verket en makrotolk. Bara strängar som börjande med &#064; kändes igen, tolkades lokalt och expanderades. <screen
+>@LineEdit1.setText(@ListBox.selection)
+</screen>
+</para>
+
+<para
+>Alla underliggande funktioner (lokala variabler, uttryck, filhantering) var nödvändigt att göra i ett annat skriptspråk, som Bash. Även om avsikten med &kommander; är att stödja alla andra skriptspråk, vilket för närvarande är i viss mån möjligt, fanns det behov av ett snabbt, inbyggt skriptspråk som var garanterat flyttbart. Det största problemet med den gamla tolken är att &kommander; specialvärden utvärderas <emphasis
+>innan</emphasis
+> koden skickas till skriptspråket, vilket gör det omöjligt att använda dem i snurror och villkor.</para>
+<para
+>Utvecklarna ansåg att Bash var långsamt och inte vänligt för nya användare, och den gamla tolken var ursprungligen Bash med DCOP-anrop. Paradoxalt nog orsakade det faktum att &kommander; är språkneutralt ett behov av att kunna göra mer än bara använda funktioner internt. </para>
+</sect2>
+
+<sect2 id="new_parser">
+<title
+>Ny tolk</title>
+<para
+>Den nya tolken är en fullständig tolk. Den tolkar hela skriptet, inte bara funktionerna. Eftersom vårt intresse är interaktion med det grafiska användargränssnittet, inte att sprida skriptspråk, gjorde vi vissa kompromisser. Resultatet är att &kommander;s skriptspråk bör vara användbart för de flesta grundläggande uppgifter, samt naturligt och enkelt att använda. Det finns också en <emphasis
+>funktionsbläddrare</emphasis
+>, som hjälper till att foga samman satser. Funktionsbläddraren är avsedd att göra &kommander; tillgängligt för fullständiga noviser i programmering. Det liknar vad man finner i Kspread för att hjälpa till att välja en funktion och fylla i parametrarna. <tip
+><para
+>Om du vill använda utökade funktioner som finns i andra språk, kan du infoga dem i &kommander;-skriptobjekt inledda med teckenföljden #!. I dessa skript hjälper funktionsbläddraren till att infoga referenser till grafiska komponenter. Kom bara ihåg när funktionen används, att tolken utför en genomläsning för den gamla tolkens funktioner och en genomläsning för skriptet. Om du försöker ändra något i en grafisk komponent och läser den i mitten av ett skript, kanske du inte får vad du förväntar dig.</para
+></tip>
+<screen
+>#!/usr/bin/php
+</screen>
+</para>
+<para
+>Följande funktionslista kommer från version 1.2</para>
+<itemizedlist>
+<listitem
+><para
+>lokala och globala variabler och associativa fält</para
+></listitem>
+<listitem
+><para
+>numeriska uttryck</para
+></listitem>
+<listitem
+><para
+>stränghantering</para
+></listitem>
+<listitem
+><para
+>diverse strukturella kommandon: if, while, for, foreach</para
+></listitem>
+<listitem
+><para
+>de flesta funktionerna från den gamla tolken</para
+></listitem>
+<listitem
+><para
+>direkt hantering av grafiska komponenter</para
+></listitem>
+<listitem
+><para
+>många ytterligare funktioner</para
+></listitem>
+<listitem
+><para
+>rimlig körningshastighet</para
+></listitem>
+<listitem
+><para
+>mottagning av parametrar från signaler i skriptslots</para
+></listitem>
+</itemizedlist>
+<para
+>Denna listan är från version 1.3</para>
+<itemizedlist>
+<listitem
+><para
+>skicka parametrar och ta emot dem med skriptkörningsanrop</para
+></listitem>
+<listitem
+><para
+>returnera ett värde från ett skript</para
+></listitem>
+<listitem
+><para
+>skapa grafiska komponenter i farten</para
+></listitem>
+<listitem
+><para
+>ansluta signaler och slots i farten</para
+></listitem>
+<listitem
+><para
+>använda variabelalias för namn på en grafisk komponent</para
+></listitem>
+<listitem
+><para
+>enkla funktioner för indexerade fält</para
+></listitem>
+<listitem
+><para
+>direkt åtkomst av slots i en grafisk komponent</para
+></listitem>
+</itemizedlist>
+</sect2>
+
+<sect2 id="invoking">
+<title
+>Anropa den nya tolken</title>
+<para
+>För att aktivera den nya tolken, ställ in egenskapen <command
+>useInternalParser</command
+> i dialogrutan till <command
+>true</command
+>. Man kan också aktivera den nya tolken i ett enskilt skript genom att skriva <screen>
+#!kommander
+</screen
+> på första raden i skriptet. Observera också, att om du använder ett annat skriptspråk i ett skript med teckenföljden #!, aktiverar &kommander; automatiskt den gamla tolken för att kommunicera med dialogrutan. <screen
+>#!/bin/bash
+echo @Self.item(0)
+# returnerar första parametern som skickas till skriptet
+# echo $returvärde återgår till det anropande skriptet
+</screen>
+</para>
+</sect2>
+</sect1>
+<!--
+</chapter>
+<chapter id="features">
+-->
+<sect1 id="features">
+<title
+>Funktioner i den nya tolken</title>
+
+<sect2 id="types">
+<title
+>Typer</title>
+<para
+>Varje värde har en av tre typer: sträng, heltal eller dubbelt flyttal. Typkonvertering är automatisk, och väljer den lämpligaste typen (om du till exempel adderar ett flyttal med ett heltal, blir resultatet ett flyttal). Om ett av värdena är en sträng, blir också resultatet det. </para>
+<para
+>Ställen du kan råka ut för problem här är när ett numeriskt värde hämtas från en grafisk komponent och du försöker använda en matematisk funktion med det. Eftersom &kommander; använder <command
+>+</command
+> för att sammanfoga två textsträngar, kan det behandla <command
+>LineEdit1.text + 2</command
+> som <command
+>22</command
+> istället för <command
+>2</command
+>. Se konverteringsfunktionerna bland <link linkend="string_functions"
+>strängfunktioner</link
+> för att undvika problem. </para>
+</sect2>
+
+<sect2 id="expressions">
+<title
+>Uttryck</title>
+<para
+>Följande matematiska operatorer stöds: <command
+>+, -, *, mod, </command
+>. Vanliga parenteser stöds förstås också. </para>
+
+<para
+>Alla sorters jämförelser stöds: <command
+>&lt;</command
+>, <command
+>&gt;</command
+>, <command
+>&lt;=</command
+>, <command
+>&gt;=</command
+>, <command
+>==</command
+>, <command
+>!=</command
+>. I stället för <command
+>!=</command
+> kan du också använda <command
+>&lt;&gt;</command
+>. Dessutom stöds de logiska operatorerna <command
+>and</command
+>, <command
+>or</command
+>, <command
+>not</command
+>, samt deras motsvarighet i C (<command
+>&amp;&amp;</command
+>, <command
+>||</command
+>, <command
+>!</command
+>). </para>
+
+<para
+>För strängar kan operatorn <command
+>+</command
+> användas för sammanfogning av strängar. </para>
+
+<para
+>Några exempel på giltiga uttryck: <screen
+>2+3
+-5 * (2 - 13 mod 3)
+"Listan har " + 12 + "objekt."
+</screen>
+</para>
+</sect2>
+
+<sect2 id="variables">
+<title
+>Variabler</title>
+<para
+>Variabler behöver inte deklareras. Så fort en variabel har används, anses den vara deklarerad. <link linkend="types"
+>Typen</link
+> hos en variabel känns igen automatiskt, och kan ändras senare. </para>
+
+<para
+>Dessutom stöds associativa fält. De avbildar strängar till värden av godtycklig typ. För att deklarera ett sådant fält kan du helt enkelt lägga till några element i det, till exempel: <command
+>A["Quanta"] = "Webbeditor"</command
+>. Fält hanteras också av kommandot <link linkend="foreach"
+>foreach</link
+> och <link linkend="array_functions"
+>fältfunktioner</link
+>. </para>
+
+<para
+>Lokala och globala variabler stöds. Globala variabler markeras med ett inledande understreck. Alltså är <command
+>min_var</command
+> en lokal variabel, medan <command
+>_min_var</command
+> är global. Samma sak gäller för fält. </para>
+
+<screen
+>a = 5
+b = 2 * 5 - (a + 1)
+c = "[Objekt " + b + "]"
+d["Min_nyckel"] = "Mitt_värde"
+d["Min_nyckel_2"] = 5
+</screen>
+
+<para
+>Att använda variabler för grafiska komponenter fungerar i stort sett som man kan förvänta sig. Det är användbart när grafiska komponenter läggs till i en tabell med en snurra. </para>
+
+<screen
+>for i=0 to 10 do
+  min_kombinationsruta = "ComboTable"+i
+  createWidget(min_kombinationsruta, "ComboBox", "Form1")
+end
+</screen>
+</sect2>
+
+<sect2 id="comments">
+<title
+>Kommentarer</title>
+<para
+>Du kan använda kommentarer i &kommander; med två traditionella kommentarformer från programspråk för radkommentarer. För användare som är noviser när det gäller programmering och som undrar vad <quote
+>traditionella former</quote
+> är, se nedan. Du kan kopiera och klistra in texten nedan i en initiering av en knapp eller dialogruta, och se hur kommentarer beter sig vid användning. </para>
+<screen
+>// detta är en kommentar på en rad
+message_info("Hej allihop") // traditionellt första program
+// ovanstående kommentar ignoreras också - meddelanderutan gör det inte
+# detta är också en kommentar
+message_info("Detta meddelande visas")
+</screen>
+<para
+>Att använda följande flerraderskommentar fungerar <emphasis
+>inte</emphasis
+>, och gör att resten av komponentens körning misslyckas. </para>
+<screen
+>/*
+Hej, det är meningen att detta ska vara en kommentar
+Ingenting i skriptet efter detta kommer att köras
+ANVÄND INTE DENNA KOMMENTARTYP I KOMMANDER!
+*/
+</screen>
+</sect2>
+
+<sect2 id="globals">
+<title
+>Inbyggda globala variabler</title>
+<para
+>&kommander; har några inbyggda globala variabler som kan vara praktiska. </para>
+<itemizedlist>
+<listitem>
+<para
+><command
+>_ARGS</command
+> - argumentsträngarna som skickas till dialogrutan när den visas. </para
+></listitem>
+<listitem>
+<para
+><command
+>_ARGCOUNT</command
+> - antal argument som skickades. De kan hämtas som <command
+>ARG1</command
+> till <command
+>ARGn</command
+> där n är det totala antalet argument som skickades. </para
+></listitem>
+<listitem>
+<para
+><command
+>_KDDIR</command
+> - katalogen där dialogrutan kördes. &kommander; använder normalt din hemkatalog, eller en ändrad katalog om tillfrågad om dess arbetskatalog. Det är användbart för att spara och läsa filer med &kommander;-filen. </para
+></listitem>
+<listitem>
+<para
+><command
+>_NAME</command
+> - det finns ingen anledning att använda denna, gör alltså inte det </para
+></listitem>
+<listitem>
+<para
+><command
+>_PID</command
+> - processidentifierare som den aktuella dialogrutan körs med - också tillgänglig som bara <emphasis
+>pid</emphasis
+>. Undvik användning av detta namn för dina egna variabler! </para
+></listitem>
+<listitem>
+<para
+><command
+>_VERSION</command
+> - praktiskt om du vill visa vilken version av &kommander; som kör </para
+></listitem>
+</itemizedlist>
+</sect2>
+<sect2 id="passargs">
+<title
+>Skicka argument i &kommander;</title>
+<para
+>Du kan skicka argument via skriptparametrar, signaler och slots, kommandoradsparametrar och DCOP. Låt oss ta en titt på skript. Anropa skript på följande vis:<screen
+>resultat = Skriptobjekt1.execute("Hej allihop")
+debug(resultat)</screen
+> Inne i skriptet kan det se ut så här:<screen
+>var = str_upper(Self.Item(0))
+return(var)</screen
+> Nu får du ett returvärde i meddelandeloggen via <emphasis
+>standardfelutmatningen</emphasis
+> som är <emphasis
+>HEJ ALLIHOP</emphasis
+>. </para>
+<para
+>Att ta emot en signal som är ansluten till en skriptslot fungerar på samma sätt. <emphasis
+>Self.Item(0)</emphasis
+> är parameter ett och så vidare. Du kan hämta antal argument som skickas via <emphasis
+>Skriptobjekt.count</emphasis
+>. </para>
+<para
+>Kommandoradsparametrar tillåter namngivna eller namnlösa argument. Namnlösa ser ut som <screen
+>kmdr-executor mitt_program.kmdr 100 röd</screen
+> Här blir _ARG1 = 100 och _ARG2 = röd. En konstighet är att när strängar med mellanslag skickas som argument måste de citeras. Används dialogkommandot blir saker och ting mer komplicerade, eftersom hela argumentsträngen måste skickas som en sträng, alltså inom citationstecken. <screen
+>dialog("min_dialog.kmdr", 100+" \"Hej allihop\"")</screen
+> Det returnerar <emphasis
+>_ARG1 = 100</emphasis
+> och <emphasis
+>_ARG2 = Hej allihop</emphasis
+>. Utan skyddade citationstecken hade du fått <emphasis
+>_ARG2 = Hej</emphasis
+> och <emphasis
+>_ARG3 = allihop</emphasis
+>. Att använda namngivna parametrar är rätt trevligt, och potentiellt mindre förvirrande. <screen
+>dialog("min_dialog.kmdr", "xantal=100 xcitat=Hej allihop")</screen
+> Nu kan du komma åt dem med de globala variablerna <emphasis
+>_xantal</emphasis
+> och <emphasis
+>_xcitat</emphasis
+>. </para>
+<para
+>DCOP kan vara komplicerat, vilket är orsaken till att vi rekommenderar att använda de verktyg vi utvecklar för att göra det möjligt att skapa DCOP för &kommander;-fjärrdialogrutor med något som liknar en funktionsbläddrare. Här är ett exempel på ett DCOP-anrop som skickas från en dialogruta öppnad av ett &kommander;-fönster. Eftersom den vet vem som skapat den, kan den skicka tillbaka information medan den är öppen, och fritt komma åt alla fönstrets funktioner med undantag av slots. Det kan naturligtvis göras internt med ett skript som kan anropas externt, så i praktiken finns det inga begränsningar av vad som är möjligt. <screen
+>dcop("kmdr-executor-"+parentPid, "KommanderIf", "setText(QString,QString)", "StatusBar8", "Hej")</screen
+> Låt oss titta på detta en del i taget. Först av allt lägger vi till <emphasis
+>parentPid</emphasis
+> to "kmdr-executor-" eftersom vi inte antar att ett &kommander;-fönster gjorde anropet. Du skulle kunna använda det med Quanta, Kspread eller vad som helst. Därefter adresserar vi <emphasis
+>KommanderIf</emphasis
+>, som är ett <emphasis
+>bra</emphasis
+> gränssnitt för slutanvändare som har städats. Vi hoppas att fler program till sist börjar använda ett bra gränssnitt för integrering när KDE går från DCOP till DBUS i KDE4. Nästa parameter, <emphasis
+>"setText(QString,QString)"</emphasis
+>, är viktig eftersom den anger <emphasis
+>prototyp</emphasis
+> för tillåtna parametrar. Annars skulle inte &kommander; kunna validera anropet. Utan definitionen av DCOP-anropet som används får du ett fel. Återstående parametrar är förstås de som skickas. Vi rekommenderar att du tittar på program med <command
+>kdcop</command
+> för att se hur det fungerar, och övar på att skicka DCOP-anrop från skalet för att få rätt syntax. </para>
+</sect2>
+</sect1>
+<!--
+</chapter>
+-->
+<sect1 id="parser_commands">
+
+<title
+>Kommandon</title>
+<para
+>Diverse strukturkommandon stöds. De kan nästlas fritt. </para>
+
+<para
+>Det finns också tre särskilda kommandon: <command
+>exit</command
+>, <command
+>break</command
+> och <command
+>continue</command
+>. Det första avsluta skriptets körning och återgår. Det andra avslutar pågående block (<link linkend="while"
+>while</link
+>, <link linkend="for"
+>for</link
+> eller <link linkend="foreach"
+>foreach</link
+>), och det tredje avslutar bara pågående varv, och fortsätter från snurrans början. </para>
+
+
+<sect2 id="if">
+<title
+>if</title>
+<para
+>Kommandot <command
+>if</command
+> har följande syntax: </para>
+ 
+<para
+><command
+>if</command
+> <emphasis
+>villkor</emphasis
+> <command
+>then</command
+> <emphasis
+>kod</emphasis
+> <command
+>elseif</command
+> <emphasis
+>villkor</emphasis
+> <command
+>then</command
+> <emphasis
+>kod</emphasis
+> <command
+>else</command
+> <emphasis
+>kod</emphasis
+> <command
+>endif</command
+> </para>
+
+<para
+>Både delarna <command
+>elseif</command
+> och <command
+>else</command
+> är valfria. <emphasis
+>Villkor</emphasis
+> är vilket uttryck som helst. <emphasis
+>Kod</emphasis
+> utförs om villkoret är sant. Det betyder: <itemizedlist>
+<listitem
+><para
+>skilt från noll för heltal och flyttal</para
+></listitem>
+<listitem
+><para
+>inte tom för strängar</para
+></listitem>
+</itemizedlist>
+</para>
+
+<screen
+>if a * 2 &gt; 7 then
+   b = 1
+elseif a &lt; 0 then
+   b = 2
+elseif 
+   b = 0
+endif
+</screen>
+</sect2>
+
+<sect2 id="while">
+<title
+>while</title>
+<para
+><command
+>while</command
+> <emphasis
+>villkor</emphasis
+> <command
+>do</command
+> <emphasis
+>kod</emphasis
+> <command
+>end</command
+> </para>
+
+<para
+><emphasis
+>Villkor</emphasis
+> beräknas om varje gång snurran utförs. <screen
+>while i &lt; 15 do
+  i = i + a
+end  
+</screen>
+</para>
+
+
+</sect2>
+
+<sect2 id="for">
+<title
+>for</title>
+<para
+>Kommandot <command
+>for</command
+> har följande syntax: </para>
+ 
+<para
+><command
+>for</command
+> <emphasis
+>variabel</emphasis
+> <command
+>=</command
+> <emphasis
+>startvärde</emphasis
+> <command
+>to</command
+> <emphasis
+>slutvärde</emphasis
+> <command
+>step</command
+> <emphasis
+>uttryck</emphasis
+> <command
+>do</command
+> <emphasis
+>kod</emphasis
+> <command
+>end</command
+> </para>
+
+<para
+>Snurran utförs med början på <emphasis
+>startvärde</emphasis
+> och avslutas när variabelns värde är större än <emphasis
+>slutvärde</emphasis
+>. Om <command
+>step</command
+> anges, ökas variabelns värde med det angivna värdet istället för <command
+>1</command
+>. <screen
+>for i = 1 to 20 step 5 do
+  a = a + 2 * i
+end  
+</screen>
+</para>
+</sect2>
+
+<sect2 id="foreach">
+<title
+>foreach</title>
+<para
+>Kommandot <command
+>foreach</command
+> har följande syntax: </para>
+ 
+<para
+><command
+>foreach</command
+> <emphasis
+>variabel</emphasis
+> <command
+>in</command
+> <emphasis
+>fält</emphasis
+> <command
+>do</command
+> <emphasis
+>kod</emphasis
+> <command
+>end</command
+> </para>
+
+<para
+>Snurran utförs för varje värde i det givna fältet. För varje varv tilldelas variabeln nästa värde i fältet. <screen
+>summa = 0
+foreach i in mitt_fält do 
+  summa = summa + mitt_fält[i]
+end  
+</screen>
+</para>
+</sect2>
+</sect1>
+<!--
+</chapter>
+-->
+<sect1 id="functions">
+
+<title
+>Funktioner</title>
+<para
+>De flesta av den gamla tolkens funktioner stöds av den nya tolken. Dessutom har några nya funktioner lagts till. </para>
+
+
+<sect2 id="string_functions">
+<title
+>Strängfunktioner</title>
+<para
+>Strängfunktionerna är samma som i den gamla tolken, den enda skillnaden är att deras namn inleds med <command
+>str_</command
+> istället för <command
+>@String.</command
+> <itemizedlist>
+<listitem>
+<para
+><command
+>str_length(<parameter
+>sträng</parameter
+>)</command
+> - returnerar längden av <emphasis
+>sträng</emphasis
+> </para
+></listitem>
+<listitem>
+<para
+><command
+>str_contains(<parameter
+>sträng</parameter
+>, <parameter
+>text</parameter
+>)</command
+> - returnerar 1 om <emphasis
+>sträng</emphasis
+> innehåller <emphasis
+>text</emphasis
+> </para
+></listitem>
+<listitem>
+<para
+><command
+>str_find(<parameter
+>sträng</parameter
+>, <parameter
+>text</parameter
+>, <parameter
+>start</parameter
+>)</command
+> - returnerar positionen för den första förekomsten av <emphasis
+>text</emphasis
+> i <emphasis
+>sträng</emphasis
+>, det valfria värdet <emphasis
+>start</emphasis
+> anger sökningens början </para
+></listitem>
+<listitem>
+<para
+><command
+>str_find(<parameter
+>sträng</parameter
+>, <parameter
+>text</parameter
+>, <parameter
+>start</parameter
+>)</command
+> - returnerar positionen för den sista förekomsten av <emphasis
+>text</emphasis
+> i <emphasis
+>sträng</emphasis
+>, det valfria värdet <emphasis
+>start</emphasis
+> anger sökningens början </para
+></listitem>
+<listitem>
+<para
+><command
+>str_left(<parameter
+>sträng</parameter
+>, <parameter
+>antal</parameter
+>)</command
+> - returnerar första <emphasis
+>antal</emphasis
+> tecken av <emphasis
+>sträng</emphasis
+> </para
+></listitem>
+<listitem>
+<para
+><command
+>str_right(<parameter
+>sträng</parameter
+>, <parameter
+>antal</parameter
+>)</command
+> - returnerar sista <emphasis
+>antal</emphasis
+> tecken av <emphasis
+>sträng</emphasis
+> </para
+></listitem>
+<listitem>
+<para
+><command
+>str_right(<parameter
+>sträng</parameter
+>, <parameter
+>start</parameter
+>, <parameter
+>antal</parameter
+>)</command
+> - returnerar delsträngen av <emphasis
+>sträng</emphasis
+> med början på <emphasis
+>start</emphasis
+> som innehåller <emphasis
+>antal</emphasis
+> tecken (eller allt till strängens slut om den sista parametern inte anges) </para
+></listitem>
+<listitem>
+<para
+><command
+>str_remove(<parameter
+>sträng</parameter
+>, <parameter
+>text</parameter
+>)</command
+> - returnerar <emphasis
+>sträng</emphasis
+> med alla delsträngar som är lika med <emphasis
+>text</emphasis
+> borttagna </para
+></listitem>
+<listitem>
+<para
+><command
+>str_replace(<parameter
+>sträng</parameter
+>, <parameter
+>text</parameter
+>, <parameter
+>text2</parameter
+>)</command
+> - returnerar <emphasis
+>sträng</emphasis
+> med alla delsträngar som är lika med <emphasis
+>text</emphasis
+> ersatta med <emphasis
+>text2</emphasis
+> </para
+></listitem>
+<listitem>
+<para
+><command
+>str_lower(<parameter
+>sträng</parameter
+>)</command
+> - returnerar <emphasis
+>sträng</emphasis
+> konverterad till små bokstäver </para
+></listitem>
+<listitem>
+<para
+><command
+>str_upper(<parameter
+>sträng</parameter
+>)</command
+> - returnerar <emphasis
+>sträng</emphasis
+> konverterad till stora bokstäver </para
+></listitem>
+<listitem>
+<para
+><command
+>str_section(<parameter
+>sträng</parameter
+>, <parameter
+>avdelare</parameter
+>, <parameter
+>start</parameter
+>, <parameter
+>slut</parameter
+>)</command
+> - returnerar delsträngen som innehåller lämpliga delar av <emphasis
+>sträng</emphasis
+> bestämda av <emphasis
+>avdelare</emphasis
+>. Om inget <emphasis
+>slut</emphasis
+> anges, returneras en ensam del från <emphasis
+>start</emphasis
+> </para
+></listitem>
+<listitem>
+<para
+><command
+>str_args(<parameter
+>sträng</parameter
+>, <parameter
+>...</parameter
+>)</command
+> - returnerar <emphasis
+>sträng</emphasis
+> med <command
+>%1</command
+>, <command
+>%2</command
+>, <command
+>%3</command
+> ersatta med efterföljande parametrar. </para
+></listitem>
+<listitem>
+<para
+><command
+>str_isnumber(<parameter
+>sträng</parameter
+>)</command
+> - returnerar 1 om <emphasis
+>sträng</emphasis
+> är ett giltigt tal </para
+></listitem>
+<listitem>
+<para
+><command
+>str_isempty(<parameter
+>sträng</parameter
+>)</command
+> - returnerar 1 om <emphasis
+>sträng</emphasis
+> är tom </para
+></listitem>
+<listitem>
+<para
+><command
+>str_toint(<parameter
+>sträng</parameter
+>, <parameter
+>förval</parameter
+>)</command
+> - returnerar <emphasis
+>sträng</emphasis
+> konverterad till ett heltal. Om konverteringen inte är möjlig, returneras det valfria värdet <emphasis
+>förval</emphasis
+> </para
+></listitem>
+<listitem>
+<para
+><command
+>str_todouble(<parameter
+>sträng</parameter
+>, <parameter
+>förval</parameter
+>)</command
+> - returnerar <emphasis
+>sträng</emphasis
+> konverterad till ett flyttal. Om konverteringen inte är möjlig, returneras det valfria värdet <emphasis
+>förval</emphasis
+> </para
+></listitem>
+</itemizedlist
+></para>
+</sect2>
+
+<sect2 id="kommander_functions">
+<title
+>&kommander;-funktioner</title>
+<para
+>De flesta &kommander;-funktioner stöds. Vissa (som <command
+>expr</command
+>) blev föråldrade av den nya tolken och är inte tillgängliga. </para>
+
+<itemizedlist>
+<listitem>
+<para
+><command
+>debug(<parameter
+>sträng</parameter
+>, <parameter
+>...</parameter
+>)</command
+> - skriver ut alla parametrar på standardfelutmatningen </para
+></listitem>
+<listitem>
+<para
+><command
+>echo(<parameter
+>sträng</parameter
+>, <parameter
+>...</parameter
+>)</command
+> - skriver ut alla parametrar på standardutmatningen </para
+></listitem>
+<listitem>
+<para
+><command
+>dcop(<parameter
+>sträng</parameter
+>, <parameter
+>...</parameter
+>)</command
+> - anropar en DCOP-funktion</para>
+</listitem>
+<listitem>
+<para
+><command
+>exec(<parameter
+>sträng</parameter
+>, <parameter
+>skal</parameter
+>)</command
+> - kör ett externt program (med användning av valfritt <emphasis
+>skal</emphasis
+>), blockerar körningen av aktuell dialogruta till programmet som skickas som parameter avslutas, returnerar programmets utmatning </para
+></listitem>
+<listitem>
+<para
+><command
+>i18n(<parameter
+>sträng</parameter
+>)</command
+> - markerar <emphasis
+>sträng</emphasis
+> för framtida översättning </para
+></listitem>
+<listitem>
+<para
+><command
+>env(<parameter
+>sträng</parameter
+>)</command
+> - returnerar värdet av en miljövariabel </para
+></listitem>
+<listitem>
+<para
+><command
+>readSetting(<parameter
+>nyckel</parameter
+>, <parameter
+>förval</parameter
+>)</command
+> - returnerar ett värde lagrat i inställningsfilen med angiven <emphasis
+>nyckel</emphasis
+>. Om ett sådant värde inte finns, returneras <emphasis
+>förval</emphasis
+> </para
+></listitem>
+<listitem
+><para
+><command
+>writeSetting(<parameter
+>nyckel</parameter
+>, <parameter
+>värde</parameter
+>)</command
+> - skriver paret <emphasis
+>nyckel</emphasis
+> och <emphasis
+>värde</emphasis
+> i inställningsfilen </para
+></listitem>
+</itemizedlist>
+<para
+>Nytt i &kommander; 1.3</para>
+<itemizedlist>
+<listitem>
+<para
+><command
+>execBackground(<parameter
+>sträng</parameter
+>, <parameter
+>skal</parameter
+>)</command
+> - kör ett externt program (med användning av valfritt <emphasis
+>skal</emphasis
+>) i bakgrunden, utan att blockera aktuell dialogruta, i motsats till funktionen <command
+>exec</command
+> ovan, returnerar den inte programmets utmatning. </para
+></listitem>
+<listitem>
+<para
+><command
+>return(<parameter
+>värde</parameter
+>)</command
+> - returnerar ett värde till anropande objekt (skript, knapp ...) </para
+></listitem>
+<listitem>
+<para
+><command
+>createWidget(<parameter
+>komponentnamn</parameter
+>, <parameter
+>komponenttyp</parameter
+>, <parameter
+>skapare</parameter
+>)</command
+> - skapar en ny grafisk komponent. Därefter kan du till exempel lägga till den i en tabell eller verktygslåda, och använda <command
+>min_komponent.show(true)</command
+> för att göra den synlig. Om du lägger till en ny grafisk komponent i formuläret, måste du ta hänsyn till layout. &kommander; skapar inte en layout i farten, eller justerar positioner bildpunkt för bildpunkt (i de flesta fall). Det är förvirrande till och med vid utveckling med C++. Vi rekommenderar att du använder en gruppruta och skapar en layout i dialogrutan för att få bäst kontroll. </para
+></listitem>
+<listitem>
+<para
+><command
+>connect(<parameter
+>avsändare</parameter
+>, <parameter
+>signal</parameter
+>, <parameter
+>mottagare</parameter
+>, <parameter
+>slot</parameter
+>)</command
+> - anslut en signal i en grafisk komponent till en slot. Se anslutningsdialogrutan och välj liknande komponenter för att se möjligheterna. Om en signal till exempel ser ut som <command
+>execute(const QString&amp;)</command
+> är det exakt vad som måste finnas här inom citationstecken. </para
+></listitem>
+<listitem>
+<para
+><command
+>disconnect(<parameter
+>avsändare</parameter
+>, <parameter
+>signal</parameter
+>, <parameter
+>mottagare</parameter
+>, <parameter
+>slot</parameter
+>)</command
+> - ta bort anslutningen som anges ovan. Återigen är exakt riktig syntax helt nödvändig. </para
+></listitem>
+<listitem>
+<para
+><command
+>widgetExists(<parameter
+>komponentnamn</parameter
+>)</command
+> - kom ihåg att du nu kan använda ett variabelnamn för att ange en grafisk komponent . Använd det när grafiska komponenter som skapats ska kommas åt, för att försäkra dig om att de finns. Att anropa en grafisk komponent som inte finns orsakar naturligtvis ett fel. </para
+></listitem>
+</itemizedlist>
+</sect2
+>  
+
+<sect2 id="array_functions">
+<title
+>Fältfunktioner</title>
+<para
+>De flesta fältfunktioner stöds. Vissa (som <command
+>value</command
+>) blev föråldrade av den nya tolken och är inte tillgängliga. Den enda skillnaden är att deras namn inleds med <command
+>array_</command
+> istället för <command
+>@Array.</command
+> </para>
+
+<warning
+><para
+>På grund av begränsningar i tolken, måste fältnamn för närvarande anges som strängar, till exempel <command
+>array_count("Mitt_fält")</command
+>.</para
+></warning>
+
+<itemizedlist>
+<listitem>
+<para
+><command
+>array_clear(<parameter
+>fält</parameter
+>)</command
+> - tar bort alla element från <emphasis
+>fält</emphasis
+> </para
+></listitem>
+<listitem>
+<para
+><command
+>array_count(<parameter
+>fält</parameter
+>)</command
+> - returnerar antal element i <emphasis
+>fält</emphasis
+> </para
+></listitem>
+<listitem>
+<para
+><command
+>array_keys(<parameter
+>fält</parameter
+>)</command
+> - returnerar en sträng som innehåller nycklarna i <emphasis
+>fält</emphasis
+> åtskilda med radslut. Observera att om du importerade en skalär (nycklar utan värden) i ett fält med &kommander; skulle du inte kunna komma åt den med <command
+>array_values("mitt_fält")</command
+> som du kanske förväntade dig (eftersom den bara verkar ha värden) utan skulle istället behöva använda <command
+>array_keys("mitt_fält")</command
+>. Du kanske finner att ett bättre val i detta fall är att använda de nya <emphasis
+>indexerade fälten</emphasis
+> som beskrivs nedan. </para
+></listitem>
+<listitem>
+<para
+><command
+>array_values(<parameter
+>fält</parameter
+>)</command
+> - returnerar en sträng som innehåller värden i <emphasis
+>fält</emphasis
+> åtskilda med radslut </para
+></listitem>
+<listitem>
+<para
+><command
+>array_tostring(<parameter
+>fält</parameter
+>)</command
+> - returnerar en sträng som innehåller hela <emphasis
+>fält</emphasis
+> som rader med par av nyckel och värden åtskilda med tabulatortecken </para
+></listitem>
+<listitem>
+<para
+><command
+>array_fromstring(<parameter
+>fält</parameter
+>, <parameter
+>sträng</parameter
+>)</command
+> - läser fält från <emphasis
+>sträng</emphasis
+> (oftast skapad av funktionen <command
+>array_tostring</command
+>) </para
+></listitem>
+<listitem>
+<para
+><command
+>array_remove(<parameter
+>fält</parameter
+>, <parameter
+>nyckel</parameter
+>)</command
+> - tar bort objektet med <emphasis
+>nyckel</emphasis
+> från <emphasis
+>fält</emphasis
+> </para
+></listitem>
+</itemizedlist>
+<para
+>Här är ett exempel på fälthantering:</para>
+<screen
+>array_fromstring("mitt_fält", "1\tA\nandra\tB\n3\tC")
+foreach key in mitt_fält do
+  debug("mitt_fält[" + key + "]= " + mitt_fält[key])
+end
+</screen>
+<para
+>Det skriver ut följande på standardfelutmatningen. Det syns att det inte finns någon garanti om elementens ordning i fältet, samt att nycklarna är strängar, inte tal.</para>
+<screen
+>mitt_fält[1]= A
+mitt_fält[3]= C
+mitt_fält[andra]= B
+</screen>
+<para
+>Ett annat exempel på fält utan nycklar:</para>
+<screen
+>array_fromstring("mitt_fält", "A\nB\nC")
+foreach nyckel in mitt_fält do
+  debug(nyckel)
+end
+debug("Fältelement:\n" + array_keys("mitt_fält"))
+</screen>
+<para
+>Det ger resultatet:</para>
+<screen
+>A
+B
+C
+Fältelement:
+A
+B
+C
+</screen>
+
+<para
+>Nytt i &kommander; 1.3</para>
+<itemizedlist>
+<listitem>
+<para
+><command
+>array_indexedFromString(<parameter
+>fält</parameter
+>, <parameter
+>sträng</parameter
+>, <parameter
+>avdelare</parameter
+>)</command
+> - Det här kompenserar för att &kommander; inte har indexerade fält. Den skapar ett fält med ett nollbaserat sekvensiellt index. Kom ihåg att använda citationstecken för fältnamnet och eventuella strängar som inte representeras av en variabel. Argumentet avdelare är valfritt och har det förvalda värdet "\t" (tabulator), och används för att åtskilja fält vid läsning och skrivning av tabeller, fält eller grafiska detaljkomponenter. <emphasis
+>Kom ihåg att fältindex inte själv tvingar att några regler följs, det är precis som om du skapade det med en for-snurra, bara bekvämare.</emphasis
+> </para
+></listitem>
+<listitem>
+<para
+><command
+>array_indexedInsertElements(<parameter
+>fält</parameter
+>, <parameter
+>nyckel</parameter
+>, <parameter
+>sträng</parameter
+>, <parameter
+>avdelare</parameter
+>)</command
+> - Funktionen ingår i uppsättningen med funktioner för indexerade fält, och gör det möjligt att infoga element i fältet och samtidigt behålla ett index som är sekventiellt, i en följd, och unikt. Ange indexnyckel att börja, textsträng och hur den skiljs åt. Elementen läggs till och alla efterföljande indexnummer skiftas med antalet tillagda element. </para
+></listitem>
+<listitem>
+<para
+><command
+>array_indexedRemoveElements(<parameter
+>fält</parameter
+>, <parameter
+>nyckel</parameter
+>, <parameter
+>antal</parameter
+>)</command
+> - Det här gör det möjligt att ta bort element från ett indexerat fält och undvika indexhål. Ange nyckel att börja med och valfritt hur många element som ska tas bort. Förvalt antal är ett. Slutresultatet blir ett omindexerat fält utan de borttagna elementen. </para
+></listitem>
+<listitem>
+<para
+><command
+>array_indexedToString(<parameter
+>fält</parameter
+>, <parameter
+>avdelare</parameter
+>)</command
+> - Det här gör det möjligt att konvertera ett indexerat fält tillbaka till en sträng, vilket är särskilt användbart för grafiska detaljkomponenter. Om du till exempel visar resultatet av en databasfråga i Trädkomponent1 med sex kolumner, kan du använda <command
+>Trädkomponent1.selection</command
+> för att hämta den markerade raden. Den är avdelad med tabulatortecken, och du skulle kunna titta på det femte elementet genom att använda <command
+>str_section(Trädkomponent1.selection, "\t", 4)</command
+> (kom ihåg att den är nollbaserad). Det är bra för att läsa ett värde, men om du vill ändra det märker du att du måste göra en hel del ytterligare arbete. Efter strängen har delats, måste du sätta ihop den igen med <command
+>val1+"\t"+val2...</command
+>. Genom att använda indexerade fält kan du redigera det femte elementet på följande sätt:<screen>
+idx = Trädkomponent1.currentItem
+array_indexedFromString("z", Trädkomponent1.selection)
+z[4] = "nytt värde"
+Trädkomponent1.removeItem(idx)
+Trädkomponent1.insertItem(array_indexedToString("z"), idx)
+</screen
+> Observera att bara två korta rader har lagts till för att åstadkomma det. Det är mycket välkommet vid databasanvändning. </para
+></listitem>
+</itemizedlist>
+</sect2
+>  
+
+
+<sect2 id="file_functions">
+<title
+>Filfunktioner</title>
+<para
+>Alla filfunktioner stöds. Den enda skillnaden är att deras namn inleds med <command
+>file_</command
+> istället för <command
+>@File.</command
+> </para>
+
+<itemizedlist>
+<listitem>
+<para
+><command
+>file_read(<parameter
+>namn</parameter
+>)</command
+> - returnerar innehållet i filen <emphasis
+>namn</emphasis
+> </para
+></listitem>
+<listitem>
+<para
+><command
+>file_write(<parameter
+>namn</parameter
+>, <parameter
+>...</parameter
+>)</command
+> - skriver alla argument till filen <emphasis
+>namn</emphasis
+> </para
+></listitem>
+<listitem>
+<para
+><command
+>file_append(<parameter
+>namn</parameter
+>, <parameter
+>...</parameter
+>)</command
+> - lägger till alla argument sist i filen <emphasis
+>namn</emphasis
+> </para
+></listitem>
+</itemizedlist>
+</sect2
+>  
+
+  
+<sect2 id="input_functions">
+<title
+>Inmatningsfunktioner</title>
+<para
+>Dessa funktioner visar en dialogruta som låter användaren mata in ett värde. De kan kommas åt genom att använda <command
+>@Input.</command
+> i den gamla tolken. För de flesta funktioner är alla parametrar valfria, undantagen är <command
+>input_text</command
+> som kräver 2 parametrar och <command
+>input_value</command
+> som kräver 5 parametrar. </para>
+
+<itemizedlist>
+<listitem>
+<para
+><command
+>input_color(<parameter
+>rubrik</parameter
+>, <parameter
+>förval</parameter
+>)</command
+> - returnerar färg på formatet #RRGGBB </para
+></listitem>
+<listitem>
+<para
+><command
+>input_text(<parameter
+>rubrik</parameter
+>, <parameter
+>beteckning</parameter
+>, <parameter
+>förval</parameter
+>)</command
+> - returnerar text inmatad av användaren </para
+></listitem>
+<listitem>
+<para
+><command
+>input_value(<parameter
+>rubrik</parameter
+>, <parameter
+>beteckning</parameter
+>, <parameter
+>förval</parameter
+>, <parameter
+>min</parameter
+>, <parameter
+>max</parameter
+>, <parameter
+>steg</parameter
+>)</command
+> - returnerar värden som matas in av användaren </para
+></listitem>
+<listitem>
+<para
+><command
+>input_direktory(<parameter
+>startkatalog</parameter
+>, <parameter
+>filter</parameter
+>)</command
+> - returnerar en katalog som valts av användaren </para
+></listitem>
+<listitem>
+<para
+><command
+>input_openfile(<parameter
+>rubrik</parameter
+>, <parameter
+>beteckning</parameter
+>, <parameter
+>förval</parameter
+>)</command
+> - returnerar en befintlig fil som matas in av användaren </para
+></listitem>
+<listitem>
+<para
+><command
+>input_savefile(<parameter
+>rubrik</parameter
+>, <parameter
+>beteckning</parameter
+>, <parameter
+>förval</parameter
+>)</command
+> - returnerar en fil som matas in av användaren (om filen redan finns, krävs en bekräftelse) </para
+></listitem>
+<listitem>
+<para
+><command
+>input_openfiles(<parameter
+>rubrik</parameter
+>, <parameter
+>beteckning</parameter
+>, <parameter
+>förval</parameter
+>)</command
+> - returnerar en sträng med befintliga filer som matas in av användaren åtskilda med radslut </para
+></listitem>
+</itemizedlist>
+</sect2
+>  
+
+
+<sect2 id="message_functions">
+<title
+>Meddelandefunktioner</title>
+<para
+>Dessa funktioner visar meddelanden för användaren, eller ber användaren bekräfta en åtgärd. Använd istället <command
+>@Message.</command
+> i den gamla tolken. </para>
+
+<itemizedlist>
+<listitem>
+<para
+><command
+>message_info(<parameter
+>text</parameter
+>, <parameter
+>rubrik</parameter
+>)</command
+> - visar informationstext </para
+></listitem>
+<listitem>
+<para
+><command
+>message_error(<parameter
+>text</parameter
+>, <parameter
+>rubrik</parameter
+>)</command
+> - visar feltext </para
+></listitem>
+<listitem>
+<para
+><command
+>message_warning(<parameter
+>text</parameter
+>, <parameter
+>rubrik</parameter
+>, <parameter
+>knapp1</parameter
+>, <parameter
+>knapp2</parameter
+>, <parameter
+>knapp3</parameter
+>)</command
+> - visar en fråga med en varning och upp till tre knappar. Numret på den valda knappen returneras. Om inga knappnamn anges, visas <command
+>Ja</command
+> och <command
+>Nej</command
+> </para
+></listitem>
+<listitem>
+<para
+><command
+>message_question(<parameter
+>text</parameter
+>, <parameter
+>rubrik</parameter
+>, <parameter
+>knapp1</parameter
+>, <parameter
+>knapp2</parameter
+>, <parameter
+>knapp3</parameter
+>)</command
+> - visar en fråga och upp till tre knappar. Numret på den valda knappen returneras. Om inga knappnamn anges, visas <command
+>Ja</command
+> och <command
+>Nej</command
+> </para
+></listitem>
+</itemizedlist>
+</sect2
+>  
+</sect1>
+</chapter>
+
+
+

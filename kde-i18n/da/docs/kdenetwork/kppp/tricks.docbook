@@ -1,0 +1,296 @@
+<chapter id="modem-tricks">
+<title
+>Modemtrick og vink</title>
+
+<para
+>Dette afsnit bør få endog de mest frygtsomme til at begynde på den mystiske kunst at finjustere et modem. Kommandoerne her er alle ifølge Hayes AT standard, men alle modemer er ikke ens, så dit resultat kan variere.</para>
+
+<sect1 id="modem-sessions">
+<title
+>Modemsessioner</title>
+
+<para
+>En modemsession lader dig komme direkte til modemet. Du indskriver kommandoen, og det svarer. For at starte en modemsession når ingen tilslutning er aktiv, går du til dialogen med <guibutton
+>Indstillinger</guibutton
+>, derefter <guilabel
+>Modem</guilabel
+> <guibutton
+>Terminal</guibutton
+>. Der åbnes et vindue for interaktiv indstilling af modemet. Forsøg at skrive <userinput
+><command
+>ATZ</command
+></userinput
+> (som nulstiller modemet). Du bør få svaret OK. Anvend <menuchoice
+><guimenu
+>Fil</guimenu
+><guimenuitem
+>Luk</guimenuitem
+></menuchoice
+> for at afslutte sessionen.</para>
+
+</sect1>
+
+<sect1 id="modem-profiles">
+<title
+>Modemprofiler</title>
+					
+<para
+>En årsag til at du kan ville sende kommandoen direkte til modemet er hvis du har et antal modemindstillinger som du vil beholde, og ikke behøve at angive for hver tilslutning. En god måde at gøre dette er med modemprofiler. Modemet kan have flere lagrede profiler som nummereres 0, 1, ... <command
+>AT&amp;V</command
+> kan anvendes til at kigge på allesammen. Den forvalgte profil er oftest nummer 0 (dette kan ændres med <command
+>AT&amp;Y</command
+>.) Profilen som anvendes forøjeblikket kaldes den <quote
+>aktive</quote
+> profil.</para>
+
+<para
+>Når du ændrer en indstilling, så ændres den aktive profil. Kommandoen <command
+>ATZ</command
+> får modemet at indlæse den forvalgte profil, og fjerne alle ændringer som du har lavet. For at gemme ændringerne, indlæses profilen som du vil ændre med <command
+>ATZ<replaceable
+>n</replaceable
+></command
+> (hvor <replaceable
+>n</replaceable
+> er profilens nummer). Udfør alle ændringer du vil, og gem den bagefter med <command
+>AT&amp;W<replaceable
+>n</replaceable
+></command
+>. For at få kppp til at anvende profilen som du vil have, ændr modeminitieringsstrengen (<guibutton
+>Indstillinger</guibutton
+> <guilabel
+>Modem</guilabel
+> <guibutton
+>Modemkommandon</guibutton
+> <guilabel
+>Kommando til at initiere</guilabel
+>). Kommandoen <command
+>ATZ1</command
+> får for eksempel kppp til at nulstille modemet og anvende den gemte profil nummer 1.</para>
+
+<para
+>Hvis du vil nulstille modemet for at komme tilbage til et kendt startpunkt, anvendes <command
+>AT&amp;F&amp;W</command
+> for at indstille den aktive profil til fabrikkens forudinstillede værdier, og gem disse indstillinger i den forvalgte profil.</para>
+
+<para
+>Eksempel på profilændringer findes i næste afsnit</para>
+
+</sect1>
+
+<sect1 id="modem-hangup">
+<title
+>Få modemet til at lægge på</title>
+
+<para
+>Ind imellem kan du mærke at &kppp; har svært ved at få modemet til at lægge på. Dette forårsages formodentlig af en fejltilpasning mellem &kppp;s og modemets indstillinger. Et standardmodem anvender to metoder til at bestemme sig for at lægge på: <link linkend="hangup-command-method"
+>Kommando</link
+>, og <link linkend="hangup-dtr-method"
+><acronym
+>DTR</acronym
+></link
+>. Kommandometoden indebær at en sekvens til at afbryde sendes til modemet, som stiller det i kommandotilstand, og derefter sendes en kommando til at lægge på (<command
+>ATH</command
+>).</para>
+
+<para
+>Hvis du tilretter <application
+>pppd</application
+>-pakken manuelt udenfor &kppp; er det ofte en god hjælp at anvende kommandometoden, så man kan afslutte en terminalsession, og derefter starte <application
+>pppd</application
+> uden at modemet lægges på. I de fleste andre situationer er <acronym
+>DTR</acronym
+>-metoden at foretrække, eftersom den er enklere.</para>
+
+<sect2 id="hangup-dtr-method">
+<title
+><acronym
+>DTR</acronym
+> (<command
+>AT&amp;Dn</command
+>)-metoden</title>
+
+<para
+><acronym
+>DTR</acronym
+>-metoden gør at modemet lægges på så snart &kppp; slutter med at anvende modemet. Hvis du starter en modemsession, og spørger efter tilstanden med <command
+>AT&amp;V</command
+>, og du kan se <command
+>&amp;D0</command
+> iblandt indstillingerne som vises, er <acronym
+>DTR</acronym
+>-metoden at lægge på deaktiveret. For at aktiverer <acronym
+>DTR</acronym
+>-metoden, anvendes  <guibutton
+>Terminal</guibutton
+>knappen for at starte en modemsession, og derefter skrives:</para>
+
+<screen
+><userinput
+><command
+>ATZ</command
+></userinput
+> <lineannotation
+># nulstil til forvalgt profil</lineannotation>
+<userinput
+><command
+>AT&amp;D2</command
+></userinput
+>  <lineannotation
+># Indstil til at lægge på når DTR forsvinder</lineannotation>
+<userinput
+><command
+>AT&amp;W</command
+></userinput
+>  <lineannotation
+># Skriv til forvalgt profil</lineannotation
+>
+</screen>
+
+<sect3>
+<title
+>Hvordan <acronym
+>DTR</acronym
+>-metoden fungerer</title>
+
+<para
+>Når signalet Data Terminal Ready (<acronym
+>DTR</acronym
+>) på  den serielle tilslutning mellem værtsmaskinen og modemet bliver høj, lægger modemet på. Når &kppp; åbner den serielle port, ændres <acronym
+>DTR</acronym
+>-tilslutningen til lav, på et eksternt modem kan du se <acronym
+>DTR</acronym
+>-lampen (eller <acronym
+>TR</acronym
+>-lampen) tændes når dette sker. Når <acronym
+>TR</acronym
+>-lampen slukkes (eftersom &kppp; har lukket den serielle port, eller noget værre!), kommer modemet til at lægge på.</para>
+</sect3>
+
+</sect2>
+
+<sect2 id="hangup-command-method">
+<title
+>Kommandometoden</title>
+
+<para
+>Den anden måde at få et modemet til at lægge på når det er tilsluttet  (brugt med <command
+>AT&amp;D<replaceable
+>n</replaceable
+></command
+> hvor <replaceable
+>n</replaceable
+> ikke er <returnvalue
+>2</returnvalue
+>) er at få modemet at acceptere kommandoen mens en session står på. For at få den at lægge på som den skal, startes en modemsession og  vagttiden indstilles til et kort interval, på følgende måde:</para>
+
+<screen
+><userinput
+><command
+>ATZ</command
+></userinput>
+<userinput
+><command
+>ATS12=5</command
+></userinput>
+<userinput
+><command
+>AT&amp;W</command
+></userinput
+>
+</screen>
+
+<para
+>Anvend derefter skyderen <guilabel
+>Vagttid</guilabel
+> i modemkommandodelen til at stemme med registret (<varname
+>S12</varname
+> til værdien <returnvalue
+>5</returnvalue
+>). Derefter skal modemet lægge på som det skal.</para>
+
+<sect3>
+<title
+>Hvordan kommandometoden fungerer</title>
+
+<para
+>Når det lokale modem er tilsluttet til et fjernmodem, befinder det sig i tilstanden <quote
+>tilsluttet</quote
+>, hvor det sender alle tegn som det modtager til fjernmodemet uden tolkning. For at få modemet at tage imod tegn som kommandoer til sig selv, skal man stille modemet om til kommandostand. Koden som afbryder udfører dette.</para>
+
+<para
+>Koden som afbryder defineres som tre tidsinterval med længden defineret af <varname
+>S12</varname
+> i halvtredsindstyvendedels sekunder.</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Stille (skal  være endnu længere <varname
+>S12</varname
+>/50 sekunder)</para>
+</listitem>
+<listitem>
+<para
+>Tegnet som afbryder (som defineres af registret <varname
+>S2</varname
+>, den forvalgte værdi er <quote
+>+</quote
+>), gentaget tre gange (med mindre end <varname
+>S12</varname
+>/50 sekunder mellem hver gang).</para>
+</listitem>
+<listitem>
+<para
+>Stille (skal  være endnu længere <varname
+>S12</varname
+>/50 sekunder)</para>
+</listitem>
+</itemizedlist>
+
+<para
+>Når modemet først er i kommandotilstand, kan du sende kommandoer til det. For at få det til at lægge på, sendes kommandoen <command
+>ATH</command
+>. Koderne for at afbryde og strengen for at lægge på som &kppp; anvender vises i dialogen <link linkend="modem-commands"
+><guilabel
+>Modemkommandoer</guilabel
+></link
+>. Disse skal passe sammen med dit modem.</para>
+
+</sect3>
+</sect2>
+</sect1>
+
+<sect1 id="tone-dialing-speedup">
+<title
+>Hurtigere tonevalgsopkald</title>
+
+<para
+>Hvis du kan anvende tonevalgsopkald, kan tiden det tager at ringe op ændres med <varname
+>S11</varname
+>-registret. Det angiver tiden (i hundrededels sekunder) for at sende hver tone under opkaldet. Forvalgt værdi er oftest 95 (næsten et sekund). Hvor hurtigt du kan ringe op beror på telefonselskabets udrustning som håndterer din tilslutning. Den minimale tid er 50, næsten dobbelt så hurtigt, og den hastighed fungerer ofte. </para>
+
+<screen
+><userinput
+><command
+>ATZ</command
+></userinput
+>        <lineannotation
+># nulstil til forvalgt profil</lineannotation>
+<userinput
+><command
+>ATS11=50</command
+></userinput
+>   <lineannotation
+># hurtigst mulige opkald, anvend en større værdi hvis det ikke fungerer</lineannotation>
+<userinput
+><command
+>AT&amp;W</command
+></userinput
+>   <lineannotation
+># skriv til forvalgt profil</lineannotation
+>
+</screen>
+
+</sect1>
+</chapter>

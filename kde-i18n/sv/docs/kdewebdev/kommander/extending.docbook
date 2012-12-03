@@ -1,0 +1,444 @@
+<?xml version="1.0"  encoding="UTF-8" ?>
+
+<chapter id="extending">
+<chapterinfo>
+<authorgroup>
+<author
+><firstname
+>Andras</firstname
+> <surname
+>Mantia</surname
+> <affiliation
+><address
+><email
+>amantia@kde.org</email
+></address
+></affiliation>
+</author>
+<author
+><firstname
+>Michal</firstname
+> <surname
+>Rudolf</surname
+> <affiliation
+><address
+><email
+>mrudolf@kdewebdev.org</email
+></address
+></affiliation>
+</author>
+
+<othercredit role="translator"
+> <firstname
+>Stefan</firstname
+> <surname
+>Asserhäll</surname
+> <affiliation
+><address
+><email
+>stefan.asserhall@comhem.se</email
+></address
+></affiliation
+> <contrib
+>Översättare</contrib
+></othercredit
+> 
+
+</authorgroup>
+</chapterinfo>
+<title
+>Utöka &kommander;</title>
+
+<sect1 id="create-widgets">
+<title
+>Skapa grafiska komponenter för &kommander;</title>
+<para
+>Du kan ganska enkelt skapa nya grafiska komponenter med &kommander; som är baserade på komponenter som inte tillhör &kommander;. </para>
+<para
+>Det finns två sätt att lägga till nya komponenter i &kommander;: genom att skapa insticksprogram, eller genom att direkt lägga till dem i &kommander;s källkod. </para>
+<sect2 id="create-class">
+<title
+>Skapa komponentklassen</title>
+<para
+>Det första steget är att skapa komponentklassen. Metoden baseras på att härleda den nya &kommander; komponentklassen från &Qt;- eller &kde;-komponenten som du vill integrera med &kommander;, och dessutom från klassen KommanderWidget. Genom att överskrida metoder från denna klass, ger &kommander; komponenten sin funktion. </para>
+<para
+>Det mesta av koden i en &kommander;-komponent är bara mallkod. Därför kan du använda KDevelops mall för &kommander;-insticksprogram för att skapa det mesta av &kommander;-komponentens kod åt dig. För att göra det kör KDevelop (3.5 rekommenderas), välj <guimenu
+>Projekt -> Nytt projekt</guimenu
+>, markera kryssrutan <guilabel
+>Visa alla projektmallar</guilabel
+>, välj mallen <guilabel
+>C++/&kommander;/KommanderPlugin</guilabel
+>. Ge insticksprogrammet ett namn och följ instruktionerna i guiden. </para>
+<para
+>Allt du behöver göra är fylla i de viktiga delarna som hör till din grafiska komponent, liksom eventuell tillståndsinformation, komponenttext, etc. </para>
+<para
+>Låt oss anta att vi vill skapa en ny radeditorkomponent för &kommander; baserat på KDE-komponenten KLineEdit. Genom att använda dialogrutan för att skapa &kommander;-komponenter, får vi något som liknar det här i den skapade deklarationsfilen: </para>
+<screen
+>#include &lt;kommanderwidget.h&gt;
+
+class QShowEvent;
+class KomLineEdit : public KLineEdit, public KommanderWidget
+{
+    Q_OBJECT
+
+    Q_PROPERTY(QString populationText READ populationText WRITE setPopulationText DESIGNABLE false)
+    Q_PROPERTY(QStringList associations READ associatedText WRITE setAssociatedText DESIGNABLE false)
+    Q_PROPERTY(bool KommanderWidget READ isKommanderWidget)
+    
+public:
+    KomLineEdit(QWidget *a_parent, const char *a_name);
+    ~KomLineEdit();
+
+    virtual QString widgetText() const;
+
+    virtual bool isKommanderWidget() const;
+    virtual void setAssociatedText(const QStringList&amp;);
+    virtual QStringList associatedText() const;
+    virtual QString currentState() const;
+
+    virtual QString populationText() const;
+    virtual void setPopulationText(const QString&amp;);
+public slots:
+    virtual void setWidgetText(const QString &amp;);
+    virtual void populate();
+protected:
+    void showEvent( QShowEvent *e );
+signals:
+    void widgetOpened();
+    void widgetTextChanged(const QString &amp;);
+};
+</screen>
+<para
+>Det mesta av detta är bara mallkod som du inte behöver bry dig om. De enda två saker du måste försäkra dig om är att filen kommanderwidget.h inkluderas längst upp, och att klassen först härleds från komponenten vi önskar integrera med &kommander; och därefter från KommanderWidget. </para>
+<para
+>Det finns några delar i cpp-filen som är viktiga för varje enskild komponent. </para>
+<screen
+>KomLineEdit::KomLineEdit(QWidget *a_parent, const char *a_name)
+    : KLineEdit(a_parent, a_name), KommanderWidget(this)
+{
+    QStringList states;
+    states &lt;&lt; "default";
+    setStates(states);
+    setDisplayStates(states);
+}
+</screen>
+<para
+>Vi anger tillstånden komponenten kan ha i konstruktorn. Vår radeditor har ingen form av tillstånd, så vi ger den bara tillståndet <emphasis
+>default</emphasis
+>. Om du skapar en komponent som har olika tillstånd, som en kryssruta, kan du ange tre tillstånd <emphasis
+>unchecked</emphasis
+>, <emphasis
+>semichecked</emphasis
+> och <emphasis
+>checked</emphasis
+> här. </para>
+<screen
+>QString KomLineEdit::currentState() const
+{
+    return QString("default");
+}</screen>
+<para
+>Vi angav tillstånden i konstruktorn ovan, och detta returnerar bara komponentens nuvarande tillstånd. För vår komponent är det alltid <emphasis
+>default</emphasis
+>, men du bör lägga till kod här som kontrollerar vilket tillstånd komponenten för närvarande har, och returnerar lämplig sträng här. </para>
+<screen
+>QString KomLineEdit::widgetText() const
+{
+    return KLineEdit::text();
+}
+
+void KomLineEdit::setWidgetText(const QString &amp;a_text)
+{
+    KLineEdit::setText(a_text);
+    emit widgetTextChanged(a_text);
+}
+</screen>
+<para
+>Detta är de två viktigaste metoderna, där den största delen av koden som utgör funktionen finns. Metoden <emphasis
+>QString KomLineEdit::widgetText() const</emphasis
+> returnerar komponenttexten (texten som <emphasis
+>@widgetText</emphasis
+> expanderas till i textassociationer). Komponenttexten i vår komponent är helt enkelt texten i radeditorn, så vi returnerar den. På liknande sätt, när komponenttexten ändras, ändrar vi bara texten i radeditorn. Vi skickar signalen <emphasis
+>widgetTextChanged()</emphasis
+> efter komponenttexten har ändrats, så att andra komponenter kan får reda på det faktum att komponenten har uppdaterats. </para>
+<para
+>För att lägga till funktioner i komponenten, måste du registrera några funktioner och lägga till kod för att hantera dem. Här är koden som används för att registrera dem. Lägg den i början av cpp-filen, ovanför konstruktorn. </para>
+<screen
+>#include &lt;klocale.h&gt; // för i18n
+
+#include "kommanderplugin.h"
+#include "specials.h"
+
+enum Functions {
+  FirstFunction = 1159,
+  Function1,
+  Function2,
+  LastFunction
+};
+KomLineEdit::KomLineEdit(QWidget *a_parent, const char *a_name)
+    : KLineEdit(a_parent, a_name), KommanderWidget(this)
+{
+  ... // kod som beskrivs ovan
+  KommanderPlugin::setDefaultGroup(Group::DCOP);
+  KommanderPlugin::registerFunction(Function1, "function1(QString widget, QString arg1, int arg2)",  i18n("Call function1 with two arguments, second is optional."), 2, 3);
+  KommanderPlugin::registerFunction(function2, "function2(QString widget)",  i18n("Get a QString as a result of function2."), 1);  
+}
+</screen>
+<para
+>Detta registrerar två funktioner: <emphasis
+>function1 och function2</emphasis
+> Numren som tilldelas funktionerna (här <emphasis
+>1160</emphasis
+> och <emphasis
+>1161</emphasis
+>) måste vara unika, och inte användas av några andra insticksprogram eller inne i &kommander;. <emphasis
+>function1</emphasis
+> har två argument, ett valfritt, <emphasis
+>function2</emphasis
+> har inget argument och returnerar en sträng. Argumentet <emphasis
+>QString widget</emphasis
+> i signaturerna anger att funktionerna arbetar med en grafisk komponent, som: <emphasis
+>KomLineEdit.function1("komponent", 1)</emphasis
+>. </para>
+<para
+>För att lära &kommander; att komponenten stöder dessa funktioner, lägg till en metod på följande sätt: </para>
+<screen
+>bool KomLineEdit::isFunctionSupported(int f)
+{
+  return (f &gt; FirstFunction &amp;&amp; f &lt; LastFunction) || f == DCOP::text;
+}
+</screen>
+<para
+>Det betyder att KomLineEdit stöder funktionerna ovan, och den vanliga funktionen <emphasis
+>text</emphasis
+>. Funktionskoden ska hanteras inne i metoden handeDCOP: </para>
+<screen
+>QString KomLineEdit::handleDCOP(int function, const QStringList&amp; args)
+{
+  switch (function)
+  {
+    case function1:
+      handleFunction1(arg[0], arg[1].toInt()); // anropa din hantering av function1
+      break;
+    case function2:
+      return handleFunction2(); // anropa function2
+      break;
+    case DCOP::text:
+      return text(); // anropa den vanliga metoden KLineEdit::text()
+      break;
+    default:
+      return KommanderWidget::handleDCOP(function, args);
+  }
+  return QString::null;
+}
+</screen>
+<para
+>Det finns tillfällen då komponenten ska se annorlunda ut i editorn än när den körs, vilket är fallet för skriptobjekt, om-dialogruta, etc. Den vanliga lösningen är att visa en QLabel istället för komponenten. För att göra det måste komponenten härledas från QLabel, och använda följande i konstruktorn: </para>
+<screen
+>if (KommanderWidget::inEditor)
+  {
+    setPixmap(KGlobal::iconLoader()->loadIcon("iconname", KIcon::NoGroup, KIcon::SizeMedium));
+    setFrameStyle(QFrame::Box | QFrame::Plain);
+    setLineWidth(1);
+    setFixedSize(pixmap()->size());
+  }
+  else
+    setHidden(true);
+</screen>
+<para
+>Du kan skapa själva komponenten (om en komponent över huvud taget behövs, kanske "komponenten" bara tillhandahåller funktioner för att t.ex. komma åt en databas) i en av dina funktioner, som i funktionen <emphasis
+>execute</emphasis
+>. Här är ett exempel från komponenten om-dialogruta: </para>
+<screen
+>QString AboutDialog::handleDCOP(int function, const QStringList&amp; args)
+{
+  switch (function) {
+  ...
+    case DCOP::execute:
+    {
+      if (m_aboutData)
+      {        
+        KAboutApplication dialog(m_aboutData, this);
+        dialog.exec();
+      }
+      break;
+    }
+   ...
+}  
+</screen>
+<para
+>Nu har du en fullständig &kommander;-komponent. Allt som återstår att göra är att göra den tillgänglig i &kommander;-systemet via insticksprogram. </para>
+
+</sect2>
+
+<sect2 id="create-plugin">
+<title
+>Skapa insticksprogrammet till &kommander;</title>
+<para
+>Alla komponenter i &kommander; tillhandahålls via insticksprogram. De vanliga komponenterna laddas som komponentinsticksprogram, men &kommander;s editor är också länkat med biblioteket, eftersom vissa mekanismer i editorn är specifikt knutna till standardkomponenterna. </para>
+<para
+>Ett insticksprogram i &kommander; är helt enkelt ett delat bibliotek som har symbolen 'kommander_plugin'. Symbolen är en funktion som returnerar en pekare till en instans av klassen KommanderPlugin. </para>
+<para
+>&kommander; gör det enkelt att skapa ett insticksprogram för dina komponenter, så att du inte behöver bekymra dig om lågnivåsaker. Grundidén är att härleda en ny insticksklass för dina komponenter från basklassen KommanderPlugin och implementera några få specifika detaljer. Mallkod skapas av KDevelops projektmall som beskrivs ovan. </para>
+<para
+>Följande kod fortsätter exemplet om hur man skapar en radeditorkomponent för Kommander. </para>
+<screen
+>#include &lt;kommanderplugin.h>
+
+/* WIDGET INCLUDES */
+#include "komlineedit.h"
+
+</screen>
+<para
+>Det första vi gör är att inkludera kommanderplugin.h. Den innehåller definitionen av klassen KommanderPlugin. Vi inkluderar också alla deklarationsfiler för komponenter som insticksprogrammet tillhandahåller - bara komlineedit.h i detta fall. </para>
+<screen
+>class MyKomPlugin : public KommanderPlugin
+{
+public:
+    MyKomPlugin();
+    virtual QWidget *create( const QString &amp;className, QWidget *parent = 0, const char *name = 0 );
+};
+</screen>
+<para
+>Därefter skapar vi delklassen KommanderPlugin som kallas <emphasis
+>MyKomPlugin</emphasis
+>. Klassen har helt enkelt en konstruktor och den överskridna metoden create. </para>
+<screen
+>MyKomPlugin::MyKomPlugin()
+{
+    addWidget( "KomLineEdit", "My Widget Group", i18n("A Kommander line edit widget") new QIconSet(KGlobal::iconLoader()->loadIcon("iconname", KIcon::NoGroup, KIcon::SizeMedium)));
+    // lägg till mina andra komponenter här
+}
+</screen>
+<para
+>I insticksprogrammets konstruktor, anropar vi <emphasis
+>addWidget()</emphasis
+>för varje komponent vi vill tillhandahålla i insticksprogrammet. <emphasis
+>addWidget()</emphasis
+> har sex argument, men bara de fyra första krävs. I ordning är argumenten, komponentklassens namn, grupp, verktygstips, en ikonuppsättning för ikonen som används i editorns verktygsrad, vad är det här-information, och en Boolean som anger om komponenten är omgivande komponent för andra komponenter eller inte. Informationen används av editorn när komponenten grupperas i menyer, tillhandahåller hjälpinformation, etc. </para>
+<para
+>När det gäller ikonen, så laddar exemplet ovan en ikon av medelstorlek som kallas <emphasis
+>iconname</emphasis
+> från &kde;:s vanliga ikonplats. </para>
+<screen
+>QWidget *MyKomPlugin::create( const QString &amp;className, QWidget *parent, const char *name )
+{
+    if( className == "KomLineEdit" )
+    return new KomLineEdit( parent, name );
+    // skapa mina andra komponenter här
+    return 0;
+}
+</screen>
+<para
+><emphasis
+>create()</emphasis
+> är stället där instanser av våra komponenter verkligen skapas. Så snart &kommander; behöver en instans av en av klasserna som tillhandahålls av vårt insticksprogram, anropas <emphasis
+>create()</emphasis
+> med namnet på klassen som behövs, överliggande komponent och namnet som ska användas. Om <emphasis
+>className</emphasis
+> matchar någon komponent vi känner till, returnerar vi en ny instans av den klassen, men annars returnerar vi 0. </para>
+<para
+>Till sist exporterar vi insticksprogrammet. Det tillhandahåller bara en anropspunkt för insticksprogrammet så att &kommander;-systemet kan komma åt den. Utan det känner inte &kommander; igen biblioteket som ett &kommander;-insticksprogram. </para>
+<screen
+>KOMMANDER_EXPORT_PLUGIN(Mitt_Kom_insticksprogram)
+</screen>
+<para
+>För att kompilera den nya utökningen till &kommander;, ska du kompilera alla filer som ett delat bibliotek, och länka med kommanderplugin, kommanderwidget och eventuella lämpliga KDE-bibliotek. Med radeditorexemplet, om vi har komlineedit.h, komlineedit.cpp och mykomplugin.cpp, skulle kompilering och installering av insticksprogrammet omfatta något som liknar följande kommandon: </para>
+<screen
+>libtool --mode=compile g++ -$KDEDIR/include -IQTDIR/include \
+   -I. -fPIC -c komlineedit.cpp
+libtool --mode=compile g++ -$KDEDIR/include -IQTDIR/include \
+   -I. -fPIC -c mykomplugin.cpp
+
+libtool --mode=link g++ -shared -L$KDEDIR/lib -lkdeui -lkommanderwidget \
+   -lkommanderplugin komlineedit.cppkomlineedit.o mykomplugin.o 
+   -o libmykomplugin.so
+</screen>
+<para
+>Om du vill installera det nya insticksprogrammet för hela systemet, som systemadministratör, använd då: </para>
+<screen
+>su -c "cp libmykomplugin.so $KDEDIR/lib"
+</screen>
+<note
+><para
+>Om du använder KDevelops projekthantering, behöver du inte göra ovanstående, utan anpassa istället Makefile.am för att länka med extra bibilotek. Normalt länkar den med &Qt;- och &kde;-biblioteken och skapar alla objektfiler som behövs. Kör bara <command
+>make</command
+> för att bygga och <command
+>su -c make install</command
+> för att installera.</para
+></note>
+</sect2>
+<sect2 id="config-plugin">
+<title
+>Inställning av de installerade insticksprogrammen</title>
+<para
+>Nu när insticksprogrammet är installerat, kör programmet <command
+>kmdr-plugins</command
+> eller välj <guimenu
+>Inställnigar -> Anpassa insticksprogram</guimenu
+> i editorn. Listan i programmet visar insticksprogrammen som för närvarande är laddade av &kommander;. Lägg till det nya insticksprogrammet i listan genom att klicka på knappen <guilabel
+>Lägg till</guilabel
+> i verktygsraden och välja ditt insticksprogram. När programmet avslutas sparas ändringarna. </para>
+<para
+>Om du nu startar om &kommander;s editor, ska de grafiska komponenterna som det nya insticksprogrammet tillhandahåller vara tillgängliga i menyer och verktygsrader.Du kan nu använda dina nya komponenter i &kommander;-dialogrutor. </para>
+</sect2>
+<sect2 id="add-widget">
+<title
+>Lägg till komponenten direkt i &kommander;</title>
+<para
+>Det här avsnittet är till för utvecklare av &kommander;, och beskriver hur en ny komponent läggs till direkt i &kommander;.</para>
+<para
+>Ironiskt nog är detta mer komplicerat, särskilt om komponenten behöver extra redigeringsmetoder. Först skapas komponenten som ovan. Därefter måste du registrera komponenten i editorn och för körning. Lägg till den i <emphasis
+>editor/widgetdatabase.cpp</emphasis
+> för att registrera den i editorn: </para>
+<screen
+>...
+#include "mywidget.h"
+...
+void WidgetDatabase::setupDataBase( int id )
+{
+  ...
+  r = new WidgetDatabaseRecord;
+  r->name = "MyWidgetName";
+  r->iconName = "icon.png";
+  r->group = widgetGroup( "Kommander" );
+  r->toolTip = i18n("My new widget");
+  append(r);
+  ...
+}
+</screen>
+<para
+>Du måste dessutom lägga till följande i <emphasis
+>editor/widgetfactory.cpp</emphasis
+>: </para>
+<screen
+>...
+#include "mywidget.h"
+...
+QWidget *WidgetFactory::createWidget( const QString &amp;className, QWidget *parent, const char *name, bool init,
+  const QRect *r, Qt::Orientation orient )
+{
+  ...
+  else if (className == "MyWidgetName")
+    return new MyWidget(parent, name);    
+  ...
+}
+</screen>
+<para
+>För att registrera för körning (i själva verket i instickssystemet), lägg till följande i <emphasis
+>widgets/plugin.cpp</emphasis
+>: </para>
+<screen
+>KomStdPlugin::KomStdPlugin()
+{
+  ...
+  addWidget("MyWidgetName", group, "", new QIconSet(KGlobal::iconLoader()->loadIcon("iconname", KIcon::NoGroup, KIcon::SizeMedium)));
+  ...
+}
+</screen>
+<para
+>Det liknar hur komponenten registreras via instickssystemet i det första fallet. </para>
+</sect2>
+</sect1>
+
+</chapter>

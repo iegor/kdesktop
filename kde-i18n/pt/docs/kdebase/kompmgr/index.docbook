@@ -1,0 +1,574 @@
+<?xml version="1.0" ?>
+<!DOCTYPE book PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" "dtd/kdex.dtd" [
+ <!ENTITY kappname "kompmgr">
+ <!ENTITY package "kwin">
+ <!ENTITY % Portuguese "INCLUDE">
+ <!ENTITY % addindex "IGNORE">
+]>
+
+<book lang="&language;">
+<bookinfo>
+<title
+>Informação do &kappname;</title>
+
+<authorgroup>
+<author
+><personname
+><firstname
+>Thomas</firstname
+><surname
+>Luebking</surname
+></personname
+> <email
+>thomas.luebking@web.de</email
+> </author>
+
+<othercredit role="translator"
+><firstname
+>José</firstname
+><surname
+>Pires</surname
+><affiliation
+><address
+><email
+>jncp@netcabo.pt</email
+></address
+></affiliation
+><contrib
+>Tradução</contrib
+></othercredit
+> 
+</authorgroup>
+
+<copyright>
+<year
+>2005</year>
+<holder
+>Thomas Luebking</holder>
+</copyright>
+
+<legalnotice
+>&FDLNotice;</legalnotice>
+
+<date
+>2005-01-15</date>
+<releaseinfo
+>2.0.1</releaseinfo>
+
+<abstract>
+<para
+>O &kappname; é um motor de desenho composto para ser usado pelo &kwin;.</para>
+<para
+>Este documento é mais uma explicação geral do que faz, como funciona e quais as restrições do que propriamente como o usar (dado que funciona automaticamente em segundo plano).</para
+> 
+</abstract>
+
+<keywordset>
+<keyword
+>KDE</keyword>
+<keyword
+>kwin</keyword>
+<keyword
+>motor de desenho</keyword>
+</keywordset>
+</bookinfo>
+
+<chapter id="introduction">
+<title
+>Introdução</title>
+
+<para
+>O &kappname; baseia-se no <application
+>xcompmgr</application
+>, a implementação de composição de referência do Keith Packards para usar as novas funcionalidades do X.</para>
+
+<para
+>Um gestor de composição captura o resultado das janelas do X e desenha-as como se fosse uma única imagem que será apresentada no ecrã. A vantagem de fazer isto é que poderá fazer praticamente tudo com o conteúdo das janelas, incluindo a mistura de todas elas (translucidez) ou a associação de sombras. Poderá também pintá-las com uma dada cor, adicionar uma publicidade irritante à janela, encolhê-las, fracturá-las, adicionar linhas de varrimento ou tudo o que possa imaginar, estando o limite no seu 'hardware'.</para>
+
+</chapter>
+
+<chapter id="xorg">
+<title
+>Xorg</title>
+
+<para
+>É necessário o <emphasis
+>X.org 6.8 ou posterior</emphasis
+> para ter o &kappname; a funcionar. O X.org 6.7 ou anteriores ou o XFree86 não irão funcionar.</para>
+
+<sect1 id="xsetup">
+<title
+>Configuração</title>
+<para
+>Necessita de activar explicitamente a extensão Composite. Adicione uma nova secção ao seu ficheiro de configuração do X.org:</para>
+
+<programlisting
+>Section "Extensions"
+    Option "Composite" "Enable"
+EndSection
+</programlisting>
+
+<para
+>Se for suportado pelo seu <acronym
+>GPU</acronym
+> (o 'chip' complexo que dá poder a uma placa gráfica moderna), active a aceleração Render. Esta é melhor suportada pela <trademark
+>NVIDIA</trademark
+> e não tanto pelas placas da ATI.</para>
+
+<programlisting
+>Section "Device"
+....
+....
+    Option     "RenderAccel" "true"
+....
+....
+EndSection</programlisting>
+
+<para
+>O &kappname; deverá ficar agora disponível. Para mais informações, veja por favor a <link linkend="problems"
+>FAQ</link
+>.</para>
+
+</sect1>
+
+</chapter>
+
+<chapter id="settings">
+<title
+>Configuração</title>
+
+<para
+>Este capítulo descreve os parâmetros que pode mexer, qual o seu resultado visual e o seu impacto na performance.</para>
+
+<sect1 id="translucency">
+<title
+>Translucidez</title>
+
+<para
+>Um objecto translúcido é um que permite passar a luz através dele. Em termos das janelas do seu ecrã, significa que o conteúdo das janela pode ser visto através da janela que estiver no topo.</para>
+
+<para
+>A translucidez permite-lhe realçar as janelas especiais, ter uma vista tridimensional do seu ecrã, manter um registo das janelas cobertas e simplesmente fica bonito. O preço é que a mistura das imagens em conjunto custa alguma carga ao sistema.</para>
+
+<para
+>Poderá configurar de forma independente a translucidez para os seguintes itens:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Janelas activas</guilabel
+></term>
+<listitem
+><para
+>Sugere-se que active a translucidez de janelas para a janela activa. A razão principal é por causa da performance e, em segundo lugar, porque para analisar o conteúdo de uma janela translúcida significa que o seu cérebro tem de se esforçar para ignorar a informação irritante que aparece por trás, o que se torna cansativo.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Janelas inactivas</guilabel
+></term>
+<listitem
+><para
+>Se tornar as janelas activas translúcidas, as janelas activas ficarão realçadas e mais fáceis de colocar em primeiro plano. Contudo, se escolher um valor baixo, poderá ter problemas a encontrar uma janela inactiva. Se escolher valores mesmo muito baixos (&lt; 20&percnt;) poderá não conseguir distinguir as janelas empilhadas, como tal poderá carregar sem querer no botão <guibutton
+>OK</guibutton
+> de uma janela quando apenas queria activar uma janela. Os valores óptimos ficam entre 60&percnt; e 80&percnt;.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Janelas em movimento</guilabel
+></term>
+<listitem
+><para
+>Ainda que seja um efeito bonito ter janelas altamente translúcidas (opacidade &lt; 20&percnt;) ao mover as janelas, existe um preço bem pesado a pagar em performance, especialmente se não desactivar as sombras (ver abaixo). Basta tentar e, se sentir que o seu sistema fica muito lento, tente manter as janelas em movimento opacas. Este valor também se aplica as janelas quando estiverem a ser dimensionadas.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Janelas acopladas</guilabel
+></term>
+<listitem
+><para
+>Dado que as janelas acopladas, como o 'kicker', são raramente (se é que são alguma vez) mudadas de posição e são de tamanho limitado, isto é puramente visual e não irá afectar de forma determinante a performance do seu sistema.</para
+>  
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Tratar as janelas "manter acima" como activas</guilabel
+></term>
+<listitem
+><para
+>Se disser a uma janela para ficar acima das outras, normalmente irá querer deixá-la com o foco (em primeiro plano), como tal poderá fazer sentido dar-lhe a mesma ênfase.</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Desactivar as janelas ARGB</guilabel
+></term>
+<listitem
+><para
+>O XRender suporta janelas com uma determinada máscara 'alfa', &ie; com secções translúcidas. De momento, existem poucas ou nenhumas aplicações que tirem partido desta funcionalidade, dado que não faz muito sentido sem um gestor de composição. Isto poderá mudar no futuro.</para>
+<para
+>Por outro lado, a maioria das aplicações de GTK 1.x (&eg;, o <application
+>xmms</application
+>) definem esse tipo de máscara, o que resulta em janelas quase inutilizáveis (desde que as janelas subjacentes não sejam pretas), como tal poderá desactivar o suporte para as janelas ARGB aqui, para tirar partido das aplicações do GTK. Espera-se que possa vir a existir uma actualização para o GTK+ no futuro para resolver isto.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</sect1>
+
+<sect1 id="shadows">
+<title
+>Sombras</title>
+<para
+>Porque é que alguém poderá querer as suas janelas a mostrar sombras? Bem, talvez por parecer bonito, ou porque cria uma melhor separação entre janelas ou... simplesmente porque parece bonito!</para
+> 
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Usar sombreados</guilabel
+></term>
+<listitem
+><para
+>Dado que as sombras custam alguma ocupação adicional do CPU/GPU, poderão ser desactivadas, mantendo à mesma uma capacidade para canais 'alfa' geral.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Tamanho da janela activa</guilabel
+></term>
+<term
+><guilabel
+>Tamanho da janela inactiva</guilabel
+></term>
+<term
+><guilabel
+>Tamanho da janela acoplada</guilabel
+></term>
+<listitem
+><para
+>Poderá seleccionar diferentes tamanhos das sombras para os vários tipos/estados das janelas. Os valores não são absolutos mas poder-se-ão aplicar à sua resolução do ecrã.</para>
+<para
+>Em princípio, poderá definir os valores que quiser (se editar o ficheiro de configuração com um editor de texto, muito além do valor <quote
+>32</quote
+> que é oferecido), mas as sombras maiores ocupam mais poder de CPU/GPU.</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Deslocamento vertical</guilabel
+></term>
+<term
+><guilabel
+>Deslocamento horizontal</guilabel
+></term>
+<listitem
+><para
+>Por omissão, a janela iria projectar uma sombra <quote
+>igual a toda a volta</quote
+>, o que implicaria uma fonte de luz frontal. Os utilizadores familiarizados com o &MacOS; poderiam querer um deslocamento vertical, enquanto os utilizadores do &Windows; poderão preferir um deslocamento mais subtil para sueste. Experimente os valores até que fique satisfeito.</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Cor do sombreado</guilabel
+></term>
+<listitem
+><para
+>Normalmente as sombras, na ausência de luz, aparecem em tons de cinzento (de modo que a cor máxima de sombra é o preto, o que corresponde à ausência completa de luz). Ei, mas isto é um mundo virtual, e você poderá querer até ter sombras cor-de-rosa, porque não?</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Retirar sombras ao mover</guilabel
+></term>
+<listitem
+><para
+>Assinale isto se necessitar de mais performance (especialmente ao usar janelas translúcidas em movimento).</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Retirar sombras ao mudar tamanho</guilabel
+></term>
+<listitem
+><para
+>É uma boa ideia assinalar este item quer esteja a usar janelas translúcidas em movimento ou a serem dimensionadas quer não. A imagem da sombra das janelas tem de ser criada de novo permanentemente no caso de dimensionar as janelas, o que trará um enorme impacto na performance do sistema.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</sect1>
+
+<sect1 id="effects">
+<title
+>Efeitos</title>
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Janelas que desvanescem</guilabel
+></term>
+<term
+><guilabel
+>Desvanescer entre mudanças de opacidade</guilabel
+></term>
+<listitem
+><para
+>Em vez de mostrar simplesmente uma janela nova, poderá querer que ela apareça gradualmente. Embora isso cause boa impressão, também faz impressão na performance e é difícil de interagir em condições com as janelas que estão a aparecer ou a desaparecer. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><guilabel
+>Velocidade do aparecimento</guilabel
+></term>
+<term
+><guilabel
+>Velocidade do desaparecimento</guilabel
+></term>
+<listitem
+><para
+>Pelas razões de usabilidade indicadas nas <guilabel
+>Janelas que desvanescem</guilabel
+>, é mais prático usar uma velocidade rápida de de aparecimento e (para causar boa impressão) uma velocidade lenta de desaparecimento. Isto irá provocar efeitos giros e uma sensação de suavidade, assim como provoca pouca latência antes de a informação aparecer.</para
+> 
+</listitem>
+</varlistentry>
+</variablelist>
+</sect1>
+
+</chapter>
+
+<chapter id="problems">
+<title
+>Problemas</title>
+
+<para
+>A extensão Composite propriamente dita é bastante recente. Poderá causar vários problemas e até estoirar o X, como tal <emphasis
+>recomenda-se mesmo que nem sequer active a extensão Composite no Xorg.conf em máquinas de produção críticas</emphasis
+>. Contudo, se está disposto a arriscar num sistema um pouco mais instável, é certamente giro ter alguma beleza no sistema.</para>
+
+<para
+>No caso de sentir algumas instabilidades, estão aqui alguns problemas comuns - e as soluções alternativas: </para>
+
+<qandaset>
+<qandaentry>
+<question>
+<para
+>Tenho o X.org 6.8.x, mas o &kappname; recusa-se a iniciar</para>
+</question>
+<answer>
+<para
+>Terá de activar explicitamente a extensão Composite, adicionando para tal uma nova secção no /etc/X11/XorgConfig:</para>
+<programlisting
+>Section "Extensions"
+   Option "Composite" "Enable"
+EndSection</programlisting>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Ok, o &kappname; funciona, mas está horrivelmente lento</para>
+</question>
+<answer>
+<para
+>Se for suportado pelo seu <acronym
+>GPU</acronym
+> (principalmente nos <trademark
+>NVIDIA</trademark
+> e parcialmente nas placas da ATI), certifique-se primeiro que activou a aceleração Render</para>
+<programlisting
+>Section "Device"
+....
+....
+Option     "RenderAccel" "true"
+....
+....
+EndSection
+</programlisting>
+
+<para
+>Se continuar à mesma lento, poderá tentar ajustar a sua utilização de memória. Tanto poderá reduzir a profundidade de cor do seu ecrã (&eg; de 24 para 16) ou reduzir a sua resolução (&eg; de 1280x1024 para 1024x768).</para
+> 
+
+<para
+>Tenha em mente que o factor limitativo da extensão Composite parece ser o tamanho da 'cache' do CPU.</para>
+
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Depois de activar a extensão Composite, não consigo correr mais nenhuma aplicação de <acronym
+>GLX</acronym
+>. Tenho uma placa da <trademark
+>NVIDIA</trademark
+>.</para>
+</question>
+<answer>
+<para
+>Devido a alguns problemas, a <trademark
+>NVIDIA</trademark
+> desactivou o suporte de GLX quando o suporte do Composite está activo. A reactivação é possível, mas poderá causar problemas com algumas combinações de 'kernel'/controlador/GPU.</para
+> 
+<programlisting
+>Section "Device"
+....
+....
+Option  "AllowGLXWithComposite" "true"
+....
+....
+EndSection
+</programlisting>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Eu queria jogar um jogo que usa a <acronym
+>SDL</acronym
+> (mas não a <acronym
+>GL</acronym
+>) como, por exemplo, o <application
+>scummvm</application
+>, mas quando o 'compmgr' está activo, tudo o que vejo é uma sombra!</para>
+</question>
+<answer>
+<para
+>Isto é um problema com o PictType que foi indicado pela SDL.</para>
+
+<para
+>Solução alternativa:</para>
+<screen
+>Em vez de invocar directamente o <command
+>scummvm</command
+>, invoque o
+<command
+>SDL_VIDEO_X11_VISUALID=0x24 scummvm</command
+> Isto irá dizer à SDL
+para usar um formato suportado, para que assim possa jogar como sempre fez. </screen>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>A aplicação XXX recusa-se a correr após iniciar a extensão Composite.</para>
+<para
+>A aplicação YYY estoira o X após iniciar a extensão Composite.</para>
+<para
+>A aplicação ZZZ parece estranha após activar o gestor de composição.</para>
+</question>
+<answer>
+<para
+>A extensão Composite é ainda experimental.</para>
+<para
+>Solução alternativa:</para>
+<para
+>Em vez de invocar o <command
+>nomeAplicacao</command
+> directamente, invoque o <command
+>XLIB_SKIP_ARGB_VISUALS=1 nomeAplicacao</command
+></para>
+<para
+>As aplicações conhecidas por causarem problemas:</para>
+<itemizedlist>
+<listitem
+><para
+>Todas as aplicações do GTK+ 1 (&eg; <application
+>gmplayer</application
+>, <application
+>xmms</application
+>, <application
+>gaim</application
+>) - estoirando no arranque, aparecerem estranhas ou inúteis ou estoirarem mesmo com o X</para
+></listitem>
+<listitem
+><para
+>&kuickshow; - mostra apenas uma área a preto</para
+></listitem>
+<listitem
+><para
+>&Qt; <application
+>Designer</application
+> - estoira o X</para
+></listitem>
+<listitem
+><para
+>&kopete; - estoira o X</para
+></listitem>
+<listitem
+><para
+>&kolf; - estoira o X</para
+></listitem>
+</itemizedlist>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Tento ver um vídeo, mas só aparecem coisas estranhas na Janela do Vídeo.</para>
+</question>
+<answer>
+<para
+>Está a usar o <quote
+>xv</quote
+> como infra-estrutura de vídeo. Este é o modo de sobreposição, onde o conteúdo do vídeo é escrito directamente na memória do vídeo, passando ao lado do X. Como tal, a janela parece estar estática (fundo colorido) e não é actualizada pela extensão 'damage'.</para>
+<para
+>Espera-se que exista uma correcção para isto no futuro. O autor tem obtido melhores resultados a usar o <application
+>Xine</application
+> mas a visualização de vídeos translúcidos também não é lá muito rápida de qualquer forma.</para>
+</answer>
+</qandaentry>
+
+</qandaset>
+</chapter>
+
+<chapter id="credits-and-licenses">
+<title
+>Créditos e Licenças</title>
+
+<sect1 id="authors">
+<title
+>Autores</title>
+<para
+>Thomas Luebking <email
+>baghira-style@gmx.net</email
+> - Editor</para>
+&underFDL; &underGPL; </sect1>
+
+
+</chapter>
+
+</book>
+<!--
+Local Variables:
+mode: sgml
+sgml-omittag: nil
+sgml-shorttag: t
+End:
+-->
+

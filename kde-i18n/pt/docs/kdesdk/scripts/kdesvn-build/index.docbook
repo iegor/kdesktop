@@ -1,0 +1,1725 @@
+<?xml version="1.0" ?>
+<!DOCTYPE book PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" "dtd/kdex.dtd" [
+  <!ENTITY kappname "kdesvn-build">
+  <!ENTITY package "kdesdk">
+  <!ENTITY % addindex "IGNORE">
+  <!ENTITY % Portuguese "INCLUDE"
+> <!-- Change language only here -->
+  <!ENTITY svn "<application
+>Subversion</application
+>">
+  <!ENTITY kdesvn-build "<application
+>kdesvn-build</application
+>">
+]>
+
+<book lang="&language;">
+
+<bookinfo>
+<title
+>Manual do 'Script' &kdesvn-build;</title>
+
+<authorgroup id="authors">
+<author
+><firstname
+>Michael</firstname
+><surname
+>Pyne</surname
+> <affiliation
+><address
+><email
+>michael.pyne@kdemail.net</email
+></address
+></affiliation>
+</author
+> 
+<author
+><firstname
+>Carlos</firstname
+><surname
+>Woelz</surname
+> <affiliation
+><address
+><email
+>carloswoelz@imap-mail.com</email
+></address
+></affiliation>
+</author
+> 
+
+
+<othercredit role="translator"
+><firstname
+>José</firstname
+><surname
+>Pires</surname
+><affiliation
+><address
+><email
+>jncp@netcabo.pt</email
+></address
+></affiliation
+><contrib
+>Tradução</contrib
+></othercredit
+> 
+
+</authorgroup>
+
+<copyright>
+<year
+>2005</year>
+<holder
+>Michael Pyne</holder>
+</copyright>
+
+<copyright>
+<year
+>2005</year>
+<holder
+>Carlos Woelz</holder>
+</copyright>
+
+
+<legalnotice
+>&FDLNotice;</legalnotice>
+
+<date
+>2005-06-18</date>
+<releaseinfo
+>0.98</releaseinfo>
+
+<abstract>
+<para
+>O &kdesvn-build; é um programa em Perl que compila e instala o &kde; directamente a partir do código existente no repositório de &svn; do &kde;.</para>
+</abstract>
+
+<keywordset>
+<keyword
+>KDE</keyword>
+<keyword
+>kdesdk</keyword>
+<keyword
+>SVN</keyword>
+<keyword
+>Subversion</keyword>
+<keyword
+>Desenvolvimento KDE</keyword>
+</keywordset>
+
+</bookinfo>
+
+
+<chapter id="introduction">
+<title
+>Introdução</title>
+
+<para
+>O &kdesvn-build; é um programa em Perl que ajuda os utilizadores a instalar o <ulink url="http://www.kde.org/"
+>&kde;</ulink
+> a partir do <ulink url="http://subversion.tigris.org/"
+>&svn;</ulink
+>. Poderá também querer considerar o programa 'kde-build' que vem incluído no módulo 'kdesdk' do &kde;. </para>
+
+<para
+>Aqui será documentado a sintaxe opções do ficheiro de configuração do &kdesvn-build;, as suas opções da linha de comandos, as funcionalidades e uma introdução a todos os passos necessários para compilar o &kde; a partir do código, incluindo os passos que deverá efectuar ao usar as outras ferramentas ou, por outras palavras, os passos que não são efectuados automaticamente pelo programa &kdesvn-build;. </para>
+
+</chapter>
+
+<chapter id="getting-started">
+<title
+>Começar</title>
+
+<para
+>Neste capítulo, será apresentada a forma de utilização do &kdesvn-build; para obter os módulos do repositório do &kde; e os compilar. Será dada também uma explicação básica da estrutura de &svn; do &kde; e os passos que terá de efectuar antes de executar o programa. </para>
+
+<para
+>Todos os tópicos presentes neste capítulo são cobertos com ainda mais detalhe na secção <ulink url="http://quality.kde.org/develop/cvsguide/buildstep.php"
+> Guia de Compilação do Código do &kde; Passo-a-Passo</ulink
+>, na <ulink url="http://quality.kde.org"
+>Página Web da Equipa de Qualidade do &kde;</ulink
+>. Se estiver a compilar o KDE pela primeira vez, é uma boa ideia lê-lo ou consultá-lo como fonte de referência. Irá encontrar informações detalhada sobre as ferramentas de empacotamento e os requisitos, os problemas de compilação comuns e as estratégias e informações sobre a execução da instalação do seu novo &kde;. </para>
+
+<sect1 id="before-building">
+<title
+>Preparar o Sistema para Compilar o &kde;</title>
+
+<para
+>Recomenda-se que transfira e compile o &kde; com uma conta de utilizador. Se já tiver os pacotes do &kde; instalados, a melhor opção será criar um utilizador diferente (dedicado) para compilar e executar o novo &kde;. A vantagem de compilar o &kde; com um utilizador dedicado é que não poderá corromper o sistema de base e terá sempre uma forma de trabalhar confortavelmente quando as coisas correrem mal. </para>
+
+<para
+>Mais tarde, poderá fazer uma instalação como 'root' se o desejar. Este documento não cobre uma instalação como 'root'. Se estiver a efectuar uma instalação a nível do sistema, provavelmente já deverá saber o que está a fazer. </para>
+
+<para
+>Antes de usar o programa &kdesvn-build; (ou qualquer outra estratégia de compilação), deverá instalar as ferramentas de desenvolvimento e bibliotecas necessárias para o &kde;. Necessita da biblioteca Qt, versão 3.3.0 ou posterior, do Automake 1.8, Autoconf 2.5X (melhor se 
+>=2.57, dado que foi detectado um erro com as versões anteriores), o cliente do 'subversion' (svn), o compilador 'gcc' com o suporte de C++, a libxml2, o openssl, a libbz2 entre outras coisas (para uma lista completa, visite os <ulink url="http://www.kde.org/info/requirements/3.4.php"
+>Requisitos de Compilação do KDE</ulink
+>). Poderá obter normalmente estas ferramentas para o seu sistema, a partir da sua distribuição ou fornecedor. </para>
+
+<para
+>Alguns destes pacotes estão divididos em bibliotecas, programas ou utilitários e pacotes de desenvolvimento. Irá necessitar, pelo menos do programa ou biblioteca e do seu pacote de desenvolvimento. Se tiver dúvidas, instale tudo. As bibliotecas que necessita irão variar de acordo com os módulos que pretende compilar, dado que cada módulo tem os seus próprio requisitos. O <ulink url="http://quality.kde.org/develop/cvsguide/buildstep.php#step1"
+> Guia de Compilação do Código do &kde; Passo-a-Passo</ulink
+> tem mais detalhes sobre as ferramentas e técnicas específicas usadas para instalar e encontrar o 'software' necessário. </para>
+
+<para
+>Poderá já ter uma versão do programa &kdesvn-build; instalada no seu sistema. O &kdesvn-build; obriga a que você crie um ficheiro de configuração chamado <filename
+>.kdesvn-buildrc</filename
+>. Este ficheiro deverá ser instalado na pasta pessoal (~/), e contém todos os dados de configuração necessários para o programa correr, como as opções de configuração, compilação, a localização do código, o destino da instalação (prefixo), os módulos que serão compilados, &etc;. Os dados de configuração por omissão são oferecidos pelo ficheiro <filename
+>kdesvn-buildrc-sample</filename
+>. Poderá encontrar mais informações sobre a sintaxe do ficheiro de configuração em <xref linkend="configure-data"/> e <xref linkend="kdesvn-buildrc"/>. </para>
+
+<para
+>Uma boa forma de obter a última versão é escolher a página 'kdesdk/scripts' da página Web do <ulink url="http://websvn.kde.org/trunk/KDE"
+>websvn.kde.org</ulink
+>. Irá ver uma lista dos ficheiros disponíveis na pasta 'kdesdk/scripts' do repositório de &svn; do &kde;. Carregue na ligação do &kdesvn-build; e transfira a última versão do programa. Faça o mesmo para o ficheiro <filename
+>kdesvn-buildrc-sample</filename
+>. Torne o programa executável e verifique se está na sua PATH. </para>
+
+</sect1>
+
+<sect1 id="configure-data">
+<title
+>Definir os Dados de Configuração</title>
+
+<para
+>Para usar o programa, deverá ter um ficheiro na sua pasta pessoal chamado <filename
+>.kdesvn-buildrc</filename
+>, que define as opções gerais e os módulos que deseja transferir e compilar. </para>
+
+<para
+>Use o ficheiro <filename
+>kdesvn-buildrc-sample</filename
+> como modelo, defina as opções globais e os módulos que deseja compilar. </para>
+
+<para
+>Seleccione o servidor de onde deseja obter o &svn;, definindo a opção global 'svn-server'. O valor por omissão é o servidor &svn; anónimo, o <emphasis
+>svn://anonsvn.kde.org/</emphasis
+>, mas está à vontade para alterá-lo se tiver uma <ulink url="http://developer.kde.org/documentation/misc/firststepsaccount"
+>conta de &svn; do &kde;</ulink
+> ou, se existir, <ulink url="http://developer.kde.org/source/anonsvn.html"
+> uma réplica perto de si</ulink
+>. </para>
+
+<para
+>Preste bastante atenção às variáveis globais 'kdedir' e 'qtdir', dado que a primeira define onde o seu &kde; irá ser instalado (por omissão em <filename
+>~/kde</filename
+>), e o segundo diz onde (e se) a sua biblioteca Qt irá ser compilada e instalada, (por omissão em <filename
+>~/kdesvn/build/qt-copy</filename
+>). Terá de saber mais tarde a localização da 'kdedir' e da 'qtdir', para configurar as variáveis de ambiente que são necessárias para executar a sua instalação nova. Verifique se os módulos indicados são, de facto, os módulos que pretende compilar. As opções por omissão do ficheiro <filename
+>kdesvn-buildrc-sample</filename
+> deverão ser suficientes para obter uma instalação relativamente completa do &kde;. Grave o resultado como <filename
+>.kdesvn-buildrc</filename
+> na sua pasta pessoal. </para>
+
+<para
+>Se desejar afinar o seu ficheiro <filename
+>.kdesvn-buildrc</filename
+>, consulte o <xref linkend="kdesvn-buildrc"/> para obter informação mais detalhada sobre todas as opções de configuração. </para>
+
+</sect1>
+
+<sect1 id="building-and-troubleshooting">
+<title
+>Usar o 'script' &kdesvn-build;</title>
+
+<para
+>Agora está pronto para executar o programa. A partir de uma janela de termina, autentique-se com o utilizador que usa para compilar o &kde; e execute o programa: <screen
+><prompt
+>&percnt;</prompt
+><command
+>su</command
+> <option
+>-</option
+> <replaceable
+>utilizador</replaceable>
+<prompt
+>&percnt;</prompt
+><command
+>kdesvn-build</command
+>
+</screen>
+</para>
+
+<para
+>Agora, o programa deverá começar a ir obter o código-fonte e a compilá-lo. É pouco provável que corra tudo bem da primeira vez que compilar o &kde;. Não desespere! Verifique os ficheiros de registo para ver se faltam algumas ferramentas ou pacotes de desenvolvimento (a localização dos ficheiros de registo é definida pela variável 'log-dir' no ficheiro de configuração). Algumas vezes, a ramificação de desenvolvimento principal fica muito instável e difícil de compilar, principalmente quando está próximo um congelamento do desenvolvimento. Tenha paciência. Poderá descobrir mais exemplos comuns das coisas que poderão correr mal e as suas soluções, assim como dicas e estratégias gerais para compilar o &kde; no <ulink url="http://quality.kde.org/develop/cvsguide/buildstep.php#step1"
+> Guia de Compilação do Código do &kde; Passo-a-Passo</ulink
+>. </para>
+
+</sect1>
+
+<sect1 id="environment">
+<title
+>Configurar o Ambiente para Executar o seu &kde; Novo</title>
+
+<para
+>Assumindo que está a usar um utilizador dedicado para compilar o &kde; e já tem uma versão do &kde; instalada, a execução do seu &kde; novo poderá ter os seus truques, dado que o &kde; novo terá de ter precedência sobre o antigo. Mude as variáveis de ambiente para garantir que isso acontece. </para>
+
+<para
+>Abra ou crie o ficheiro <filename
+>.bash_profile</filename
+> na sua pasta pessoal com o seu editor favorito e adicione o seguinte ao fim do ficheiro: <programlisting>
+KDEDIR=(local do kdedir)
+KDEDIRS=$KDEDIR
+PATH=$KDEDIR/bin:$QTDIR/bin:$PATH
+LD_LIBRARY_PATH=$KDEDIR/lib:$LD_LIBRARY_PATH
+export KDEDIRS PATH LD_LIBRARY_PATH
+</programlisting
+> Se estiver a compilar o módulo 'qt-copy', adicione em alternativa: <programlisting
+>QTDIR=(local do qtdir)
+KDEDIR=(local do kdedir)
+KDEDIRS=$KDEDIR
+PATH=$KDEDIR/bin:$QTDIR/bin:$PATH
+MANPATH=$QTDIR/doc/man:$MANPATH
+LD_LIBRARY_PATH=$KDEDIR/lib:$QTDIR/lib:$LD_LIBRARY_PATH
+export QTDIR KDEDIRS PATH MANPATH LD_LIBRARY_PATH
+</programlisting>
+</para>
+
+<para
+>Se não estiver a usar um utilizador dedicado, defina um novo <envar
+>$KDEHOME</envar
+> para o seu novo ambiente no seu ficheiro <filename
+>.bash_profile</filename
+>: <programlisting
+>export KDEHOME="${HOME}/.kde-svn"
+
+# Criar a pasta se necessário
+[ ! -e ~/.kde-svn ] &amp;&amp; mkdir ~/.kde-svn
+</programlisting>
+</para>
+
+<note>
+<para
+>Se, mais tarde, o seu menu estiver vazio ou completamente cheio de aplicações da sua distribuição, poderá ter de definir o as suas variáveis de ambiente do 'xdg' no seu <filename
+>.bash_profile</filename
+>: <programlisting
+>XDG_CONFIG_DIRS="/etc/xdg"
+XDG_DATA_DIRS="${KDEDIR}/share:/usr/share"
+export XDG_CONFIG_DIRS XDG_DATA_DIRS
+</programlisting>
+
+</para>
+</note>
+
+<para
+>Agora que terminou o que tinha para fazer, certifique-se que será usado o <application
+>startkde</application
+> correcto: </para>
+
+<para
+>Abra o ficheiro de texto <filename
+>.xinitrc</filename
+> (ou o <filename
+>.xsession</filename
+>, dependendo da distribuição) da pasta pessoal, ou crie-o se necessário. Adicione a linha: <programlisting
+>exec ${KDEDIR}/bin/startkde
+</programlisting>
+</para>
+
+<para
+>Agora inicie o seu &kde; novo: nos sistemas BSD e Linux, com o suporte para terminais virtuais, os atalhos Ctrl+Alt+F1...F12 são usados para mudar para a Consola Virtual 1 a 12. Isto permite-lhe executar mais que um ambiente gráfico ao mesmo tmpo. Os primeiros seis são terminais de texto e os seis seguintes são gráficos. </para>
+
+<para
+>Quando você arranca, é-lhe apresentado o gestor gráfico, em alternativa. Poderá usar o novo ambiente do KDE, mesmo que não apareça como opção. Carregue em Ctrl + Alt + F2, para que lhe apareça um terminal de texto. Autentique-se com o utilizador dedicado e escreva: </para>
+
+<screen
+>startx -- :1
+</screen>
+
+<tip>
+<para
+>Poderá executar o KDE a partir do código e o KDE antigo ao mesmo tempo! Autentique-se com o seu utilizador normal e inicie o ambiente do KDE estável. Carregue em Ctrl + Alt + F2 (ou F1, F3, etc..), para que lhe apareça um terminal de texto. Ligue-se com o utilizador dedicado e escreva "startx -- :1". Poderá voltar ao utilizador normal, carregando em Ctrl + Alt + F6 (Ou F7, F8, etc... Experimente! Um deles é o correcto.) Para voltar ao KDE a partir do código, carregue em Ctrl + Alt + F7 (ou F6, F8,etc..). Agora poderá mudar entre as suas versões do KDE e teste a nova, sabendo que poderá voltar rapidamente à segurança do ambiente estável do KDE. </para>
+</tip>
+
+
+</sect1>
+
+</chapter>
+
+<chapter id="features">
+<title
+>Funcionalidades do Programa</title>
+
+<para
+>As funcionalidades do &kdesvn-build; incluem: </para>
+
+
+<itemizedlist>
+
+<listitem
+><para
+>Obtém ou actualiza automaticamente os módulos do &svn;, à medida das necessidades. </para
+></listitem>
+
+<listitem
+><para
+>Agenda o processo de compilação dos módulos. </para
+></listitem>
+
+<listitem
+><para
+>Tenta automaticamente compilar de novo os módulos que foram compilados com o 'make' incremental, que está sujeito a erros ao fim de algumas modificações. </para
+></listitem>
+
+<listitem
+><para
+>Poderá retomar uma execução anterior ou iniciar o processo de compilação de um determinado módulo. </para
+></listitem>
+
+<listitem
+><para
+>Vem incorporado com um conjunto seguro de opções predefinidas, apropriadas para compilar uma instalação mono-utilizador de base do &kde; a partir do repositório de &svn; anónimo. </para
+></listitem>
+
+<listitem
+><para
+>Vem com suporte para o <ulink url="http://www.kde.me.uk/index.php?page=unsermake"
+>Unsermake</ulink
+>. </para
+></listitem>
+
+<listitem
+><para
+>Expansão do til (~) para as suas opções de configuração. Por exemplo, poderá indicar: <programlisting
+>qtdir ~/kdesvn/build/qt-copy</programlisting>
+</para
+></listitem>
+
+<listitem
+><para
+>Pastas configuráveis para compilação, para o código-fonte e para registos. </para
+></listitem>
+
+<listitem
+><para
+>Configura automaticamente um sistema de compilação com uma pasta de compilação diferente da pasta de código, para manter impecável a pasta de código. A única excepção é o <application
+>qt-copy</application
+>, que não está desenhado para ser compilado dessa forma (a menos que queira testar o <link linkend="conf-use-qt-builddir-hack"
+><quote
+>truque do Qt com uma pasta de compilação separada</quote
+></link
+>). </para
+></listitem>
+
+<listitem
+><para
+>Poderá indicar as opções globais a aplicar a todos os módulos a obter, assim como poderá indicar opções para se aplicar aos módulos individuais. </para
+></listitem>
+
+<listitem
+><para
+>Dado que as ferramentas 'auto*' normalmente perdem a sincronização com as modificações na árvore de código, poderá forçar uma nova compilação de um módulo, se criar um ficheiro chamado '.refresh-me' na pasta de compilação do módulo em questão ou executando o &kdesvn-build; com a opção <option
+>--refresh-build</option
+>. </para
+></listitem>
+
+<listitem
+><para
+>Poderá indicar vários valores de ambiente a usar durante a compilação, incluindo o <envar
+>KDEDIR</envar
+>, o <envar
+>QTDIR</envar
+>, o <envar
+>DO_NOT_COMPILE</envar
+> e o <envar
+>CXXFLAGS</envar
+>. </para
+></listitem>
+
+<listitem
+><para
+>Registo dos comandos. Os ficheiros de registo são datados e numerados, para que tenha sempre um relatório de execução de um programa. Do mesmo modo, é criada uma ligação simbólica 'latest' para apontar sempre para o item de registo mais recente na pasta respectiva. </para
+></listitem>
+
+<listitem
+><para
+>Se estiver a usar uma compilação de utilizador do &kde;, em vez de uma instalação do sistema (para a qual necessita de ser o 'root' para instalar), poderá usar o programa para o instalar por si. Não foi ainda validado o código e este faz uma utilização ampla da chamada <function
+>system()</function
+>, como tal, não é recomendado executá-lo como 'root' nesta altura. </para
+></listitem>
+
+<listitem
+><para
+>Poderá usar o <link linkend="conf-make-install-prefix"
+>make-install-prefix</link
+> para anteceder o comando 'make install' com um comando separado, o que poderá ser útil para o 'sudo'. </para
+></listitem>
+
+<listitem
+><para
+>Poderá usar a opção <link linkend="conf-apidox"
+>apidox</link
+> para compilar e instalar automaticamente a documentação da API para alguns módulos. </para
+></listitem>
+
+<listitem
+><para
+>Poderá obter apenas uma parte de um módulo do &kde; no &svn;. Por exemplo, poderá obter apenas a biblioteca <application
+>taglib</application
+> do <application
+>kdesupport</application
+> ou apenas o <application
+>K3B</application
+> do <application
+>extragear/multimedia</application
+>. O programa irá obter automaticamente o <application
+>kde-common</application
+>, se for necessário para fazer a compilação funcionar. </para
+></listitem>
+
+<listitem
+><para
+>Poderá <quote
+>fingir</quote
+> efectuar as operações. Se passar a opção <option
+>--pretend</option
+> ou <option
+>-p</option
+> na linha de comandos, o programa dar-lhe-á uma descrição mais extensiva dos comandos que estará prestes a executar, sem os executar de facto. </para
+></listitem>
+
+<listitem
+><para
+>Suporte para obter ramificações ('branches') específicas dos módulos do &svn;. Este trabalho ainda necessita de ser terminado, mas já poderá seleccionar a ramificação que pretende compilar com a <link linkend="conf-module-base-path"
+>opção de configuração 'module-base-path'</link
+>. </para
+></listitem>
+
+</itemizedlist>
+
+<para
+>As coisas que o &kdesvn-build; NÃO faz: </para>
+
+<itemizedlist>
+
+<listitem
+><para
+>Descobrir a réplica do &svn; do &kde; mais rápida. Não existe sequer uma lista a acompanhar o programa nesta altura, ainda que o servidor por omissão deva funcionar perfeitamente. </para
+></listitem>
+
+<listitem
+><para
+>Lavar-lhe os dentes. Isso deverá partir de si à mesma. </para
+></listitem>
+
+<listitem
+><para
+>O programa, provavelmente, não está livre de erros. Desculpe por isso. </para
+></listitem>
+
+</itemizedlist>
+
+</chapter>
+
+<chapter id="kdesvn-buildrc">
+<title
+>O Formato do '.kdesvn-buildrc'</title>
+
+<para
+>Para usar o programa, deverá ter um ficheiro na sua pasta pessoal <filename
+>.kdesvn-buildrc</filename
+>, que descreve os módulos que deseja obter e compilar. </para>
+
+
+
+<para
+>Ele começa com as opções globais, indicadas da seguinte forma: </para>
+
+<programlisting
+>global
+<replaceable
+>nome-opção valor-opção</replaceable>
+<replaceable
+>[...]</replaceable>
+end global
+</programlisting>
+
+<para
+>Segue-se então uma ou mais secções dos módulos, organizadas da seguinte forma: </para>
+
+<programlisting
+>module <replaceable
+>nome-módulo</replaceable>
+<replaceable
+>nome-opção valor-opção</replaceable>
+<replaceable
+>[...]</replaceable>
+end module
+</programlisting>
+
+<para
+>O <replaceable
+>nome-módulo</replaceable
+> deverá ser um módulo do repositório de &svn; do &kde; (por exemplo, o 'kdelibs' ou o 'kdebase'). Algumas das opções sobrepõem-se às globais, algumas adicionam-se às opções globais e algumas opções globais simplesmente não podem ser sobrepostas. </para>
+
+<para
+>Segue-se uma lista ordenada alfabeticamente das opções que poderá usar. Carregue na opção para descobrir mais sobre ela. Se alguma não estiver documentada, envie por favor um e-mail aos autores, usando o endereço que poderá encontrar <link linkend="authors"
+>acima</link
+>. </para>
+
+<itemizedlist>
+<listitem
+><para
+><link linkend="conf-apidox"
+>apidox</link
+>, para compilar a Documentação da API</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-apply-qt-patches"
+>apply-qt-patches</link
+>, para melhorar o 'qt-copy'</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-binpath"
+>binpath</link
+>, para definir a variável <envar
+>PATH</envar
+>.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-branch"
+>branch</link
+>, para obter uma dada ramificação, em vez da '/trunk'.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-build-dir"
+>build-dir</link
+>, para definir a pasta onde será feita a compilação.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-checkout-only"
+>checkout-only</link
+>, para transferir apenas as partes de um módulo.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-colorful-output"
+>colorful-output</link
+> para colorir o resultado do programa.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-configure-flags"
+>configure-flags</link
+> para definir as opções com que um módulo poderá ser configurado.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-cxxflags"
+>cxxflags</link
+> para definir a variável <envar
+>CXXFLAGS</envar
+>.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-dest-dir"
+>dest-dir</link
+> para mudar a pasta de instalação de um módulo.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-disable-agent-check"
+>disable-agent-check</link
+>, para impedir que o 'kdesvn-build' verifique o estado do 'ssh-agent'.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-do-not-compile"
+>do-not-compile</link
+>, para marcar as pastas que não serão compiladas.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-inst-apps"
+>inst-apps</link
+>, para só compilar e instalar algumas pastas.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-install-after-build"
+>install-after-build</link
+>, para evitar a instalação após o processo de compilação.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-kdedir"
+>kdedir</link
+>, para indicar a pasta onde o KDE será instalado.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-libpath"
+>libpath</link
+>, para configurar a variável <envar
+>LD_LIBRARY_PATH</envar
+>.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-make-install-prefix"
+>make-install-prefix</link
+>, para executar um programa auxiliar (como o 'sudo') durante o 'make install'.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-make-options"
+>make-options</link
+>, para passar opções ao programa 'make'.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-manual-build"
+>manual-build</link
+>, para evitar que o módulo seja compilado automaticamente.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-manual-update"
+>manual-update</link
+>, para evitar que seja feito, seja o que for, ao módulo de forma automática.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-module-base-path"
+>module-base-path</link
+>, para mudar o local onde transferir o módulo (útil para as ramificações - 'branches' -, e marcas - 'tags').</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-niceness"
+>niceness</link
+>, para mudar a prioridade do CPU.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-no-rebuild-on-fail"
+>no-rebuild-on-fail</link
+>, para evitar executar o 'make' de novo se falhar.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-qtdir"
+>qtdir</link
+>, para definir a localização do Qt.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-set-env"
+>set-env</link
+>, para configurar uma variável de ambiente.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-source-dir"
+>source-dir</link
+>, para mudar o local onde colocar o código transferido.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-stop-on-failure"
+>stop-on-failure</link
+>, para fazem com que o 'kdesvn-build' pare o mais cedo possível, após encontrar um problema.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-svn-server"
+>svn-server</link
+>, para mudar o servidor de onde é transferido o código.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-use-qt-builddir-hack"
+>use-qt-builddir-hack</link
+>, para dar ao Qt uma pasta de compilação diferente da do seu código, como acontece no KDE.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-use-unsermake"
+>use-unsermake</link
+>, para usar o sistema de compilação avançado, o 'unsermake'.</para
+></listitem>
+</itemizedlist>
+
+
+<para
+>Aqui está uma tabela com as opções globais, bem como alguns comentários sobre elas. As opções que se sobreporem às globais irão também sobrepor-se a uma configuração da linha de comandos. </para>
+
+<table id="option-table">
+<title
+>Tabela de Opções</title>
+<tgroup cols="3">
+
+<thead>
+<row>
+<entry
+>Nome da Opção</entry>
+<entry
+>Comportamento do Módulo -&gt; Global</entry>
+<entry
+>Notas</entry>
+</row>
+</thead>
+
+<tbody>
+
+<row id="conf-apidox">
+<entry
+>apidox</entry>
+<entry
+>Sobrepõe-se à global</entry>
+<entry
+>Configure esta opção como <quote
+>true</quote
+>, para que o &kdesvn-build; compile e instale automaticamente a documentação da API do módulo, após o processo de compilação/instalação normal. Isto só funciona para os módulos em que o <command
+>make apidox</command
+> faz alguma coisa, e que incluem o 'kdelibs', 'kdebase' e o 'koffice', entre outros. </entry>
+</row>
+
+<row id="conf-apply-qt-patches">
+<entry
+>apply-qt-patches</entry>
+<entry
+>Sobrepõe-se à global</entry>
+<entry
+>Esta opção só é útil para o 'qt-copy'. Se for um valor diferente de zero, então o programa 'apply-patches' do 'qt-copy' será executado antes da compilação, para aplicar as alterações não oficiais no 'qt-copy'. Dado que estas alterações são normalmente a razão para usar o 'qt-copy', em vez de um Qt oficial, não deverá haver qualquer problema em activá-las. Por omissão, está activada a aplicação destas modificações.</entry>
+</row>
+
+<row id="conf-binpath">
+<entry
+>binpath</entry>
+<entry
+>Não poderá ser sobreposta</entry>
+<entry
+><para
+>Active esta opção para modificar a variável de ambiente PATH durante a compilação. Não poderá sobrepor esta opção numa opção do módulo. O valor por omissão é o <filename class="directory"
+>/bin:/usr/bin:/usr/local/bin:/usr/X11R6/bin</filename
+>. Esta variável de ambiente deverá incluir os locais, separados por dois-pontos das suas ferramentas de desenvolvimento. Os locais <filename class="directory"
+>$KDEDIR/bin</filename
+> e <filename class="directory"
+>$QTDIR/bin</filename
+> são adicionados automaticamente. Poderá usar o til (~) para os locais que adicionar com esta opção.</para>
+</entry>
+</row>
+
+<row id="conf-branch">
+<entry
+>branch</entry>
+<entry
+>Sobrepõe-se à global</entry>
+<entry
+><para
+>Altere esta opção para obter uma ramificação do KDE, em vez do valor por omissão "trunk", onde o desenvolvimento do KDE está em curso. Por exemplo, para obter a ramificação do KDE 3.4, deverá configurar esta opção como "3.4".</para>
+<para
+>Lembre-se que alguns módulos usam um nome de ramificação diferente. Em concreto, o módulo obrigatório 'arts' não segue os números de versões do KDE. O 'arts' que acompanhava o KDE 3.4 era o 1.4.</para>
+<para
+>Se o 'kdesvn-build' não conseguir obter adequadamente uma ramificação com esta opção, poderá ter de indicar manualmente o URL de onde transferir, com a opção <link linkend="conf-override-url"
+>override-url</link
+>.</para>
+</entry>
+</row>
+
+<row id="conf-build-dir">
+<entry
+>build-dir</entry>
+<entry
+>Sobrepõe-se à global</entry>
+<entry
+>Use esta opção para mudar a pasta que contém o código compilado. Existem três formas diferentes de o usar: <itemizedlist
+> <listitem
+><para
+>Relativa à pasta de código do &kde; no &svn; (ver a <link linkend="conf-source-dir"
+>opção 'source-dir'</link
+>). Esta é a opção predefinida e a forma como funcionou o programa até à versão v0.61. Este modo fica seleccionado se escrever o nome de uma pasta que não comece por um til (~) ou uma barra (/).</para
+> <para
+>O valor por omissão é <filename class="directory"
+>build</filename
+>.</para
+></listitem
+> <listitem
+><para
+>Um local absoluto. Se indicar um local que comece por um /, então será usado esse local directamente. Por exemplo, o <filename class="directory"
+>/tmp/kde-obj-dir/</filename
+>.</para
+></listitem
+> <listitem
+><para
+>Relativo à sua pasta pessoal. Se indicar uma pasta que comece com um '~', então o local será usado em relação à sua pasta pessoal, de forma semelhante à expansão do til da linha de comandos. Por exemplo, o <filename class="directory"
+>~/builddir</filename
+> irá configurar a pasta de compilação como <filename class="directory"
+>/home/utilizador/builddir</filename
+>.</para
+></listitem
+> </itemizedlist
+> Talvez de forma surpreendente, esta opção poderá alterada por módulo. </entry>
+</row>
+
+<row id="conf-checkout-only">
+<entry
+>checkout-only</entry>
+<entry
+>Sobrepõe-se à global</entry>
+<entry
+>Altere esta opção para obter o código do &svn; passo-a-passo. O valor desta opção deverá ser uma lista separada por espaços das pastas a transferir. Se não incluir a pasta 'admin', será incluída automaticamente (se necessário). Ao transferir passo-a-passo, a pasta 'admin' será obtida do 'kde-common', que é onde se encontra no servidor do &svn;. Ainda que esta opção se sobreponha à global, tenha em atenção que esta opção, como global, não faz sentido. </entry>
+</row>
+
+<row id="conf-configure-flags">
+<entry
+>configure-flags</entry>
+<entry
+>Adiciona às opções globais (excepto no 'qt-copy')</entry>
+<entry
+>Use esta opção para indicar quais as opções a passar ao './configure' quando criar o sistema de compilação do módulo. Quando isto é usado como uma opção global, é aplicada a todos os módulos onde este programa se compila. O 'qt-copy' usa um conjunto muito diferente de opções do 'configure' do resto do &kde;, como tal esta opção <emphasis
+>sobrepõe</emphasis
+> as opções globais, quando é aplicada ao 'qt-copy'.</entry>
+</row>
+
+<row id="conf-colorful-output">
+<entry
+>colorful-output</entry>
+<entry
+>Não poderá ser sobreposta</entry>
+<entry
+>Configure esta opção como 'false' para desactivar o resultado colorido do &kdesvn-build;. Por omissão é <quote
+>true</quote
+>. Lembre-se que o &kdesvn-build; não irá mostrar os códigos de cores em nada que não seja um terminal (como o 'xterm', o &konsole; ou a consola normal do Linux). </entry>
+</row>
+
+<row id="conf-cxxflags">
+<entry
+>cxxflags</entry>
+<entry
+>Adiciona-se à opção global</entry>
+<entry
+>Use esta opção para indicar as opções a passar ao <command
+>./configure</command
+> como <envar
+>CXXFLAGS</envar
+>, ao criar o sistema de compilação do módulo. Esta opção é indicada aqui em vez do <link linkend="conf-configure-flags"
+>configure-flags</link
+>, dado que esta opção irá também definir a variável de ambiente <envar
+>CXXFLAGS</envar
+> durante o processo de compilação. </entry>
+</row>
+
+<row id="conf-dest-dir">
+<entry
+>dest-dir</entry>
+<entry
+>Sobrepõe-se à global</entry>
+<entry
+>Use esta opção para mudar o nome que é dado a um módulo no disco. Por exemplo, se o seu módulo se chamava 'extragear/network', poderá mudar o nome do mesmo para 'extragear-network' com esta opção. </entry>
+</row>
+
+<row id="conf-disable-agent-check">
+<entry
+>disable-agent-check</entry>
+<entry
+>Não poderá ser sobreposta</entry>
+<entry
+>Normalmente, se estiver a usar o SSH para obter o código do Subversion (se, por exemplo, estiver a usar o protocolo 'svn+ssh'), o 'kdesvn-build' irá tentar certificar-se que, se estiver a usar o 'ssh-agent', ele está de facto a gerir algumas identidades do SSH. Isto é para tentar e evitar que o SSH pergunte a sua frase-senha para todos os módulos. Poderá desactivar esta opção se activar a opção 'disable-agent-check' como 'true'. </entry>
+</row>
+
+<row id="conf-do-not-compile">
+<entry
+>do-not-compile</entry>
+<entry
+>Sobrepõe-se à global</entry>
+<entry
+><para
+>Use esta opção para definir a variável de ambiente <envar
+>DO_NOT_COMPILE</envar
+> antes de executar o programa 'configure'. De acordo com a <ulink url="http://developer.kde.org/documentation/other/developer-faq.html"
+>FAQ de Desenvolvimento do &kde;</ulink
+>, este deverá ser o caso de uma pasta de topo que não deseje compilar. As pastas deverão estar separadas por espaços.</para>
+
+<para
+>Lembre-se que o código dos programas será à mesma transferido. Poderá usar a instrução <link linkend="conf-checkout-only"
+>checkout-only</link
+> para escolher as pastas que deseja obter.</para>
+</entry>
+</row>
+
+<row id="conf-email-address">
+<entry
+>email-address</entry>
+<entry
+>Não poderá ser sobreposta</entry>
+<entry>
+<para
+>Configure esta opção com o endereço de e-mail que o 'kdesvn-build' deverá enviar, no caso de alguma vez necessitar de enviar mensagens. Não terá de se preocupar com isto se não usar qualquer funcionalidade que envie e-mails. (Elas estão todas  desactivadas por omissão). </para>
+
+<para
+>De momento, só o <link linkend="conf-email-on-compile-error"
+>email-on-compile-error</link
+> é que necessita desta opção. </para>
+</entry>
+</row>
+
+<row id="conf-email-on-compile-error">
+<entry
+>email-on-compile-error</entry>
+<entry
+>Não poderá ser sobreposta</entry>
+<entry>
+<para
+>Poderá configurar esta opção com o endereço de e-mail para onde enviar um relatório, sempre que um módulo não conseguir ser compilado. O 'kdesvn-build' irá esperar até que todos os módulos terminem e irá recolher todos os resultados no relatório. Este só é enviado se um módulo se recusar a compilar. </para>
+
+<para
+>Por favor, veja a opção <link linkend="conf-email-address"
+>email-address</link
+> para configurar o endereço de onde o 'kdesvn-build' irá enviar, dado que o valor por omissão não é normalmente o que pretende. </para>
+</entry>
+</row>
+
+<row id="conf-inst-apps">
+<entry
+>inst-apps</entry>
+<entry
+>Sobrepõe-se à global</entry>
+<entry
+><para
+>Esta é o oposto da opção <link linkend="conf-do-not-compile"
+>do-not-compile</link
+>. Serve para indicar que apenas as pastas de topo referidas serão compiladas. As pastas deverão estar separadas por espaços.</para>
+
+<para
+>As alterações não farão efeito até à próxima vez que o <command
+>make <option
+>-f</option
+> Makefile.cvs</command
+> seja executado, quer automaticamente pelo programa, quer manualmente pelas opções <link linkend="cmdline-refresh-build"
+><option
+>--refresh-build</option
+></link
+> ou <link linkend="cmdline-recreate-configure"
+><option
+>--recreate-configure</option
+></link
+>. </para>
+
+<para
+>Lembre-se que o código dos programas será à mesma transferido. Poderá usar a instrução <link linkend="conf-checkout-only"
+>checkout-only</link
+> para escolher as pastas que deseja obter.</para>
+</entry>
+</row>
+
+<row id="conf-install-after-build">
+<entry
+>install-after-build</entry>
+<entry
+>Sobrepõe-se à global</entry>
+<entry
+>Esta opção é usada para instalar o pacote depois de este ser compilado com sucesso. Esta opção está activa por omissão. Se quiser desactivá-la, terá de configurar esta opção como 0 no ficheiro de configuração. Poderá também usar a opção da linha de comandos <link linkend="cmdline-no-install"
+><option
+>--no-install</option
+></link
+>. </entry>
+</row>
+
+<row id="conf-kdedir">
+<entry
+>kdedir</entry>
+<entry
+>Não poderá ser sobreposta</entry>
+<entry
+>Esta opção define a pasta em que o &kde; será instalado após a compilação. Por omissão, será em <filename class="directory"
+>~/kde</filename
+>. Se mudar isto para uma pasta que necessite do acesso do 'root', poderá ter de ler acerca da opção <link linkend="conf-make-install-prefix"
+>make-install-prefix</link
+> também.</entry>
+</row>
+
+<row id="conf-libpath">
+<entry
+>libpath</entry>
+<entry
+>Não poderá ser sobreposta</entry>
+<entry
+>Configure esta opção para definir a variável de ambiente LD_LIBRARY_PATH, enquanto efectua a compilação. Não poderá sobrepor esta opção num módulo. O valor por omissão está em branco, mas os locais <filename class="directory"
+>$KDEDIR/lib</filename
+> e <filename class="directory"
+>$QTDIR/lib</filename
+> são adicionados automaticamente. Poderá usar o til (~) para os locais que adicionar com esta opção. </entry>
+</row>
+
+<row id="conf-log-dir">
+<entry
+>log-dir</entry>
+<entry
+>Sobrepõe-se à global</entry>
+<entry
+>Use esta opção para mudar a pasta que irá conter os ficheiros de registo gerados pelo programa. Esta opção poderá ser definida por cada módulo, desde a versão 0.64 e posteriores. </entry>
+</row>
+
+<row id="conf-make-install-prefix">
+<entry
+>make-install-prefix</entry>
+<entry
+>Sobrepõe-se à global</entry>
+<entry
+>Configure esta variável com uma lista separada por espaços, que será interpretada como um comando e as suas opções, para anteceder o comando 'make install', que é usado para instalar os módulos. Isto é útil para instalar os pacotes com o 'sudo', por exemplo, mas tenha cuidado enquanto lida com os privilégios do 'root'.</entry>
+</row>
+
+<row id="conf-make-options">
+<entry
+>make-options</entry>
+<entry
+>Sobrepõe-se à global</entry>
+<entry
+>Configure esta variável para passar as opções da linha de comandos ao comando 'make'. Isto é útil para os programas, como o <ulink url="http://distcc.samba.org/"
+><application
+>distcc</application
+></ulink
+>. O <application
+>distcc</application
+> permite-lhe partilhar o seu trabalho de compilação por mais que um computador. Para a usar, deverá usar a opção <option
+>-j</option
+> do 'make'. Agora já pode. De acordo com a documentação, recomenda-se '2 * número_de_cpus_na_rede'. Existe 1 CPU no caso do autor, como tal seria <option
+>-j2</option
+> no caso dele.</entry>
+</row>
+
+<row id="conf-manual-build">
+<entry
+>manual-build</entry>
+<entry
+>Sobrepõe-se à global</entry>
+<entry
+>Configure o valor da opção como <quote
+>true</quote
+> para evitar que o processo de compilação tente compilar este módulo. Será à mesma mantido actualizado ao actualizar a partir do &svn;. Esta opção é exactamente equivalente à opção da linha de comandos <link linkend="cmdline-no-build"
+><option
+>--no-build</option
+></link
+>. </entry>
+</row>
+
+<row id="conf-manual-update">
+<entry
+>manual-update</entry>
+<entry
+>Sobrepõe-se à global</entry>
+<entry
+>Configure o valor da opção como <quote
+>true</quote
+> para evitar que o processo de compilação tente actualizar (e, por conseguinte, compilar ou instalar) este módulo. Se definir esta opção para um módulo, também poderá tê-la comentada. </entry>
+</row>
+
+<row id="conf-module-base-path">
+<entry
+>module-base-path</entry>
+<entry
+>Sobrepõe-se à global</entry>
+<entry
+><para
+>Configure esta opção para se sobrepor à pasta por omissão do &kdesvn-build; para o módulo em questão. Isto poderá ser usado, por exemplo, para usar ramificações ou marcas específicas de determinadas bibliotecas. O <ulink url="http://websvn.kde.org/"
+>Visualizador de Código do &kde;</ulink
+> é extremamente valioso para o ajudar a escolher o local correcto.</para>
+<para
+>Lembre-se que o &kdesvn-build; constrói o local final de acordo com o seguinte modelo: <varname
+>$svn-server</varname
+>/home/kde/<varname
+>$module-base-path</varname
+>/<varname
+>$module-name</varname
+>. </para>
+<para
+>O valor por omissão tanto pode ser o <quote
+>trunk</quote
+> como o <quote
+>trunk/KDE</quote
+>, dependendo do nome do módulo.</para>
+</entry>
+</row>
+
+<row id="conf-niceness">
+<entry
+>niceness</entry>
+<entry
+>Não poderá ser sobreposta</entry>
+<entry
+>Configure esta opção com um valor entre 20 e 0. Quanto mais alto o número, menor prioridade terá o &kdesvn-build; para si próprio. O valor por omissão é 10. </entry>
+</row>
+
+<row id="conf-no-rebuild-on-fail">
+<entry
+>no-rebuild-on-fail</entry>
+<entry
+>Sobrepõe-se à global</entry>
+<entry
+>Configure o valor desta opção como <quote
+>true</quote
+> para evitar sempre que o &kdesvn-build; tente compilar de novo este módulo, se falhar numa compilação incremental. Normalmente, o &kdesvn-build; irá tentar compilar de novo o módulo do zero, para contradizer o efeito de uma actualização do &svn; inválida que confunda o sistema de compilação.</entry>
+</row>
+
+<row id="conf-override-url">
+<entry
+>override-url</entry>
+<entry
+>Sobrepõe-se à global</entry>
+<entry
+>Se configurar esta opção, o 'kdesvn-build' irá usar o seu valor como o URL a passar ao Subversion,  <emphasis
+>sem qualquer alteração</emphasis
+>. Deverá usar geralmente esta opção, se quiser obter uma versão específica, mas o 'kdesvn-build' não conseguir descobrir o que queria dizer ao usar a opção <link linkend="conf-branch"
+>branch</link
+>. </entry>
+</row>
+
+<row id="conf-qtdir">
+<entry
+>qtdir</entry>
+<entry
+>Não poderá ser sobreposta</entry>
+<entry
+>Configure esta opção para definir a variável de ambiente QTDIR enquanto compila. Poderá sobrepor esta configuração numa opção de um módulo. Se não indicar esta opção, será por omissão a <filename class="directory"
+><varname
+>$(source-dir)</varname
+>/build/qt-copy</filename
+>, que irá usar o módulo 'qt-copy' que está incluído no repositório de código do &kde;. Poderá usar um til (~) que representa a sua pasta pessoal. </entry>
+</row>
+
+<row id="conf-remove-after-install">
+<entry
+>remove-after-install</entry>
+<entry
+>Sobrepõe-se à global</entry>
+<entry
+><para
+>Se estiver com pouco espaço em disco, poderá querer usar esta opção para remover automaticamente a pasta de compilação (ou as pastas de compilação e de código, para instalações episódicas), após o módulo ter sido instalado com sucesso. </para>
+<para
+>Os valores possíveis para esta opção são: <itemizedlist>
+<listitem
+><para
+>none - Não remove nada (Este é o valor por omissão).</para
+></listitem>
+<listitem
+><para
+>builddir - Remove a pasta de compilação, mas não o código.</para
+></listitem>
+<listitem
+><para
+>all - Remove tanto o código-fonte como a pasta de compilação.</para
+></listitem>
+</itemizedlist>
+</para>
+
+<para
+>Lembre-se que a utilização desta opção poderá ter um grande impacto na utilização da sua largura de banda (se usar o 'all') e o tempo que dura a compilação do KDE, dado que o 'kdesvn-build' será incapaz de efectuar compilações incrementais.</para>
+</entry>
+</row>
+
+<row id="conf-set-env">
+<entry
+>set-env</entry>
+<entry
+>Sobrepõe-se à global</entry>
+<entry
+><para
+>Esta opção aceita um conjunto de valores separados por espaços, onde o primeiro valor é a variável de ambiente a definir e o resto dos valores é o que deseja atribuir à sua variável. Por exemplo, para configurar a variável RONALD como McDonald, iria pôr este comando na secção apropriada:</para>
+<screen
+><command
+>set-env</command
+> <envar
+>RONALD</envar
+> <userinput
+>McDonald</userinput
+></screen>
+<para
+>Esta opção é especial, na medida em que poderá ser repetida sem sobrepor a configuração anterior do 'set-env' na mesma secção do ficheiro de configuração. Desta forma, poderá definir mais que uma variável de ambiente por módulo (ou a nível global).</para>
+</entry>
+</row>
+
+<row id="conf-source-dir">
+<entry
+>source-dir</entry>
+<entry
+>Não poderá ser sobreposta</entry>
+<entry
+>Esta opção é usada para definir a pasta do seu computador, onde será guardado o código-fonte do &svn; do &kde;. Se não indicar este valor, será usado o valor por omissão <filename class="directory"
+>~/kdesvn</filename
+>. Se indicar de facto este valor, use um local absoluto. </entry>
+</row>
+
+<row id="conf-svn-server">
+<entry
+>svn-server</entry>
+<entry
+>Não poderá ser sobreposta</entry>
+<entry
+>Esta opção é usada para definir o servidor usado para obter o código do &svn;. Por omissão, é usado o repositório anónimo de &svn;, em <emphasis
+>svn://anonsvn.kde.org/</emphasis
+></entry>
+</row>
+
+<row id="conf-stop-on-failure">
+<entry
+>stop-on-failure</entry>
+<entry
+>Sobrepõe-se à global</entry>
+<entry
+>Configure o valor desta opção como <quote
+>true</quote
+> para fazer com que o programa pare a execução, após ocorrer um erro durante o processo de compilação ou instalação. Esta opção está desactivada por omissão. </entry>
+</row>
+
+<row id="conf-tag">
+<entry
+>tag</entry>
+<entry
+>Sobrepõe-se à global</entry>
+<entry
+><para
+>Use esta opção para obter uma versão específica de um módulo.</para>
+<para
+><emphasis
+>NOTA:</emphasis
+> As hipóteses serão muito boas quando NÃO QUISER usar esta opção. As versões do KDE estão disponíveis em pacote comprimidos no <ulink url="ftp://ftp.kde.org/"
+>servidor de FTP do KDE</ulink
+> ou numa das suas <ulink url="http://download.kde.org/download.php"
+>réplicas</ulink
+>.</para>
+<para
+>Se estiver a usar o 'kdesvn-build' porque está com problemas a obter uma versão do KDE para compilar na sua distribuição, pense em usar a <ulink url="http://developer.kde.org/build/konstruct/"
+>ferramenta de compilação Konstruct</ulink
+> em alternativa, a qual funciona a partir dos pacotes de lançamento.</para>
+</entry>
+</row>
+
+<row id="conf-use-qt-builddir-hack">
+<entry
+>use-qt-builddir-hack</entry>
+<entry
+>Sobrepõe-se à global</entry>
+<entry
+>Ainda que esta opção se sobreponha à global, só fará sentido para o 'qt-copy'. Configure esta opção como <quote
+>true</quote
+> para activar o modo <emphasis
+>experimental</emphasis
+> de 'srcdir' != 'builddir'. Se estiver activada, o &kdesvn-build; irá copiar o módulo de código do 'qt-copy' para a pasta de compilação e efectuar as compilações a partir daí. Isto significa que a sua variável de ambiente QTDIR ficará igual a <filename class="directory"
+>$(qt-copy-build-dir)/qt-copy/lib</filename
+> em alternativa. Deverá também mudar a sua opção <link linkend="conf-qtdir"
+>qtdir</link
+> em função disso. O 'make' incremental deverá à mesma funcionar neste modo, dado que as datas serão preservadas após a cópia. Se usar a opção <link linkend="conf-apply-qt-patches"
+>apply-qt-patches</link
+>, as actualizações serão aplicadas na pasta de compilação, não na pasta de código. Esta opção é igual a <quote
+>true</quote
+>, por omissão. </entry>
+</row>
+
+<row id="conf-use-unsermake">
+<entry
+>use-unsermake</entry>
+<entry
+>Sobrepõe-se à global</entry>
+<entry
+><para
+>Configure esta opção como <quote
+>true</quote
+> para poder usar o programa experimentar 'unsermake' em vez do 'automake' ao correr o programa 'configure'. Isto poderá levar a algumas diminuições sérias na altura da compilação, principalmente no caso dos <ulink url="http://www.csh.rit.edu/slashdot/distcc.html"
+>sistemas de compilação distribuídos</ulink
+>. Esta opção é, por omissão, <quote
+>true</quote
+> (para a maioria dos módulos). </para>
+
+<para
+>Normalmente, se usar esta opção, o 'kdesvn-build' irá manter automaticamente o 'unsermake' actualizado. Isto poderá começar a ser incómodo, principalmente se estiver a gerir você mesmo o 'unsermake'. Se for este o caso, poderá configurar esta opção como <quote
+>self</quote
+>, pelo que o 'kdesvn-build' irá usar à mesma o 'unsermake', mas não fará nada de especial para o manter actualizado. </para>
+</entry>
+</row>
+
+</tbody>
+
+</tgroup>
+</table>
+
+</chapter>
+
+<chapter id="cmdline">
+<title
+>Opções da Linha de Comandos e Variáveis de Ambiente</title>
+
+<para
+>Este programa não usa variáveis de ambiente. Se necessitar de definir variáveis de ambiente para o ambiente de compilação ou de instalação, veja a opção <link linkend="conf-set-env"
+>set-env</link
+>. </para>
+
+<para
+>O programa aceita as seguintes opções da linha de comandos: </para>
+
+<variablelist>
+
+<varlistentry id="cmdline-help">
+<term
+><option
+>--help</option
+></term>
+<listitem
+><para
+>mostra apenas uma ajuda simples deste programa. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-version">
+<term
+><option
+>--version</option
+></term>
+<listitem
+><para
+>mostra a versão do programa. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-author">
+<term
+><option
+>--author</option
+></term>
+<listitem
+><para
+>mostra as informações de contacto do autor. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-color">
+<term
+><option
+>--color</option
+></term>
+<listitem
+><para
+>activa o resultado do programa a cores. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-no-color">
+<term
+><option
+>--no-color</option
+></term>
+<listitem
+><para
+>desactiva o resultado do programa a cores. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-pretend">
+<term
+><option
+>--pretend</option
+> (ou <option
+>-p</option
+>)</term>
+<listitem
+><para
+>não faz NADA de facto, mas funciona como se fizesse. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-quiet">
+<term
+><option
+>--quiet</option
+> (ou <option
+>-q</option
+>)</term>
+<listitem
+><para
+>Não é tão descritivo com o resultado à saída. Com esta opção, só as mensagens básicas são apresentadas. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-really-quiet">
+<term
+><option
+>--really-quiet</option
+></term>
+<listitem
+><para
+>Só mostra as mensagens de avisos e erros. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-verbose">
+<term
+><option
+>--verbose</option
+></term>
+<listitem
+><para
+>Torna-se bastante descritivo com o que se passa e o que o 'kdesvn-build' está a fazer. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-svn-only">
+<term
+><option
+>--svn-only</option
+></term>
+<listitem
+><para
+>efectua apenas a actualização do código. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-build-only">
+<term
+><option
+>--build-only</option
+></term>
+<listitem
+><para
+>efectua apenas o processo de compilação. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-ignore-modules">
+<term
+><option
+>--ignore-modules</option
+></term>
+<listitem
+><para
+>não inclui os módulos passados no resto da linha de comandos no processo de actualização/compilação. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-no-svn">
+<term
+><option
+>--no-svn</option
+></term>
+<listitem
+><para
+>ignora o passo de contacto do servidor do &svn;. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-no-build">
+<term
+><option
+>--no-build</option
+></term>
+<listitem
+><para
+>salta o processo de compilação. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-no-install">
+<term
+><option
+>--no-install</option
+></term>
+<listitem
+><para
+>não instala automaticamente os pacotes, após a sua compilação. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-debug">
+<term
+><option
+>--debug</option
+></term>
+<listitem
+><para
+>activa o modo de depuração para o programa. De momento, isto significa que todo o resultado será enviado para o STDOUT, para além de ficar registado na pasta de registo como normal. Do mesmo modo, muitas das funções tornar-se-ão mais descritivas sobre o que estão fazer no modo de depuração. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-no-rebuild-on-fail">
+<term
+><option
+>--no-rebuild-on-fail</option
+></term>
+<listitem
+><para
+>não tenta compilar de novo os módulos que não conseguiram ser compilados do zero. O &kdesvn-build; nunca irá tentar fazer isto num módulo que já se tentou compilar do zero. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-refresh-build">
+<term
+><option
+>--refresh-build</option
+></term>
+<listitem
+><para
+>volta a criar o sistema de compilação e a compilar do zero. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-reconfigure">
+<term
+><option
+>--reconfigure</option
+></term>
+<listitem
+><para
+>executa o programa 'configure' de novo sem limpar a pasta de compilação. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-recreate-configure">
+<term
+><option
+>--recreate-configure</option
+></term>
+<listitem
+><para
+>executa o <command
+>make <option
+>-f</option
+> Makefile.cvs</command
+> de novo para criar o programa 'configure' e continua a compilação normalmente. Esta opção implica a <option
+><link linkend="cmdline-reconfigure"
+>--reconfigure</link
+></option
+>. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-resume">
+<term
+><option
+>--resume</option
+></term>
+<listitem
+><para
+>que tenta continuar a compilação a partir do ponto em que o programa parou da última vez. O programa começa a compilar o módulo, após o último ter sido compilado da última vez em que o programa foi executado, quer tenha corrido bem ou não. Esta opção implica a <link linkend="cmdline-no-svn"
+><option
+>--no-svn</option
+></link
+>. Não deverá indicar os nomes de outros módulos na linha de comandos. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-resume-from">
+<term
+><option
+>--resume-from</option
+></term>
+<listitem
+><para
+>que é semelhante à opção <link linkend="cmdline-resume"
+><option
+>--resume</option
+></link
+>, excepto que indica qual o módulo de onde começa a compilação como parâmetro seguinte na linha de comandos. Esta opção implica a <link linkend="cmdline-no-svn"
+><option
+>--no-svn</option
+></link
+>. Não deverá indicar os nomes dos outros módulos na linha de comandos. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-rc-file">
+<term
+><option
+>--rc-file</option
+></term>
+<listitem
+><para
+>que interpreta o próximo parâmetro da linha de comandos como o ficheiro de onde ler as opções de configuração. O valor por omissão deste parâmetro é '~/.kdesvn-buildrc'. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-prefix">
+<term
+><option
+>--prefix=&lt;/localização/do/kde&gt;</option
+></term>
+<listitem
+><para
+>que lhe permite mudar a pasta onde o &kde; será instalado na linha de comandos. Esta opção implica a <link linkend="cmdline-reconfigure"
+><option
+>--reconfigure</option
+></link
+>. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-build-system-only">
+<term
+><option
+>--build-system-only</option
+></term>
+<listitem
+><para
+>pára após a execução do <command
+>make <option
+>-f</option
+> Makefile.cvs</command
+>. O programa 'configure' irá necessitar à mesma de ser executado, coisa que o &kdesvn-build; irá fazer da próxima vez. Isto permite-lhe preparar todos os programas 'configure' de uma vez, para que possa ver o <command
+>./configure <option
+>--help</option
+></command
+> de cada módulo e editar as suas opções do 'configure' adequadamente. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-install"
+><term
+><option
+>--install</option
+></term>
+<listitem
+><para
+>Se esta for a única opção da linha de comandos, irá tentar instalar todos os módulo incluídos em 'successfully-built', excepto o 'qt-copy', que não necessita de instalação. Se as opções da linha de comandos forem indicadas após o <option
+>--install</option
+>, então assumem-se que são módulos para instalar. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-global-option">
+<term
+><option
+>--&lt;nome-da-opção&gt;=</option
+></term>
+<listitem
+><para
+>Poderá usar esta opção para sobrepor outra opção no seu ficheiro de configuração para todos os módulos. Por exemplo, para sobrepor a opção <link linkend="conf-log-dir"
+>log-dir</link
+>, deverá escrever: <option
+>--log-dir=/local/da/pasta</option
+>. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-module-option">
+<term
+><option
+>--&lt;nome-módulo&gt;,&lt;nome-opção&gt;=</option
+></term>
+<listitem
+><para
+>Poderá usar esta opção para sobrepor uma opção do seu ficheiro de configuração para um dado módulo. Por exemplo, para sobrepor a opção <link linkend="conf-use-unsermake"
+>use-unsermake</link
+> do 'kdemultimedia', iria escrever: <option
+>--kdemultimedia,use-unsermake=false</option
+>. </para
+></listitem>
+</varlistentry>
+
+</variablelist>
+
+<para
+>Todas as outras opções da linha de comandos assumem-se como sendo módulos para actualizar e compilar. Por favor, não misture a compilação com a instalação. </para>
+
+</chapter>
+
+<chapter id="credits-and-licenses">
+<title
+>Créditos e Licenças</title>
+&underFDL; </chapter>
+
+</book>

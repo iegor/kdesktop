@@ -1,0 +1,326 @@
+<chapter id="callback">
+<title
+>Indstil &kppp; til at ringe tilbage</title>
+
+<para
+>Dette kapitel er baseret på materiale der skyldes Martin H&auml;fner, <email
+>mh@ap-dec717c.physik.uni-karlsruhe.de</email
+></para>
+
+<sect1 id="unix-callback-server">
+<title
+>&UNIX; eller &Linux; tilbagekaldsserver</title>
+
+<para
+>Dette afsnit introducerer &UNIX; (&Linux;) tilbagekald, og hvordan &kppp; kan indstilles til at forbinde til en &UNIX; tilbagekaldsserver, især til en script-baseret &Linux; <link linkend="callback-resources"
+>tilbageringsningserver</link
+></para>
+
+<sect2>
+<title
+>En introduktion til tilbagekald</title>
+
+<para
+>Der er adskillige grunde til at overveje tilbagekald. Nogle af dem er:</para>
+
+<itemizedlist>
+<listitem>
+<para
+>For at forøge sikkerheden i dit lokale netværk</para>
+</listitem>
+<listitem>
+<para
+>For at reducere udgifterne for eksterne medarbejdere</para>
+</listitem>
+<listitem>
+<para
+>For at kontrollere telefonomkostninger hvor opkald erklæres som forretningsudgifter</para>
+</listitem>
+</itemizedlist>
+
+<para
+>Tænk på om nogen kunne ringe til nummeret på den server du ringer til, og så bryder et kodeord. Hvorfor bekymre sig om at vedligeholde en brandmur for din internetforbindelse hvis det er så let at få adgang til dit netværk?</para>
+
+<para
+>Tilbagekaldsprogrammer beder generelt om dit navn, og hænger så op. Det ringer så tilbage til dig, sædvanligvis til et nummer der er opbevaret <emphasis
+>på serveren</emphasis
+> i en database. Klienten tager så telefonen og fortsætter med at komme på som om intet var hændt. Serveren beder nu om brugernavn og kodeord, med sikkerhed for at du er den du siger du er da du først ringede, eller i det mindste at du er der hvor du sagde du var. Forbindelsen etableres normalt, og <application
+>pppd</application
+> startes.</para>
+
+<para
+>Nu er det store spørgsmål hvordan klienten skal bedes om at tage telefonen, når serveren ringer tilbage. Har du brug for et specielt program, såsom <application
+>mgetty</application
+>? Svaret er  <emphasis
+>nej</emphasis
+>, du har ikke brug for et specielt klient-program. I almindelighed kan en vilkårlig klient bruges til tilbagekald, du kan endog bruge et almindeligt terminalprogram såsom <application
+>minicom</application
+> til forbindelsen.</para>
+
+<para
+>Det eneste du skal gøre er at bede dit modem om at <command
+>AutoAnswer</command
+> telefonen når et <computeroutput
+>RING</computeroutput
+> detekteres af modemet. Dette gøres med følgende modem-kommando:</para>
+
+<screen
+><userinput
+><command
+>AT&amp;SO=1</command
+></userinput
+>
+</screen>
+
+<para
+>Dette beder modemet om at tage telefonen efter et <computeroutput
+>RING</computeroutput
+>.</para>
+
+<para
+>Som en masse andre klientprogrammer, tjekker &kppp; for at se om forbindelsen bliver lukket af serveren, og standser så den aktuelle session hvis en <computeroutput
+>NO CARRIER</computeroutput
+> detekteres. Dette er derfor det egentlige problem når tilbagekald skal indstilles. <computeroutput
+>NO CARRIER</computeroutput
+> vil naturligvis blive detekteret det øjeblik tilbagekaldsserveren lægger på. Nogle servere bruger derfor et speciel login-program. Så hvordan løser du dette problem? Du fortæller dit modem at det skal vise <computeroutput
+>CARRIER UP</computeroutput
+> altid (hvilket ikke giver problemer hvis du beder klienten om at lægge på.) Du kan gøre dette med følgende modem-kommando:</para>
+
+<screen
+><userinput
+><command
+>AT&amp;C0</command
+></userinput
+>
+</screen>
+
+<para
+>Hvis du ønsker at teste dette, kan du først bruge et almindeligt terminalprogram såsom <application
+>minicom</application
+>, og ringe til din tilbagekaldsserver, for at se hvad der sker.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Opsætning af &kppp;</title>
+
+<para
+>Så nu da du har set teorien i det virkelige liv, hvordan skal du nu indstille &kppp; til at tage sig af forbindelsen? </para>
+
+<para
+>Proceduren er helt ligetil som følger.</para>
+
+<procedure>
+<step>
+<para
+>Bed først modemet om at acceptere forbindelser og ikke standse forhandlingerne når tilbagekaldsserveren lægger på første gang. Du kan tilføje begge disse valg i  <guilabel
+>Modem</guilabel
+>-fanebladet i &kppp;-indstillingen ved at tilføje til <guilabel
+>Opkaldsstreng</guilabel
+> strengen <command
+>AT&amp;C0S0=1DT</command
+></para>
+<para
+>Der er ingen andre ændringer i indstillingen af &kppp;. hvis du har besvær med modem init og nulstil, så tjek afsnittet <link linkend="callback-troubleshooting"
+>Problemløsning</link
+> for yderligere oplysninger.</para>
+</step>
+<step>
+<para
+>Tænk på din server et øjeblik. Husk at &UNIX;, &Windows; og Macintosh operativsystemer har forskellige meninger om hvordan en linje skal afsluttes i en tekstfil, og derfor også i procedurer til at logge på. Hvis du forbinder til en &Windows; server, bruges <userinput
+>CR/LF</userinput
+>, hvis du forbinder til en &UNIX; server, bruges <userinput
+>CR</userinput
+> og hvis du forbinder til en Macintosh server, bruges <userinput
+>LF</userinput
+> </para>
+</step>
+<step>
+<para
+>Vi antager for disse instruktioner at du ringer til en &Linux; tilbagekalds-pakke som bruger en almindelig måde at logge på (ikke <acronym
+>PAP</acronym
+> eller sådant).</para>
+<para
+>Sæt <guilabel
+>Godkendelse</guilabel
+>-stil i <guilabel
+>Ring op</guilabel
+>-fanebladet for kontoens indstilling til <guilabel
+>Script-baseret</guilabel
+></para>
+</step>
+<step>
+<para
+>Nu skal du opbygge et script til at logge på. Redigering af script til at logge på er en af &kppp;'s meget smarte egenskaber. Du kan finde det i <guilabel
+>Login-Script</guilabel
+>-fanebladet for <guilabel
+>Redigér konto</guilabel
+>- dialogen.</para>
+
+<para
+>I dette eksempel har brugeren <systemitem
+>userxyz</systemitem
+> brug for at følgende script bliver kaldet. Tilbagekaldsserveren kender allerede tabellen med navne og deres anvendelige telefonnumre, så du vælger telefonnummeret der skal bruges med et alias, af sikkerhedsgrunde.</para>
+
+<para
+>For hver linje vælges kriterier fra dropned-listen til venstre for dialogen, og du skriver handlingen i tekstfeltet til højre for den. Vælg <guibutton
+>Tilføj</guibutton
+> for at tilføje hver linje til scriptet. Du kan bruge <guibutton
+>Indsæt</guibutton
+> for at tilføje en linje i midten af scriptet, og <guibutton
+>Fjern</guibutton
+> for at slette en linje hvis du lavede en fejl.</para>
+
+<para
+>Hele scriptet skal se ud som noget i denne retning (uden kommentarerne vist her der starter med et #)</para>
+
+<screen
+>Expect       ogin:           <lineannotation
+># husk vi laver almindelig terminal login</lineannotation>
+ID           ""              <lineannotation
+># kppp sender det id du indstillede i
+hoveddialogen</lineannotation>
+Expect       for userxyz:    <lineannotation
+># en liste af de tilgængelige numre bliver
+vist, brugeren skal vælge et</lineannotation
+> 
+Send         userxyz-home    <lineannotation
+># brugeren ønsker at blive ringet tilbage
+på sin hjemmetelefon</lineannotation>
+Expect       ogin:           <lineannotation
+># Tilbagekaldsprocessen kører
+nu, en ny forbindelse derfor en ny login.</lineannotation>
+ID
+Expect       assword:        <lineannotation
+># Send dit kodeord nu</lineannotation>
+Expect       &gt;            <lineannotation
+># Vent på kommandolinjen (tegnet
+kan variere)</lineannotation>
+Send         start_ppp       <lineannotation
+># denne kommando starter pppd</lineannotation
+>
+</screen>
+
+<para
+>Efter at have ventet på forespørgslen til at logge på, sender brugeren sin ID og venter på en liste af telefonnumre for dette brugernavn. Så fortælles serveren hvilket af de tilbudte numre der skal ringes tilbage til. &kppp; kan åbne en dialog for dette hvis det ofte sker du er et andet sted, &eg; hvis du for eksempel er handelsrejsende og flytter fra hotel til hotel. Nu forventer serveren at du logger på og giver dit kodeord til godkendelse, men i mellemtiden lægger serveren på og ringer tilbage til brugeren. Godkendelsesinformationen sendes og &kppp; venter på et kommandolinjetegn, og starter så et lille script (her kaldet <filename
+>start_ppp</filename
+> som får gang i <application
+>pppd</application
+> på serveren.</para>
+					      
+<para
+><filename
+>start_ppp</filename
+> scriptet kunne se ud som noget i retning af følgende:</para>
+					      
+<programlisting
+>#!/bin/sh
+stty -echo
+exec /usr/sbin/pppd -detach silent modem
+</programlisting>
+					      
+<para
+>Opsætning af en <acronym
+>PPP</acronym
+>-server er naturligvis ikke inden for dette dokuments muligheder. For detaljeret information, se <application
+>pppd</application
+>'s man-sider. En glimrende beskrivelse af en tilbagekaldsserver kan findes på <ulink url="http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback"
+> http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback</ulink
+></para>
+</step>
+</procedure>
+
+<para
+>Alle andre indstillingsspørgsmål, såsom indstilling af  <application
+>pppd</application
+> eller <acronym
+>IP</acronym
+> virker som normalt, og der er ikke brug for nogen specielle programmer til at tage linjen.</para>
+
+<note>
+<para
+>&kppp; tilbagekald og andre programmer såsom <application
+>mgetty</application
+> eller et vilkårligt andet faxgetty kan køres på den samme serielle port. Der er ingen problemer med at ringe ind, da &kppp; laver en låsefil som vil fortælle getty-programmet at et andet program (i dette tilfælde &kppp; naturligvis,) bruger linjen på dette tidspunkt.</para>
+</note>
+
+</sect2>
+
+<sect2 id="callback-troubleshooting">
+<title
+>Problemløsning</title>
+
+<para
+>Der er nogle kendte problemer med &kppp; i tilbagekaldstilstand:</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Når du initialiserer modemet til auto-svar, må du nulstille modemet efter din forbindelse er lukket. Ellers vil dit modem fortsætte med at tage telefonen for dig, hvilket ikke er en god idé hvis det drejer sig om din eneste telefonlinje.</para>
+</listitem>
+<listitem>
+<para
+>&kppp; har nogle små problemer når den skal dele en linje med et andet program, såsom <application
+>mgetty</application
+>. Hvis <application
+>mgetty</application
+> kører på samme modem-linje, er &kppp; ikke i stand til at initialisere modemet rigtigt. </para>
+</listitem>
+<listitem>
+<para
+>&kppp; kan ikke spørge om visse bruger-inddata når der logges på script-baseret. Uheldigvis spørger &kppp; også om brugernavnet anden gang tilbagekaldsserveren beder om det, i eksempelscriptet ovenfor. Du kan slippe for det ved at skrive dit bruger-id ind i login-scriptet (ikke særlig pænt eller portabelt, men det virker).</para>
+</listitem>
+</itemizedlist>
+
+</sect2>
+
+<sect2 id="callback-resources">
+<title
+>Internet-ressourcer for server software</title>
+
+<para
+>&Linux; programmer for tilbageringsservere findes mange steder.</para>
+
+<para
+>Det velkendte <application
+>mgetty</application
+> er et meget stærkt program, og det kan også klare tilbagekaldsforbindelser En beskrivelse af hvordan <application
+>mgetty</application
+> skal sættes op til dette formål findes på <ulink url="http://www.dyer.demon.co.uk/slug/tipscrip.htm"
+> http://www.dyer.demon.co.uk/slug/tipscrip.htm</ulink
+>, ved Colin McKinnon, <email
+>colin@wew.co.uk</email
+>.</para>
+
+<para
+>Der er også en brugsklar pakke for &Linux; på <ulink url="http://www.icce.rug.nl/docs/programs/callback/callback.html"
+> http://www.icce.rug.nl/docs/programs/callback/callback.html</ulink
+>. Denne pakke vedligeholdes af Frank B. Brokken, <email
+>frank@icce.rug.nl</email
+>. Da opsætningen ikke er særlig nem, har jeg skrevet en kort introduktion for den på  <ulink url="http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback"
+>http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback/</ulink
+>, som også indeholder en mere generel introduktion til tilbagekald.</para>
+
+</sect2>
+</sect1>
+
+<sect1 id="nt-callback">
+<title
+>&Windows; NT <acronym
+>RAS</acronym
+> tilbagekald</title>
+
+<para
+>&Windows; NT bruger en fuldstændig anderledes metode end den der er  beskrevet ovenfor. NT kræver en udvidelse af selve <acronym
+>PPP</acronym
+>-protokollen der hedder  <acronym
+>CBCP</acronym
+> (Call Back Control Protocol). <application
+>pppd</application
+> har støtte for denne protokol, men du må rekompilere <application
+>pppd</application
+>. Hvis der er nogen der har erfaring med at forbinde til en NT tilbagekaldsserver, så vil jeg gerne vide det.</para>
+
+</sect1>
+</chapter>

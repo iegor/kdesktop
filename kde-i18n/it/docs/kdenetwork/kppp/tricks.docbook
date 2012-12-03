@@ -1,0 +1,294 @@
+<chapter id="modem-tricks">
+<title
+>Consigli e trucchi per il modem</title>
+
+<para
+>Questa sezione dovrebbe introdurre i timorosi  all'arcana (o non proprio) arte di truccare i modem. I comandi qui riportati si basano sullo standard Hayes AT, ma non tutti i modem sono uguali, quindi le cose possono essere diverse per il tuo.</para>
+
+<sect1 id="modem-sessions">
+<title
+>Sessioni del modem</title>
+
+<para
+>Una sessione del modem ti permette di interagirci direttamente. Quando digiti i comandi, il modem ti risponde. Per iniziare una sessione quando nessuna connessione è attiva, vai in <guibutton
+>Setup</guibutton
+>, poi nella finestra di dialogo <guilabel
+>Modem</guilabel
+> <guibutton
+>Terminale</guibutton
+>. Si aprirà una finestra per la configurazione interattiva del modem. Prova a digitare <userinput
+><command
+>ATZ</command
+></userinput
+> (reimposta il modem). Dovresti ottenere una risposta OK. Vai in <menuchoice
+><guimenu
+>File</guimenu
+><guimenuitem
+>Chiudi</guimenuitem
+></menuchoice
+> per terminare la sessione.</para>
+
+</sect1>
+
+<sect1 id="modem-profiles">
+<title
+>Profili del modem</title>
+					
+<para
+>Un motivo per cui potresti voler inviare direttamente al modem i comandi è se vuoi mantenere le configurazioni e non doverle ridigitare ad ogni connessione. Un buon modo per farlo è usare i profili del modem. I modem possono avere diversi profili salvati e numerati successivamente (0,1,...). Si può usare <command
+>AT&amp;V</command
+> per vederli tutti. Il profilo predefinito è il numero 0 (si può cambiare attraverso il comando <command
+>AT&amp;Y</command
+>). Il profilo correntemente in uso si chiama profilo <quote
+>attivo</quote
+>.</para>
+
+<para
+>Quando cambi un'impostazione, il profilo attivo viene modificato. Il comando <command
+>ATZ</command
+> ripristina il profilo precedentemente salvato. Per salvare le modifiche, carica il profilo con <command
+>ATZ<replaceable
+>n</replaceable
+></command
+> (dove <replaceable
+>n</replaceable
+> è il numero del profilo). Modifica tutto quello che vuoi, e poi salva il tutto con <command
+>AT&amp;W<replaceable
+>n</replaceable
+></command
+>. Per far caricare un certo profilo a kppp, cambia la stringa di inizializzazione del modem (<guibutton
+>Configurazione</guibutton
+> <guilabel
+>Modem</guilabel
+> <guibutton
+>Comandi modem...</guibutton
+> <guilabel
+>Stringa di inizializzazione</guilabel
+>). Per esempio <command
+>ATZ1</command
+> reimposta il modem caricando il profilo numero 1.</para>
+
+<para
+>Se vuoi reimpostare un profilo a partire dalle impostazioni di fabbrica, digita <command
+>AT&amp;F&amp;W</command
+>.</para>
+
+<para
+>Nella sezione successiva ci sono alcuni esempi di modifiche di profili.</para>
+
+</sect1>
+
+<sect1 id="modem-hangup">
+<title
+>Far riattaccare il modem</title>
+
+<para
+>Qualche volta può capitare che &kppp; abbia dei problemi a far riattaccare il modem. La causa di questo comportamento potrebbe essere l'incompatibilità tra le impostazioni di &kppp; e quelle del modem. Un modem standard utilizza due metodi per riattaccare: <link linkend="hangup-command-method"
+>Comando</link
+>, e <link linkend="hangup-dtr-method"
+><acronym
+>DTR</acronym
+></link
+>. Con il comando viene inviata al modem una sequenza di escape, e, non appena il modem è pronto a ricevere i comandi, viene eseguito il comando di riattacco (<command
+>ATH</command
+>).</para>
+
+<para
+>Fuori da &kppp;, quando si configura <application
+>pppd</application
+> manualmente, è conveniente usare il metodo Comando, cosicché si possa uscire da una sessione di terminale, e avviare <application
+>pppd</application
+> senza far disconnettere il modem. Nella maggior parte degli altri casi, il metodo <acronym
+>DTR</acronym
+> è quello raccomandato, essendo il più semplice.</para>
+
+<sect2 id="hangup-dtr-method">
+<title
+>Metodo <acronym
+>DTR</acronym
+> (<command
+>AT&amp;Dn</command
+>)</title>
+
+<para
+>Il metodo <acronym
+>DTR</acronym
+> fa riattaccare il modem ogni volta che &kppp; smette di utilizzarlo. Se inizi una sessione con il modem e richiedi lo stato con <command
+>AT&amp;V</command
+>, e vedi tra le impostazioni attuali del profilo attivo vedi un <command
+>&amp;D0</command
+>, allora il metodo di disconnessione <acronym
+>DTR</acronym
+> è disabilitato. Per abilitarlo, usa il pulsante <guibutton
+>Terminale</guibutton
+> per iniziare una sessione del modem, poi:</para>
+
+<screen
+><userinput
+><command
+>ATZ</command
+></userinput
+> <lineannotation
+># reimposta al profilo predefinito</lineannotation>
+<userinput
+><command
+>AT&amp;D2</command
+></userinput
+>  <lineannotation
+># Imposta per disconnettere con DTR</lineannotation>
+<userinput
+><command
+>AT&amp;W</command
+></userinput
+>  <lineannotation
+># Scrivi le modifiche nel profilo predefinito</lineannotation
+>
+</screen>
+
+<sect3>
+<title
+>Come funziona il metodo <acronym
+>DTR</acronym
+></title>
+
+<para
+>Tutte le volte che la linea "Data Terminal Ready" (<acronym
+>DTR</acronym
+>) viene impostata con lo stato "alto", il modem si disconnette. Quando &kppp; apre la porta seriale, la linea <acronym
+>DTR</acronym
+> è impostata su "basso". Su un modem esterno, vedrai accendersi il LED <acronym
+>DTR</acronym
+> (o <acronym
+>TR</acronym
+>). Quando si spegnerà il LED <acronym
+>TR</acronym
+> (perché &kppp; ha chiuso la porta seriale, o peggio), il modem si disconnetterà.</para>
+</sect3>
+
+</sect2>
+
+<sect2 id="hangup-command-method">
+<title
+>Metodo comando</title>
+
+<para
+>L'altro modo per far riattaccare il modem quando è connesso (usato quando <command
+>AT&amp;D<replaceable
+>n</replaceable
+></command
+>, dove <replaceable
+>n</replaceable
+> non è <returnvalue
+>2</returnvalue
+>), è quello di far accettare comandi al modem durante una sessione. Apri una sessione, ed imposta il tempo dei controlli ad un intervallo breve:</para>
+
+<screen
+><userinput
+><command
+>ATZ</command
+></userinput>
+<userinput
+><command
+>ATS12=5</command
+></userinput>
+<userinput
+><command
+>AT&amp;W</command
+></userinput
+>
+</screen>
+
+<para
+>Poi, usando il cursore <guilabel
+>Tempo controlli</guilabel
+>, fa' in modo che sia uguale al registro (<varname
+>S12</varname
+>) con questo valore <returnvalue
+>5</returnvalue
+>. Il modem dovrebbe disconettersi correttamente.</para>
+
+<sect3>
+<title
+>Come funziona il metodo Comando</title>
+
+<para
+>Quando il modem locale è connesso ad uno remoto, è nello stato <quote
+>connect</quote
+>, in cui passa tutti i dati che riceve al modem remoto senza alcuna interpretazione. Per far accettare al modem i comandi, bisogna metterlo nello stato Comando. La sequenza di escape fa questo.</para>
+
+<para
+>La sequenza di escape è definita come tre intervalli di tempo con lunghezza definita da <varname
+>S12</varname
+> in cinquantesimi di secondo.</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Silenzioso (deve durare più di <varname
+>S12</varname
+>/50 secondi)</para>
+</listitem>
+<listitem>
+<para
+>Il carattere di escape (definito dal registro <varname
+>S2</varname
+>, impostato come valore predefinito a <quote
+>+</quote
+>), ripetuto tre volte (meno di <varname
+>S12</varname
+>/50 secondi tra l'uno e l'altro).</para>
+</listitem>
+<listitem>
+<para
+>Silenzioso (deve durare più di <varname
+>S12</varname
+>/50 secondi)</para>
+</listitem>
+</itemizedlist>
+
+<para
+>Una volta che il modem è nello stato Comando, puoi inviargli i comandi. Per farlo riattaccare, digita <command
+>ATH</command
+>. La sequenza di escape e la stringa di aggancio usata da &kppp; sono mostrati nella finestra <link linkend="modem-commands"
+><guilabel
+>Comandi Modem</guilabel
+></link
+>. Dovrebbero essere uguali per il tuo modem.</para>
+
+</sect3>
+</sect2>
+</sect1>
+
+<sect1 id="tone-dialing-speedup">
+<title
+>Far comporre i toni più velocemente</title>
+
+<para
+>Se puoi usare la composizione per toni, il tempo di composizione può essere cambiato usando il registro <varname
+>S11</varname
+>. Esso fornisce la durata (in centesimi di secondo) di ogni tono. Il valore predefinito è 95 (quasi un secondo). La velocità massima di composizione dipende dalle centraline del tuo fornitore telefonico. La durata minima impostabile è 50, e spesso funziona. </para>
+
+<screen
+><userinput
+><command
+>ATZ</command
+></userinput
+>        <lineannotation
+># reimposta il profilo predefinito</lineannotation>
+<userinput
+><command
+>ATS11=50</command
+></userinput
+>   <lineannotation
+># componi velocemente, usa un valore più alto se non funziona</lineannotation>
+<userinput
+><command
+>AT&amp;W</command
+></userinput
+>   <lineannotation
+># scrivi le modifiche nel profilo predefinito</lineannotation
+>
+</screen>
+
+</sect1>
+</chapter>

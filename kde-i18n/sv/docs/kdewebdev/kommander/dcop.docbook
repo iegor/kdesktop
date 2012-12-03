@@ -1,0 +1,234 @@
+<?xml version="1.0"  encoding="UTF-8" ?>
+
+<sect1 id="dcop-interface">
+<sect1info>
+<title
+>&DCOP;-funktioner</title>
+</sect1info>
+
+<title
+>&DCOP;-funktioner</title>
+
+<para
+>&kommander; började med att komma åt grafiska komponenter internt med &DCOP;, vilket utvecklades till komponentfunktioner. &DCOP; är fortfarande tillgängligt och kan användas för att dela information mellan dialogrutor. Det kan också användas för att utöka och integrera nästan alla befintliga KDE-program. &DCOP; kan anropas på flera sätt i &kommander;. Det första är terminalmetoden. Öppna en &kommander;-dialogruta och en terminal, och pröva det här. </para>
+<note
+><para
+>Detta är till största delen fokuserat på den gamla tolken. Om du letar efter interna grafiska komponentfunktioner, se <link linkend="new_parserdocs"
+>den nya tolken</link
+>. Informationen här är särskilt relevant för kommunikation mellan dialogrutor och program, eller när andra skriptspråk används inne i Kommander för skript.</para
+></note>
+<screen
+>dcop | grep kmdr
+dcop `dcop | grep kmdr`
+dcop `dcop | grep kmdr` KommanderIf
+</screen>
+<para
+>Det visar vilka dialogrutor som kör, och vilka gränssnitt som är tillgängliga, samt vad som är tillgängligt att anropa i det särskilda gränssnittet för interna funktioner i &kommander;. Vid förklaringen av &DCOP; här, kom ihåg att &DCOP; används internt av KDE-program (ersatt av D-Bus i KDE 4) och är mycket användbart. Ta en titt på <command
+>kdcop</command
+> genom att trycka på Alt+F2 och skriva det i kördialogrutan. Här kan du utforska allt som kör. Nu åter till &DCOP; i &kommander;. </para>
+<screen
+>dcop kmdr-executor-@pid KommanderIf setText minKomponent <quote
+>ny text</quote
+>
+</screen>
+<para
+>Det här antar att du är inne i en &kommander; fil och har tillgång till specialvärdet @pid, som innehåller process-id. Det är i själva verket enklare att ersätta <quote
+>kmdr-executor-@pid</quote
+> med @dcopid. Du kan dock använda syntaxen (men förstås utan specialvärden) från kommandoraden eller vilket externt skript som helst för att ändra &kommander;-fönstret. </para>
+<para
+>&kommander; utvecklade den mycket snabbare interna &DCOP;-funktionen. Att använda den från ett annat programfönster (&DCOP; via terminalen är mycket långsamt) är mer komplicerat, eftersom du måste ange mycket information, inklusive anropets prototyp. Anropet ovan skulle bli (observera att @dcopid i själva verket är internt till dialogrutan, men det skulle kunna ersättas med giltigt processid): </para>
+<screen
+>@dcop(@dcopid, KommanderIf, <quote
+>enableWidget(QString, bool)</quote
+>, komponent, true)
+</screen>
+<para
+>I tidiga versioner av &kommander; använde lokala &DCOP;-anrop inne i skriptspråkstrukturer (som <application
+>bash</application
+>) anrop med terminalmetoder. <emphasis
+>Om du använder intern &DCOP; körs alla &kommander; specialvärden först och därefter körs skriptet.</emphasis
+> Läs föregående mening igen, eftersom det kommer att ge dig många sorger och bekymmer med en <application
+>bash</application
+>-snurra som använder &kommander;-specialvärden. </para>
+<para
+>Det finns ett nytt förenklat sätt att använda &DCOP; inne i &kommander; genom att använda en objektsyntax. Låt oss anta att du vill ändra texten i den grafiska komponenten @Radeditor1. Det skulle se ut så här: </para>
+<screen
+>@Radeditor1.setText(Ny text)
+</screen>
+<para
+>Som du kan se är den nya syntaxen mycket enkel, samt visuellt överensstämmande med funktionsgrupper. Alla &DCOP;-referenser här använder den nya objektsyntaxen som listas ovan. <emphasis
+>Observera att om du hänvisar till en grafisk komponent via &DCOP; från ett annat fönster eller ett annat program är den första parametern alltid komponentnamnet. Alla funktioner listas här med början från den andra parametern.</emphasis
+> </para>
+
+<sect2 id="dcop-globals">
+<title
+>&DCOP; för globala variabler</title>
+<variablelist>
+<varlistentry>
+<term
+>global(QString variabelnamn)</term>
+<listitem>
+<para
+>Returnerar den angivna globala variabelns värde. När ett skript körs från ett fönster i &kommander; upphör alla (icke-globala) variabler som anges i skriptet att existera efter skriptet är färdigt, och är därför inte tillgängliga för andra skriptprocesser eller i en ny instans av den anropande processen. Det globala <quote
+>omfattningen</quote
+> betyder att variabeln existerar för alla fönstrets processer ända till fönstret stängs. Du kan ändra variablerna när som helst med ett nytt anrop till <function
+>@setGlobal</function
+>. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>setGlobal(QString variabelnamn, QString värde)</term>
+<listitem>
+<para
+>Skapar en variabel som är global i fönsterprocessen och tilldelar värdet till den. Värdet kan hämtas med global(QString variabelnamn) eller tilldelas igen. </para>
+</listitem>
+</varlistentry>
+</variablelist>
+</sect2>
+
+<sect2 id="dcop-all">
+<title
+>&DCOP; för alla grafiska komponenter</title>
+
+<para
+>Följande lista är gammal, och finns bara kvar i referenssyfte. Titta i <emphasis
+>funktionsbläddraren</emphasis
+> för en fullständig och aktuell referens till alla grafiska komponentfunktioner, som är tillgänglig från alla texteditorfönster i &kommander; genom att klicka på knappen längst ner till vänster. De är nu komponentfunktioner, inte &DCOP;-funktioner, men &DCOP;-funktionerna är publicerade i &DCOP;-gränssnittet <emphasis
+>KommanderIf</emphasis
+> som beskrivs ovan. Dialogrutor för att lista och skapa anrop till dessa funktioner är tillgängliga på vår webbplats. </para>
+<variablelist>
+<varlistentry>
+<term
+>setText(QString text)</term>
+<listitem>
+<para
+>Det här tar bort texten som visas i den grafiska komponenten och ersätter den med den angivna texten. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>enableWidget(bool aktivera)</term>
+<listitem>
+<para
+>Aktiverar eller inaktiverar en grafisk komponent. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>associatedText</term>
+<listitem>
+<para
+>Returnerar texten som är associerad med den angivna grafiska komponenten. Det är inte samma som texten som visas. Det skulle vara <quote
+>@widgetText</quote
+> eller texten och/eller skriptet som används för att erhålla det visade värdet. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>setAssociatedText(QString text)</term>
+<listitem>
+<para
+>Det här tilldelar den förvalda strängen för &kommander; text. Den tilldelas typiskt värdet <quote
+>@widgetText</quote
+> för att visa vad som skrivs in i komponenten. Det är inte troligt att du har mycket nytta av det, men om du gör det finns det där. Gäller alla grafiska komponenter som kan innehålla data. </para>
+</listitem>
+</varlistentry>
+</variablelist>
+</sect2>
+
+<sect2 id="dcop-box">
+<title
+>&DCOP; för listrutor och kombinationsrutor</title>
+<variablelist>
+<varlistentry>
+<term
+>addListItem(QString objekt, int index)</term>
+<listitem>
+<para
+>Lägger till ett objekt i en listruta på angivet index. Listindex börjar på noll. För att lägga till i slutet på listan, använd -1. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>addListItems(QStringList objekt, int index)</term>
+<listitem>
+<para
+>Det här lägger till en stränglista på en gång. Listan ska avdelas av nyrader (\n - nyrader). Det är bekvämt eftersom du kan använda bash för att ganska enkelt få fram listan. Att till exempel använda @exec(s -l ~/projects | grep kmdr) som objekt, ger en kataloglistning med &kommander; filer i din projektkatalog. Listindex börjar med 0. Använd -1 för att lägga till sist i listan. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>addUniqueItem(QString objekt)</term>
+<listitem>
+<para
+>addUniqueItem lägger till ett objekt i slutet på listan, men bara om det är unikt. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>clearList</term>
+<listitem>
+<para
+>Tar bort alla objekt. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>removeListItem(int index)</term>
+<listitem>
+<para
+>Tar bort objektet vid angivet index. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>item(int index)</term>
+<listitem>
+<para
+>Returnerar texten för objektet på angivet index. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>setCurrentListItem(int index)</term>
+<listitem>
+<para
+>Tilldela nuvarande (eller markerat) objekt till angivet index. Gäller de grafiska komponenterna listruta och kombinationsruta. </para>
+</listitem>
+</varlistentry>
+</variablelist>
+</sect2>
+
+<sect2 id="dcop-button">
+<title
+>&DCOP; för kryssrutor och alternativknappar</title>
+<variablelist>
+<varlistentry>
+<term
+>setChecked(QString komponentnamn, bool markerad)</term>
+<listitem>
+<para
+>Markerar/avmarkerar en kryssruta eller alternativknapp. </para>
+</listitem>
+</varlistentry>
+</variablelist>
+</sect2>
+
+<sect2 id="dcop-tab">
+<title
+>&DCOP; for flikkomponenter</title>
+<variablelist>
+<varlistentry>
+<term
+>setCurrentTab(QString komponentnamn, int index)</term>
+<listitem>
+<para
+>Väljer fliken med index för flikkomponenter. Index börjar med 0. </para>
+</listitem>
+</varlistentry>
+</variablelist>
+</sect2>
+
+
+</sect1>

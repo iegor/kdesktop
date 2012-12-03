@@ -1,0 +1,1205 @@
+<appendix id="regular-expressions">
+<appendixinfo>
+<authorgroup>
+<author
+>&Anders.Lund; &Anders.Lund.mail;</author>
+&erik.kjaer.pedersen.role; 
+</authorgroup>
+</appendixinfo>
+
+<title
+>Regulære udtryk</title>
+
+<synopsis
+>Dette appendix indeholder en kort men forhåbentlig tilstrækkelig og
+dækkende introduktion til verden af <emphasis
+>regulære
+udtryk</emphasis
+>. Det dokumenterer regulære udtryk af den form
+der er tilgængelig indenfor &kate;, som hverken er kompatibel med de  regulære
+udtryk i perl, eller med dem for eksempel i
+<command
+>grep</command
+>.</synopsis>
+
+<sect1>
+
+<title
+>Indledning</title>
+
+<para
+><emphasis
+>Regulære udtryk</emphasis
+> giver os en måde at beskrive noget muligt indhold af en tekststreng på en måde der kan forstås af et lille program, så det kan undersøge om en tekst matcher, og også i tilfælde af avancerede programmer, med muligheden for at gemme dele eller den matchende tekst.</para>
+
+<para
+>Et eksempel: Lad os sige du ønsker at gennemsøge en tekst for paragraffer der starter med enten navnet <quote
+>Henrik</quote
+> eller navnet <quote
+>Pernille</quote
+> fulgt af en form af udsagnsordet <quote
+>sige</quote
+>.</para>
+
+<para
+>Med en normal søgning, vil du begynde med at søge efter det første navn, <quote
+>Henrik</quote
+> måske fulgt af <quote
+>s</quote
+> sådan her: <userinput
+>Henrik s</userinput
+>, og mens du kigger efter matcher, vil du skulle kassere dem der ikke er begyndelsen af en paragraf, så vel som dem hvor ordet der starter med bogstaverne <quote
+>s</quote
+> ikke var <quote
+>siger</quote
+>, <quote
+>sagde</quote
+> eller sådan. Og derefter skal du selvfølgelig gentage dethele med det andet navn...</para>
+
+<para
+>Med Regulære udtryk, overstås denne opgave med en enkel søgning, og med en større grad af præcision.</para>
+
+<para
+>For at opnå dette definerer regulære udtryk regler for at udtrykke i detalje en generalisation af at en streng matcher. Vort eksempel, som vi bogstaveligt kunne udtrykke sådan her: <quote
+>En linje der begynder med enten <quote
+>Henrik</quote
+> eller <quote
+>Pernille</quote
+> (muligvis fulgt af op til 4 blanke eller tab-tegn) fulgt af mellemrum fulgt af <quote
+>s</quote
+> og så enten  <quote
+>iger</quote
+> eller <quote
+>agde</quote
+></quote
+> kan udtrykkes med følgende regulære udtryk:</para
+> <para
+><userinput
+>^[ \t]{0,4}(Henrik|Pernille) s(iger|agde)</userinput
+></para>
+
+<para
+>Ovenstående eksempel demonstrerer alle fire hovedbegreber i moderne regulære udtryk, nemlig:</para>
+
+<itemizedlist>
+<listitem
+><para
+>Mønstre</para
+></listitem>
+<listitem
+><para
+>Påstande</para
+></listitem>
+<listitem
+><para
+>Kvantifikatorer</para
+></listitem>
+<listitem
+><para
+>Tilbagereferencer</para
+></listitem>
+</itemizedlist>
+
+<para
+>karet (<literal
+>^</literal
+>)-tegnet der begynder udtrykket er en påstand, der kun er sand hvis følgende matchende streng er i begyndelsen af en linje.</para>
+
+<para
+>Strengene <literal
+>[ \t]</literal
+> og <literal
+>(Henrik|Pernille) s(iger|agde)</literal
+> er mønstre. Den første er en <emphasis
+>tegnklasse</emphasis
+> der matcher enten et blankt eller en (vandret) tab-tegn; det andet mønster indeholder først et undermønster der matcher enten <literal
+>Henrik</literal
+> <emphasis
+>eller</emphasis
+> <literal
+>Pernille</literal
+>, og så et stykke der matcher den nøjagtige streng <literal
+> s</literal
+> og endelig et undermønster der matcher enten <literal
+>iger</literal
+> <emphasis
+>eller</emphasis
+> <literal
+>agde</literal
+></para>
+
+<para
+>Strengen <literal
+>{0,4}</literal
+> er en kvantor der siger <quote
+>hvadsomhelst fra 0 op til 4 af de foregående</quote
+>.</para>
+
+<para
+>Programmer der understøtter det regulære udtryk begreb <emphasis
+>tilbagereferencer</emphasis
+> gemmer hele den matchende del af strengen så vel som undermønstre i parenteser. Givet en metode til at få adgange til disse referencer, kunne vi få fat på enten hele matchningen (når der søges i et tekstdokument i en editor med et regulært udtryk, som ofte er markeret som udvalgt) eller navnet der er fundet, eller den sidste del af verbet.</para>
+
+<para
+>Alt i alt vil udtrykket matche der hvor vi ønskede det og kun der.</para>
+
+<para
+>Følgende afsnit vil beskrive i detalje hvordan man konstruerer og bruger mønstre, tegnklasser, påstande, kvantorer og tilbagereference, og det afsluttende afsnit vil give nogle få nyttige eksempler.</para>
+
+</sect1>
+
+<sect1 id="regex-patterns">
+
+<title
+>Mønstre</title>
+
+<para
+>Mønstre består af bogstavelige strenge og tegnklasser. Mønstre kan indeholde under-mønstre, som er mønstre omgivet af parenteser.</para>
+
+<sect2>
+<title
+>Escape-tegn</title>
+
+<para
+>I mønstre så vel som i tegnklasser er der nogle tegn der har en speciel betydning. For bogstaveligt at matche disse tegn, skal de være markerede eller <emphasis
+>escaped</emphasis
+> for at lade programmer for regulære udtryk vide at de skal fortolke sådanne tegn i deres bogstavelige betydning.</para>
+
+<para
+>Dette gøres ved at sætte en baglæns skråstreg foran tegnet (<literal
+>\</literal
+>).</para>
+
+
+<para
+>Programmer for regulære udtryk vil så i det stille ignorere at escape et tegn som ikke har nogen speciel betydning i sammenhængen, så escape for eksempel af et <quote
+>j</quote
+> (<userinput
+>\j</userinput
+>) er problemløst. Hvis du er i tvivl om et tegn kunne have en speciel betydning, kan du derfor escape det uden problemer.</para>
+
+<para
+>Escape inkluderer naturligvis den baglæns skråstreg selv, så for bogstaveligt at matche den, skal du skrive <userinput
+>\\</userinput
+>.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Tegnklasser og forkortelser</title>
+
+<para
+>En <emphasis
+>tegnklasse</emphasis
+> er et udtryk der matches en af et defineret sæt tegn. I regulære udtryk, er tegnklasser definerede ved at putte de lovlige tegn for klassen i forkantede parenteser, <literal
+>[]</literal
+>, eller ved at bruge en af de forkortede klasser beskrevet nedenfor.</para>
+
+<para
+>Simple tegnklasser indeholder kun ét eller flere bogstavelige tegn, for eksempel <userinput
+>[abc]</userinput
+> (der matcher et vilkårligt af bogstaverne <quote
+>a</quote
+>, <quote
+>b</quote
+> eller <quote
+>c</quote
+>) eller <userinput
+>[0123456789]</userinput
+> (der matcher et vilkårligt ciffer).</para>
+
+<para
+>Fordi bogstaver og cifre har en logisk rækkefølge, kan du forkorte dem ved at angive områder af dem: <userinput
+>[a-c]</userinput
+> er lig med <userinput
+>[abc]</userinput
+> og <userinput
+>[0-9]</userinput
+> er lig med <userinput
+>[0123456789]</userinput
+>. En kombination af disse konstruktioner, for eksempel <userinput
+>[a-fynot1-38]</userinput
+> er fuldstændig lovlig (denne sidste ville selvfølgelig matche en vilkårlig af <quote
+>a</quote
+>,<quote
+>b</quote
+>,<quote
+>c</quote
+>,<quote
+>d</quote
+>, <quote
+>e</quote
+>,<quote
+>f</quote
+>,<quote
+>y</quote
+>,<quote
+>n</quote
+>,<quote
+>o</quote
+>,<quote
+>t</quote
+>, <quote
+>1</quote
+>,<quote
+>2</quote
+>,<quote
+>3</quote
+> eller <quote
+>8</quote
+>).</para>
+
+<para
+>Idet versaler ikke er de samme tegn som deres tilsvarende ikke-versal-ækvivalente. For at lave tegnklasser der ikke er versalfølsomme der matcher <quote
+>a</quote
+> eller <quote
+>b</quote
+>, uanset versaltype, må du skrive det som <userinput
+>[aAbB]</userinput
+>.</para>
+
+<para
+>Det er naturligvis muligt at lave en <quote
+>negativ</quote
+> klasse der matcher som <quote
+>alt undtagen</quote
+> For at gøre dette putter man en karet (<literal
+>^</literal
+>) i begyndelsen af klassen: </para>
+
+<para
+><userinput
+>[^abc]</userinput
+> vil passe med alle tegn <emphasis
+>undtagen</emphasis
+> <quote
+>a</quote
+>, <quote
+>b</quote
+> eller <quote
+>c</quote
+>.</para>
+
+<para
+>Foruden disse bogstavelige tegn, er der visse forkortelser der er definerede, hvilket gør livet en smule nemmere: <variablelist>
+
+<varlistentry>
+<term
+><userinput
+>\a</userinput
+></term>
+<listitem
+><para
+>Dette matche <acronym
+>ASCII</acronym
+>-klokketegnet (BEL, 0x07).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\f</userinput
+></term>
+<listitem
+><para
+>Dette matcher <acronym
+>ASCII</acronym
+>-form-feed-tegnet (FF, 0x0C).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\n</userinput
+></term>
+<listitem
+><para
+>Dette matcher <acronym
+>ASCII</acronym
+>-line-feed-tegnet (LF, 0x0A, Unix ny-linje).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\r</userinput
+></term>
+<listitem
+><para
+>Dette matcher <acronym
+>ASCII</acronym
+>-vognretur-tegnet (CR, 0x0D).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\t</userinput
+></term>
+<listitem
+><para
+>Dette matcher <acronym
+>ASCII</acronym
+>-vandret-tab-tegnet (HT, 0x09).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\v</userinput
+></term>
+<listitem
+><para
+>Dette matcher <acronym
+>ASCII</acronym
+>-lodret-tab-tegnet (VT, 0x0B).</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><userinput
+>\xhhhh</userinput
+></term>
+
+<listitem
+><para
+>Dette matcher Unicode-tegnet der svarer til det hexadecimale tal hhhh (mellem 0x0000 og 0xFFFF). \0ooo (&ie;, \zero ooo) matcher <acronym
+>ASCII</acronym
+>/Latin-1-tegnet der svare til det oktale tal ooo (mellem 0 og 0377).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>.</userinput
+> (punktum)</term>
+<listitem
+><para
+>Dette matcher et vilkårligt tegn (inklusive ny-linje).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\d</userinput
+></term>
+<listitem
+><para
+>Dette matcher et ciffer. Lig med <literal
+>[0-9]</literal
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\D</userinput
+></term>
+<listitem
+><para
+>Dette matcher et ikke-ciffer. Lig med <literal
+>[^0-9]</literal
+> eller <literal
+>[^\d]</literal
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\s</userinput
+></term>
+<listitem
+><para
+>Dette matcher et hvidt tegn. Næsten det samme som <literal
+>[ \t\n\r]</literal
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\S</userinput
+></term>
+<listitem
+><para
+>Dette matcher et ikke-hvidt tegn. Næsten det samme som <literal
+>[^ \t\r\n]</literal
+>, og lig med <literal
+>[^\s]</literal
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\w</userinput
+></term>
+<listitem
+><para
+>Matcher et vilkårligt <quote
+>ord-tegn</quote
+> - i dette tilfælde et vilkårligt bogstav eller ciffer. Bemærk at understregning (<literal
+>_</literal
+>) ikke matches, ligesom det er tilfældet med perl regulær udtryk. Lig med <literal
+>[a-zA-Z0-9]</literal
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\W</userinput
+></term>
+<listitem
+><para
+>Matcher et vilkårligt ikke-ord-tegn - alt undtagen bogstaver og tal. Lig med <literal
+>[^a-zA-Z0-9]</literal
+> eller <literal
+>[^\w]</literal
+></para
+></listitem>
+</varlistentry>
+
+
+</variablelist>
+
+</para>
+
+<para
+>De forkortede klasser kan puttes ind i hjemmelavede klasser, for eksempel for at matche et ord-tegn, et blankt eller et punktum, kan du skrive <userinput
+>[\w \.]</userinput
+></para
+> 
+
+<note
+> <para
+>POSIX-notation for klasser, <userinput
+>[:&lt;class name&gt;:]</userinput
+> bliver ikke understøttet for øjeblikket.</para
+> </note>
+
+<sect3>
+<title
+>Tegn med specielle betydninger indenfor tegnklasser</title>
+
+<para
+>Følgende tegn har en speciel betydning indenfor <quote
+>[]</quote
+> tegnklassekonstruktionen, og skal escapes for bogstaveligt at blive inkluderet i en klasse:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><userinput
+>]</userinput
+></term>
+<listitem
+><para
+>Afslutter tegnklassen. Skal escapes med mindre det er det allerførste tegn i klassen (kan efterfølge et ikke-escaped karet-tegn)</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><userinput
+>^</userinput
+> (karet)</term>
+<listitem
+><para
+>Angiver en negativ klasse, hvis det er det første tegn. Skal escapes for at matche bogstaveligt hvis det er det første tegn i en klasse.</para
+></listitem
+> 
+</varlistentry>
+<varlistentry>
+<term
+><userinput
+>-</userinput
+> (bindestreg)</term>
+<listitem
+><para
+>Angiver et logisk område. Skal altid escapes indenfor en tegnklasse.</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><userinput
+>\</userinput
+> (baglæns skråstreg)</term>
+<listitem
+><para
+>Escape-tegnet. Skal altid escapes.</para
+></listitem>
+</varlistentry>
+
+</variablelist>
+
+</sect3>
+
+</sect2>
+
+<sect2>
+
+<title
+>Alternativer: matcher <quote
+>én af</quote
+></title>
+
+<para
+>Hvis du ønsker at matche en af et sæt alternative mønstre, kan du adskille dem med <literal
+>|</literal
+> (lodret-streg-tegn).</para>
+
+<para
+>For eksempel for at finde enten <quote
+>Jesper</quote
+> eller <quote
+>Emil</quote
+> skal du bruge udtrykket <userinput
+>Jesper|Emil</userinput
+>.</para>
+
+</sect2>
+
+<sect2>
+
+<title
+>Undermønstre</title>
+
+<para
+><emphasis
+>Undermønstre</emphasis
+> er mønstre der er omgivet af parenteser, og de bruges på forskellige måder indenfor verden af regulære udtryk.</para>
+
+<sect3>
+
+<title
+>Angivelse af alternativer</title>
+
+<para
+>Du kan bruge et undermønster for at gruppere et sæt alternativer indenfor et større mønster. Alternativerne er adskilt af tegnet <quote
+>|</quote
+> (lodret streg).</para>
+
+<para
+>For eksempel for at matche et vilkårligt af ordene <quote
+>int</quote
+>, <quote
+>float</quote
+> eller <quote
+>double</quote
+>, kan du bruge mønstret <userinput
+>int|float|double</userinput
+>. Hvis du kun ønsker at finde en, hvis den efterfølges af noget hvidt, og derpå nogle bogstaver, puttes de alternative muligheder indenfor et undermønster: <userinput
+>(int|float|double)\s+\w+</userinput
+>.</para>
+
+</sect3>
+
+<sect3>
+
+<title
+>Indfangning af matchende tekst (tilbagereferencer)</title>
+
+<para
+>Hvis du ønsker at bruge en tilbagereference, så brug et undermønster for at få den ønskede det af mønstret til at blive husket.</para>
+
+<para
+>For eksempel, hvis du ønsker at finde to forekomster af det samme ord adskilt af et komma og muligvis noget hvidt, skal du skrive <userinput
+>(\w+),\s*\1</userinput
+>. Undermønstret <literal
+>\w+</literal
+> vil finde en stump af ord-tegnene, og hele udtrykket vil matche hvis de bliver efterfulgt af et komma, 0 eller mere hvidt og så den samme stump ord-tegn. (Strengen <literal
+>\1</literal
+> refererer til<emphasis
+>det første undermønster omgivet af parenteser</emphasis
+>)</para>
+
+<!-- <para
+>See also <link linkend="backreferences"
+>Back references</link
+>.</para
+> -->
+
+</sect3>
+
+<sect3 id="lookahead-assertions">
+<title
+>Fremadskuende påstande</title>
+
+<para
+>En fremadskuende påstand er et undermønster, der starter enten med <literal
+>?=</literal
+> eller <literal
+>?!</literal
+>.</para>
+
+<para
+>For eksempel for at matche den bogstavelige streng <quote
+>Rasmussen</quote
+> men kun hvis det ikke er <quote
+>Poul Nyrup Rasmussen</quote
+>, vil du skulle bruge dette udtryk: <userinput
+>(?!Poul Nyrup )Rasmussen</userinput
+>. (Dette vil finde <quote
+>Anders Fogh Rasmussen</quote
+> og også <quote
+>Halfdan Rasmussen</quote
+>, men ignorere en matchning med Poul Nyrup Rasmussen.)</para>
+
+<para
+>Undermønstre brugt til påstande bliver ikke indfangede.</para>
+
+<para
+>Se også <link linkend="assertions"
+>Påstande</link
+></para>
+
+</sect3>
+
+</sect2>
+
+<sect2 id="special-characters-in-patterns">
+<title
+>Tegn med en speciel betydning indenfor mønstre</title>
+
+<para
+>Følgende tegn har en betydning indenfor et mønster, og skal escapes hvis du ønsker at matche dem bogstaveligt: <variablelist>
+
+<varlistentry>
+<term
+><userinput
+>\</userinput
+> (baglæns skråstreg)</term>
+<listitem
+><para
+>Escape-tegnet.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>^</userinput
+> (karet)</term>
+<listitem
+><para
+>Betyder begyndelsen af strengen.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>$</userinput
+></term>
+<listitem
+><para
+>Betyder slutningen af strengen.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>()</userinput
+> (venstre og højre parenteser)</term>
+<listitem
+><para
+>Angiver undermønstre.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>{}</userinput
+> (venstre og højre tuborg-parenteser)</term>
+<listitem
+><para
+>Angiver numeriske kvantorer.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>[]</userinput
+> (venstre og høje firkantede parenteser)</term>
+<listitem
+><para
+>Angiver tegnklasser.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>|</userinput
+> (lodret streg)</term>
+<listitem
+><para
+>logisk OR. Adskiller alternativer.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>+</userinput
+> (plus-tegn)</term>
+<listitem
+><para
+>Kvantor, 1 eller flere.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>*</userinput
+> (stjerne)</term>
+<listitem
+><para
+>Kvantor, 0 eller flere.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>?</userinput
+> (spørgsmålstegn)</term>
+<listitem
+><para
+>Et frivilligt tegn. Kan fortolkes som en kvantor, 0 eller 1.</para
+></listitem>
+</varlistentry>
+
+</variablelist>
+
+</para>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="quantifiers">
+<title
+>Kvantifikatorer</title>
+
+<para
+><emphasis
+>Kvantorer</emphasis
+> tillader et regulært udtryk at matche et bestemt angivet antal gange eller et område af tal af enten tegn, tegnklasser eller undermønstre.</para>
+
+<para
+>Kvantorer er omgiver af tuborg-parenteser (<literal
+>{</literal
+> og <literal
+>}</literal
+>) og har den generelle form <literal
+>{[minimum-antal][,[maksimum-antal]]}</literal
+> </para>
+
+<para
+>Brugen forklares bedst ved et eksempel: <variablelist>
+
+<varlistentry>
+<term
+><userinput
+>{1}</userinput
+></term>
+<listitem
+><para
+>Nøjagtig én forekomst</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>{0,1}</userinput
+></term>
+<listitem
+><para
+>Nul eller én forekomst</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>{,1}</userinput
+></term>
+<listitem
+><para
+>Det samme, med mindre arbejde;)</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>{5,10}</userinput
+></term>
+<listitem
+><para
+>Mindst 5 men højst 10 forekomster.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>{5,}</userinput
+></term>
+<listitem
+><para
+>Mindst 5 forekomster, intet maksimum.</para
+></listitem>
+</varlistentry>
+
+</variablelist>
+
+</para>
+
+<para
+>Derudover er der nogle forkortelser: <variablelist>
+
+<varlistentry>
+<term
+><userinput
+>*</userinput
+> (stjerne)</term>
+<listitem
+><para
+>ligesom <literal
+>{0,}</literal
+>, find et vilkårligt antal forekomster.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>+</userinput
+> (plus-tegn)</term>
+<listitem
+><para
+>ligesom <literal
+>{1,}</literal
+>, mindst én forekomst.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>?</userinput
+> (spørgsmålstegn)</term>
+<listitem
+><para
+>ligesom <literal
+>{0,1}</literal
+>, nul eller én forekomst.</para
+></listitem>
+</varlistentry>
+
+</variablelist>
+
+</para>
+
+<sect2>
+
+<title
+>Grådighed</title>
+
+<para
+>Når kvantorer bruges uden maksimum, vil regulære udtryk som standard matche så meget af den søgte streng som muligt, hvilket er almindelig kendt som <emphasis
+>grådig</emphasis
+> opførsel.</para>
+
+<para
+>Programmer til moderne regulære udtryk giver metoder til at <quote
+>slå grådighed fra</quote
+>, selvom det i et grafisk miljø er op til grænsefladen at give dig adgang til denne egenskab. For eksempel kan en søgningsdialog der giver adgang til en regulær-udtryk-søgning have et afkrydsningsfelt der hedder<quote
+>Minimal matchning</quote
+> ligesom den bør indikere om grådighed er standardopførslen.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Eksempler i sammenhæng</title>
+
+<para
+>Her er nogle få eksempler der bruger kvantorer</para>
+
+<variablelist>
+
+<varlistentry>
+<term
+><userinput
+>^\d{4,5}\s</userinput
+></term>
+<listitem
+><para
+>Matcher cifrene i <quote
+>1234 gå</quote
+> og <quote
+>12345 nu</quote
+>, men hverken i <quote
+>567 elleve</quote
+> eller i <quote
+>223459 et eller andet sted</quote
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\s+</userinput
+></term>
+<listitem
+><para
+>Matcher et eller flere blanke tegn</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>(bla){1,}</userinput
+></term>
+<listitem
+><para
+>Matcher hele <quote
+>blablabla</quote
+> og <quote
+>bla</quote
+> i <quote
+>blandt andet</quote
+> eller <quote
+>indblandet</quote
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>/?&gt;</userinput
+></term>
+<listitem
+><para
+>Matcher <quote
+>/&gt;</quote
+> i <quote
+>&lt;lukket punkt/&gt;</quote
+> så vel som <quote
+>&gt;</quote
+> i <quote
+>&lt;åbentpunkt&gt;</quote
+>.</para
+></listitem>
+</varlistentry>
+
+</variablelist>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="assertions">
+<title
+>Påstande</title>
+
+<para
+><emphasis
+>Påstande</emphasis
+> tillader et regulært udtryk kun at match under visse kontrollerede betingelser.</para>
+
+<para
+>En behøver ikke et tegn for at matche, den undersøger snarere omgivelserne for en mulig match før den anerkender den. For eksempel <emphasis
+>ordgrænse</emphasis
+>-påstanden forsøger ikke at finde et ikke ord-tegn overfor et på dens plads, i stedet sørger den for at der ikke er et ord-tegn. Dette betyder at påstanden kan matche hvor der ikke er noget tegn, &ie; ved slutningen af en søgt streng.</para>
+
+<para
+>Visse påstande har rent faktisk ikke noget mønster at matche, men den del af strengmatchningen vil ikke blive en del af resultatet af matchningen for det fulde udtryk.</para>
+
+<para
+>Regulære udtryk som dokumenteret her understøtter følgende udtryk: <variablelist>
+
+<varlistentry
+> 
+<term
+><userinput
+>^</userinput
+> (karet: begyndelsen af streng)</term
+> 
+<listitem
+><para
+>Matcher begyndelsen af den søgte streng.</para
+> <para
+>Udtrykket <userinput
+>^Inger</userinput
+> vil matche ved <quote
+>Inger</quote
+> i strengen <quote
+>Inger, hej!</quote
+> men ikke i <quote
+>Hej, Inger!</quote
+> </para
+> </listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>$</userinput
+> (slutning af streng)</term>
+<listitem
+><para
+>Matcher slutningen af den søgte streng.</para>
+
+<para
+>Udtrykket <userinput
+>du\?$</userinput
+> vil matche ved det sidste du i strengen <quote
+>Du gjorde det ikke, gjorde du?</quote
+> men ingen steder i <quote
+>Du gjorde det ikke, vel?</quote
+></para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\b</userinput
+> (ordgrænse)</term>
+<listitem
+><para
+>Matcher hvis der er et ord-tegn på den ene side og et ikke-ord-tegn på den anden.</para>
+<para
+>Dette er nyttigt for at finde ord-afslutninger, for eksempel begge ender for at finde et helt ord. Udtrykket <userinput
+>\ben\b</userinput
+> vil matche det <quote
+>en</quote
+> der er for sig selv i strengen <quote
+>Der var en der kom ind gennem vinduet</quote
+>, men ikke det <quote
+>en</quote
+> der er i <quote
+>gennem</quote
+>.</para
+></listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\B</userinput
+> (ikke-ord-grænse)</term>
+<listitem
+><para
+>Matcher hvor <quote
+>\b</quote
+> ikke gør.</para>
+<para
+>Det betyder at det for eksempel vil matche inde i ord: Udtrykket <userinput
+>\Bel\B</userinput
+> vil matche ved el i <quote
+>heldig</quote
+> men ikke i <quote
+>alligevel</quote
+> eller <quote
+>Mon du elsker mig</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>(?=PATTERN)</userinput
+> (Positiv fremadskuen)</term>
+<listitem
+><para
+>En fremadskuende påstand kigger på den del af strengen der følger en mulig match. Den positive fremadskuen vil forhindre strengen i at matche hvis teksten der følger den mulige match ikke matcher et <emphasis
+>PATTERN</emphasis
+> i påstanden, men den tekst der matches derved vil ikke blive inkluderet i resultatet.</para>
+<para
+>Udtrykket <userinput
+>skole(?=\w)</userinput
+> vil matche ved <quote
+>skole</quote
+> i <quote
+>skolelærer</quote
+> men ikke ved <quote
+>Skulker du fra din skole?</quote
+></para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>(?!PATTERN)</userinput
+> (Negativ fremadskuen)</term>
+
+<listitem
+><para
+>Den negative fremadskuen forhindrer en mulig match i at blive anerkendt hvis den følgende del af den søgte streng ikke matcher dens <emphasis
+>PATTERN</emphasis
+>.</para>
+<para
+>Udtrykket <userinput
+>const \w+\b(?!\s*&amp;)</userinput
+> vil matche ved <quote
+>const char</quote
+> i strengen <quote
+>const char* foo</quote
+> men den ikke kan matche <quote
+>const QString</quote
+> i <quote
+>const QString&amp; bar</quote
+> fordi <quote
+>&amp;</quote
+> matcher den negative fremadskuen påstandsmønster.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+</para>
+
+</sect1>
+
+<!-- TODO sect1 id="backreferences">
+
+<title
+>Back References</title>
+
+<para
+></para>
+
+</sect1 -->
+
+</appendix>

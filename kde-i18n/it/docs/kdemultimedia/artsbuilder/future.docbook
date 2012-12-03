@@ -1,0 +1,401 @@
+<!-- <?xml version="1.0" ?>
+<!DOCTYPE chapter PUBLIC "-//KDE//DTD DocBook XML V4.1.2-Based Variant
+V1.1//EN" "dtd/kdex.dtd">
+To validate or process this file as a standalone document, uncomment
+this prolog. Be sure to comment it out again when you are done -->
+
+<chapter id="future-work">
+<title
+>Lavoro futuro</title>
+
+<para
+>Questa sezione descrive il lavoro di &arts; in corso. Lo sviluppo procede velocemente, perciò queste informazioni potrebbe non essere aggiornate. Dovresti controllare il file della lista TODO e gli archivi della <link linkend="mailing-lists"
+>mailing list</link
+> per vedere quale nuova funzionalità è prevista. Sentiti libero di partecipare al nuovo design e all'implementazione. </para>
+
+<para
+>Questa è la bozza del documento che cerca di darti una panoramica di come le nuove tecnologie saranno integrate in &arts;. In particolare, riguarda quello che segue: </para>
+
+<itemizedlist>
+<listitem
+><para
+>Come funzionano le interfacce.</para
+></listitem>
+<listitem
+><para
+>Codec - decodificazione dei flussi mp3 o wav in un formato tale che possano essere usati come dati.</para
+></listitem>
+<listitem
+><para
+>Video.</para
+></listitem>
+<listitem
+><para
+>Threading.</para
+></listitem>
+<listitem
+><para
+>Sincronizzazione.</para
+></listitem>
+<listitem
+><para
+>Espansione dinamica/masquerading.</para
+></listitem>
+<listitem
+><para
+>Composizione dinamica.</para
+></listitem>
+<listitem
+><para
+>&GUI;</para
+></listitem>
+<listitem
+><para
+>&MIDI;</para
+></listitem>
+</itemizedlist>
+
+<para
+>Questo è il lavoro in corso. Comunque, questo dovrebbe essere solo la base se vuoi vedere nuove tecnologie in &arts;. Dovrebbe darti un'idea generale di come questi problemi saranno indirizzati. Comunque sentiti libero di correggere qualsiasi cosa vedi qui. </para>
+
+<para
+>Ciò che userà la tecnologia &arts; (quindi per favore coordina i tuoi sforzi): </para>
+
+<itemizedlist>
+<listitem>
+<para
+><application
+>KPhone</application
+> (voce su <acronym
+>IP</acronym
+>) </para>
+</listitem>
+
+<listitem>
+<para
+>&noatun; (lettore video / audio) </para>
+</listitem>
+
+<listitem>
+<para
+>&artscontrol; (programma di controllo del server sonoro per visualizzatori) </para>
+</listitem>
+
+<listitem>
+<para
+><application
+>Brahms</application
+> (sequenziatore musicale) </para>
+</listitem>
+
+<listitem>
+<para
+><application
+>Kaiman</application
+> (&kde;2 media player - compatibilità con kmedia2) </para>
+</listitem>
+
+<listitem>
+<para
+><application
+>mpglib</application
+>/<application
+>kmpg</application
+> (tecnologia di riproduzione audio e video <acronym
+>mpg</acronym
+>) </para>
+</listitem>
+
+<listitem>
+<para
+><application
+>SDL</application
+> (direct media layer per giochi non ancora avviato ma forse funziona) </para>
+</listitem>
+
+<listitem>
+<para
+><application
+>electric ears</application
+> (l'autore mi ha contattato - lo stato è sconosciuto) </para>
+</listitem>
+</itemizedlist>
+
+<sect1 id="interfaces-how">
+<title
+>Come funzionano le Interfacce</title>
+
+<!-- I think this is now obsolete and documented elsewhere ? -->
+
+<para
+>Le interfacce &MCOP; sono la base del concetto di &arts;. Sono l'equivalente della rete alle classi C++. Quando possibile dovresti orientare il tuo design verso le interfacce. Le interfacce consistono in quattro parti: </para>
+
+<itemizedlist>
+<listitem
+><para
+>Flussi sincroni</para
+></listitem>
+<listitem
+><para
+>Flussi asincroni</para
+></listitem>
+<listitem
+><para
+>Metodi</para
+></listitem>
+<listitem
+><para
+>Attributi</para
+></listitem>
+</itemizedlist>
+
+<para
+>Questi possono essere mescolati come vuoi. Le nuove tecnologie dovrebbero essere definite in termini di interfacce. Leggiti le sezioni sui flussi asincroni e sui flussi sincroni, così come le interfacce di KMedia2, che sono un buon esempio su come funzionano queste cose </para>
+
+<para
+>Le interfacce sono specificate nel codice <literal role="extension"
+>.idl</literal
+> ed eseguite tramite il compilatore <command
+>mcopidl</command
+>. Ricava la classe <classname
+><replaceable
+>Nomeinterfaccia</replaceable
+>_impl</classname
+> per implementarle e usa <function
+>REGISTER_IMPLEMENTATION(Interfacename_impl)</function
+> per inserire le implementazioni del tuo oggetto nel sistema dell'oggetto &MCOP;. </para>
+
+</sect1>
+
+<sect1 id="codecs">
+<title
+>Codec - Decodificazione dei dati</title>
+
+<para
+>Le interfacce kmedia2 ti permettono di ignorare quei file wav, mp3 e qualsiasi cosa sia composta da flussi di dati. Invece, implementano solamente i metodi per eseguirli. </para>
+
+<para
+>In questo modo puoi scrivere una procedura di caricamento wave in modo da eseguire i file wave (come PlayObject), ma nessun altro può usare il tuo codice. </para>
+
+<para
+>I flussi asincroni potrebbero essere l'alternativa. Definisci un'interfaccia che ti permetta di passare i blocchi di dati in entrata e di ottenere i blocchi di dati in uscita. Questo sembra simile a quello di &MCOP;: </para>
+
+<programlisting
+>interface Codec {
+  in async byte stream indata;
+  out async byte stream outdata;
+};
+</programlisting>
+
+
+<para
+>Naturalmente i codec possono anche fornire attributi per emettere dati aggiuntivi, come le informazioni di formattazione. </para>
+
+<programlisting
+>interface ByteAudioCodec {
+  in async byte stream indata;
+  out async byte stream outdata;
+  readonly attribute samplingRate, bits, channels;
+};
+</programlisting>
+
+<para
+>Questo <interfacename
+>ByteAudioCodec</interfacename
+> per esempio potrebbe essere connesso ad un oggetto <interfacename
+>ByteStreamToAudio</interfacename
+>, per fare un vero audio float. </para>
+
+<para
+>Naturalmente altri tipi di codec possono coinvolgere l'emissione diretta di dati video, come per esempio </para>
+
+<programlisting
+>interface VideoCodec {
+  in async byte stream indata;
+  out video stream outdata;      /* nota: i flussi video ancora non esistono */
+};
+</programlisting>
+
+<para
+>Molto probabilmente il concetto di un codec dovrebbe essere impiegato piuttosto che nel modo <quote
+>tu sai come riprodurre e io no</quote
+> come per esempio <interfacename
+>WavPlayObject</interfacename
+> attualmente fa. Tuttavia qualcuno ha bisogno di sedersi e di fare qualche esperimento prima che un <acronym
+>API</acronym
+> possa essere finito. </para>
+
+</sect1>
+
+<sect1 id="video">
+<title
+>Video</title>
+
+<para
+>La mia idea è di fornire video come flussi asincroni di qualche tipo di dati nativi di &MCOP; che contengono immagini. Questo tipo di dati deve ancora essere creato. Facendo questo le estensioni che si occupano di immagini video potrebbero essere connesse allo stesso modo delle estensioni audio. </para>
+
+<para
+>Ci sono alcune cose importanti da non tralasciare, cioè: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Ci sono spazi di colori <acronym
+>RGB</acronym
+> e <acronym
+>YUV</acronym
+>. </para>
+</listitem>
+<listitem>
+<para
+>Il formato dovrebbe essere in qualche modo aggiunto al flusso. </para>
+</listitem>
+<listitem>
+<para
+>La sincronizzazione è importante. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>La mia idea è di lasciare la possibilità di reimplementare la classe <classname
+>VideoFrame</classname
+> in modo che possa memorizzare le cose in un segmento di memoria condivisa. Così facendo anche il flusso video tra processi differenti sarebbe possibile senza troppi problemi. </para>
+
+<para
+>Comunque, la situazione standard per il video è che le cose sono nello stesso processo, dalla decodifica al rendering. </para>
+
+<para
+>Ho fatto una primitiva implementazione di flusso video, che puoi scaricare <ulink url="http://space.twc.de/~stefan/kde/download/video-quickdraw.tar.gz"
+>qui </ulink
+>. Questa avrebbe bisogno di essere integrata in &MCOP; dopo alcuni esperimenti. </para>
+
+<para
+>Dovrebbe essere fornita una componente rendering che supporti XMITSHM (con <acronym
+>RGB</acronym
+> e <acronym
+>YUV</acronym
+>), Martin Vogt mi ha detto che sta lavorando su qualcosa del genere. </para>
+
+</sect1>
+
+<sect1 id="threading">
+<title
+>Threading</title>
+
+<para
+>Generalmente, &MCOP; è processato tutto in uno. Forse per il video non saremo più in grado di aggirare il threading. Ok. Ci sono alcune cose che dovrebbero essere trattate con attenzione: </para>
+
+
+<itemizedlist>
+<listitem
+><para
+>SmartWrappers - non sono sicuri da thread a causa del conteggio dei riferimenti non sicuro e altro. </para>
+</listitem>
+<listitem>
+<para
+>Dispatcher / I/O - anche non sicuri da thread. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Tuttavia, quello che potrei immaginare è di rendere i moduli selezionati sicuri da thread, sia per i flussi sincroni che asincroni. In modo che, con un sistema consapevole dello scorrere dei thread, potresti programmare lo scorrere del segnale su due o più processi. Questo aiuterebbe molto anche l'audio di cose su un multiprocessore. </para>
+
+<para
+>Ecco come dovrebbe funzionare: </para>
+
+
+<itemizedlist>
+<listitem>
+<para
+>Il sistema di flusso decide quali moduli dovrebbero calcolare cosa - ovvero: </para>
+    <itemizedlist>
+	<listitem
+><para
+>frame video (con il metodo process_indata)</para
+></listitem>
+	<listitem
+><para
+>flussi audio asincroni (calculateBlock)</para
+></listitem>
+	<listitem
+><para
+>altri flussi asincroni, principalmente flussi byte</para
+></listitem>
+	</itemizedlist>
+</listitem>
+<listitem>
+<para
+>I moduli possono calcolare queste cose nei propri processi. Per l'audio, è utile riusare i processi (il render &eg; su quattro processi per quattro processori, non importa se 100 moduli sono in esecuzione). Per la decompressione dei video e dei byte, sarebbe più semplice avere un'implementazione di blocco in un proprio processo, che è sincronizzato contro il resto di &MCOP; dal sistema di flusso. </para>
+</listitem>
+
+<listitem>
+<para
+>I moduli potrebbero non usare le funzionalità &MCOP; (come chiamate remote) durante un'operazione processata. </para>
+</listitem>
+</itemizedlist>
+
+</sect1>
+
+<sect1 id="synchronization">
+<title
+>Sincronizzazione</title>
+
+<para
+>Il video e il &MIDI; (e l'audio) potrebbero richiedere la sincronizzazione. Sostanzialmente, si tratta dell'ora. L'idea che ho è di attaccare delle ore ai flussi asincroni, aggiungendone uno a ogni pacchetto. Se invii due frame video, semplicemente ne fai due pacchetti (sono grossi comunque), in modo che puoi avere due diversi valori dell'ora. </para>
+
+<para
+>L'audio dovrebbe implicitamente avere un'ora associata, dato che è sincrono. </para>
+
+</sect1>
+
+<sect1 id="dynamic-composition">
+<title
+>Composizione dinamica</title>
+
+<para
+>È possibile dire: un effetto FX è composto di questi semplici moduli. FX dovrebbe sembrare un normale modulo &MCOP; (vedi masquerading), ma in realtà è composto di altri moduli. </para>
+
+<para
+>Questo è richiesto per &arts-builder;. </para>
+
+</sect1>
+
+<sect1 id="gui">
+<title
+>&GUI;</title>
+
+<para
+>Tutti i componenti della &GUI; saranno moduli &MCOP;. Dovrebbero avere attributi come grandezza, etichetta, colore, ... . Un compilatore <acronym
+>RAD</acronym
+> (&arts-builder;) dovrebbe essere in grado di comporli in modo visivo. </para>
+
+<para
+>La &GUI; dovrebbero essere salvabili, salvandone gli attributi. </para>
+
+</sect1>
+
+<sect1 id="midi-stuff">
+<title
+>&MIDI;</title>
+
+<para
+>Gli elementi &MIDI; vengono implementati come flussi asincroni. Ci sono due opzioni, una è usare le normali strutture &MCOP; per definire i caratteri e l'altra è di introdurre ancora caratteri personalizzati. </para>
+
+<para
+>Penso che le strutture normali potrebbero essere sufficienti, cioè: </para>
+
+<programlisting
+>struct MidiEvent {
+  byte b1,b2,b3;
+  sequence&lt;byte&gt; sysex;
+}
+</programlisting>
+
+<para
+>I flussi asincroni dovrebbero supportare i tipi di flusso personalizzati. </para>
+
+</sect1>
+
+</chapter>
+
+

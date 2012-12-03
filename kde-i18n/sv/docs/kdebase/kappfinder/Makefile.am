@@ -1,0 +1,4 @@
+KDE_LANG = sv
+SUBDIRS = $(AUTODIRS)
+KDE_DOCS = kappfinder
+KDE_MANS = AUTO

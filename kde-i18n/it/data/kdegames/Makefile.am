@@ -1,0 +1,4 @@
+
+SUBDIRS = $(AUTODIRS)
+TOPLEVEL_LANG = it
+

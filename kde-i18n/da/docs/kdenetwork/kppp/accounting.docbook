@@ -1,0 +1,162 @@
+<appendix id="appendix-accounting-template">
+<title
+>Et eksempel på en skabelon til kontering af telefonomkostninger.</title>
+
+<para
+>Hvis du ikke kan finde en regel for dit område, må du selv skrive én ved at følge denne skabelon. Det skal du dog ikke være bange for for det er ret nemt.</para>
+
+<para
+>Glem ikke at indsende din nyligt oprettede regelfil til &kppp;'s vedligeholder. Disse nye regler kan tjekkes for gyldig syntaks med <userinput
+><option
+>-r</option
+> <replaceable
+>rule_file</replaceable
+></userinput
+> kommandolinjetilvalget til &kppp; og skal installeres i <filename class="directory"
+>${KDEDIR}/share/apps/kppp/Rules</filename
+> eller i <filename class="directory"
+>${HOME}/.kde/share/apps/kppp/Rules</filename
+> før du vil kunne vælge dem i denne dialog.</para>
+
+<programlisting
+>################################################################
+#
+# Licens
+# Denne skabelon er (c) ved Mario Weilguni &lt;mweilguni@kde.org&gt;
+# Den er udgivet under samme betingelse som kppp-pakken, 
+# som den er en del af
+#
+################################################################
+#
+# Dette er et eksempel på et regelsæt for kppp. Du kan bruge det som en 
+# skabelon når du bliver nødt til at lave dit eget regelsæt. Hvis du gør
+# det, så fjern alle kommentarer og tilføj dine egne. Det vil gøre det
+# for andre brugere at tjekke dit regelsæt.
+# 
+# Underskriv venligst tarif-filen med dit navn og en e-mail-adresse
+# så jeg kan kontakte dig om nødvendigt.
+#
+# BEMÆRK: reglerne i dette regelsæt giver ikke meget mening og
+#       er kun til demonstrationsformål
+#
+# NOTE OM FILNAVNE:
+#        når du laver dit eget regelsæt, så brug "_" i filnavne
+#        i stedet for mellemrum og brug ".rst  som endelse
+#           dvs. "Dansk by opkald"
+#          --> filen skal gemmes som "Dansk_by_opkald.rst"
+#
+# Tak til Bernd Wuebben
+# wuebben@math.cornell.edu / wuebben@kde.org
+################################################################
+
+
+################################################################
+#
+# NAVN PÅ REGELSÆTTET. Dette er NØDVENDIGT til konteringsformål.
+#
+################################################################
+name=default
+
+################################################################
+# indstilling af møntenhed
+################################################################
+
+# definerer DKR (Danske kroner) til at blive brugt som møntenhed
+# (ikke absolut nødvendigt, standard = "$")
+currency_symbol=DKR
+
+# Definér positionen af møntsymbolet.
+# (ikke absolut nødvendigt, standard er "right")
+currency_position=right 
+
+# Definér antal betydende cifre.
+# (ikke absolut nødvendigt, standard er "2"
+currency_digits=2
+
+
+
+################################################################
+# forbindelsesopsætning
+################################################################
+
+# BEMÆRK: regler anvendes oppefra og nedefter - den
+#       SIDSTE matchende regel er den der bruges til
+#       omkostningsberegninger.
+
+# Dette beregnes hver gang du forbinder. Hvis du ikke skal 
+# betale pr forbindelse, så skriv "0" her eller kommentér det væk.
+per_connection=0.0
+
+
+# minimum omkostning pr forbindelse. Hvis det et telefonopkald koster
+# er mindre end denne værdi, bruges denne værdi i stedet
+minimum_costs=0.0
+
+
+# Du betaler .74 for de første 180 sekunder ( 3 minutter) uanset
+# om du er forbundet i 1 sekund eller 180 sekunder.
+# Denne regel vil tage prioritet i de første 180 sekunder
+# over en vilkårlig anden regel, specielt 'standard'-reglen.
+# kig på omkostningsgrafen costgraphs.gif i docs-mappen
+# for kppp-distributionen for en grafisk illustration.
+flat_init_costs=(0.74,180)
+
+# Dette er standardreglen som bruges når der ikke er nogen anden regel.
+# Den første komponent "0.1" er prisen for en
+# "enhed", mens "72" er varigheden i sekunder.
+# Derfor betyder følgende regel: "Hver 72 sekunder bliver 0.1 
+# DKR lagt til regningen"
+default=(0.1, 72)
+
+#
+# mere komplicerede regler:
+#
+
+# "mandag indtil søndag fra 12:00 til 23:59 koster det
+# 0.2 hver 72 sekunder"
+on () between () use (0.2, 2)
+
+# samme som ovenfor
+on (monday..sunday) between () use (0.2, 2)
+
+# samme som ovenfor. Du skal bruge 24-timers notation, ellers vil konteringen
+# ikke virke rigtigt. (Eksempel: skriv 15:00 for 3 pm)
+on (monday..sunday) between (0:00..23:59) use (0.2, 2)
+
+# anvendes på fredag, lørdag, søndag og mandag 8 indtil 13
+on (friday..monday) between (8:00..13:00) use(0.3,72)
+
+# ATTENTION:
+on(monday..friday) between (21:00..5:00) use (0.4,2)
+# inkludere IKKE lørdag 0:00-5:00, kun monday..friday, som det siger.
+
+# anvendes på en bestemt given dato (jul)
+on (12/25) between () use (0.3,72)
+
+# et område af datoer og en bestemt ugedag
+on (12/25..12/27, 12/31, 07/04, monday) between () use (0.4, 72)
+
+# brug dette for påske
+on (easter) between () use (0.3,72)
+
+# easter + 50 days (Pinsemandag )
+on (easter+50) between () use (0.3,72)
+
+on (thursday) between (20:00..21:52) use (8.2, 1)
+
+
+# "on()" reglerne ovenfor bruges kun på det nuværende tidspunkt. Du kan også
+# få en regel til at afhænge af antallet af sekunder du har været forbundet
+# ved at angive tidspunktet som et tredje argument til "use()".
+# For eksempel, lad os sige at normal-rate om aftenen er 0.20 pr minut,
+# og det falder med 20% efter en times forbindelsestid. Dette kan modelleres
+# sådan:
+
+on () between (19:30..08:00) use (0.20, 60)
+on () between (19:30..08:00) use (0.16, 60, 3600)
+
+# Bemærk at disse regler, ligesom andre regler, er følsomme overfor den 
+# rækkefølge de kommer i.
+</programlisting>
+
+</appendix>

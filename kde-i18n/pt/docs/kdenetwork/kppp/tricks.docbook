@@ -1,0 +1,296 @@
+<chapter id="modem-tricks">
+<title
+>Truques e Dicas com Modem</title>
+
+<para
+>Esta secção deverá preparar os mais receosos na arte obscura (ou nem tanto) de "afinação" do modem. Os comandos que aqui são dados são todos da norma AT da Hayes, mas nem todos os modems são iguais, por isso o resultado poderá variar.</para>
+
+<sect1 id="modem-sessions">
+<title
+>Sessões de Modem</title>
+
+<para
+>Uma sessão do modem permite-lhe interagir com o modem directamente. Você vai escrevendo os comandos e ele irá respondendo. Para obter uma sessão do modem, quando não está nenhuma ligação activa, vá à opção <guibutton
+>Configurar</guibutton
+>, seguida de <guilabel
+>Modem</guilabel
+> <guibutton
+>Terminal</guibutton
+>. Isto irá abrir uma janela para configurar interactivamente o modem. Tente escrever <userinput
+><command
+>ATZ</command
+></userinput
+> (o qual reinicia o seu modem). Neste caso, deverá obter uma resposta OK. Use a opção <menuchoice
+><guimenu
+>Ficheiro</guimenu
+><guimenuitem
+>Fechar</guimenuitem
+></menuchoice
+> para terminar a sessão.</para>
+
+</sect1>
+
+<sect1 id="modem-profiles">
+<title
+>Perfis de Modem</title>
+					
+<para
+>Uma razão pela qual poderá querer enviar os comandos do modem directamente será se você tiver um conjunto de configurações do modem que queira manter e que não queira indicar para todas as ligações. Uma boa forma de fazer isto é através dos perfis do modem. Os modems poderão ter vários perfis armazenados e numerados 0,1,... O <command
+>AT&amp;V</command
+> poderá ser usado para os ver a todos. O perfil por omissão é normalmente o 0 (isto poderá ser alterado através do comando <command
+>AT&amp;Y</command
+>.) O perfil usado de momento é chamado de perfil <quote
+>activo</quote
+>.</para>
+
+<para
+>Quando você altera uma opção, o perfil activo é modificado. O comando <command
+>ATZ</command
+> fará com que o modem carregue o perfil predefinido, eliminando quaisquer alterações que você tenha feito. Para gravar as modificações, carregue o perfil que deseja alterar com o comando <command
+>ATZ<replaceable
+>n</replaceable
+></command
+> (em que o <replaceable
+>n</replaceable
+> é o número do perfil). Faça as alterações que desejar e grave finalmente com o comando <command
+>AT&amp;W<replaceable
+>n</replaceable
+></command
+>. Para fazer com que o &kppp; use o perfil que deseja, mude a mensagem de inicialização do modem (<guibutton
+>Configurar</guibutton
+> <guilabel
+>Modem</guilabel
+> <guibutton
+>Comandos do Modem</guibutton
+> <guilabel
+>Texto de Inicialização</guilabel
+>.) Por exemplo, o <command
+>ATZ1</command
+> fará com que o &kppp; reinicie o modem e use o perfil armazenado #1.</para>
+
+<para
+>Se você quiser reinicializar o seu modem para voltar a um ponto de partida conhecido, use o comando <command
+>AT&amp;F&amp;W</command
+> para configurar o perfil actual para as predefinições de fábrica e para guardar essas configurações como o perfil por omissão.</para>
+
+<para
+>Os exemplos de mudanças de perfil estão na próxima secção</para>
+
+</sect1>
+
+<sect1 id="modem-hangup">
+<title
+>Fazer o modem desligar</title>
+
+<para
+>Algumas das vezes você poderá achar que o &kppp; tem dificuldades em suspender o modem. Isto poderá ser o resultado de uma discrepância entre as configurações do &kppp; e as do modem. Um modem normal usa dois métodos para decidir suspender-se: o <link linkend="hangup-command-method"
+>Comando</link
+> e o <link linkend="hangup-dtr-method"
+><acronym
+>DTR</acronym
+></link
+>. O método do Comando envolve o envio de uma sequência especial para o modem, a qual coloca-o no modo de comandos, enviando de seguida o comando de suspensão (<command
+>ATH</command
+>).</para>
+
+<para
+>Fora do &kppp;, ao configurar o pacote do <application
+>pppd</application
+> manualmente, é muitas das vezes útil usar o método do comando, para que uma pessoa possa sair de uma sessão de terminal e iniciar o <application
+>pppd</application
+> sem ter de suspender o modem. Nas restantes situações, o método do <acronym
+>DTR</acronym
+> é preferido, dado ser mais simples.</para>
+
+<sect2 id="hangup-dtr-method">
+<title
+>Método <acronym
+>DTR</acronym
+> (<command
+>AT&amp;Dn</command
+>)</title>
+
+<para
+>O método do <acronym
+>DTR</acronym
+> fará com que o modem suspenda a ligação sempre que o &kppp; deixar de usar o modem. Se você obtiver uma sessão do modem, e perguntar o estado através do <command
+>AT&amp;V</command
+>, e vir no meio das opções apresentadas do perfil actual um <command
+>&amp;D0</command
+>, então é porque o método de suspensão <acronym
+>DTR</acronym
+> está desactivado. Para activar o método <acronym
+>DTR</acronym
+>, use o botão do <guibutton
+>Terminal</guibutton
+> para obter uma sessão do modem, seguido de:</para>
+
+<screen
+><userinput
+><command
+>ATZ</command
+></userinput
+> <lineannotation
+># Repõe no perfil predefinido</lineannotation>
+<userinput
+><command
+>AT&amp;D2</command
+></userinput
+>  <lineannotation
+># Indica para suspender com a queda do DTR</lineannotation>
+<userinput
+><command
+>AT&amp;W</command
+></userinput
+>  <lineannotation
+># Grava no perfil predefinido</lineannotation
+>
+</screen>
+
+<sect3>
+<title
+>Como funciona o método <acronym
+>DTR</acronym
+></title>
+
+<para
+>Sempre que a linha Data Terminal Ready (<acronym
+>DTR</acronym
+>) na linha série entre o computador e o modem fica num nível alto, o modem suspende a ligação. Quando o &kppp; acede à porta série, a linha <acronym
+>DTR</acronym
+> passa a um nível lógico baixo; num modem externo, você poderá ver a luz do <acronym
+>DTR</acronym
+> (ou <acronym
+>TR</acronym
+>) mudar sempre que isso acontecer. Quando a luz do <acronym
+>TR</acronym
+> se apaga (porque o &kppp; cortou o acesso à porta série, ou por outro motivo pior!), o modem suspender-se-á.</para>
+</sect3>
+
+</sect2>
+
+<sect2 id="hangup-command-method">
+<title
+>Método de comando</title>
+
+<para
+>A outra forma de fazer com que um modem se suspenda quando estiver ligado (usado no <command
+>AT&amp;D<replaceable
+>n</replaceable
+></command
+>, onde o <replaceable
+>n</replaceable
+> não é igual a <returnvalue
+>2</returnvalue
+>); isto faz com que o modem aceite o comando sempre que uma sessão está em progresso. Para fazer com que se suspenda convenientemente, obtenha uma sessão do modem, e defina o tempo de guarda para um intervalo curto, como por exemplo:</para>
+
+<screen
+><userinput
+><command
+>ATZ</command
+></userinput>
+<userinput
+><command
+>ATS12=5</command
+></userinput>
+<userinput
+><command
+>AT&amp;W</command
+></userinput
+>
+</screen>
+
+<para
+>Use então a barra do <guilabel
+>Tempo de Guarda</guilabel
+> na secção de comandos do modem para corresponder ao registo (<varname
+>S12</varname
+> para este valor <returnvalue
+>5</returnvalue
+>. O modem deverá então suspender-se convenientemente.</para>
+
+<sect3>
+<title
+>Como É Que o Método do Comando Funciona</title>
+
+<para
+>Quando o modem local está ligado a um modem remoto, este encontra-se no estado <quote
+>connect</quote
+> (ligação), em que passa todos os caracteres que recebe para o modem remoto, sem os interpretar. Para que o modem aceite os caracteres como comandos para ele próprio, alguém terá de pôr o modem no estado de comandos. O código especial fará isso.</para>
+
+<para
+>O código especial é definido como sendo três intervalos de tempo cujo período é definido pelo <varname
+>S12</varname
+> em 50-avos de segundo.</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Silencioso (precisa demorar mais do que <varname
+>S12</varname
+>/50 segundos)</para>
+</listitem>
+<listitem>
+<para
+>Carácter de escape (definido pelo registo <varname
+>S2</varname
+>, em que o valor por omissão é o <quote
+>+</quote
+>), repetido três vezes (com menos de <varname
+>S12</varname
+>/50 segundos entre cada um.</para>
+</listitem>
+<listitem>
+<para
+>Silencioso (precisa demorar mais do que <varname
+>S12</varname
+>/50 segundos)</para>
+</listitem>
+</itemizedlist>
+
+<para
+>Logo que o modem esteja no estado de comandos, você poderá então começar a enviar instruções para ele. Para o fazer suspender-se, envie o comando <command
+>ATH</command
+>. Os códigos de escape e o texto de suspensão usados pelo &kppp; são apresentados na janela dos <link linkend="modem-commands"
+><guilabel
+>Comandos do Modem</guilabel
+></link
+>. Estes deverão corresponder ao seu modem.</para>
+
+</sect3>
+</sect2>
+</sect1>
+
+<sect1 id="tone-dialing-speedup">
+<title
+>Fazer a marcação por tons mais rápida</title>
+
+<para
+>Se você puder usar a marcação por tons, a quantidade de tempo que leva a marcar poderá ser alterada usando o registo <varname
+>S11</varname
+>. Ele contém a duração (em centésimos de segundo) durante a qual se envia cada tom à medida que vai marcando. O valor por omissão é 95 (quase um segundo). A rapidez com que poderá marcar depende do equipamento de comutação da sua companhia telefónica que gere a sua linha. A duração mínima é 50, quase duas vezes mais rápido, e essa velocidade normalmente funciona. </para>
+
+<screen
+><userinput
+><command
+>ATZ</command
+></userinput
+>        <lineannotation
+># repõe no perfil predefinido</lineannotation>
+<userinput
+><command
+>ATS11=50</command
+></userinput
+>   <lineannotation
+># a marcação mais rápida possível, use um valor mais alto se não funcionar</lineannotation>
+<userinput
+><command
+>AT&amp;W</command
+></userinput
+>   <lineannotation
+># grava no perfil predefinido</lineannotation
+>
+</screen>
+
+</sect1>
+</chapter>

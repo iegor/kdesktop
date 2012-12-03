@@ -1,0 +1,4 @@
+KDE_LANG = pl
+SUBDIRS = $(AUTODIRS)
+KDE_DOCS = konsole
+KDE_MANS = AUTO

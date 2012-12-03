@@ -1,0 +1,399 @@
+<!-- <?xml version="1.0" ?>
+<!DOCTYPE chapter PUBLIC "-//KDE//DTD DocBook XML V4.1.2-Based Variant
+V1.1//EN" "dtd/kdex.dtd">
+To validate or process this file as a standalone document, uncomment
+this prolog. Be sure to comment it out again when you are done -->
+
+<chapter id="future-work">
+<title
+>Дальнейшая работа</title>
+
+<para
+>В этом разделе описывается то, над чем мы сейчас работаем. А так как разработка ведётся быстро, информация может быть устаревшей. Чтобы узнать о последних планах, проверяйте список файла TODO и <link linkend="mailing-lists"
+>список рассылки</link
+>. Не забывайте о том, что вы тоже можете принять участие в разработке. </para>
+
+<para
+>Это черновик, в котором описано, как новые технологии внедряются в &arts;. Вот какие темы здесь упомянуты: </para>
+
+<itemizedlist>
+<listitem
+><para
+>Как работает интерфейс.</para
+></listitem>
+<listitem
+><para
+>Кодеки - декодирование потоков mp3 или wav для того, чтобы использовать их как данные.</para
+></listitem>
+<listitem
+><para
+>Видео.</para
+></listitem>
+<listitem
+><para
+>Многопоточность.</para
+></listitem>
+<listitem
+><para
+>Синхронизация.</para
+></listitem>
+<listitem
+><para
+>Динамическое расширение.</para
+></listitem>
+<listitem
+><para
+>Динамическое построение.</para
+></listitem>
+<listitem
+><para
+>&GUI;</para
+></listitem>
+<listitem
+><para
+>&MIDI;</para
+></listitem>
+</itemizedlist>
+
+<para
+>Над этим мы сейчас работаем. Если вы хотите увидеть технологию в &arts;, начните с этого. Вы получите общее представление о решающихся проблемах. Вы можете и исправить эту информацию. </para>
+
+<para
+>То, что будет использоваться совместно с &arts; (поэтому координируйте свои действия, пожалуйста): </para>
+
+<itemizedlist>
+<listitem>
+<para
+><application
+>KPhone</application
+> (передача речи по протоколу <acronym
+>IP</acronym
+>) </para>
+</listitem>
+
+<listitem>
+<para
+>&noatun; (видео- и аудиопроигрыватель) </para>
+</listitem>
+
+<listitem>
+<para
+>&artscontrol; (программа управления звуковым сервером, для осциллографов) </para>
+</listitem>
+
+<listitem>
+<para
+><application
+>Brahms</application
+> (музыкальный синтезатор) </para>
+</listitem>
+
+<listitem>
+<para
+><application
+>Kaiman</application
+> (&kde;2 медиа-проигрыватель, совместим с kmedia2) </para>
+</listitem>
+
+<listitem>
+<para
+><application
+>mpglib</application
+>/<application
+>kmpg</application
+> (<acronym
+>mpg</acronym
+> - технология воспроизведения аудио и видео) </para>
+</listitem>
+
+<listitem>
+<para
+><application
+>SDL</application
+> (обращение к мульитмедиа-данным напрямую, для игр, ещё не реализовано) </para>
+</listitem>
+
+<listitem>
+<para
+><application
+>electric ears</application
+> (автор со мной связался - статус неизвестен) </para>
+</listitem>
+</itemizedlist>
+
+<sect1 id="interfaces-how">
+<title
+>Как работает интерфейс</title>
+
+<!-- I think this is now obsolete and documented elsewhere ? -->
+
+<para
+>Интерфейсы &MCOP; - основа идеи &arts;. Они эквивалентны классам в C++. Когда возможно, ориентируйтесь на интерфейсы. Они состоят из четырёх частей: </para>
+
+<itemizedlist>
+<listitem
+><para
+>Синхронные потоки</para
+></listitem>
+<listitem
+><para
+>Асинхронные потоки</para
+></listitem>
+<listitem
+><para
+>Методы</para
+></listitem>
+<listitem
+><para
+>Атрибуты</para
+></listitem>
+</itemizedlist>
+
+<para
+>Их можно смешивать как угодно. Новые технологии должны быть определены в терминах интерфейсов. Прочитайте разделы о синхронных и асинхронных потоках, а также об интерфейсах KMedia2, которые являются замечательными примерами работы интерфейсов. </para>
+
+<para
+>Интерфейсы определены в коде <literal role="extension"
+>.idl</literal
+> и компилируются <command
+>mcopidl</command
+>. Вы создаёте производный класс <classname
+><replaceable
+>Interfacename</replaceable
+>_impl</classname
+> и используете функцию <function
+>REGISTER_IMPLEMENTATION(Interfacename_impl)</function
+>, чтобы встроить ваши объктные реализации в систему объектов &MCOP;. </para>
+
+</sect1>
+
+<sect1 id="codecs">
+<title
+>Кодеки - Декодирование данных</title>
+
+<para
+>Интерфейсы kmedia2 позволяют игнорировать файлы wav, mp3 и всё, что состоит из потоков данных. Вместо этого вы описываете методы их воспроизведения. </para>
+
+<para
+>Поэтому вы можете написать программу загрузки файлов wave таким образом, чтобы она пригрывала их (как PlayObject), но никто другой, кроме вас, не сможет использовать код. </para>
+
+<para
+>Альтернативой являются асинхронные потоки. Вы определяете интерфейс, который позволяет передавать блоки данных. В &MCOP; это выглядит так: </para>
+
+<programlisting
+>interface Codec {
+  in async byte stream indata;
+  out async byte stream outdata;
+};
+</programlisting>
+
+
+<para
+>Конечно, кодеки могут снабжаться атрибутами для получения дополнительной информации, к примеру, о формате. </para>
+
+<programlisting
+>interface ByteAudioCodec {
+  in async byte stream indata;
+  out async byte stream outdata;
+  readonly attribute samplingRate, bits, channels;
+};
+</programlisting>
+
+<para
+>Этот <interfacename
+>ByteAudioCodec</interfacename
+>, например, может быть подключен к объекту <interfacename
+>ByteStreamToAudio</interfacename
+> для создания настоящего аудио потока. </para>
+
+<para
+>Конечно, в других типах кодеков видео воспроизводится напрямую, например </para>
+
+<programlisting
+>interface VideoCodec {
+  in async byte stream indata;
+  out video stream outdata;      /* note: видеопотоки  ещё не используются */
+};
+</programlisting>
+
+<para
+>Кодек не должен разрабатываться по принципу <quote
+>вы знаете, как воспроизводить, а я - нет</quote
+>, как, например, <interfacename
+>WavPlayObject</interfacename
+>. И всё же кто-то должен сидеть и тестировать его до завершения <acronym
+>API</acronym
+>. </para>
+
+</sect1>
+
+<sect1 id="video">
+<title
+>Видео</title>
+
+<para
+>Я хочу сделать видео асинхронными потоками некоторых встроенных типов данных &MCOP;, содержащих изображения. Сейчас идёт работа над этим типом данных. Тогдга модули, работающие с видео изображениями могут быть подключены так же, как и модули, работающие со звуком. </para>
+
+<para
+>Есть ещё несколько вещей, которые обязательно нужно иметь в виду: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Цветовые пространства <acronym
+>RGB</acronym
+> и <acronym
+>YUV</acronym
+>  </para>
+</listitem>
+<listitem>
+<para
+>Формат должен каким-то образом добавляться к потоку. </para>
+</listitem>
+<listitem>
+<para
+>Очень важна синхронизация. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Также я хочу оставить возможность переопределить класс <classname
+>VideoFrame</classname
+>, чтобы он мог хранить данные в разделённой памяти. Тогда будут возможны видео потоки между различными процессами без особых проблем. </para>
+
+<para
+>Как обычно, вся обработка видео, от декодирования до отображения на экране, должна производиться в одном процессе. </para>
+
+<para
+>Я сделал прототип реализации видеопотоков, который вы можете скачать <ulink url="http://space.twc.de/~stefan/kde/download/video-quickdraw.tar.gz"
+>отсюда</ulink
+>. Его нужно будет интегрировать в &MCOP; после тестирования. </para>
+
+<para
+>Компонент визуализации должен поддерживать XMITSHM (с <acronym
+>RGB</acronym
+> и <acronym
+>YUV</acronym
+>), Мартин Вогт (Martin Vogt) сказал, что работает над этим. </para>
+
+</sect1>
+
+<sect1 id="threading">
+<title
+>Многопоточность</title>
+
+<para
+>Сейчас &MCOP; не поддерживает работу с несколькими потоками обработки данных. Возможно, мы не сможем избежать многопоточности при работе с видео. Но есть вещи, с которыми нужно обращаться аккуратно: </para>
+
+
+<itemizedlist>
+<listitem
+><para
+>SmartWrappers - их использование с многопоточностью небезопасно из-за незащищенного механизма подсчета ссылок и т. д. </para>
+</listitem>
+<listitem>
+<para
+>Диспетчер ввода-вывода тоже небезопасен. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Однако я мечтаю сделать эти модули безопасными для синхронных и асинхронных потоков. Тогда можно будет посылать сигнал на несколько процессоров. Кроме того, это можно использовать при воспроизведении аудио на многопроцессорных системах. </para>
+
+<para
+>Как это будет работать: </para>
+
+
+<itemizedlist>
+<listitem>
+<para
+>Система управления потоками решает, что должны обрабатывать модули (и какие), т. е.: </para>
+    <itemizedlist>
+	<listitem
+><para
+>видеокадры (метод process_indata)</para
+></listitem>
+	<listitem
+><para
+>синхронные аудиопотоки (calculateBlock)</para
+></listitem>
+	<listitem
+><para
+>другие асинхронные потоки, в основном байтовые</para
+></listitem>
+	</itemizedlist>
+</listitem>
+<listitem>
+<para
+>Модули могут обрабатывать эти вещи и в собственных потоках. В аудио можно использовать потоки повторно (т. е. использование 4 потоков на 4 процессорах, даже если запущено 100 модулей). Для видео и декомпрессии будет удобно использование блокирующего средства во внутреннем потоке, которое синхронизировано с остальной частью &MCOP; системой управления потоками. </para>
+</listitem>
+
+<listitem>
+<para
+>Модули могут не использовать средства &MCOP; (такие, как удалённый вызов) во время работы в потоке. </para>
+</listitem>
+</itemizedlist>
+
+</sect1>
+
+<sect1 id="synchronization">
+<title
+>Синхронизация</title>
+
+<para
+>Видео и &MIDI; (и аудио) могут требовать синхронизации. Это могут быть маркеры времени. Я хочу использовать их в асинхронным потокам, добавляя эти маркеры к каждому пакету. Если вы посылаете два видеокадра, сделайте их пвкетами (всё равно они большие), чтобы у вас были два разных маркера. </para>
+
+<para
+>Т. к. аудио - синхронный поток, временные метки здесь тоже подразумеваются. </para>
+
+</sect1>
+
+<sect1 id="dynamic-composition">
+<title
+>Динамическое построение</title>
+
+<para
+>Нужно сделать так, чтобы можно было сказать: эффект FX состоит из этих простых модулей. FX должен выглядеть как обычный модуль &MCOP;, но состоять из других модулей. </para>
+
+<para
+>Это необходимо для &arts-builder;. </para>
+
+</sect1>
+
+<sect1 id="gui">
+<title
+>&GUI;</title>
+
+<para
+>Все компоненты &GUI; будут модулями &MCOP;. У них должны быть такие атрибуты, как размер, метка, цвет, ... &arts-builder; должен уметь составлять их визуально. </para>
+
+<para
+>Должна быть возможность сохранять графический интерфейс, сохраняя атрибуты. </para>
+
+</sect1>
+
+<sect1 id="midi-stuff">
+<title
+>&MIDI;</title>
+
+<para
+>&MIDI; будет реализован с помощью асинхронных потоков. Есть два варианта: использовать обычные структуры &MCOP; для описания типа или вводить новые стандартные типы. </para>
+
+<para
+>Думаю, обычных структур будет достаточно: </para>
+
+<programlisting
+>struct MidiEvent {
+  byte b1,b2,b3;
+  sequence&lt;byte&gt; sysex;
+}
+</programlisting>
+
+<para
+>Асинхронные потоки должны поддерживать обычные типы потоков. </para>
+
+</sect1>
+
+</chapter>
+
+

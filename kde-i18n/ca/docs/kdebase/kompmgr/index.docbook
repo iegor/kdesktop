@@ -1,0 +1,560 @@
+<?xml version="1.0" ?>
+<!DOCTYPE book PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" "dtd/kdex.dtd" [
+ <!ENTITY kappname "kompmgr">
+ <!ENTITY package "kwin">
+ <!ENTITY % Catalan  "INCLUDE">
+ <!ENTITY % addindex "IGNORE">
+]>
+
+<book lang="&language;">
+<bookinfo>
+<title
+>Informació sobre &kappname;</title>
+
+<authorgroup>
+<author
+><personname
+><firstname
+>Thomas</firstname
+><surname
+>Luebking</surname
+></personname
+> <email
+>thomas.luebking@web.de</email
+> </author>
+
+&traductor.Antoni.Bella; 
+</authorgroup>
+
+<copyright>
+<year
+>2005</year>
+<holder
+>Thomas Luebking</holder>
+</copyright>
+
+<legalnotice
+>&FDLNotice;</legalnotice>
+
+<date
+>2005-01-15</date>
+<releaseinfo
+>2.0.1</releaseinfo>
+
+<abstract>
+<para
+>&kappname; és un motor de presentació Composite usat per &kwin;.</para>
+<para
+>Aquest document és més aviat una explicació general del que fa, com treballa i quines restriccions te, que no pas com usar-lo (atès que treballa en segon pla en mode automàtic).</para
+> 
+</abstract>
+
+<keywordset>
+<keyword
+>KDE</keyword>
+<keyword
+>kwin</keyword>
+<keyword
+>motor de presentació</keyword>
+</keywordset>
+</bookinfo>
+
+<chapter id="introduction">
+<title
+>Introducció</title>
+
+<para
+>&kappname; es basa en <application
+>xcompmgr</application
+>, la implementació per a composar referències d'en Keith Packards per a l'ús de les noves característiques de X.</para>
+
+<para
+>Un gestor de Composite pren la sortida de les finestres X i la presenta en un únic dibuix que es mostra a la pantalla. L'avantatge de fer això és que podeu fer bàsicament qualsevol cosa amb els continguts de les finestres, inclouen combinacions (transllùcidessa) o afegir-hi ombres. Podeu afegir avisos antipàtics a les finestres, reduir, separar, afegir línies d'escombrat, o qualsevol altra cosa que pugueu imaginar, sempre limitat pel vostre maquinari.</para>
+
+</chapter>
+
+<chapter id="xorg">
+<title
+>Xorg</title>
+
+<para
+>Necessàriament precisareu <emphasis
+>X.org 6.8 o posterior</emphasis
+> per a que &kappname; funcioni. X.org 6.7 o anterior o XFree86 no funcionaran.</para>
+
+<sect1 id="xsetup">
+<title
+>Configuració</title>
+<para
+>Necessiteu habilitar de forma explícita la extensió Composite. Afegiu una nova secció al vostre fitxer de configuració de X.org:</para>
+
+<programlisting
+>Section "Extensions"
+    Option "Composite" "Enable"
+EndSection
+</programlisting>
+
+<para
+>Si està suportada per la vostra <acronym
+>GPU</acronym
+> (el complex xip que usa una targeta gràfica moderna), activa l'acceleració gràfica. Està millor suportat per <trademark
+>NVIDIA</trademark
+> i no completament per les targetes ATI.</para>
+
+<programlisting
+>Section "Device"
+....
+....
+    Option     "RenderAccel" "true"
+....
+....
+EndSection</programlisting>
+
+<para
+>&kappname; hauria d'estar ara disponible. Per a obtenir més informació, si us plau, consulteu la <link linkend="problems"
+>PMF</link
+>.</para>
+
+</sect1>
+
+</chapter>
+
+<chapter id="settings">
+<title
+>Arranjament</title>
+
+<para
+>Aquest capítol descriu quins paràmetres podeu tocar, el seu resultat visual i el seu impacte en el rendiment.</para>
+
+<sect1 id="translucency">
+<title
+>Transllùcidessa</title>
+
+<para
+>Un objecte transllùcid és un que permet passar la llum a través seu. En termes de finestres al vostre escriptori, això vol dir que el contingut de les finestres es pot veure a través d'una altra que es troba a sobre.</para>
+
+<para
+>La transllùcidessa us permet emfatitzar finestres especials, tenir un vista tridimensional sobre el vostre escriptori, seguir el rastre a les finestres cobertes i una aparença maca. El preu d'això, és que la mescla de tots aquests ítems te un cost en quant a la capacitat del sistema.</para>
+
+<para
+>Podeu configurar la transllùcidessa independentment per als següents ítems:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Finestres actives</guilabel
+></term>
+<listitem
+><para
+>Suggerim desactivar la transllùcidessa per a la finestra activa. La principal raó és el rendiment, i la segona és que explorar el contingut d'una finestra transllùcida vol dir que el vostre cervell haurà de separar la informació, el qual és molt esgotador.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Finestres inactives</guilabel
+></term>
+<listitem
+><para
+>Si establiu la transllùcidessa per a les finestres inactives, les finestres actives apareixeran emfatitzades i serà més fàcil donar-lis el focus. De tota manera, si escolliu un valor baix, podeu tenir problemes per a trobar una finestra inactiva. Si escolliu valors molt baixos (&lt;20&percnt;) podria donar-se el cas que no sigueu capaç de distingir les finestres en el seu ordre de pila, per això -de manera que accidentalment feu clic al botó <guibutton
+>Bé</guibutton
+> d'un diàleg quan tan sols volíeu activar una finestra. Els valors òptims estan situats entre el 60&percnt; i el 80&percnt;.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Moure finestres</guilabel
+></term>
+<listitem
+><para
+>Tot i que és un bonic efecte tenir una transllùcidessa fort (opacitat &lt; 20&percnt;) en el moviment de les finestres, en rendiment s'abona un preu realment alt, especialment si no desactiveu les ombres (veure a continuació). Intenteu-ho i si el vostre sistema és massa lent, mantingueu opaques les finestres en moviment. Aquest valor també s'aplica a les finestres quan es dimensionen.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Ancorar finestres</guilabel
+></term>
+<listitem
+><para
+>L'ancoratge a l'estil de kicker, no sol presentar moviment i normalment te una mida limitada, sent per tant pùrament visual i no minva el rendiment del sistema.</para
+>  
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Intenta "mantenir sobre" les finestres com si estiguessin actives</guilabel
+></term>
+<listitem
+><para
+>Si establiu una finestra per a que romangui sobre les altres, com a norma general desitjareu que el focus romangui sobre seu, per tant tindreu la sensació de que tenen la mateixa importància.</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Deshabilitar les finestres ARGB</guilabel
+></term>
+<listitem
+><para
+>XRender suporta finestres amb màscares alfa, &ead;, seccions transllùcides. Actualment no hi ha aplicacions o n'hi ha molt poques que usin aquesta característica, el qual no tindria sentit sense l'ús del gestor de Composite. Això canviarà en el futur.</para>
+<para
+>D'altra banda, la majoria de les aplicacions gtk 1.x (&pex;, <application
+>xmms</application
+>) s'estableixen com a una màscara alfa, resultant en finestres gairebé inusables (mentre les finestres filles no estiguin en negre), de manera que podeu deshabilitar el suport per a finestres ARGB per a l'ús d'aplicacions gtk. A l'espera que en el futur pròxim hi hagi un pedaç que ho solucioni.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</sect1>
+
+<sect1 id="shadows">
+<title
+>Ombres</title>
+<para
+>Perquè voldria algú ombrejar les seves finestres? Bé, potser tan sols per a que tinguin un aspecte més maco, o perquè permet una millor separació entre les finestres, o... Perquè és maco!</para
+> 
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Usar ombres</guilabel
+></term>
+<listitem
+><para
+>Atès que les ombres suposen un cost d'energia addicional en termes de cpu/gpu, es pot desactivar, mantenint la propietat d'un canal alfa general.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Mida de la finestra activa</guilabel
+></term>
+<term
+><guilabel
+>Mida de la finestra inactiva</guilabel
+></term>
+<term
+><guilabel
+>Mida de la finestra ancorada</guilabel
+></term>
+<listitem
+><para
+>Podeu seleccionar mides diferents d'ombra per als diferents tipus/estats de la finestra. Els valors no són absoluts, s'aplicaran en funció de la resolució a la vostra pantalla.</para>
+<para
+>Fonamentalment, podeu aplicar qualsevol valor desitjat (si editeu el fitxer de configuració amb un editor de text, no useu un valor superior a <quote
+>32</quote
+>), però les ombres grans tenen un cost major d'energia a la cpu/gpu.</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Desplaçament vertical</guilabel
+></term>
+<term
+><guilabel
+>Desplaçament horitzontal</guilabel
+></term>
+<listitem
+><para
+>Per omissió, la finestra tindrà una ombra amb el valor <quote
+>igual al voltant</quote
+>, el qual implica una font de llum frontal. Els usuaris familiaritzats amb &MacOS; poden preferir un desplaçament vertical, els usuaris de &Windows; poden preferir un desplaçament suau cap al sud-est. Experimenteu amb els valors fins que esteu còmode.</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Color de l'ombra</guilabel
+></term>
+<listitem
+><para
+>Normalment les ombres com a absència de la llum, apareixen com a ombres grises (de manera que el màxim valor de l'ombra és negre, o sense llum). Però, com aquest és un món virtual, podeu decidir fins i tot tenir ombres roses. Perquè no?</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Elimina les ombres en moure</guilabel
+></term>
+<listitem
+><para
+>Marqueu això si necessiteu més rendiment (especialment quan useu la transllùcidessa en moure les finestres).</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Elimina les ombres en dimensionar</guilabel
+></term>
+<listitem
+><para
+>És una bona idea comprovar si aquest ítem usa la transllùcidessa de les finestres en dimensionar-les (moure-les), o no. El mapa de píxels per a l'ombra de la finestra s'ha de recrear permanentment durant el dimensionat el qual influeix notablement sobre el rendiment del sistema.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</sect1>
+
+<sect1 id="effects">
+<title
+>Efectes</title>
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Aparició de les finestres</guilabel
+></term>
+<term
+><guilabel
+>Esvaneix entre canvis d'opacitat</guilabel
+></term>
+<listitem
+><para
+>En comptes de fer aparèixer una nova finestra de sobte, podríeu voler que aparegui lentament. Tot i que això sembla impressionant, també tindrà un preu igualment impressionant en velocitat de rendiment, i dificultarà la interacció amb les finestres de manera significativa durant el procés d'aparició. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><guilabel
+>Velocitat d'aparició</guilabel
+></term>
+<term
+><guilabel
+>Velocitat de desaparició</guilabel
+></term>
+<listitem
+><para
+>Per les raons d'ús mencionades en <guilabel
+>Aparició de les finestres</guilabel
+>, és més pràctic usar un aparició de velocitat ràpida (per a una millor visualització) i una desaparició lenta. Això proveirà bonics efectes i un comportament suau del sistema amb una espera baixa abans que aparegui la informació.</para
+> 
+</listitem>
+</varlistentry>
+</variablelist>
+</sect1>
+
+</chapter>
+
+<chapter id="problems">
+<title
+>Problemes</title>
+
+<para
+>Tota la extensió Composite és força nova. Pot provocar alguns problemes, fins i tot penjar el sistema X, de manera que <emphasis
+>us recomanem vigorosament que no habiliteu la extensió Composite en Xorg.conf en sistemes de producció crítica</emphasis
+>. De tota manera, si voleu arriscar lleugerament la estabilitat del sistema, obtindreu alguna bonica visualització.</para>
+
+<para
+>En aquest cas pot tenir alguns falles imprevistes del sistema. Aquí veiem alguns problemes comuns, i la seva solució: </para>
+
+<qandaset>
+<qandaentry>
+<question>
+<para
+>Tinc X.org 6.8.x, però &kappname; falla a l'inici</para>
+</question>
+<answer>
+<para
+>Necessitareu habilitar explícitament la extensió de Composite, afegiu una nova secció a /etc/X11/XorgConfig:</para>
+<programlisting
+>Section "Extensions"
+   Option "Composite" "Enable"
+EndSection</programlisting>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Bé, &kappname; funciona, però te un aspecte horrible</para>
+</question>
+<answer>
+<para
+>Si està suportada per la vostra <acronym
+>GPU</acronym
+> (principalment <trademark
+>NVIDIA</trademark
+> i algunes targetes ATI), assegureu-vos primer d'activar l'acceleració Render.</para>
+<programlisting
+>Section "Device"
+....
+....
+Option     "RenderAccel" "true"
+....
+....
+EndSection
+</programlisting>
+
+<para
+>Si continua sent lent, podeu intentar ajustar l'ús de la memòria. Decrementeu la profunditat de pantalla (&pex;, de 24 a 16) o baixeu la resolució (&pex;, de 1280x1024 a 1024x768).</para
+> 
+
+<para
+>Si us plau, tingueu en compte que el factor de limitació actual per a la extensió Composite sembla ser la mida del cau de la CPU.</para>
+
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Després d'habilitar la extensió Composite, no puc executar cap aplicació <acronym
+>GLX</acronym
+>. Tinc una targeta <trademark
+>NVIDIA</trademark
+></para>
+</question>
+<answer>
+<para
+>Per algun problema, <trademark
+>NVIDIA</trademark
+> desactiva el suport GLX quan Composite està actiu. Torneu-lo a activar si és possible, però pot provocar problemes en algunes combinacions de nucli/controlador/GPU.</para
+> 
+<programlisting
+>Section "Device"
+....
+....
+Option  "AllowGLXWithComposite" "true"
+....
+....
+EndSection
+</programlisting>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Vull jugar a un joc usant <acronym
+>SDL</acronym
+> (però no <acronym
+>GL</acronym
+>) anomenat <application
+>scummvm</application
+>, però quan està activat kompmgr, tot el que puc veure és una ombra!</para>
+</question>
+<answer>
+<para
+>Hi ha un problema amb PictType informat per SDL.</para>
+
+<para
+>Solució provisional:</para>
+<screen
+>En comptes de cridar <command
+>scummvm</command
+> directament, useu
+<command
+>SDL_VIDEO_X11_VISUALID=0x24 summvm</command
+>. Això li dirà a SDL
+que usi un format suportat i podreu jugar com sempre. </screen>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>L'aplicació XXX refusa l'inici després d'habilitar la extensió de Composite.</para>
+<para
+>L'aplicació YYY penja el sistema X després d'habilitar la extensió Composite.</para>
+<para
+>L'aplicació ZZZ fa coses rares després d'activar el gestor de Composite.</para>
+</question>
+<answer>
+<para
+>La extensió Composite encara és experimental.</para>
+<para
+>Solució provisional:</para>
+<para
+>En comptes de cridar <command
+>nomAplicació</command
+> directament, useu <command
+>XLIB_SKIP_ARGB_VISUALS=1 nomAplicació</command
+></para>
+<para
+>Aplicacions que es coneix que causen problemes:</para>
+<itemizedlist>
+<listitem
+><para
+>Totes les aplicacions gtk1 (&pex; <application
+>gmplayer</application
+>, <application
+>xmms</application
+>, <application
+>gaim</application
+>) poden fallar durant l'inici o tornar-se inusables o penjar el sistema X</para
+></listitem>
+<listitem
+><para
+>&kuickshow; - Tan sols mostra un marc negre</para
+></listitem>
+<listitem
+><para
+>&Qt; <application
+>Designer</application
+> - Penja el sistema X</para
+></listitem>
+<listitem
+><para
+>&kopete; - Penja el sistema X</para
+></listitem>
+<listitem
+><para
+>&kolf; - Penja el sistema X</para
+></listitem>
+</itemizedlist>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>He intentat veure un vídeo, però tan sols veig artefactes en la finestra de vídeo.</para>
+</question>
+<answer>
+<para
+>Heu provat usar <quote
+>xv</quote
+> com frontal per al vídeo. Aquest és el mode de recobriment, a on el contingut del vídeo s'escriu directament en la memòria de la targeta de vídeo, saltant-se el sistema X. De tota manera, la finestra sembla estàtica (fons colorejat) i no és actualitzada per la extensió malmesa.</para>
+<para
+>Esperem que en el futur hi hagi una solució. Actualment he obtingut millors resultats usant <application
+>Xine</application
+> però mostrant vídeos transllùcids no és ràpid.</para>
+</answer>
+</qandaentry>
+
+</qandaset>
+</chapter>
+
+<chapter id="credits-and-licenses">
+<title
+>Crèdits i llicències</title>
+
+<sect1 id="authors">
+<title
+>Autors</title>
+<para
+>Thomas Luebking <email
+>baghira-style@gmx.net</email
+> - Editor</para>
+&underFDL; &underGPL; </sect1>
+
+
+</chapter>
+
+</book>
+<!--
+Local Variables:
+mode: sgml
+sgml-omittag: nil
+sgml-shorttag: t
+End:
+-->
+

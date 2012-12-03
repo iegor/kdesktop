@@ -1,0 +1,4357 @@
+<part id="kde-for-administrators">
+<partinfo>
+<authorgroup>
+<author
+><personname
+> <firstname
+>Waldo</firstname
+> <surname
+>Bastian</surname
+> </personname
+> <email
+>bastian@kde.org</email
+> </author>
+<othercredit role="reviewer"
+>&Philip.Rodrigues; &Philip.Rodrigues.mail; </othercredit>
+</authorgroup>
+</partinfo>
+
+<title
+>&kde; voor systeembeheerders</title>
+
+<chapter id="kde-internals">
+<title
+>Interne werking van &kde;</title>
+
+<sect1 id="kde-for-admins-overview">
+<title
+>Overzicht</title>
+<para
+>Moet nog geschreven worden</para>
+</sect1>
+
+<sect1 id="directory-layout">
+<title
+>Mappenindeling</title>
+
+<para
+>&kde; definieert een bestandssysteemhiërarchie die door de &kde;-omgeving zelf en door alle &kde;-programma's wordt gebruikt. Over het algemeen slaat &kde; al zijn bestanden op in een mappenboom met een vaste structuur. </para>
+
+<para
+>Standaard gebruikt &kde; twee mappenbomen:</para>
+
+<itemizedlist>
+<listitem
+><para
+>Één op systeemniveau (bijvoorbeeld <filename class="directory"
+>/opt/kde3</filename
+>).</para
+></listitem>
+<listitem
+><para
+>Één op gebruikersniveau in de persoonlijke map van de gebruiker (meestal <filename class="directory"
+>~/.kde</filename
+>)</para
+></listitem>
+</itemizedlist>
+
+<para
+>Als systeembeheerder kunt u aanvullende bomen aanmaken. Dergelijke aanvullende bomen kunnen worden gebruikt voor <link linkend="user-profiles"
+>profielen</link
+>.</para>
+
+<informalexample
+><para
+>&SuSE; &Linux; gebruikt bijvoorbeeld:</para>
+
+<itemizedlist>
+<listitem
+><para
+><filename
+class="directory"
+>$<envar
+>HOME</envar
+>/.kde</filename
+></para
+></listitem>
+<listitem
+><para
+><filename class="directory"
+>/opt/kde3</filename
+>. (Dit is &SuSE;-specifiek, andere distributies kunnen gebruik maken van <filename class="directory"
+>/usr</filename
+> of <filename class="directory"
+>/usr/kde3</filename
+>)</para
+></listitem>
+<listitem
+><para
+><filename class="directory"
+>/etc/opt/kde3</filename
+>. (Deze is door &SuSE; toegevoegd.)</para
+></listitem>
+</itemizedlist>
+
+<para
+>Als u het programma KIOSK Admin versie 0.7 of nieuwer hebt geïnstalleerd, dan kunt u met het volgende commando controleren welke mappenbomen er gebruikt worden: <userinput
+><command
+>kiosktool-kdedirs</command
+> <option
+>--check</option
+></userinput
+></para>
+</informalexample>
+
+<para
+>&kde; en &kde;-programma's zoeken naar bestanden door alle &kde;-mappenbomen te doorzoeken. De mappenbomen worden in volgorde van prioriteit gecontroleerd. Als een bestand in meerdere mappenbomen beschikbaar is, dan krijgt het bestand uit de laatste boom de prioriteit. Normaliter krijgt de boom die zich in de persoonlijke map van de gebruiker bevindt de hoogste prioriteit. Dit is ook de mappenboom waarin de wijzigingen worden opgeslagen.</para>
+
+<informalexample>
+<para
+>Voor informatie over het &MIME;-type <literal
+>text/plain</literal
+> worden de volgende bestanden doorzocht:</para>
+
+<itemizedlist>
+<listitem
+><para
+><filename
+class="directory"
+>$<envar
+>HOME</envar
+>/.kde/share/mimelnk/text/plain.desktop</filename
+></para
+></listitem>
+<listitem
+><para
+><filename
+class="directory"
+>/opt/kde3/share/mimelnk/text/plain.desktop</filename
+></para
+></listitem>
+<listitem
+><para
+><filename
+class="directory"
+>/etc/opt/kde3/share/mimelnk/text/plain.desktop</filename
+></para
+></listitem>
+</itemizedlist>
+
+<para
+>Als een gebruiker een wijziging maakt, dan wordt die opgeslagen in het bestand <filename class="directory"
+>$<envar
+>HOME</envar
+>/.kde/share/mimelnk/text/plain.desktop</filename
+></para>
+</informalexample>
+
+<para
+>Bij configuratiebestanden ligt het het verhaal anders. Als er meerdere configuratiebestanden met dezelfde naam zijn gevonden in de mappenbomen, dan wordt de inhoud ervan gecombineerd. De prioriteitsvolgorde van de mappenbomen speelt hierbij een rol. Als twee bestanden dezelfde configuratiesleutel definiëren, dan bepaalt het bestand met de hoogste prioriteit de waarde voor de sleutel.</para>
+
+<informalexample
+><para
+>Bijvoorbeeld, als de volgende twee bestanden bestaan met deze inhoud:</para>
+<variablelist>
+<varlistentry
+><term
+><filename
+>$<envar
+>HOME</envar
+>/.kde/share/config/foobar</filename
+></term>
+<listitem
+><programlisting
+>Color=red
+Shape=circle
+</programlisting>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename
+>/etc/opt/kde3/share/config/foobar</filename
+></term>
+<listitem
+><programlisting
+>Color=blue
+Position=10,10
+</programlisting>
+</listitem>
+</varlistentry>
+</variablelist>
+
+<para
+>Dan worden de beide bestanden samengevoegd met dit als resultaat:</para>
+
+<programlisting
+>Color=red
+Shape=circle
+Position=10,10
+</programlisting>
+
+</informalexample>
+</sect1>
+
+<sect1 id="specifying-directories">
+<title
+>Mappen specificeren</title>
+
+<para>
+
+<segmentedlist>
+<segtitle
+>Omgevingsvariabele</segtitle>
+<segtitle
+>Voorbeeldinstelling(en)</segtitle>
+<segtitle
+>Commentaar</segtitle>
+
+<seglistitem>
+<seg
+><envar
+>KDEHOME</envar
+></seg>
+<seg
+><filename class="directory"
+>~/.kde</filename
+></seg>
+<seg
+></seg>
+</seglistitem>
+
+<seglistitem>
+<seg
+><envar
+>KDEROOTHOME</envar
+></seg>
+<seg
+><filename class="directory"
+>/root/.kde</filename
+></seg>
+<seg
+>Andere variabele om te voorkomen dat root schrijft naar $KDEHOME van de gebruiker als het commando <command
+>su</command
+> is gebruikt.</seg>
+</seglistitem>
+
+<seglistitem>
+<seg
+><envar
+>KDEDIR</envar
+></seg>
+<seg
+><filename class="directory"
+>/opt/kde3</filename
+>, <filename class="directory"
+>/usr</filename
+>, <filename class="directory"
+>/usr/kde3</filename
+></seg>
+<seg
+>Afhankelijk van de distributeur. Wordt gebruikt door &kde; 2. Indien niet ingesteld, dan wordt teruggevallen op de ingecompileerde standaard.</seg>
+</seglistitem>
+
+<seglistitem>
+<seg
+><envar
+>KDEDIRS</envar
+></seg>
+<seg
+><filename class="directory"
+>/opt/kde3</filename
+>, <filename class="directory"
+>/usr</filename
+>, <filename class="directory"
+>/usr/kde3</filename
+></seg>
+<seg
+>Nieuw in &kde; 3. Kan meerdere locaties definiëren, van elkaar gescheiden door een dubbele punt. Als deze niet is ingesteld wordt er teruggevallen op $<envar
+>KDEDIR</envar
+></seg>
+</seglistitem>
+
+</segmentedlist>
+</para>
+<para
+>Hoeft <emphasis
+>niet per sé</emphasis
+> te worden ingesteld, de standaard voldoet in de meeste gevallen.</para>
+<para
+>Wilt u &kde; 2 naast &kde; 3 gebruiken? Laat dan $<envar
+>KDEDIR</envar
+> verwijzen naar &kde; 2 en $<envar
+>KDEDIRS</envar
+> naar &kde; 3.</para>
+
+<informalexample>
+<para
+>Een staflid op een universiteit kan de volgende instellingen hebben:</para>
+<programlisting
+>KDEHOME='~/.kde3'
+KDEROOTHOME='/root/.kde3'
+KDEDIRS='/opt/kde_staff:/opt/kde3'
+</programlisting>
+
+</informalexample>
+
+</sect1>
+
+<sect1 id="user-profiles">
+<title
+>Gebruikersprofielen</title>
+
+<para
+>In het vorige voorbeeld bevat <filename class="directory"
+>/opt/kde_staff</filename
+> aanvullende instellingen en toepassingen voor stafleden. <quote
+>Gebruikersprofielen</quote
+> maken het u mogelijk om deze map toe te voegen voor bepaalde gebruikers en niet voor anderen. Voeg het volgende toe aan het bestand <filename
+>/etc/kderc</filename
+>:</para>
+
+<programlisting
+>[Directories-staff]
+prefixes=/opt/kde_staff
+</programlisting>
+
+<para
+>Dit maakt een profiel aan met de naam <quote
+>Staff</quote
+>, welke de mappenboom <filename class="directory"
+>opt/kde_staff</filename
+> toevoegt. (Merk op dat &SuSE; &Linux; gebruik maakt van <filename
+>/etc/kde3rc</filename
+> in plaats van <filename
+>/etc/kderc</filename
+>. Nu we het profiel benoemd hebben kunnen we het toewijzen aan gebruikers.</para>
+
+<para
+>Om profielen toe te wijzen aan gebruikers is het nodig om een mapping-bestand te specificeren in <filename
+>/etc/kderc</filename
+>:</para>
+
+<programlisting
+>[Directories]
+userProfileMapFile=/etc/kde-user-profile
+</programlisting>
+
+<para
+>Het is nu mogelijk om een profiel toe te wijzen, gebaseerd op de gebruikersnaam of de &UNIX;-groep waar de gebruiker lid van is.</para
+> 
+
+<para
+>Om het staffprofiel toe te wijzen aan alle gebruikers die lid zijn van de &UNIX;-groep staff_members voegt u het volgende toe aan <filename
+>/etc/kde-user-profile</filename
+>:</para>
+
+<programlisting
+>[General]
+groups=staff_members
+[Groups]
+staff_members=staff
+</programlisting>
+
+<para
+>Het is ook mogelijk om een profiel aan één gebruiker toe te wijzen:</para>
+
+<programlisting
+>[Users]
+bastian=staff
+</programlisting>
+
+</sect1>
+
+<sect1 id="directory-layout-revisited">
+<title
+>Mappenindeling opnieuw bekeken</title>
+
+<para
+>Elke mappenboom die &kde; gebruikt heeft een vaste mappenstructuur. Mappen die niet relevant zijn voor een bepaalde boom worden, of eenvoudigweg niet worden gebruikt kunnen echter worden weggelaten. Bijvoorbeeld, mappen die gebruikt worden voor tijdelijke bestanden worden meestal alleen gevonden onder <filename class="directory"
+>$<envar
+>KDEHOME</envar
+></filename
+>, niet in een van de andere mappenbomen.</para>
+
+</sect1>
+
+<sect1 id="architecture-specific-directories">
+<title
+>Architectuurspecifieke mappen</title>
+
+<para
+>Architectuur (besturingssysteem en processortype) specifieke mappen:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><filename class="directory"
+>bin</filename
+></term>
+<listitem
+><para
+>Wordt gebruikt voor &kde;-executables.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename class="directory"
+>lib</filename
+></term>
+<listitem
+><para
+>Wordt gebruikt voor &kde;-bibliotheken.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename class="directory"
+>lib/kde3</filename
+></term>
+<listitem
+><para
+>Deze mappen bevatten componenten, plugins en andere runtimelaadbare objecten voor gebruik door &kde;3.<replaceable
+>x</replaceable
+>-toepassingen.</para
+></listitem
+> 
+</varlistentry>
+</variablelist>
+
+</sect1>
+
+<sect1 id="shared-directories">
+<title
+>Gedeelde mappen</title>
+
+<para
+>Gedeeld. Niet architectuurspeifiek, kan worden gedeeld tussen verschillende architecturen.</para>
+
+<variablelist>
+<varlistentry>
+<term
+><filename class="directory"
+>share/applnk</filename
+></term>
+<listitem
+><para
+><literal role="extension"
+>.desktop</literal
+>-bestanden voor het &kde;-menu (oud)</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename class="directory"
+>share/applications</filename
+></term>
+<listitem
+><para
+><literal role="extension"
+>.desktop</literal
+>-bestanden voor het &kde;-menu (sinds &kde; 3.2)</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename class="directory"
+>share/apps</filename
+></term>
+<listitem
+><para
+>Bevat programmaspecifieke gegevensbestanden. Elk programma heeft hier een submap voor het opslaan van aanvullende gegevensbestanden.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename class="directory"
+>share/config</filename
+></term>
+<listitem
+><para
+>Configuratiebestanden. Configuratiebestanden worden normaliter genoemd naar het programma waartoe ze behoren plus de letters <quote
+>rc</quote
+>. En speciaal geval is <filename
+>kdeglobals</filename
+>. Dit bestand wordt door alle &kde;-programma's gelezen.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename
+class="directory"
+>share/config/session</filename
+></term>
+<listitem
+><para
+>Deze map wordt gebruikt voor sessiebeheer en is normaliter alleen beschikbaar onder <filename class="directory"
+>$<envar
+>KDEHOME</envar
+></filename
+>. Aan het einde van een sessie slaan &kde;-programma's hier hun staat op. De bestandsnamen zijn opgebouwd uit de naam van het programma gevolgd door een nummer. De sessiebeheerder <command
+>ksmserver</command
+> slaat referenties naar deze nummers op bij het bewaren van een sessie in <filename
+>ksmserverrc</filename
+>.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename class="directory"
+>share/doc/HTML</filename
+></term>
+<listitem
+><para
+>Deze map bevat de documentatie van &kde;-programma's. De documentatie is gecategoriseerd op taal en het programma waar het bij hoort. Normaliter zijn er tenminste twee bestanden te vinden in een map: <filename
+>index.docbook</filename
+>, die de documentatie in het onopgemaakte DocBook-formaat bevat en <filename
+>index.cache.bz2</filename
+> die dezelfde documentatie, maar dan opgemaakt als <command
+>bzip2</command
+>-gecomprimeerd &HTML;.  De &HTML;-versie wordt gebruikt door &khelpcenter;. Als de &HTML;-versie ontbreekt, dan wordt deze opnieuw gegenereerd vanuit de DocBook-versie. Dit proces neemt echter de nodige tijd in beslag.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename class="directory"
+>share/icons</filename
+></term>
+<listitem
+><para
+>In deze map worden de pictogrammen opgeslagen. Pictogrammen zijn ingedeeld op thema, dimensie en gebruik.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename class="directory"
+>share/mimelnk</filename
+></term>
+<listitem
+><para
+>In deze map worden <literal role="extension"
+>.desktop</literal
+>-bestanden die &MIME;-typen beschrijven opgeslagen. &kde; gebruikt &MIME;-typen om het type bestand te identificeren.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename class="directory"
+>share/services</filename
+></term>
+<listitem
+><para
+>Deze map bevat <literal role="extension"
+>.desktop</literal
+>-bestanden die diensten beschrijven. Diensten zijn net programma's, maar worden meestal door andere programma's gestart in plaats van door de gebruiker. Diensten verschijnen niet in het &kde;-menu.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename class="directory"
+>share/servicetypes</filename
+></term>
+<listitem
+><para
+>Deze map bevat <literal role="extension"
+>.desktop</literal
+>-bestanden die servicetypen beschrijven. Een servicetype representeert meestal een bepaalde programmeerinterface. Programma's en diensten zetten in hun <literal role="extension"
+>.desktop</literal
+>-bestand welke servicetypen ze aanleveren.</para
+> </listitem
+></varlistentry>
+
+<varlistentry>
+<term
+><filename class="directory"
+>share/sounds</filename
+></term>
+<listitem
+><para
+>Deze map bevat geluidsbestanden.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename class="directory"
+>share/templates</filename
+></term>
+<listitem
+><para
+>Deze map bevat sjablonen voor het aanmaken van diverse soorten bestanden. Een sjabloon bevat een <literal role="extension"
+>.desktop</literal
+>-bestand die het bestand beschrijft, inclusief een referentie naar een bronbestand in de submap <filename class="directory"
+>.source</filename
+>. De sjablonen in deze map verschijnen in het menu <guimenu
+>Nieuw aanmaken</guimenu
+> dat beschikbaar is op het bureaublad en in de bestandsbeheerder. Als een gebruiker een sjabloon uit het menu selecteert, dan wordt het bijhorende bronbestand gekopieerd.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename class="directory"
+>share/wallpapers</filename
+></term>
+<listitem
+><para
+>Deze map bevat de afbeeldingen die kunnen worden gebruikt als achtergrondafbeelding voor het bureaublad</para
+></listitem>
+</varlistentry>
+
+</variablelist>
+
+</sect1>
+
+<sect1 id="host-specific-directories">
+<title
+>Host-specifieke mappen</title
+> 
+
+<para
+>Er zijn drie host-specifieke mappen die meestal met symlinks worden doorverwezen naar andere locaties. Als deze mappen nog niet bestaan, dan worden volgende symlinks en mappen aangemaakt met behulp van het programma <command
+>lnusertemp</command
+>:</para>
+
+<variablelist>
+
+<varlistentry>
+<term
+><filename
+>$<envar
+>KDEHOME</envar
+>/socket-$<envar
+>HOSTNAME</envar
+></filename
+></term>
+<listitem
+><para
+>Gebruikelijk <filename class="directory"
+>/tmp/ksocket-$<envar
+>USER</envar
+>/</filename
+>, dit wordt gebruikt voor diverse  &UNIX;-sockets.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename
+>$<envar
+>KDEHOME</envar
+>/tmp-$<envar
+>HOSTNAME</envar
+></filename
+></term>
+<listitem
+><para
+>Gebruikelijk <filename class="directory"
+>/tmp/kde-$<envar
+>USER</envar
+>/</filename
+>, dit wordt gebruikt voor tijdelijke bestanden.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename
+>$<envar
+>KDEHOME</envar
+>/cache-$<envar
+>HOSTNAME</envar
+></filename
+></term>
+<listitem
+><para
+>Gebruikelijk <filename class="directory"
+>/var/tmp/kdecache-$<envar
+>USER</envar
+>/</filename
+>, dit wordt gebruikt voor bestanden in de cache.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+<para
+>Omdat <filename class="directory"
+>/tmp</filename
+> en <filename class="directory"
+>/var/tmp</filename
+> systeemwijd schrijfbaar zijn is het mogelijk dat één van bovenstaande mappen al bestaat, maar eigendom is van een andere gebruiker. In dat geval zal <command
+>lnusertmp</command
+> een nieuwe map aanmaken met een alternatieve naam en koppeling.</para>
+
+</sect1>
+
+<sect1 id="configuration-files">
+<title
+>Configuratiebestanden</title
+> <para
+>&kde; gebruikt een eenvoudig tekstgebaseerd bestandsformaat voor al zijn configuratiebestanden. Het bestaat uit sleutel-waarde paren die in groepen zijn geplaatst. Alle configuratiebestanden van &kde; gebruiken de <acronym
+>UTF</acronym
+>-8 tekensetcodering voor tekst buiten het <acronym
+>ASCII</acronym
+>-bereik.</para>
+
+<para
+>Het begin van een groep wordt aangegeven door een groepnaam die tussen blokhaakjes is geplaatst. Alle sleutel-waarde items die daar onder volgen behoren tot die groep. De groep eindigt bij het begin van een volgende groep of als het einde van het bestand is bereikt. Items bovenin een bestand die niet voorafgegaan worden door een groepsnaam behoren tot de standaardgroep.</para>
+
+<informalexample
+><para
+>Het volgende voorbeeld toont een configuratiebestand dat bestaat uit twee groepen. De eerste groep bevat de sleutels <varname
+>LargeCursor</varname
+> en <varname
+>SingleClick</varname
+>, de tweede groep bevat de sleutels <varname
+>Show hidden files</varname
+> en <varname
+>Sort by</varname
+>.</para>
+
+<programlisting
+>[KDE]
+LargeCursor=false
+SingleClick=true
+</programlisting>
+
+<programlisting
+>[KFileDialog Settings]
+Show hidden files=false
+Sort by=Name
+</programlisting>
+</informalexample>
+
+<para
+>Items in een groep bestaan uit een sleutel en waarde, van elkaar gescheiden door net is-gelijk-teken. De sleutel kan spaties bevatten en mag worden gevolgd door opties die tussen blokhaakjes zijn geplaatst. Het gedeelte achter het is-gelijk-teken is de waarde van het item. Alle witruimte om het is-gelijk-teken heen wordt genegeerd als ook eventuele witruimte aan het einde. Om het verkort uit te leggen, de opmaak is:</para>
+
+<programlisting
+><replaceable
+>sleutel</replaceable
+>=<replaceable
+>waarde</replaceable
+>
+</programlisting>
+
+<para
+>Als een waarde een spatie aan het begin of einde moet bevatten, dan kan dit worden bereikt door gebruik te maken van een backslash, gevolgd door een <quote
+>s</quote
+>.</para>
+
+<para
+>Er zijn nog enkele andere backslash-codes, hier is een complete lijst: <itemizedlist>
+<listitem
+><para
+><token
+>\s</token
+> kan worden gebruikt als spatie</para>
+</listitem>
+<listitem
+><para
+><token
+>\t</token
+> kan worden gebruikt als een tab</para>
+</listitem>
+<listitem
+><para
+><token
+>\r</token
+> kan worden gebruikt als return-teken</para>
+</listitem>
+<listitem
+><para
+><token
+>\n</token
+> kan worden gebruikt als linefeed-teken (new line)</para>
+</listitem>
+<listitem
+><para
+><token
+>\\</token
+> om een backslash te kunnen gebruiken</para>
+</listitem>
+</itemizedlist
+></para>
+
+<informalexample
+><para
+>In het volgende voorbeeld begint de waarde van het item <varname
+>Caption</varname
+> met twee spaties, terwijl het item <varname
+>Description</varname
+> drie regels tekst bevat. Linefeeds in backslashnotaties worden gebruikt om de verschillende regels van elkaar te scheiden.</para>
+
+<programlisting
+>[Preview Image]
+Caption=\s My Caption
+Description=This is\na very long\ndescription.
+</programlisting>
+</informalexample>
+
+<para
+>Lege regels in configuratiebestanden worden genegeerd. Dat geldt ook voor regels die beginnen met een hekje (<quote
+>#</quote
+>). Het hekje kan worden gebruikt om commentaren aan configuratiebestanden toe te voegen. Merk op dat wanneer een &kde;-programma een configuratiebestand bijwerkt deze commentaren <emphasis
+>niet</emphasis
+> worden behouden.</para>
+
+<para
+>Het is mogelijk om meerdere configuratiebestanden met dezelfde naam in de submap <filename class="directory"
+>share/config</filename
+> van de verscheidene &kde;-bomen te hebben. In dat geval wordt de informatie uit al deze configuratiebestanden met elkaar gecombineerd op sleutel-bij-sleutel basis. Als dezelfde sleutel binnen een bepaalde groep in meer dan één bestand is gedefinieerd, dan wordt de sleutelwaarde uit de mappenboom met de hoogste prioriteit gebruikt. Configuratiebestanden onder <filename class="directory"
+>$<envar
+>KDEHOME</envar
+></filename
+> hebben altijd de hoogste prioriteit. Als een sleutel binnen een bepaalde groep in hetzelfde bestand op meerdere plekken is gedefinieerd, dan wordt de waarde van het laatste item gebruikt.</para>
+
+<informalexample>
+<para
+>Als <filename
+>$<envar
+>HOME</envar
+>/.kde/share/config/foobar</filename
+> <programlisting>
+[MyGroup]
+Color=red
+Shape=circle
+</programlisting
+>bevat en <filename
+>/etc/opt/kde3/share/config/foobar</filename
+> bevat <programlisting>
+[MyGroup]
+Color=blue
+Position=10,10
+</programlisting
+> dan wordt dit het resultaat: <programlisting
+>[MyGroup]
+Color=red
+Shape=circle
+Position=10,10
+</programlisting>
+</para>
+</informalexample>
+
+<informalexample>
+<para
+>Als <filename
+>$<envar
+>HOME</envar
+>/.kde/share/config/foobar</filename
+> <programlisting>
+[MyGroup]
+Color=red
+Shape=circle
+[MyGroup]
+Color=green
+</programlisting
+> bevat, en <filename
+>/opt/kde_staff/share/config/foobar</filename
+> bevat <programlisting>
+[MyGroup]
+Color=purple
+Position=20,20
+</programlisting
+> en <filename
+>/etc/opt/kde3/share/config/foobar</filename
+> bevat <programlisting>
+[MyGroup]
+Color=blue
+Position=10,10
+</programlisting
+> dan wordt dit het resultaat: <programlisting
+>[MyGroup]
+Color=green
+Shape=circle
+Position=20,20
+</programlisting>
+</para>
+</informalexample>
+
+<para
+>Om te voorkomen dat gebruikers in staat zijn om standaardinstellingen te veranderen is het mogelijk om instellingen als onveranderbaar te markeren. Instellingen kunnen individueel, per groep of per bestand onveranderbaar gemaakt worden. Een individueel item kan vergrendeld worden door <userinput
+>[$i]</userinput
+> achter de sleutel te plaatsen. &eg;: <programlisting
+>Color[$i]=blue
+</programlisting>
+</para>
+<para
+>Een groep items kan worden vergrendeld door <userinput
+>[$i]</userinput
+> achter de groepsnaam te plaatsen. &eg;: <programlisting
+>[MyGroup][$i]
+</programlisting>
+</para>
+<para
+>Om een volledig bestand te vergrendelen, begin het bestand met <userinput
+>[$i]</userinput
+> op één regel. &ie;: <programlisting
+>[$i]
+</programlisting>
+</para>
+
+<informalexample>
+<para
+>Als <filename
+>$<envar
+>HOME</envar
+>/.kde/share/config/foobar</filename
+> dit bevat: <programlisting>
+[MyGroup]
+Color=red
+Shape=circle
+</programlisting
+> en <filename
+>/etc/opt/kde3/share/config/foobar</filename
+> dit: <programlisting>
+[MyGroup][$i]
+Color=blue
+Position=10,10
+</programlisting
+> dan wordt dit het resultaat: <programlisting
+>[MyGroup]
+Color=blue
+Position=10,10
+</programlisting>
+</para>
+</informalexample>
+
+<informalexample
+><para
+>Als <filename
+>$<envar
+>HOME</envar
+>/.kde/share/config/foobar</filename
+> dit bevat: <programlisting>
+[MyGroup]
+Color=red
+Shape=circle
+</programlisting
+> en <filename
+>/opt/kde_staff/share/config/foobar</filename
+> dit: <programlisting>
+[MyGroup]
+Color=purple
+Shape=rectangle
+</programlisting
+> en <filename
+>/etc/opt/kde3/share/config/foobar</filename
+> dit: <programlisting>
+[MyGroup][$i]
+Color=blue
+Position=10,10
+</programlisting
+> dan wordt dit het resultaat: <programlisting
+>[MyGroup]
+Color=purple
+Shape=rectangle
+Position=10,10
+</programlisting>
+</para>
+</informalexample>
+
+
+<para
+>De zogenaamde <quote
+>Shelluitbreiding</quote
+> (Shell Expansion) kan worden gebruikt om meer dynamische standaardwaarden aan te leveren. Met shelluitbreiding kan de waarde van een configuratiesleutel geconstrueerd worden vanuit de waarde van een omgevingsvariabele of de uitvoer van een shellcommando. Om gebruik te kunnen maken van shelluitbreiding in een configuratie-item dient de sleutel te eindigen op <token
+>[$e]</token
+>. Normaliter wordt de uitgebreide vorm geschreven in het configuratiebestand van de gebruiker na het eerste gebruik van het programma. Om dit te voorkomen is het aanbevolen om het configuratie-item te vergrendelen met behulp van <token
+>[$ie]</token
+>. De gebruiken kan het dan uiteraard niet meer veranderen.</para>
+
+<informalexample>
+<para
+>In het volgende voorbeeld wordt de waarde van het item <varname
+>Host</varname
+> bepaald door de uitvoer van het programma <command
+>hostname</command
+>. Deze instelling is bovendien vergrendeld om er zeker van te zijn dat de waarde altijd dynamisch wordt bepaald.</para>
+
+<para
+>De waarde van het item <varname
+>Email</varname
+> wordt bepaalt door de invulling van de waarden van de omgevingsvariabelen $<envar
+>USER</envar
+> en $<envar
+>HOST</envar
+>. Als <systemitem class="username"
+>joe</systemitem
+> is ingelogd op <systemitem class="systemname"
+>joes_host</systemitem
+>, dan zal dit resulteren in een waarde gelijk aan <literal
+>joe@joes_host</literal
+>. De instelling is niet vergrendeld.</para>
+
+<programlisting
+>[Mail Settings] 
+Host[$ie]=$(hostname)
+Email[$e]=${USER}@${HOST}
+</programlisting>
+</informalexample>
+
+<para
+>De meeste configuratie-items kunnen worden geïndexeerd met een taalcode. In dit geval wordt de taal die de gebruiker heeft gekozen om te gebruiken in de desktop gebruikt om de sleutelwaarde op te zoeken. Als de standaardtaal (Amerikaans-Engels) gekozen is, of als er geen index aanwezig is voor de gekozen taal, dan wordt de sleutel zonder index gebruikt.</para>
+
+<informalexample>
+<para
+>In het volgende voorbeeld is de waarde van de sleutel <varname
+>Caption</varname
+> afhankelijk van de gekozen taal. Als de gebruiker Frans als taal gekozen heeft (taalcode <literal
+>fr</literal
+>), dan zal de waarde van de sleutel <quote
+>Ma L&eacute;gende</quote
+> zijn. In alle andere gevallen zal de waarde <quote
+>My Caption</quote
+> worden gebruikt.</para>
+
+<programlisting
+>[Preview Image]
+Caption=My Caption
+Caption[fr]=Ma L&eacute;gende
+</programlisting>
+</informalexample>
+
+<informalexample>
+<para
+>In dit voorbeeld is de waarde van de sleutel <varname
+>Caption</varname
+> afhankelijk van de gekozen taal. Als de gebruiker Frans als taal gekozen heeft (taalcode <literal
+>fr</literal
+>), dan zal de waarde van de sleutel <quote
+>Ma L&eacute;gende</quote
+> zijn. In alle andere gevallen zal de waarde <quote
+>My Caption</quote
+> worden gebruikt.</para>
+
+<programlisting
+>[Preview Image]
+Caption=My Caption
+Caption[fr]=Ma L&eacute;gende
+</programlisting>
+</informalexample>
+
+<para
+>Over het algemeen zijn de sleutels die in een configuratiebestand kunnen verschijnen niet gedocumenteerd. Met &kde; 3.2 is een start gemaakt om dit te veranderen. In de map <filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/share/config/kcfg</filename
+> zijn bestanden te vinden die een formele beschrijving van mogelijke sleutels in een configuratiebestand leveren. Deze worden gebruikt door de nieuwe &kde; Configuration Editor wanneer beschikbaar.</para>
+
+<informalexample>
+<para
+>Hier is een voorbeeld van een in &XML; opgemaakt configuratiebestand: <programlisting
+><markup>
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE kcfg SYSTEM "http://www.kde.org/standards/kcfg/1.0/kcfg.dtd"&gt;
+&lt;kcfg&gt;
+    &lt;kcfgfile name="korganizerrc"/&gt;
+    &lt;group name="General"&gt;
+         &lt;entry type="Bool" key="Auto Save"&gt;
+             &lt;label&gt;Enable automatic saving of calendar&lt;/label&gt;
+             &lt;default&gt;true&lt;/default&gt;
+         &lt;/entry&gt;
+         &lt;entry type="Int" key="Auto Save Interval"&gt;
+             &lt;default&gt;10&lt;/default&gt;
+         &lt;/entry&gt;
+    &lt;/group&gt;
+&lt;/kcfg&gt;
+</markup
+>
+</programlisting>
+</para>
+<para
+>Dit heeft hetzelfde effect als: <programlisting
+>[General]
+Auto Save=false
+Auto Save Interval=25
+</programlisting>
+</para>
+</informalexample>
+
+</sect1>
+
+<sect1 id="kde-startup-sequence">
+<title
+>Opstartreeks van &kde;</title>
+
+<sect2 id="kdm">
+<title
+>&kdm;</title>
+
+<para
+>Draait altijd als <systemitem class="username"
+>root</systemitem
+>! Gebruikt <filename
+>$<envar
+>KDEDIR</envar
+>/share/config/kdmrc</filename
+> en <filename
+>/etc/X11/xdm/Xservers</filename
+>. De laatste bevat items als:</para>
+
+<programlisting
+>:0 local /usr/X11R6/bin/X :0 vt07
+</programlisting>
+
+<para
+>Relevante opstartbestanden zijn ook: </para>
+<simplelist>
+<member
+>[X-*-Core] section in <filename
+>kdmrc</filename
+> </member>
+<member
+>Setup - <filename
+>/etc/X11/xdm/Xsetup</filename
+> </member>
+<member
+>Gebruiker typt gebruikersnaam &amp; wachtwoord in </member>
+<member
+>Start - <filename
+>/etc/X11/xdm/Xstartup</filename
+> - als root voorbereiden </member>
+<member
+>Sessie - <filename
+>/etc/X11/xdm/Xsession</filename
+> - start sessie als gebruiker </member>
+<member
+>= Voor een KDE-sessie: <command
+>kde</command
+> of <command
+>startkde</command
+> </member>
+<member
+>= Indien aanwezig <filename
+>~/.xsession</filename
+> of <filename
+>~/.xinitrc</filename
+> </member>
+<member
+>Reset - <filename
+>/etc/X11/xdm/Xreset</filename
+> - nadat sessie beëindigd is </member>
+</simplelist>
+
+</sect2>
+
+<sect2 id="startkde">
+<title
+>Het &kde; opstartscript <command
+>startkde</command
+></title>
+
+<para
+>De opstartreeks van &kde; begint met het <filename
+>startkde</filename
+>-script. In de meeste gevallen wordt dit script aangeroepen door de display manager (&kdm;), zodra de gebruiker is geauthenticeerd. Er zijn twee belangrijke regels in het <filename
+>startkde</filename
+>-script:</para>
+
+<programlisting
+>LD_BIND_NOW=true kdeinit +kcminit +knotify en kwrapper
+ksmserver $KDEWM
+</programlisting>
+
+<para
+>De eerste regel start het hoofdproces <command
+>kdeinit</command
+>. Het hoofdproces <command
+>kdeinit</command
+> wordt gebruikt om alle andere &kde;-processen te starten. Het verschijnt in de uitvoer van commando <command
+>ps <option
+>aux</option
+></command
+> als <computeroutput
+>kdeinit: Running...</computeroutput
+>. De argumenten achter <command
+>kdeinit</command
+> betreffen de namen van de aanvullende processen die gestart moeten worden. De <token
+>+</token
+> geeft aan dat <command
+>kdeinit</command
+> dient te wachten totdat het proces is voltooid. <command
+>kdeinit</command
+> start tevens <command
+>dcopserver</command
+>, <command
+>klauncher</command
+> en <command
+>kded</command
+>.</para>
+
+<para
+>De tweede regel vraagt </para>
+
+</sect2>
+</sect1>
+
+<sect1 id="background-processes">
+<title
+>Achtergrondprocessen</title>
+
+<para
+>Alle achtergrondprocessen van &kde; zijn gebruikerspecifiek: anders dan systeemdaemons worden ze niet tussen de gebruikers gedeeld. Naast het feit dat ze uniek zijn per gebruiker zijn ze ook uniek per X-server-display. De processen zijn:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><command
+>dcopserver</command
+></term>
+<listitem
+><para
+>Desktop-communicatie</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><command
+>kded</command
+></term>
+<listitem
+><para
+>Daemon voor generieke diensten</para>
+<para
+>Start de bijwerking van de <link linkend="ksycoca"
+>Sycoca</link
+>-database wanneer nodig.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><command
+>kcminit</command
+></term>
+<listitem
+><para
+>Initialisatiedienst</para>
+<para
+>Zie <xref linkend="kcminit"/> voor meer informatie.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><command
+>klauncher</command
+></term>
+<listitem
+><para
+>Programmastarter (dit is <emphasis
+>niet</emphasis
+> de dialoog <keycombo action="simul"
+>&Alt;<keycap
+>F2</keycap
+></keycombo
+>!)</para>
+<para
+>Zie <xref linkend="klauncher"/> voor meer informatie.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><command
+>knotify</command
+></term>
+<listitem
+><para
+>Meldingen aan de gebruiker.</para>
+<para
+>Zie <xref linkend="knotify"/> voor meer informatie.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><command
+>ksmserver</command
+></term>
+<listitem
+><para
+>Sessiebeheer</para>
+<para
+>Zie <xref linkend="ksmserver"/> voor meer informatie.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+<sect2 id="kdeinit">
+<title
+><command
+>kdeinit</command
+></title>
+<para
+><command
+>kdeinit</command
+> wordt gebruikt om alle andere &kde;-programma's te starten. <command
+>kdeinit</command
+> kan normale binaire programmabestanden starten als ook <command
+>kdeinit</command
+>-laadbare modules (<acronym
+>KLM</acronym
+>'s). <acronym
+>KLM</acronym
+>'s werken zoals binaire programma's, maar kunnen op efficiëntere wijze worden opgestart. <acronym
+>KLM</acronym
+>'s zijn te vinden in <filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/lib/kde3</filename
+></para>
+
+<para
+>Het nadeel is dat programma's die op die manier zijn opgestart verschijnen als <computeroutput
+><command
+>kdeinit</command
+></computeroutput
+> in de uitvoer van <command
+>top</command
+> en <command
+>ps</command
+>. Gebruik <command
+>top<option
+>-c</option
+></command
+> of <command
+>ps <option
+>aux</option
+></command
+> om de eigenlijke programmanaam te zien:</para>
+
+<screen
+><prompt
+>%</prompt
+><userinput
+><command
+>ps <option
+>aux</option
+></command
+></userinput>
+<computeroutput>
+waba     23184  0.2  2.1 23428 11124 ?        S    21:41   0:00 kdeinit: Running...
+waba     23187  0.1  2.1 23200 11124 ?        S    21:41   0:00 kdeinit: dcopserver --nosid
+waba     23189  0.2  2.4 25136 12496 ?        S    21:41   0:00 kdeinit: klauncher
+waba     23192  0.7  2.8 25596 14772 ?        S    21:41   0:00 kdeinit: kded
+waba     23203  0.8  3.4 31516 17892 ?        S    21:41   0:00 kdeinit:
+knotify
+</computeroutput
+>
+</screen>
+
+<para
+><computeroutput
+>kdeinit: Running...</computeroutput
+> geeft het hoofdproces van <command
+>kdeinit</command
+> weer. De andere weergegeven processen zijn programma's die als <acronym
+>KLM</acronym
+>'s zijn gestart.</para>
+
+<para
+>Als <command
+>kdeinit</command
+> voor het eerst wordt gestart zal het <command
+>dcopserver</command
+>, <command
+>klauncher</command
+>, en <command
+>kded</command
+> opstarten, als ook alle aanvullende programma's die zijn gespecificeerd op zijn commandoregel in het <command
+>startkde</command
+>-script. Normaliter <command
+>kcminit</command
+> en <command
+>knotify</command
+>.</para>
+
+</sect2>
+
+<sect2 id="dcopserver">
+<title
+><command
+>dcopserver</command
+></title>
+
+<para
+><command
+>dcopserver</command
+> is een daemon die interprocescommunicatie (&DCOP;) faciliteiten aan alle &kde;-programma's levert. De &DCOP;-faciliteiten zijn toegankelijk vanaf de commandoregel via het hulpprogramma <command
+>dcop</command
+>. &DCOP; is essentieel voor alle &kde;-programma's.</para>
+
+<para
+>Enkele gerelateerde bestanden:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><filename
+>$<envar
+>HOME</envar
+>/.DCOPserver_$<envar
+>HOSTNAME</envar
+>_$<envar
+>DISPLAY</envar
+></filename
+></term>
+<listitem
+><para
+>&eg; <filename
+>.DCOPserver_linux__0</filename
+>. Beheerst door $<envar
+>DCOPAUTHORITY</envar
+></para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename
+>/tmp/.ICE-unix/dcop<replaceable
+>pid</replaceable
+>-<replaceable
+>nummer</replaceable
+></filename
+></term>
+<listitem
+><para
+>&eg; <filename
+>dcop7634-1069677856</filename
+>. Dit is het bestand waar het bestand <filename
+>DCOPserver</filename
+> hierboven naar verwijst.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename
+>$<envar
+>HOME</envar
+>/.ICEauthority</filename
+></term>
+<listitem
+><para
+>Authorisatie-informatie beheerst door $<envar
+>ICEAUTHORITY</envar
+></para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</sect2>
+
+<sect2 id="kcminit">
+<title
+>kcminit</title>
+
+<para
+><command
+>kcminit</command
+> voert initialisatiediensten uit tijdens het opstarten. Initialisatiediensten worden gespecificeerd in de .desktop-bestanden van programma's of diensten via de regel <varname
+>X-KDE-Init</varname
+>:</para>
+
+<programlisting
+>[Desktop Entry]
+Encoding=UTF-8
+Exec=kcmshell energy
+Icon=energy_star
+Type=Application
+X-KDE-Library=energy
+X-KDE-Init=energy
+</programlisting>
+
+<para
+>Initialisatiediensten worden gebruikt voor het initialiseren van hardware, gebaseerd op gebruikerspecifieke instellingen.</para>
+
+<para
+><userinput
+><command
+>kcminit <option
+>--list</option
+></command
+></userinput
+> kan worden gebruikt om alle initialisatiediensten en <userinput
+><command
+>kcminit <replaceable
+>dienst</replaceable
+></command
+></userinput
+> kan worden gebruikt één dienst expliciet uit te voeren. Dit is handig bij het onderzoeken van opstartproblemen.</para>
+
+</sect2>
+
+<sect2 id="klauncher">
+<title
+><command
+>klauncher</command
+></title>
+
+<para
+><command
+>klauncher</command
+> is een daemon die verantwoordelijk is voor de dienstenactivatie in &kde;. Het opereert in een hechte verbinding met het <command
+>kdeinit</command
+>-hoofdproces om nieuwe processen op te starten. &kde;-toepassingen communiceren met <command
+>klauncher</command
+> over &DCOP; om nieuwe toepassingen of diensten te starten.</para>
+
+<para
+>Het meest bekend van de foutmelding <computeroutput
+><errortext
+>KLauncher kon niet via DCOP worden bereikt</errortext
+></computeroutput
+>, wat aangeeft dat er een ernstig probleem is met de <command
+>dcopserver</command
+> of dat <command
+>klauncher</command
+> is gecrashed.</para>
+
+<para
+><command
+>klauncher</command
+> kan opnieuw worden gestart door <command
+>kdeinit</command
+> te herstarten vanuit een consolevenster. Zorg ervoor dat $<envar
+>HOME</envar
+>, $<envar
+>DISPLAY</envar
+> en de verscheidene $<envar
+>KDEDIR(S)</envar
+> correct zijn ingesteld als u dit doet!</para>
+
+</sect2>
+
+<sect2 id="knotify">
+<title
+><command
+>knotify</command
+></title>
+
+<para
+>De primaire taak van <command
+>knotify</command
+> is om geluidsmeldingen door te sturen naar de geluidsserver. Verder biedt het alternatieve meldwijzen aan.</para>
+
+</sect2>
+
+
+</sect1>
+
+<sect1 id="ksmserver">
+<title
+>KSMServer</title>
+
+<para
+><command
+>ksmserver</command
+> is &kde;'s sessiebeheerder. Bij het opstarten lanceert de sessiebeheerder de autostartprogramma's en herstelt het de programma's van de vorige sessie. De programma's om te autostarten zijn aangegeven in de <literal role="extension"
+>.desktop</literal
+>-bestanden in de map <filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/share/autostart</filename
+>. Of een programma wel of niet automatisch gestart dient te worden kan worden bepaald met de sleutel <varname
+>X-KDE-autostart-condition</varname
+> in het <literal role="extension"
+>.desktop</literal
+>-bestand.</para>
+
+<informalexample>
+<para
+>Het bestand <filename
+>ktip.desktop</filename
+> bevat bijvoorbeeld:</para>
+
+<programlisting
+>X-KDE-autostart-condition=ktiprc:TipOfDay:RunOnStart:true
+</programlisting>
+
+<para
+>Dit betekent dat het configuratiebestand <filename
+>ktiprc</filename
+> wordt doorzocht voor een <varname
+>RunOnStart</varname
+>-sleutel in de sectie <varname
+>[TipOfTheDay]</varname
+>. Als deze niet is gevonden, dan wordt uitgegaan van <literal
+>true</literal
+>. Dit betekent dat <application
+>ktip</application
+> één van de programma's is die standaard wordt opgestart.</para>
+</informalexample>
+
+<para
+>Enkele programma's die automatisch door <command
+>ksmserver</command
+> worden gestart zijn:</para>
+
+<variablelist>
+
+<varlistentry>
+<term
+><command
+>kdesktop</command
+></term>
+<listitem
+><para
+>Het bureaublad van &kde;</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><command
+>&kicker;</command
+></term>
+<listitem
+><para
+>Het paneel van &kde;</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><command
+>ktip</command
+></term>
+<listitem
+><para
+>Een programma dat de tip van de dag toont</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><command
+>kwrited</command
+></term>
+<listitem
+><para
+>Een hulpprogramma dat systeemberichten die naar de gebruiker zijn verstuurd ontvangt</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>&klipper;</term>
+<listitem
+><para
+>Een klembordprogramma dat huist in het systeemvak</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><command
+>kalarm</command
+></term>
+<listitem
+><para
+>Een hulpprogramma dat waarschuwt over aankomende evenementen en afspraken</para>
+</listitem>
+
+</varlistentry>
+</variablelist>
+
+<para
+><command
+>kdesktop</command
+> op zijn beurt start automatisch de programma's die zijn opgeslagen in <filename class="directory"
+>$<envar
+>KDEHOME</envar
+>/Autostart</filename
+>. <command
+>kdesktop</command
+> zal automatisch alle bestanden die in deze map zijn opgeslagen openen, inclusief documenten, uitvoerbare bestanden of programma's in de vorm van <literal role="extension"
+>.desktop</literal
+>-bestanden.</para>
+
+<para
+>De sessiebeheerder van &kde; herstelt ook één van de vorige sessies. Een sessie bevat een verzameling programma's met bijhorende programmaspecifieke informatie die de status van de programma's op het moment dat de sessie werd opgeslagen reflecteert. Sessies worden opgeslagen in het configuratiebestand <filename
+>ksmserverrc</filename
+>. Dit bestand bevat programmaspecifieke statusinformatie. Deze informatie wordt opgeslagen in <filename class="directory"
+>$<envar
+>KDEHOME</envar
+>/share/config/session</filename
+>. De statusinformatie van &kwin; bevat de locatie van de programmavensters van alle andere programma's in de sessie. </para>
+
+</sect1>
+
+<sect1 id="environment-variables">
+<title
+>Omgevingsvariabelen</title>
+
+<para
+>Enkele belangrijke omgevingsvariabelen die &kde; gebruikt:</para>
+
+<variablelist>
+
+<varlistentry>
+<term
+>$<envar
+>KDEDIR</envar
+></term>
+<listitem
+><para
+>Dient te zijn ingesteld als <envar
+>KDEDIRS</envar
+> niet is ingesteld en dient te wijzen naar de hoofdmap van de &kde;-installatieboom. Zorgt ervoor dat &kde; zijn gegevens kan vinden, zoals pictogrammen, menu's en bibliotheken.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDEDIRS</envar
+></term>
+<listitem
+><para
+>Overschrijft <envar
+>KDEDIR</envar
+> en maakt het mogelijk om meerdere mappen te specificeren waarin &kde; kan zoeken naar zijn gegevens. Handig als u enkele programma's op een andere plek dan de rest van &kde; moet of wilt installeren.</para
+> 
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+><envar
+>$KDEHOME</envar
+></term
+><listitem
+><para
+>Indien niet ingesteld gebruikt &kde; <filename class="directory"
+>~/.kde</filename
+> als de map waarin de persoonlijke gegevens worden opgeslagen.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDEROOTHOME</envar
+></term
+><listitem
+><para
+>Indien niet ingesteld gebruikt &kde; <filename class="directory"
+>~root/.kde</filename
+> als de map voor de persoonlijke gegevens van <systemitem class="username"
+>root</systemitem
+>. Is geïntroduceerd om te voorkomen dat &kde; per ongeluk gebruikersgegevens met root-toegangsrechten overschrijft als de gebruiker een &kde;-toepassing draait nadat hij of zij door middel van het commando <command
+>su</command
+> over is gegaan op <systemitem class="username"
+>root</systemitem
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDEWM</envar
+></term
+><listitem
+><para
+>Als de omgevingsvariabele <envar
+>KDEWM</envar
+> is ingesteld, dan zal het worden gebruikt als &kde;'s window manager in het <command
+>startkde</command
+>-script in plaats van &kwin;.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDE_LANG</envar
+></term
+><listitem
+><para
+>Overschrijft de taalconfiguratie van &kde;, &eg; <userinput
+>KDE_LANG=fr kprogram &amp;</userinput
+> start een programma met de Franse vertaling als de benodigde bestanden zijn geïnstalleerd.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDE_MULTIHEAD</envar
+></term
+><listitem
+><para
+>Zet deze variabele op <literal
+>true</literal
+> om aan te geven dat &kde; op een multi-head systeem draait.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDE_FORK_SLAVES</envar
+></term>
+<listitem
+><para
+>(sinds &kde; 3.2.3) Stel deze variabele in om <acronym
+>KIO</acronym
+>-slaves rechtstreeks te laten voortkomen uit de programmaprocessen zelf. Standaard worden <acronym
+>KIO</acronym
+>-slaves gestart door <command
+>klauncher</command
+>/<command
+>kdeinit</command
+>. Deze optie is voor als de <acronym
+>KIO</acronym
+>-slave in dezelfde omgeving als het programma dient te draaien. Dit kan het geval zijn met <application
+>Clearcase</application
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDE_HOME_READONLY</envar
+></term>
+<listitem
+><para
+>Stel deze variabele in om aan te geven dat uw persoonlijke map als alleen-lezen is aangekoppeld.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDE_NO_IPV6</envar
+></term
+><listitem
+><para
+>(sinds &kde; 3.2.3) - stel deze variabele in om <acronym
+>IPv6</acronym
+>-ondersteuning en <acronym
+>IPv6</acronym
+> <acronym
+>DNS</acronym
+>-zoekacties uit te schakelen.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDE_IS_PRELINKED</envar
+></term
+><listitem
+><para
+>(sinds &kde; 3.2) - Stel deze variabele in om aan te geven dat u uw &kde;-programmabestanden en bibliotheken hebt prelinked. Dit schakelt <command
+>kdeinit</command
+> uit.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDE_UTF8_FILENAMES</envar
+></term
+><listitem
+><para
+>Als deze omgevingsvariabele is ingesteld gaat &kde; er van uit dat alle bestandsnamen de tekensetcodering <acronym
+>UTF-8</acronym
+> gebruiken, ongeacht de huidige C locale.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDE_FULL_SESSION</envar
+></term
+><listitem
+><para
+>(sinds &kde; 3.2) - Automatisch op 'true' gezet tijdens de start van &kde;. Wordt gebruikt door &eg; &konqueror; om te kunnen achterhalen of het programma in het geheugen moet achterblijven voor hergebruik als het wordt afgesloten. Indien niet ingesteld zal &konqueror; stoppen nadat het is afgesloten (&eg; &kdesu; doet dat, het is ook handig voor debugging).</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDESYCOCA</envar
+></term
+><listitem
+><para
+>Maakt het mogelijk om een pad en naam op te geven voor sycoca, &kde;'s cache-bestand met systeemconfiguratiegegevens.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDETMP</envar
+></term
+><listitem
+><para
+>Maakt het mogelijk om een ander pad op te geven dan <filename class="directory"
+>/tmp</filename
+>, waar &kde; zijn tijdelijke bestanden opslaat.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDEVARTMP</envar
+></term
+><listitem
+><para
+>Maakt het mogelijk om een ander pad op te geven dan <filename class="directory"
+>/var/tmp</filename
+>, waar &kde; zijn variabele bestanden opslaat.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>XDG_DATA_HOME</envar
+></term
+><listitem
+><para
+>(sinds &kde; 3.2) - Definieert de basismap relatief aan waar gebruikersspecifieke gegevensbestanden dienen te worden opgeslagen. Standaard is <filename class="directory"
+>$<envar
+>HOME</envar
+>/.local/share</filename
+></para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>XDG_DATA_DIRS</envar
+></term
+><listitem
+><para
+>(sinds &kde; 3.2) Definieert de op voorkeur geordende set van basismappen waarin wordt gezocht naar gegevens bestanden ter aanvulling van de basismap <filename class="directory"
+>$<envar
+>XDG_DATA_HOME</envar
+></filename
+>. De standaard is <literal
+>/usr/local/share/:/usr/share/</literal
+></para>
+
+<para
+>&kde; voegt ook locaties van $<envar
+>KDEDIRS</envar
+> en profielen toe. Gebruikt voor <literal role="extension"
+>.desktop</literal
+>- en <literal role="extension"
+>.directory</literal
+>-menubestanden. <literal role="extension"
+>.desktop</literal
+>-bestanden onder <filename class="directory"
+>$<envar
+>XDG_DATA_DIRS</envar
+>/applications</filename
+>. <literal role="extension"
+>.directory</literal
+>-bestanden onder  <filename class="directory"
+>$<envar
+>XDG_DATA_DIRS</envar
+>/desktop-directories</filename
+>. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>XDG_CONFIG_HOME</envar
+></term
+><listitem
+><para
+>(&kde; 3.2) Definieert de basismap relatief aan waar gebruikerspecifieke bestanden dienen te worden opgeslagen. Standaard is <filename class="directory"
+>$<envar
+>HOME</envar
+>/.config</filename
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>XDG_CONFIG_DIRS</envar
+></term
+><listitem
+><para
+>(&kde; 3.2) - Definieert de op voorkeur geordende set van basismappen om op configuratiemappen te doorzoeken als aanvulling op de basismap $<envar
+>XDG_CONFIG_HOME</envar
+>. De standaard is <filename class="directory"
+>/etc/xdg</filename
+>. &kde; voegt locaties van $<envar
+>KDEDIRS</envar
+> als ook profielen toe. Gebruikt door <literal role="extension"
+>.menu</literal
+>-beschrijvingen in <filename class="directory"
+>$<envar
+>XDG_CONFIG_DIRS</envar
+>/menus</filename
+>. </para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</sect1>
+
+<sect1 id="the-kdeinit-mystery">
+<title
+>Het mysterie van kdeinit</title>
+
+<!-- FIXME: Add more words. Fix markup -->
+
+<para
+><command
+>kdeinit</command
+> wordt gebruikt om alle andere &kde;-programma's te starten. <command
+>kdeinit</command
+> kan normale binaire programmabestanden als ook <command
+>kdeinit</command
+>-laadbare modules (<acronym
+>KLM</acronym
+>'s) laden. <acronym
+>KLM</acronym
+>'s werken net als binaire programmabestanden, maar kunnen op een efficiëntere wijze worden gestart. <acronym
+>KLM</acronym
+>'s bevinden zich in de map <filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/lib/kde3</filename
+>.</para>
+
+<para
+>Het nadeel is dat programma's die op die manier zijn opgestart verschijnen als <computeroutput
+><command
+>kdeinit</command
+></computeroutput
+> in de uitvoer van <command
+>top</command
+> en <command
+>ps</command
+>. Gebruik <command
+>top<option
+>-c</option
+></command
+> of <command
+>ps <option
+>aux</option
+></command
+> om de eigenlijke programmanaam te zien:</para>
+
+<screen
+><prompt
+>%</prompt
+> <userinput
+><command
+>ps aux | grep bastian</command
+></userinput>
+<computeroutput>
+bastian  26061  0.0  2.2 24284 11492 ?       S    21:27   0:00 kdeinit: Running...
+bastian  26064  0.0  2.2 24036 11524 ?       S    21:27   0:00 kdeinit: dcopserver
+bastian  26066  0.1  2.5 26056 12988 ?       S    21:27   0:00 kdeinit: klauncher
+bastian  26069  0.4  3.2 27356 16744 ?       S    21:27   0:00 kdeinit: kded
+bastian  26161  0.2  2.7 25344 14096 ?       S    21:27   0:00 kdeinit: ksmserver
+bastian  26179  1.1  3.4 29716 17812 ?       S    21:27   0:00 kdeinit: kicker
+bastian  26192  0.4  3.0 26776 15452 ?       S    21:27   0:00 kdeinit: klipper
+bastian  26195  1.0  3.5 29200 18368 ?       S    21:27   0:00 kdeinit: kdesktop
+</computeroutput
+>
+</screen>
+<para
+>Zoals u mogelijk al gezien hebt is er nog een bijwerking die het moeilijk maakt om een proces dat problemen veroorzaakt te killen:</para>
+
+<screen
+><prompt
+>%</prompt
+> <userinput
+><command
+>killall kdesktop</command
+></userinput>
+<computeroutput
+>kdesktop: no process killed</computeroutput
+></screen>
+
+<para
+>U kunt in de verleiding komen om <userinput
+><command
+>killall kdeinit</command
+></userinput
+> te proberen, maar het afschieten van alle kdeinitprocessen heeft hetzelfde effect als &kde; compleet afsluiten. Dus in feite totale vernietiging!</para>
+
+<para
+>Er bestaan twee eenvoudige oplossingen hiervoor:</para>
+
+<screen
+><prompt
+>%</prompt
+> <userinput
+><command
+>kdekillall kdesktop</command
+></userinput>
+of de goeie ouwe
+<prompt
+>%</prompt
+> <userinput
+><command
+>kill 26195</command
+></userinput
+></screen>
+<para
+><command
+>kdekillall</command
+> is onderdeel van het &kde;<acronym
+>sdk</acronym
+>-pakket.</para>
+
+</sect1>
+
+</chapter>
+
+<chapter id="customizing-kde">
+<title
+>&kde; aanpassen</title>
+
+
+<sect1 id="desktop-icons">
+<title
+>Bureaubladpictogrammen</title>
+
+<para
+>&kde; gebruikt verschillende typen pictogrammen:</para>
+<itemizedlist>
+<listitem
+><para
+>Documenten</para>
+</listitem>
+<listitem
+><para
+>Koppelingen naar websites (gebruik makend van <literal role="extension"
+>.desktop</literal
+>-bestanden)</para>
+</listitem>
+<listitem
+><para
+>Koppelingen naar programma's (gebruik makend van <literal role="extension"
+>.desktop</literal
+>-bestanden)</para>
+</listitem>
+<listitem
+><para
+>Stations, apparaten, schijven, partities &amp; randapparatuur: <itemizedlist>
+<listitem
+><para
+>Expliciet door gebruik van <literal role="extension"
+>.desktop</literal
+>-bestanden</para>
+</listitem>
+<listitem
+><para
+>Automatisch via de io-slave devices://</para>
+</listitem>
+</itemizedlist>
+</para>
+</listitem>
+<listitem
+><para
+>Distributiespecifiek (&eg; &SuSE;'s Mijn Computer)</para>
+</listitem>
+</itemizedlist>
+
+<sect2 id="desktop-icons-websites">
+<title
+>Websites</title>
+<para
+>Koppelingen naar websites door gebruik te maken van <literal role="extension"
+>.desktop</literal
+>-bestanden: <menuchoice
+><guimenu
+>Nieuw aanmaken</guimenu
+><guisubmenu
+>Bestand</guisubmenu
+><guimenuitem
+>Koppeling naar locatie</guimenuitem
+></menuchoice
+>. Verander het pictogram in het dialoogvenster <guilabel
+>Eigenschappen</guilabel
+>. Het resulterende <literal role="extension"
+>.desktop</literal
+>-bestand: <programlisting
+>[Desktop Entry]
+Encoding=UTF-8
+Icon=/opt/kde3/share/apps/kdesktop/pics/ksslogo.png
+Type=Link
+URL=http://www.kde.org/
+</programlisting>
+</para>
+</sect2>
+
+<sect2 id="desktop-icons-applications">
+<title
+>Toepassingen</title>
+
+<para
+>Koppelingen naar toepassingen met behulp van <literal role="extension"
+>.desktop</literal
+>-bestanden: <menuchoice
+><guimenu
+>Nieuw aanmaken</guimenu
+><guisubmenu
+>Bestand</guisubmenu
+><guimenuitem
+>Koppeling naar toepassing</guimenuitem
+></menuchoice
+>. U moet zelf de details aanleveren. Verslepen vanuit &kde;-menu: u kunt kiezen uit kopiëren of koppelen (creëert symlink), veel eenvoudiger.</para>
+
+<!-- Perhaps legacy and translated should be the other way around, but -->
+<!-- this is how it appears in Waldo's presentation. Need to check -->
+<!-- this -->
+
+<programlisting
+>[Desktop Entry]<co id="boilerplate"/>
+Encoding=UTF-8
+GenericName=IRC Client<co id="generic-desc"/>
+GenericName[af]=Irc Kli&euml;t
+GenericName[de]=IRC Programm
+...
+GenericName[zu]=Umthengi we IRC<co id="legacy"/>
+SwallowExec=<co id="translated"/>
+Name=KSirc
+Name[af]=Ksirc
+Name[de]=KSirc
+...
+</programlisting>
+
+<calloutlist>
+<callout arearefs="boilerplate"
+><para
+>Boiler plate</para>
+</callout>
+<callout arearefs="generic-desc"
+><para
+>Vertaalde generieke beschrijving, wordt niet op bureaublad gebruikt</para>
+</callout>
+<callout arearefs="legacy"
+><para
+>Achterhaald, kan worden verwijderd</para>
+</callout>
+<callout arearefs="translated"
+><para
+>Vertaalde naam, zoals die verschijn op het bureaublad</para>
+</callout>
+</calloutlist>
+
+<para
+>Bureaubladpictogrammen</para>
+<programlisting
+>...
+Name[zu]=Ksirc
+MimeType=<co id="co-mimetype"/>
+Exec=ksirc %i %m<co id="co-exec"/>
+Icon=ksirc<co id="co-icon"/>
+TerminalOptions=<co id="co-terminaloptions"/>
+Path=<co id="co-path"/>
+Type=Application<co id="co-type"/>
+Terminal=0<co id="co-terminal"/>
+X-KDE-StartupNotify=true<co id="co-x-kde-startupnotify"/>
+X-DCOP-ServiceType=Multi<co id="co-x-dcop-servicetype"/>
+Categories=Qt;KDE;Network<co id="co-categories"/>
+</programlisting>
+
+<calloutlist>
+<callout arearefs="co-mimetype"
+><para
+>Ondersteunde &MIME;-typen, wordt niet gebruikt op bureaublad</para>
+</callout>
+<callout arearefs="co-exec"
+><para
+>De commandoregel om uit te voeren</para>
+</callout>
+<callout arearefs="co-icon"
+><para
+>Het pictogram, uit pictogramthema of volledig pad</para>
+</callout>
+<callout arearefs="co-terminaloptions"
+><para
+>Alleen gebruikt als er een terminal nodig is</para>
+</callout>
+<callout arearefs="co-path"
+><para
+>Werkmap voor het commando</para>
+</callout>
+<callout arearefs="co-type"
+><para
+>Meer boiler plate</para>
+</callout>
+<callout arearefs="co-terminal"
+><para
+>Gebruik 'true' als een terminal nodig is, tekstprogramma</para>
+</callout>
+<callout arearefs="co-x-kde-startupnotify"
+><para
+>Stuiterende cursor weergeven, schakel dit uit als dat niet werkt</para>
+</callout>
+<callout arearefs="co-x-dcop-servicetype"
+><para
+>Is het programma goed opgestart? Verwijder als dat niet werkt</para>
+</callout>
+<callout arearefs="co-categories"
+><para
+>Categorieën voor &kde;-menu, niet gebruikt op bureaublad</para>
+</callout>
+</calloutlist>
+
+
+
+</sect2>
+
+<sect2 id="desktop-icons-exec">
+<title
+>De optie <varname
+>Exec</varname
+> in <literal role="extension"
+>.desktop</literal
+>-bestanden.</title>
+
+<para
+>Volgend op het commando kunt u diverse plaatshouders definiëren die zullen worden vervangen door hun eigenlijke warden als het programma wordt opgestart: <variablelist>
+<varlistentry>
+<term
+>%f</term
+> <listitem
+><para
+>Één bestandsnaam. Wordt gebruikt als een bestand naar het pictogram wordt gesleept of bij bestandsassociaties.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>%F</term>
+<listitem
+><para
+>Een lijst met bestanden. Wordt gebruikt voor programma's die meerdere lokale bestanden in één keer kunnen openen.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>%u</term>
+<listitem
+><para
+>Één &URL;. Als het programma zelf &eg; &FTP; of &HTTP; &URL;'s kan afhandelen, anders &kde;.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>%U</term>
+<listitem
+><para
+>Een lijst met &URL;sen, zal het bestand eerst downloaden en daarna een lokaal bestand aan het programma doorgeven (!!)</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>%d</term>
+<listitem
+><para
+>De map van het te openen bestand. Bruikbaar als het programma bestanden uit de huidige werkmap nodig heeft.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>%D</term>
+<listitem
+><para
+>Een mappenlijst, niet echt praktisch</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>%i</term
+> 
+<listitem
+><para
+>Het pictogram, optie <option
+>--icon</option
+>. &kde;-programma zal het pictogram uit de regel <varname
+>Icon</varname
+>= in de taakbalk gebruiken.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>%m</term>
+<listitem
+><para
+>Het miniatuurpictogram, achterhaald.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>%c</term
+> 
+<listitem
+><para
+>De titel. Optie <option
+>--caption</option
+>. &kde;-programma's zullen de naam uit de regel <varname
+>Name</varname
+>= gebruiken in de taakbalk.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</para>
+
+<informalexample>
+<para
+>Voorbeelden: <segmentedlist>
+<segtitle
+>regel <varname
+>Exec</varname
+></segtitle>
+<segtitle
+>Uitgevoerd commando</segtitle>
+<seglistitem
+><seg
+>ksirc %i</seg
+><seg
+><command
+>ksirc --icon ksirc</command
+></seg>
+</seglistitem>
+<seglistitem
+><seg
+>cd %d; kedit $(basename %f)</seg
+><seg
+><command
+>cd /tmp; kedit file.txt</command
+></seg>
+</seglistitem>
+</segmentedlist>
+</para>
+</informalexample>
+
+<!--Dont' know what this refers to: -->
+<!--See What's This (Shift-F1) in Properties Dialog-->
+
+</sect2>
+
+<sect2 id="desktop-icons-devices">
+<title
+>Apparaten</title>
+<para
+>Koppelingen naar stations met behulp van <literal role="extension"
+>.desktop</literal
+>-bestanden: Nieuw aanmaken -> Apparaat ->(type station) </para>
+</sect2>
+
+<sect2 id="where-to-define">
+<title
+>Waar te definiëren</title>
+
+<para
+>Veel plekken voor het definiëren van bureaubladpictogrammen: <itemizedlist>
+
+<listitem
+><para
+><filename class="directory"
+>~Desktop</filename
+>: gekopieerd uit <filename class="directory"
+>/etc/skel/Desktop</filename
+></para
+></listitem>
+
+<listitem
+><para
+><filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/apps/kdesktop/Desktop</filename
+> (samengevoegd)</para
+></listitem>
+
+<listitem
+><para
+><filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/apps/kdesktop/DesktopLinks</filename
+> (gekopieerd)</para
+></listitem>
+
+<listitem
+><para
+>Apparaatpictogrammen (dynamisch samengevoegd)</para
+></listitem>
+
+<listitem
+><para
+>Distributiespecifiek: SUSE Linux kopieert bepaalde pictogrammen in startkde.theme uit <filename class="directory"
+>/opt/kde3/share/config/SuSE/default/</filename
+></para
+></listitem>
+
+</itemizedlist>
+</para>
+</sect2>
+</sect1>
+
+<sect1 id="kde-menu">
+<title
+>&kde;-menu</title>
+
+<sect2 id="how-it-works">
+<title
+>Hoe het werkt</title>
+
+<para
+>In &kde; is een algemeen menuformaat geïntroduceerd op <ulink url="http://freedesktop.org/Standards/menu-spec/"
+>http://freedesktop.org/Standards/menu-spec/</ulink
+></para>
+<para
+>Voor &kde; 3.2: <itemizedlist>
+
+<listitem
+><para
+>Mappenstructuur onder <filename class="directory"
+>/share/applnk</filename
+></para
+></listitem>
+
+<listitem
+><para
+>Mappenstructuur representeert menustructuur</para
+></listitem>
+
+<listitem
+><para
+>Elk <literal role="extension"
+>.desktop</literal
+>-bestand representeert een toepassing</para
+></listitem>
+
+</itemizedlist>
+</para>
+
+<para
+>It was moeilijk om de structuur in &kde; 3.2 opnieuw te ordenen, dus het nieuwe menuformaat: <itemizedlist>
+<listitem
+><para
+>Definieert structuren in één .menu-bestand</para
+></listitem>
+<listitem
+><para
+>Is gebaseerd op categorieën</para
+></listitem>
+<listitem
+><para
+>Wordt gedeeld tussen <acronym
+>GNOME</acronym
+> en &kde;</para
+></listitem>
+<listitem
+><para
+>Biedt ook ondersteuning voor applnk-stijl menu's</para
+></listitem>
+</itemizedlist>
+</para>
+
+<informalexample>
+<para
+>Voorbeeld van <filename
+>applications.menu</filename
+>: <programlisting
+><markup>
+        &lt;Menu&gt;
+            &lt;Name&gt;Office&lt;/Name&gt;
+            &lt;Directory&gt;suse-office.directory&lt;/Directory&gt;
+            &lt;Include&gt;
+                &lt;Filename&gt;Acrobat Reader.desktop&lt;/Filename&gt;
+                &lt;Filename&gt;kde-kpresenter.desktop&lt;/Filename&gt;
+                &lt;Filename&gt;kde-kword.desktop&lt;/Filename&gt;
+            &lt;/Include&gt;
+        &lt;Menu&gt;
+</markup
+>
+</programlisting>
+</para>
+<para
+>Menuoptie met 3 toepassingen: <itemizedlist>
+
+<listitem
+><para
+><filename
+>/usr/share/applications/Acrobat Reader.desktop</filename
+></para
+></listitem>
+
+<listitem
+><para
+><filename
+>/opt/kde3/share/applications/kde/kpresenter.desktop</filename
+></para
+></listitem>
+
+<listitem
+><para
+><filename
+>/opt/kde3/share/applications/kde/kword.desktop</filename
+></para
+></listitem>
+
+</itemizedlist>
+</para>
+</informalexample>
+</sect2>
+
+<sect2 id="stored-where">
+<title
+>Waar wordt dit opgeslagen?</title>
+
+<para
+><literal role="extension"
+>.menu</literal
+>-bestanden die de menustructuur beschrijven. De bestanden worden opgeslagen in <filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/etc/xdg/menus</filename
+> en in <filename class="directory"
+>/etc/xdg/menus</filename
+>. Deze bevatten de systeemwijde menustructuur en worden aangestuurd door $<envar
+>XDG_CONFIG_DIRS</envar
+>. <filename class="directory"
+>$<envar
+>HOME</envar
+>/.config/menus</filename
+> bevat gebruikerspecifieke wijzigingen in de menustructuur en wordt aangestuurd door $<envar
+>XDG_CONFIG_HOME</envar
+>. Voor meer informatie, zie <ulink url="http://www.freedesktop.org/Standards/basedir-spec"
+>http://www.freedesktop.org/Standards/basedir-spec</ulink
+>.</para>
+
+<para
+><literal role="extension"
+>.desktop</literal
+>-bestanden beschrijven de toepassingen en worden opgeslagen in: <filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/share/applications</filename
+>, <filename class="directory"
+>/usr/share/applications</filename
+>, <filename class="directory"
+>/usr/local/share/applications</filename
+>. Dit zijn de systeemwijde <literal role="extension"
+>.desktop</literal
+>-bestanden voor toepassingen en worden aangestuurd door $<envar
+>XDG_DATA_DIRS</envar
+>.</para>
+
+<para
+><filename class="directory"
+>$<envar
+>HOME</envar
+>/.local/applications</filename
+>  bevat gebruikerspecifieke <literal role="extension"
+>.desktop</literal
+>-bestanden en gebruikersspecifieke wijzigingen. Het wordt aangestuurd door $<envar
+>XDG_DATA_HOME</envar
+>. Voor meer informatie, zie <ulink url="http://www.freedesktop.org/Standards/basedir-spec"
+>http://www.freedesktop.org/Standards/basedir-spec</ulink
+></para>
+
+
+<para
+><literal role="extension"
+>.directory</literal
+>-bestanden die submenu's beschrijven worden opgeslagen in: <filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/share/desktop-directories</filename
+>, <filename class="directory"
+>/usr/share/desktop-directories</filename
+>, <filename class="directory"
+>/usr/local/share/desktop-directories</filename
+>. Dit zijn systeemwijde menu <literal role="extension"
+>.directory</literal
+> bestanden, bestuurt door $<envar
+>XDG_DATA_DIRS</envar
+>. De gebruikersspecifieke wijzigingen worden opgeslagen in <filename class="directory"
+>$<envar
+>HOME</envar
+>/.local/desktop-directories</filename
+>. Deze worden bestuurd door $<envar
+>XDG_DATA_HOME</envar
+>. Voor meer informatie, zie <ulink url="http://www.freedesktop.org/Standards/basedir-spec"
+>http://www.freedesktop.org/Standards/basedir-spec</ulink
+>.</para>
+
+<informalexample>
+<para
+>Voorbeeld van <filename
+>applications.menu</filename
+>: <programlisting
+><markup>
+             &lt;Menu&gt;
+                        &lt;Name&gt;Art&lt;/Name&gt;
+                        &lt;Directory&gt;suse-edutainment-art.directory&lt;/Directory&gt;
+                        &lt;Include&gt;
+                                &lt;Category&gt;X-SuSE-Art&lt;/Category&gt;
+                        &lt;/Include&gt;
+                &lt;/Menu&gt;
+</markup
+>
+</programlisting>
+</para>
+
+<para
+><literal
+>Art</literal
+> is de interne naam voor dit menu. <filename
+>suse-edutainment-art.directory</filename
+> definieert de naam en pictogram voor dit menu. en het menu bevat alle toepassingen die <literal
+>X-SuSE-Art</literal
+> als categorie bevatten, dus: <programlisting
+>Categories=Qt;KDE;Education;X-SuSE-Art
+</programlisting
+></para>
+
+<para
+><filename
+>suse-edutainment-art.directory</filename
+> definieert de naam en pictogram voor dit menu: <programlisting
+>[Desktop Entry]
+Name=Art and Culture
+Icon=kcmsystem
+</programlisting>
+</para>
+</informalexample>
+</sect2>
+
+<sect2 id="common-pitfalls">
+<title
+>Bekende valkuilen</title>
+
+<para
+>Toepassingen die <emphasis
+>niet</emphasis
+> in het menu staan <emphasis
+>bestaan niet</emphasis
+> vanuit het oogpunt van andere toepassingen of bestandsassociaties: als u een toepassing uit het menu verwijdert, dan gaat &kde; er van uit dat u het niet wilt gebruiken.</para>
+
+<para
+>Als een toepassing niet in het menu gewenst is, plaats het ofwel in het menu <filename
+>.hidden</filename
+> of in een toegewijd menu met de regel <programlisting>
+NoDisplay=true
+</programlisting
+>  in het <literal role="extension"
+>.directory</literal
+>-bestand.</para>
+</sect2>
+
+<sect2 id="essential-menus">
+<title
+>Essentiële menu's</title>
+
+<para
+><filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/etc/xdg/menus/applications-merged/</filename
+> bevat <filename
+>kde-essential.menu</filename
+>. Deze bevat enkele essentiële menu's die normaliter niet in het &kde;-menu zelf worden weergegeven: <itemizedlist>
+<listitem
+><para
+>Het Configuratiecentum heeft een verborgen Settings-menu waarvan de inhoud wordt gedefinieerd door <filename
+>kde-settings.menu</filename
+> en wiens pictogram en naam worden gedefinieerd door <filename
+>kde-settings.directory</filename
+>.</para>
+</listitem>
+<listitem
+><para
+>Het Informatiecentrum heeft een verborgen informatiemenu wiens inhoud wordt gedefinieerd door <filename
+>kde-information.menu</filename
+> en wiens pictogram en naam wordt gedefinieerd door <filename
+>kde-information.directory</filename
+>.</para>
+</listitem>
+
+<listitem
+><para
+>De schermbeveiliging bevat een verborgen System/Screensavers-menu, wiens inhoud wordt gedefinieerd door <filename
+>kde-screensavers.menu</filename
+> en wiens pictogram en naam wordt gedefinieerd door <filename
+>kde-system-screensavers.directory</filename
+>. <filename
+>$<envar
+>KDEDIR</envar
+>/share/desktop-directories/kde-system-screensavers.directory</filename
+> bevat: <programlisting
+>NoDisplay=true
+</programlisting>
+</para>
+</listitem>
+</itemizedlist
+></para>
+</sect2>
+
+<sect2 id="old-style-menus">
+<title
+>Menu's in de oude stijl</title>
+
+<para
+>&kde; blijft ondersteuning bidden voor menu's in de oude stijl die zijn gedefinieerd door de mappenstructuren in <filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/share/applnk</filename
+> (systeemwijd) en <filename class="directory"
+>$<envar
+>HOME</envar
+>/.kde/share/applnk</filename
+> (gebruikersspecifiek). Dit wordt geobserveerd, tenzij het <literal role="extension"
+>.desktop</literal
+>-bestand de regel <varname
+>Categories</varname
+>= bevat. In dat geval bepaalt 'Categories' de locatie in het menu.</para>
+</sect2>
+
+<sect2 id="ksycoca">
+<title
+><application
+>KSycoca</application
+></title>
+<para
+><application
+>KSycoca</application
+> maakt een cache aan van de menustructuur en de informatie over alle beschikbare toepassingen. U kunt de database herbouwen met het commando <userinput
+><command
+>kbuildsycoca</command
+></userinput
+>. De database die wordt gebouwd huist in <filename class="directory"
+>/var/tmp/kdecache-${<envar
+>USER</envar
+>}/ksycoca</filename
+>. Het wordt automatisch bijgewerkt door <application
+>KDED</application
+>, gecontroleerd tijdens het aanmelden bij &kde; en <application
+>KDED</application
+> volgt wijzigingen tijdens gedurende de tijd dat de gebruiker aangemeld is.</para>
+
+<para
+>Om het volgen van wijzigingen uit te schakelen (omdat dit over NFS problemen kan veroorzaken), voeg het volgende toe aan <filename
+>kdedrc</filename
+>: <programlisting
+>[General]
+CheckSycoca=false
+</programlisting>
+</para>
+
+<para
+>Om het opnieuw genereren te forceren, voer <userinput
+><command
+>touch $<envar
+>KDEDIR</envar
+>/share/services/update_ksycoca</command
+></userinput
+> uit.</para>
+
+</sect2>
+
+<sect2 id="kmenuedit">
+<title
+>&kmenuedit;</title>
+
+<para
+>&kmenuedit; richt zich op een enkelvoudige gebruikersopzet. Wijzigingen in de menustructuur worden opgeslagen in <filename
+>~/.config/menus/applications-kmenuedit.menu</filename
+>, wijzigingen in toepassingen worden opgeslagen in <filename class="directory"
+>~/.local/share/applications/</filename
+> en wijzigingen in submenu's (pictogram, naam) worden opgeslagen in <filename class="directory"
+>~/.local/share/desktop-directories/</filename
+>.  Het administratieprogramma KIOSK gebruikt &kmenuedit; en kopieert de bovenstaande wijzigingen naar profiel- of systeemwijde locaties. </para>
+
+</sect2>
+
+</sect1>
+
+<!-- This section might be redundant. If it isn't, it needs some screenies -->
+<sect1 id="kde-panel">
+<title
+>&kde;-paneel</title>
+
+<para
+>Het &kde;-paneel is ook wel bekend onder de naam &kicker;. Het is modulair en bestaat uit de volgende componenten: <itemizedlist>
+<listitem
+><para
+>Applets</para
+></listitem>
+<listitem
+><para
+>Programmaknoppen</para
+></listitem>
+<listitem
+><para
+>Speciale knoppen</para
+></listitem>
+</itemizedlist>
+</para>
+
+<para
+>Standaard bevat het paneel de volgende applets: <itemizedlist
+> <listitem
+><para
+>Pager - toont de virtuele bureaubladen</para
+></listitem
+><listitem
+><para
+>Taakbalk</para
+></listitem
+> <listitem
+><para
+>Systeemvak</para
+></listitem
+><listitem
+><para
+>Klok</para
+></listitem
+></itemizedlist
+> en de volgende speciale knoppen: <itemizedlist>
+<listitem
+><para
+>&kde;-menu</para
+></listitem>
+<listitem
+><para
+>Bureaubladknop</para
+></listitem>
+</itemizedlist>
+</para>
+
+<para
+>Verschillende programmaknoppen zijn ook toegevoegd indien de ruimte het toelaat: <itemizedlist>
+<listitem
+><para
+>Home-knop</para
+></listitem>
+<listitem
+><para
+>Browser-knop</para
+></listitem>
+<listitem
+><para
+>KMail-knop</para
+></listitem>
+</itemizedlist>
+</para>
+</sect1>
+
+<sect1 id="file-associations">
+<title
+>Bestandsassociaties</title>
+
+<para
+>Bestandsassociaties associëren een bestandstype met een programma of programma's. Het type bestand wordt bepaald aan de hand van diens &MIME; type. &MIME; types die bekend zijn bij &kde; worden opgeslagen in <filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/share/mimelnk</filename
+> en elk <literal role="extension"
+>.desktop</literal
+>-bestand van de programma's bevat een lijst met &MIME;-typen die het programma ondersteunt.</para>
+
+<informalexample>
+<para
+><filename
+>kview.desktop</filename
+>: <programlisting
+>MimeType=image/gif;image/x-xpm;image/x-xbm;image/jpeg;
+image/x-bmp;image/png;image/x-ico;image/x-portable-bitmap;
+image/x-portable-pixmap;image/x-portable-greymap;
+image/tiff;image/jp2
+</programlisting>
+</para>
+
+<para
+><filename
+>kuickshow.desktop</filename
+>: <programlisting
+>MimeType=image/gif;image/x-xpm;image/x-xbm;image/jpeg;
+image/png;image/tiff;image/x-bmp;image/x-psd;image/x-eim;
+image/x-portable-bitmap;image/x-portable-pixmap;
+image/x-portable-greymap
+</programlisting>
+</para>
+
+<para
+>Beide kunnen image/gif openen. Welke wordt gebruikt om een <literal role="extension"
+>.gif</literal
+>-bestand te openen?</para>
+
+<para
+>Het programma met de hoogste voorkeur!  <filename
+>kview.desktop</filename
+> bevat <programlisting>
+InitialPreference=3
+</programlisting
+> terwijl <filename
+>kuickshow.desktop</filename
+> contains <programlisting>
+InitialPreference=6
+</programlisting
+>  bevat. Daarom zal &kuickshow; worden gebruikt om <literal role="extension"
+>.gif</literal
+>-bestanden te openen. </para>
+
+<para
+>Hoe kunnen we &kview; als standaard instellen?</para>
+
+<para
+>Een gebruiker kan de bestandsassociatie aanpassen in het &kcontrolcenter;. Deze wijzigingen worden opgeslagen in <filename
+>$<envar
+>HOME</envar
+>/.kde/share/config/profilerc</filename
+>. Om dezelfde instellingen voor meerdere gebruikers te gebruiken slaat u deze instellingen op in de gebruikersprofielmap of in de globale &kde;-configuratiemap om te gebruiken als standaard voor meerdere gebruikers.</para>
+
+</informalexample>
+
+</sect1>
+
+</chapter>
+
+<chapter id="locking-down-kde">
+<title
+>&kde; vergrendelen</title>
+
+<sect1 id="how-it-works-the-basics">
+<title
+>Hoe het werkt, de grondbeginselen</title>
+
+<para
+>&kde;'s vergrendelmogelijkheden zijn gecentreerd rond de volgende opties:</para>
+
+<itemizedlist>
+<listitem
+><para
+><link linkend="immutable-configuration-options"
+>Configuratieopties onveranderbaar maken</link
+></para
+></listitem>
+<listitem
+><para
+><link linkend="action-restrictions"
+>Specifieke acties beperken</link
+></para
+></listitem>
+<listitem
+><para
+><link linkend="url-restrictions"
+>Toegang tot bepaalde &URL;sen beperken</link
+></para
+></listitem>
+<listitem
+><para
+><link linkend="configuration-modules"
+>Toegang tot bepaalde configuratiemodules beperken</link
+></para
+></listitem>
+</itemizedlist>
+
+</sect1>
+
+<sect1 id="immutable-configuration-options">
+<title
+>Onveranderbare configuratieopties</title>
+<subtitle
+>&kde; vergrendelen</subtitle>
+
+<para
+>Met onveranderbare opties kan de systeembeheerder standaardinstellingen aanleveren die niet door de gebruiker kunnen worden gewijzigd.</para>
+
+<para
+>Bestaande configuratieopties van de gebruiker zullen worden genegeerd zodra een configuratieoptie onveranderbaar is gemaakt.</para>
+
+<para
+>Opties kunnen worden per item, per groep items of per bestand worden beheerd.</para>
+
+<para
+>Als een bestand of optiegroep onveranderbaar is, dan zullen alle configuratieopties voor dat bestand of die groep onveranderbaar zijn, zelfs de opties waarvoor de systeemadministratie geen standaardwaarde heeft opgegeven.</para>
+
+<note
+><para
+>De ondersteuning in programma's voor onveranderbare opties kan per programma variëren. Alhoewel de gebruiker niet in staat zal zijn om permanente wijzigingen aan te brengen aan onveranderbare opties, de gebruiker kan wel nog steeds een interfaceoptie gepresenteerd krijgen waarin zo'n wijziging kan worden aangebracht.</para
+></note>
+
+</sect1>
+
+<sect1 id="action-restrictions">
+<title
+>Acties beperken</title>
+
+<para
+>&kde;-programma's zijn gebouwd rond het actieconcept. Acties kunnen op verschillende manieren worden geactiveerd, zoals via de menubalk, een van de werkbalken of een sneltoetscombinatie. <action
+>Document opslaan</action
+> is een voorbeeld van een actie. Als u de interne naam van de actie weet, dan kunt u een actie beperken. Als een actie beperkt is zal het niet langer verschijnen in de menubalk of werkbalk. De interne naam voor de actie <action
+>Document opslaan</action
+> is <option
+>action/file_save</option
+>. Het vergrendelraamwerk levert ook een set van meer abstracte beperkingen die kunnen worden gebruikt om functionaliteit uit te schakelen die niet wordt afgedekt door één actie. Een voorbeeld is de <option
+>shell-acces</option
+> beperking. Deze beperkt alle functionaliteit die de gebruiker toegang biedt tot een &UNIX;-shell.</para>
+
+<example>
+<title
+>Gebruikertoegang tot shells beperken</title>
+
+<para
+>Om te verhinderen dat de gebruiker toegang tot een commandoshell kan krijgen kunnen we actie <option
+>shell_acces</option
+> beperken door het volgende toe te voegen aan <filename
+>kdeglobals</filename
+>: </para
+> 
+
+<screen
+>[KDE Action Restrictions]
+shell_access=false</screen>
+
+<para
+>Omdat dit effect heeft op het &kde;-menu en de beschikbare programma's moeten we een bijwerking van de sycocadatabase forceren:</para>
+
+<screen
+><userinput
+><command
+>touch</command
+> <filename
+>$<envar
+>KDEDIR</envar
+>/share/services/update_ksycoca</filename
+></userinput
+></screen>
+
+<para
+>Meldt u nu opnieuw aan bij &kde; en controleer de volgende punten:</para>
+
+<itemizedlist>
+<listitem
+><para
+>Het &kmenu;</para
+></listitem>
+<listitem
+><para
+>in &konqueror;, <menuchoice
+><guimenu
+>Hulpmiddelen</guimenu
+><guimenuitem
+>Terminal openen</guimenuitem
+></menuchoice
+></para
+></listitem>
+<listitem
+><para
+><keycombo action="simul"
+>&Alt;<keycap
+>F2</keycap
+></keycombo
+> commando uitvoeren</para
+></listitem>
+</itemizedlist>
+</example>
+<para
+>Volledige documentatie over de beschikbare acties kunt u vinden op <ulink url="http://www.kde.org/areas/sysadmin/"
+>http://www.kde.org/areas/sysadmin/</ulink
+>.</para>
+
+<para
+>Enkele interessante acties ziet u hieronder:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><option
+>action/options_configure</option
+></term>
+<listitem
+><para
+>De optie <guimenuitem
+>Instellen...</guimenuitem
+> uit menu <guimenu
+>Instellingen</guimenu
+>.</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><option
+>action/help_report_bug</option
+></term>
+<listitem
+><para
+>De optie <guimenuitem
+>Bug rapporteren</guimenuitem
+> uit het menu <guimenu
+>Help</guimenu
+></para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><option
+>action/kdesktop_rmb</option
+></term>
+<listitem
+><para
+>&RMB; muisknopmenu op het bureaublad</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><option
+>action/kicker_rmb</option
+></term>
+<listitem
+><para
+>&RMB; muisknopmenu op het paneel</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><option
+>user/root</option
+></term>
+<listitem
+><para
+>Verberg alle acties of programma's die <systemitem class="username"
+>root</systemitem
+>-toegang vereisen.</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><option
+>shell_access</option
+></term>
+<listitem
+><para
+>Verbergt alle acties of toepassingen die toegang tot de shell bieden.</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><option
+>print/system</option
+></term>
+<listitem
+><para
+>Schakelt de optie uit om het afdruksysteem (backend) te selecteren.</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><option
+>lock_screen</option
+></term>
+<listitem
+><para
+>Of de gebruiker het scherm kan vergrendelen</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><option
+>start_new_session</option
+></term>
+<listitem
+><para
+>Of de gebruiker een tweede X-sessie mag starten (zie ook bij &kdm;)</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><option
+>opengl_screensavers</option
+></term>
+<listitem
+><para
+>Of de schermbeveiliging gebruik mag maken van OpenGL.</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><option
+>manipulatescreen_screensavers</option
+></term>
+<listitem
+><para
+>Sta schermbeveiligingen toe die niet het volledige scherm verbergen</para
+></listitem>
+</varlistentry>
+</variablelist>
+
+</sect1>
+
+<sect1 id="url-restrictions">
+<title
+>&URL;-beperkingen</title>
+
+<para
+>Er zijn drie typen beperkingen die kunnen worden toegepast op &URL;sen:</para>
+
+<variablelist>
+<varlistentry>
+<term
+>list</term>
+<listitem
+><para
+>Om te bepalen of de weergave van mappen is toegestaan.</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+>open</term>
+<listitem
+><para
+>Om te bepalen of bepaalde &URL;sen kunnen worden geopend</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+>Redirect</term>
+<listitem
+><para
+>Om te beheren of een &URL; een ander &URL; kan openen, ofwel automatisch, danwel via een hyperkoppeling.</para
+></listitem>
+</varlistentry>
+</variablelist>
+
+<para
+>De regels worden op de volgorde waarin ze zijn gedefinieerd nagelopen. De laatste regel die toepasbaar is op een &URL; bepaalt of de &URL; mag worden geopend.</para>
+
+<para
+>De volgende regels schakelen het openen van http en https &URL;sen buiten <systemitem class="domainname"
+>.ourcompany.com</systemitem
+> uit:</para>
+
+<screenco
+><areaspec>
+<area id="url_commas" coords="3"/>
+<area id="url_rule1" coords="3"/>
+<area id="url_rule2" coords="4"/>
+</areaspec>
+<screen
+>[KDE URL Restrictions]
+rule_count=2
+rule_1=open,,,,http,,,false
+rule_2=open,,,,http,*.ourcompany.com,,true</screen
+></screenco>
+
+<calloutlist>
+<callout arearefs="url_commas">
+<para
+>De eerste vier komma's slaan de selectiecriteria met respect tot het oorspronkelijke &URL; over. Dit gedeelte is alleen nodig bij regels voor redirect.</para
+> 
+</callout>
+<callout arearefs="url_rule1"
+><para
+><option
+>rule_1</option
+> verbiedt het openen van elke http of https &URL;</para
+></callout>
+<callout arearefs="url_rule2"
+><para
+><option
+>rule_2</option
+> staat het openen toe van elk http en https &URL; in het domein <systemitem class="domainname"
+>.ourcompany.com</systemitem
+>. Let op, het jokerteken <token
+>*</token
+> is alleen toegestaan aan het begin van een domein.</para
+></callout>
+</calloutlist>
+
+<para
+>De volgende regels maken dat de gebruiker niet langer door mappen op het lokale bestandssysteem kan bladeren als deze zich buiten zijn of haar persoonlijke map ($<envar
+>HOME</envar
+>) bevinden:</para>
+
+<screenco
+><areaspec>
+<area id="home_rule1" coords="3"/>
+<area id="home_rule2" coords="4"/>
+</areaspec>
+<screen
+>[KDE URL Restrictions]
+rule_count=2
+rule_1=list,,,,file,,,false
+rule_2=list,,,,file,,$HOME,true</screen
+></screenco>
+
+<calloutlist>
+<callout arearefs="home_rule1"
+><para
+><option
+>rule_1</option
+> verbiedt het weergeven van elke lokale map</para
+></callout>
+<callout arearefs="home_rule2"
+><para
+><option
+>rule_2</option
+> staat het weergeven toe van mappen in de gebruiker's eigen persoonlijke map ($<envar
+>HOME</envar
+>).</para
+></callout>
+</calloutlist>
+
+<para
+>$<envar
+>HOME</envar
+> en $<envar
+>TMP</envar
+> zijn speciale waarden om de persoonlijke map en de tijdelijke &kde;-map van de gebruiker aan te geven (zoals <filename class="directory"
+>/tmp/kde-bastian</filename
+>)</para>
+
+<para
+>De volgende regels maken dat de gebruiker niet langer lokale bestanden kan openen als die zich buiten zijn of haar persoonlijke map ($<envar
+>HOME</envar
+>) bevinden:</para>
+
+<screenco
+><areaspec>
+<area id="local_rule1" coords="3"/>
+<area id="local_rule2" coords="4"/>
+<area id="local_rule3" coords="5"/>
+</areaspec>
+<screen
+>[KDE URL Restrictions]
+rule_count=3
+rule_1=open,,,,file,,,false
+rule_2=open,,,,file,,$HOME,true
+rule_3=open,,,,file,,$TMP,true</screen
+></screenco>
+
+<calloutlist>
+<callout arearefs="local_rule1"
+><para
+><option
+>rule_1</option
+> verbiedt het openen van elk lokaal bestand</para
+></callout>
+<callout arearefs="local_rule2"
+><para
+><option
+>rule_2</option
+> staat het openen van bestanden in de gebruiker's eigen persoonlijke map ($<envar
+>HOME</envar
+>) toe.</para
+></callout>
+<callout arearefs="local_rule3"
+><para
+><option
+>rule_3</option
+> staat het openen van bestanden in de tijdelijke &kde;-map van de gebruiker toe. Dit is nodig voor bepaalde &kde;-programma's die een bestand of document eerst naar de tijdelijke map downloaden voordat het wordt geopend in een programma.</para
+></callout>
+</calloutlist>
+
+
+<para
+>De optie 'redirect' bepaalt of documenten vanaf een bepaalde locatie mogen refereren, ofwel automatisch, danwel handmatig via een hyperkoppeling, naar een andere locatie. Een set met standaardregels is aanwezig als algemeen beveilingsuitgangspunt. Bijvoorbeeld documenten van internet mogen niet refereren naar lokaal opgeslagen documenten.</para>
+
+<para
+>Bijvoorbeeld, als we de intranetserver <systemitem class="systemname"
+>www.mycompany.com</systemitem
+> de mogelijkheid willen geven om te refereren naar lokale bestanden kunnen we de volgende regel toevoegen:</para>
+
+<screen
+>[KDE URL Restrictions]
+rule_count=1
+rule_1=redirect,http,www.mycompany.com,,file,,,true</screen>
+
+<para
+>In plaats van een protocolnaam op te geven is het ook mogelijk om een complete groep protocollen te specificeren. Hiervoor zijn de volgende groepen gedefinieerd:</para>
+
+<variablelist>
+<varlistentry>
+<term
+>:local</term>
+<listitem
+><para
+>Protocollen die toegang verschaffen tot lokaal opgeslagen informatie. Voorbeelden zijn file:/, man:/, fonts:/, floppy:/</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+>:internet</term>
+<listitem
+><para
+>Algemene internetprotocollen zoals http en ftp</para
+></listitem>
+</varlistentry>
+</variablelist>
+
+<para
+>Informatie over protocollen is te vinden in <literal role="extension"
+>*.protocol</literal
+>-bestanden in de map <filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/share/services</filename
+>.</para>
+
+<para
+>De ingave <option
+>Class</option
+>= definieert de groep waarvan een protocol deel uit maakt: <userinput
+><command
+>grep</command
+> <option
+>Class=</option
+> <filename
+>$<envar
+>KDEDIR</envar
+>/share/services/*.protocol</filename
+></userinput
+></para>
+
+<para
+>Algemene regels:</para>
+
+<itemizedlist>
+<listitem
+><para
+>De protocollen :local mogen refereren naar elk ander protocol</para
+></listitem>
+<listitem
+><para
+>Het is altijd toegestaan om te refereren naar een :internet-protocol</para
+></listitem>
+<listitem
+><para
+>Niet alle protocollen zijn onderdeel van een groep, zoals bijvoorbeeld fish:/</para
+></listitem>
+</itemizedlist>
+
+</sect1>
+
+<sect1 id="configuration-modules">
+<title
+>Configuratiemodules</title>
+
+<para
+>&kde; heeft configuratiemodules voor het instellen van de verschillende aspecten van de &kde;-omgeving. Configuratiemodules verschijnen in het Configuratiecentrum, in de configuratiedialoog van een programma, of in beide.</para>
+
+<informalexample>
+<para
+>De proxy-configuratiemodule verschijnt in het Configuratiecentrum, maar ook als onderdeel van de dialoog <guilabel
+>Konqueror instellen</guilabel
+> in &konqueror;.</para>
+
+<para
+>Individuele configuratiemodules kunnen worden gestart met <command
+>kcmshell</command
+> <replaceable
+>module</replaceable
+></para>
+
+<para
+>Om de proxymodule te starten, gebruik:</para>
+<itemizedlist>
+<listitem
+><para
+><command
+>kcmshell</command
+> <filename
+>kde-proxy.desktop</filename
+></para
+></listitem>
+<listitem
+><para
+><command
+>kcmshell</command
+> proxy</para
+></listitem>
+</itemizedlist>
+
+<para
+><note
+><para
+>Niet alle toepassingen gebruiken configuratiemodules. Vaak is de configuratiedialoog een integraal onderdeel van het programma zelf.</para
+></note
+></para>
+</informalexample>
+
+<para
+>Alle configuratiemodules zijn strikt gesproken onderdeel van het &kde;-menu.</para>
+
+<itemizedlist>
+<listitem>
+<para
+>De modules die in het Configuratiecentrum zichtbaar zijn hebben normaliter een <literal role="extension"
+>.desktop</literal
+>-bestand in <filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/share/applications/kde</filename
+>, en zijn gesorteerd onder het verborgen menu <guimenu
+>Settings-Modules</guimenu
+> door de <filename
+>kde-settings.menu</filename
+>, ingesloten in <filename
+>kde-essential.menu</filename
+></para>
+<screen
+><userinput
+><command
+>kbuildsycoca</command
+> <option
+>--menutest</option
+> 2&gt; /dev/null | <command
+>grep</command
+> Settings-Modules</userinput
+></screen>
+</listitem>
+<listitem>
+<para
+>Programmaspecifieke modules hebben normaliter een <literal role="extension"
+>.desktop</literal
+>-bestand in <filename
+>$<envar
+>KDEDIR</envar
+>/share/applnk/.hidden</filename
+>, dat overeenkomt met het verborgen .hidden-menu, ingesloten als resultaat van <markup
+>&lt;KDELegacyDirs/&gt;</markup
+>.</para>
+<screen
+><userinput
+><command
+>kbuildsycoca</command
+> <option
+>--menutest</option
+> 2&gt; /dev/null | <command
+>grep</command
+> .hidden</userinput
+></screen>
+</listitem>
+<listitem
+><para
+>In &kde; 3.3 is het mogelijk om het Configuratiecentrum te bewerken met <application
+>kcontroledit</application
+>. <application
+>kcontroledit</application
+> werkt zoals <application
+>kmenuedit</application
+>, wijzigingen zijn alleen van toepassing op de huidige gebruiker. Gebruik <application
+>kiosktool</application
+> om de wijzingen op iedereen toe te passen.</para
+></listitem
+> 
+</itemizedlist>
+
+<para
+>Individuele configuratiemodules kunnen worden uitgeschakeld door het volgende toe te voegen aan <filename
+>kdeglobals</filename
+>:</para>
+
+<screen
+>[KDE Control Module Restrictions]
+<replaceable
+>module-id</replaceable
+>=false</screen>
+<para
+>Bijvoorbeeld, om de proxymodule uit te schakelen, gebruik</para>
+<screen
+>[KDE Control Module Restrictions]
+kde-proxy.desktop=false</screen>
+<para
+>Controleer het Configuratiecentrum en de dialoog <guilabel
+>Konqueror instellen</guilabel
+> of de proxyconfiguratie er nog is.</para>
+
+</sect1>
+<!-- 
+<sect1 id="making-it-work">
+<title
+>Making it Work</title>
+
+Making It Work
+KDE 3.2: Set $KDEDIRS from startkde script
+Distribute profiles to all clients
+
+</para>
+</sect1>
+-->
+</chapter>
+
+<chapter id="the-lazy-admin">
+<title
+>De luie systeembeheerder</title>
+
+<!-- This section appears to need quite a lot of additional words to -->
+<!-- make sense. Perhaps it would be better to comment it out if it -->
+<!-- can't be updated before the next release (Phil) -->
+<!-- FIXME: Commented it out until it's got some more content fleshing it -->
+<!-- out (Lauri)
+
+<sect1 id="lazy-admin-overview">
+<title
+>Overview</title>
+
+<para>
+The Lazy Admin
+Overview
+Deployment
+	How to get &kde; available on many clients
+Remote Desktop Sharing
+Take a look at someone else desktop
+DCOP
+	The DCOP command line tool makes it possible to control &kde; applications from the command line
+KDialog
+	A versatile tool to use standard &kde; dialogs in your own scripts
+
+
+
+Deployment
+Thin Clients
+Installing Software
+= AutoYaST
+= KickStart
+Maintaining Settings
+= /etc/kderc, other settings
+= Use rsync to copy files around
+= Shared filesystem such as NFS
+o store profiles themselves on NFS
+
+
+
+http://www.suse.de/~nashif/autoinstall/index.html
+
+</para>
+</sect1>
+-->
+<sect1 id="remote-desktop-sharing">
+<title
+>Bureaublad op afstand delen</title>
+
+<para
+>Bureaublad delen maakt het mogelijk dat gebruikers op afstand het bureaublad van de huidige gebruiker kunnen observeren en optioneel besturen. De gebruiker op afstand dient een uitnodiging te ontvangen en het is mogelijk om een wachtwoordbeschermde uitnodiging te maken. Dit is ideaal voor technische ondersteuningsteams of systeembeheerders om toegang te krijgen op de bureaubladen van de gebruikers om zo problemen op te lossen of de gebruiker te leiden door een bepaalde procedure.</para>
+
+<para
+>Bureaublad delen betrekt twee programma's: &krfb; (&kde;' remote frame buffer, een VNC-server) en &krdc; (&kde; remote desktop connection, een VNC-client).</para>
+
+<para
+>&krfb; kan worden gebruikt door iedere gebruiker om uitnodigingen aan te maken en te beheren. Uitnodigingen maken een eenmalig wachtwoord aan en staan het toe dat de ontvanger verbinding maakt met uw bureaublad. Standaard is deze geldig voor slechts één succesvolle verbinding, en verloopt na een uur wanneer niet gebruikt.</para>
+
+<para
+>Inkomende verbindingen worden afgehandeld door de kded-module 'kinetd'. U kunt het commando <userinput
+><command
+>dcop</command
+>kded kinetd services</userinput
+> gebruiken om na te gaan of het draait. &krfb; wacht standaard op verbindingen op poort 5900. Als een inkomende verbinding wordt aangemaakt, dan zal een dialoog worden geopend om de gebruiker om een bevestiging te vragen.</para>
+
+<!-- TODO: Write a bit more here, with a walk through maybe? -->
+
+</sect1>
+
+<sect1 id="kde-diy">
+<title
+>&kde; doehetzelf - Uw eigen gereedschappen bouwen</title>
+
+<sect2 id="dcop">
+<title
+>DCOP</title>
+
+<para
+>Desktop COmmunication Protocol, <acronym
+>DCOP</acronym
+>, is een lichtgewicht mechanisme voor interprocescommunicatie. <acronym
+>DCOP</acronym
+> staat interactie toe tussen de gebruiker en de programma's die op dat moment draaien. &kde; levert twee programma's waarmee <acronym
+>DCOP</acronym
+> kan worden aangeroepen: <application
+>dcop</application
+>, een commandoregelprogramma, en <application
+>kdcop</application
+>, een grafisch programma. </para>
+<para
+>Enkele wenken over het gebruik van <command
+>dcop</command
+>: </para>
+
+<para>
+<itemizedlist>
+<listitem>
+<para
+><command
+>dcop</command
+> [opties] [toepassing [object [functie [arg1] [arg2] ... ] ] ] </para>
+</listitem>
+<listitem>
+<para
+>Programma's die meer dan één venster tegelijk kunnen openen zullen worden weergegeven als &lt;toepassing&gt;-<acronym
+>PID</acronym
+> </para>
+</listitem>
+<listitem>
+<para
+>Alle argumenten zijn hoofdlettergevoelig. setFullScreen en setfullscreen zijn dus twee verschillende functies. </para>
+</listitem>
+<listitem>
+<para
+>Het jokerteken * kan worden gebruikt in de toepassings- en objectargumenten. <screen
+><prompt
+>&percnt; </prompt
+><userinput
+><command
+>dcop</command
+><option
+> kon*</option
+></userinput>
+konqueror-16006
+konsole-8954
+</screen>
+</para>
+</listitem>
+
+</itemizedlist>
+
+</para>
+
+<para
+>Hieronder vindt u enkele voorbeeldcommando's en de bijhorende uitvoer: </para>
+
+<informalexample>
+<screen
+><prompt
+>&percnt; </prompt
+><userinput
+><command
+>dcop</command
+><option
+> konsole*</option
+></userinput>
+konsole-8954
+</screen>
+<para
+>Één &konsole;-exemplaar draait met <acronym
+>pid</acronym
+> 8954.</para>
+
+<screen
+><prompt
+>&percnt; </prompt
+><userinput
+><command
+>dcop</command
+><option
+> konsole-8954</option
+></userinput>
+KBookmarkManager-.../share/apps/kfile/bookmarks.xml
+KBookmarkManager-.../share/apps/konqueror/bookmarks.xml
+KBookmarkNotifier
+KDebug
+MainApplication-Interface
+konsole (default)
+konsole-mainwindow#1
+ksycoca
+session-1
+session-2
+session-3
+session-4
+</screen>
+<para
+>Hier ziet u dat er vier sessies actief zijn.</para>
+
+<screen
+><prompt
+>&percnt; </prompt
+><userinput
+><command
+>dcop</command
+><option
+> konsole-8954</option
+><option
+> konsole</option
+></userinput>
+QCStringList interfaces()
+QCStringList functions()
+int sessionCount()
+QString currentSession()
+QString newSession()
+QString newSession(QString type)
+QString sessionId(int position)
+void activateSession(QString sessionId)
+void nextSession()
+void prevSession()
+void moveSessionLeft()
+void moveSessionRight()
+bool fullScreen()
+void setFullScreen(bool on)
+ASYNC reparseConfiguration()
+</screen>
+<para
+>Dit zijn de opties van het hoofdprogramma van &konsole;. </para>
+
+<screen
+><prompt
+>&percnt; </prompt
+><userinput
+><command
+>dcop</command
+><option
+> konsole-8954</option
+><option
+> session-1</option
+></userinput>
+QCStringList interfaces()
+QCStringList functions()
+bool closeSession()
+bool sendSignal(int signal)
+void clearHistory()
+void renameSession(QString name)
+QString sessionName()
+int sessionPID()
+QString schema()
+void setSchema(QString schema)
+QString encoding()
+void setEncoding(QString encoding)
+QString keytab()
+void setKeytab(QString keyboard)
+QSize size()
+void setSize(QSize size)
+</screen>
+<para
+>Dit zijn de opties voor de eerste sessie, session-1.</para>
+
+<screen
+><prompt
+>&percnt; </prompt
+><userinput
+><command
+>dcop</command
+><option
+> konsole-8954</option
+><option
+> konsole</option
+><option
+> setFullScreen</option
+><parameter
+> true</parameter
+></userinput
+>
+</screen>
+<para
+>Dit zet &konsole; op volledig-scherm.</para>
+
+</informalexample>
+
+<para
+>Als er meer dan één toepassing/object draait, welke moet u dan gebruiken? Is er een referentie? </para>
+<screen
+><prompt
+>&percnt; </prompt
+><userinput
+><command
+>echo</command
+><option
+> $KONSOLE_DCOP</option
+></userinput>
+DCOPRef(konsole-7547,konsole)
+
+<prompt
+>&percnt; </prompt
+><userinput
+><command
+>dcop</command
+><option
+> $KONSOLE_DCOP</option
+><option
+> newSession</option
+></userinput>
+session-6
+
+<prompt
+>&percnt; </prompt
+><userinput
+><command
+>dcopstart</command
+><option
+> konsole</option
+></userinput>
+konsole-9058
+
+
+#!/bin/sh
+konsole=$(dcopstart konsole-script)
+session=$(dcop $konsole konsole currentSession)
+dcop $konsole $session renameSession Local
+
+session=$(dcop $konsole konsole newSession)
+dcop $konsole $session renameSession Remote
+
+session=$(dcop $konsole konsole newSession)
+dcop $konsole $session renameSession Code
+dcop $konsole $session sendSession 'cd /mijn/werk/map'
+
+</screen>
+
+</sect2>
+
+<sect2 id="kdialog">
+<title
+>KDialog</title>
+<subtitle
+>&kde; DIY - bouw uw eigen gereedschappen</subtitle>
+
+<para
+>U kunt &kde;-dialogen gebruiken in uw eigen scripts, en zo de kracht van &UNIX; shellscripting met het gebruikersgemak van &kde; combineren.</para>
+
+<screen
+><userinput
+><command
+>kdialog</command
+> <option
+>--msgbox 'U hebt nieuwe e-mail!'</option
+></userinput
+></screen>
+
+<screen
+><userinput
+><command
+>kdialog</command
+> <option
+>--title 'Nieuwe berichten'</option
+> <option
+>--msgbox 'U hebt nieuwe e-mail!'</option
+></userinput
+></screen>
+
+<para
+>Het <application
+>KDialog</application
+>-gedeelte in de titelbalk kan worden vervangen via de optie <option
+>--caption</option
+></para>
+
+<screen
+><userinput
+><command
+>kdialog</command
+> <option
+>--title 'Nieuwe berichten'</option
+> <option
+>--msgbox 'U hebt nieuwe e-mail!'</option
+> <option
+>--dontagain myfile:mykey</option
+></userinput
+></screen>
+
+<para
+>Bewaart of het dialoogvenster in de toekomst mag worden weergegeven in het bestand  <filename
+>$<envar
+>KDEHOME</envar
+>/share/config/myfile</filename
+> door er de volgende regels in te schrijven:</para>
+
+<screen
+>[Notification Messages]
+mykey=false</screen>
+
+<para
+>in plaats van <option
+>--msgbox</option
+> kunt u ook<option
+>--sorry</option
+> en <option
+>--error</option
+> gebruiken. Bijvoorbeeld, u kunt <command
+>kdialog</command
+> <option
+>--sorry 'Het netwerk is onbereikbaar'</option
+> gebruiken, of <command
+>kdialog</command
+> <option
+>-error 'De postbus kon niet worden geopend'</option
+>.</para>
+
+<para
+>Het is ook mogelijk om berichtvensters te maken die ja of nee als antwoord accepteren.</para>
+
+<screen
+><command
+>kdialog</command
+> <option
+>--yesno 'Wilt u verbinding maken
+met internet?'</option
+> <command
+>echo</command
+> <returnvalue
+>$?</returnvalue
+></screen>
+
+<informaltable>
+<tgroup cols="2">
+<thead>
+<row>
+<entry
+>Retourwaarde</entry>
+<entry
+>Betekenis</entry>
+</row>
+</thead>
+<tbody>
+<row
+><entry
+>0</entry
+><entry
+>Ja, OK, doorgaan</entry
+></row>
+<row
+><entry
+>1</entry
+><entry
+>Nee</entry
+></row>
+<row
+><entry
+>2</entry
+><entry
+>Annuleren</entry
+></row>
+</tbody>
+</tgroup>
+</informaltable>
+
+<para
+>Als u het resultaat niet meteen in een variabele gebruikt, zorg er dan voor dat u het bewaart. Het volgende commando zal $? namenlijk vullen met een nieuwe waarde. U kunt <option
+>dontagain</option
+> hier ook gebruiken, het onthoudt de keuze van de gebruiker en geeft die de volgende keren terug zonder het dialoog te weergeven.</para>
+
+<para
+>Verdere variaties zijn:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><option
+>--warningyesno</option
+></term>
+<listitem>
+<para
+>net als <option
+>--yesno</option
+>, maar met een ander pictogram</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><option
+>--warningcontinuecancel</option
+></term>
+<listitem
+><para
+>Met de knoppen <guibutton
+>Doorgaan</guibutton
+> en <guibutton
+>Annuleren</guibutton
+>.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><option
+>--warningyesnocancel</option
+></term>
+<listitem
+><para
+>Met de knoppen <guibutton
+>Ja</guibutton
+>, <guibutton
+>Nee</guibutton
+> en <guibutton
+>Annuleren</guibutton
+>. Bijvoorbeeld:</para>
+<screen
+><command
+>kdialog</command
+> <option
+>--warningyesnocancel 'Wilt u de
+wijzigingen opslaan?'</option
+></screen>
+</listitem>
+</varlistentry>
+</variablelist>
+
+<screen
+><command
+>kdialog</command
+> <option
+>--inputbox "Voer uw naam in:" "Uw naam"</option
+></screen>
+
+<para
+>Het resultaat wordt naar stdout gestuurd. Om deze in een variabele te stoppen kunt u <userinput
+>name=$(kdialog --inputbox "Voer uw naam in:" "Uw naam")</userinput
+> gebruiken. Het laatste argument is optioneel, het wordt gebruikt om het invoerveld van de dialoog te vullen met voorbeeldtekst.</para>
+
+<screen
+><userinput
+><varname
+>password</varname
+>=$(<command
+>kdialog</command
+> <option
+>--password "Voer uw wachtwoord in:"</option
+>)</userinput
+></screen>
+
+<para
+>De optie <option
+>--dontagain</option
+> werkt niet met <option
+>--inputbox</option
+> of <option
+>--password</option
+></para>
+
+<para
+>Er zijn twee dialogen die de gebruiker laten kiezen uit een lijst:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><option
+>--menu</option
+></term>
+<listitem>
+<para
+>Laat de gebruiker één item uit een lijst kiezen.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><option
+>--checklist</option
+></term>
+<listitem>
+<para
+>Laat de gebruiker één of meer items uit een lijst kiezen.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+<screen
+><userinput
+><varname
+>city</varname
+>=$(<command
+>kdialog</command
+> <option
+>--menu "Selecteer een stad" a Londen b Madrid c Parijs d Berlijn</option
+>)</userinput
+></screen>
+
+<para
+><varname
+>$city</varname
+> zal <returnvalue
+>a</returnvalue
+>, <returnvalue
+>b</returnvalue
+>, <returnvalue
+>c</returnvalue
+> or <returnvalue
+>d</returnvalue
+> terug geven.</para>
+
+<screen
+><userinput
+><varname
+>city</varname
+>=$(<command
+>kdialog</command
+> <option
+>--checklist "Steden selecteren:" a Londen off b Madrid on c Parijs on d Berlijn off</option
+>)</userinput
+></screen>
+
+<para
+>Madrid en Parijs worden voorgeselecteerd. Het resultaat met Madrid en Parijs geselecteerd is <returnvalue
+>"b"</returnvalue
+> <returnvalue
+>"c"</returnvalue
+>.</para>
+
+<para
+>Als u de optie <option
+>--separate-output</option
+> toevoegt, dan zullen <returnvalue
+>b</returnvalue
+> en <returnvalue
+>c</returnvalue
+> elk op een eigen regel worden uitgevoerd, wat het verwerken van het resultaat vereenvoudigd.</para>
+
+<screen
+>file=$(kdialog --getopenfilename $HOME)
+file=$(kdialog --getopenfilename $HOME "*.png *.jpg|Afbeeldingsbestanden")
+file=$(kdialog --getsavefilename $HOME/BewaarMe.png)
+file=$(kdialog --getexistingdirectory $HOME)</screen>
+
+</sect2>
+
+</sect1>
+
+</chapter>
+&groupware-with-kontact; </part>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: xml
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:0
+sgml-indent-data:true
+sgml-parent-document:("index.docbook" "book" "part")
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

@@ -1,0 +1,652 @@
+<chapter id="tinkering-under-the-hood">
+<!-- Uncomment the <*info
+> below and add your name to be -->
+<!-- credited for writing this section. -->
+
+<!--
+<chapterinfo>
+<authorgroup>
+<author>
+<firstname
+>Your First Name here</firstname>
+<surname
+>Your Surname here </surname>
+</author>
+</authorgroup>
+</chapterinfo>
+-->
+
+<title
+>Scoprire il funzionamento di &kde;</title>
+
+<sect1 id="hand-editing-config-files">
+
+<sect1info>
+<author
+><personname
+> <firstname
+>Nicolas</firstname
+> <surname
+>Goutte</surname
+> </personname
+> <email
+>goutte@kde.org</email
+> </author>
+</sect1info>
+
+<title
+>Modifica manuale dei file di configurazione</title>
+
+<sect2 id="hand-editing-intro">
+<title
+>Introduzione</title>
+<para
+>In &kde; i file di configurazione sono facili da modificare con un semplice editor di testi come &kate;, dato che sono file di testo.</para>
+
+<para
+>Un esempio di un file di testo:</para>
+
+<programlisting
+>[General]
+AutoSave=1
+LastFile=/var/tmp/test.txt</programlisting>
+
+<para
+>I file della configurazione specifica dell'utente sono memorizzati in <filename class="directory"
+>.kde/share/config</filename
+> (cambia <filename
+>.kde</filename
+> con la tua impostazione $<envar
+>KDEHOME</envar
+>) e quelli globali nelle sottocartelle del percorso di installazione di &kde; <filename class="directory"
+>share/config</filename
+>. (Puoi trovare questo percorso eseguendo il comando <command
+>kde-config --prefix</command
+>). I nomi dei loro file solitamente finiscono in rc (senza il punto iniziale), per esempio <filename
+>kopeterc</filename
+>.</para>
+
+<warning
+><para
+>Modificare a mano i file di configurazione può rovinare la stabilità della tua installazione &kde;. Le applicazioni solitamente non controllano quello che leggono dai file di configurazione. Questo significa che possono essere disturbate da quello che prendono come configurazione e potrebbero andare in crash.</para
+></warning>
+
+</sect2>
+
+<sect2 id="hand-editing-backups">
+<title
+>Copia di riserva</title>
+
+<para
+>Così la prima regola è di fare una copia di riserva del tuo file prima di modificarlo. La copia di riserva è migliore se memorizzata fuori da qualsiasi sottocartella di <filename class="directory"
+>.kde</filename
+> (o la corrispondente cartella $<envar
+>KDEHOME</envar
+>). Le copie di riserva sono comunque una buona idea in caso di un grave danno di &kde; che distruggerebbe importanti file di configurazione (per esempio le tue impostazioni di &kmail;, che sono nel file <filename
+>kmailrc</filename
+>). (Un danno così grave non dovrebbe avvenire ma può comunque succedere.)</para>
+</sect2>
+
+<sect2 id="hand-editing">
+<title
+>Modificare</title>
+
+<para
+>Allora, perché toccare i file di configurazione? Bene, per prima cosa ne hai bisogno quando vuoi forzare la modalità KIOSK. Forse uno sviluppatore ti ha chiesto di aggiungere una voce per aiutarlo a risolvere un problema con l'applicazione. Forse vuoi risolvere un problema senza dover rimuovere tutta la cartella <filename class="directory"
+>.kde</filename
+>. Forse vuoi imparare di più sulla complessità di &kde;.</para>
+
+<para
+>Comunque, qualunque sia la ragione, vuoi modificare a mano un file di configurazione.</para>
+
+<para
+>Quando pianifichi di modificare questo tipo di file, assicurati che l'applicazione che stai usando non è in esecuzione. Se è uno dei file di configurazione base, prendi in considerazione di modificare il file mentre &kde; non è proprio in esecuzione.</para>
+
+<para
+>Pronto? Allora, fai una copia di riserva del file (Te l'ho già detto?), avvia il tuo editor preferito (prendiamo per esempio &kate;), carica il file (Stai attento a caricarlo come UTF-8, &kate; lo mostra come <quote
+>utf8</quote
+>).</para>
+
+<para
+>Adesso hai un file simile a questo:</para>
+
+<programlisting
+>[Group]
+Key1=Value1
+Key2=Value2
+Key3=Value3</programlisting>
+
+<para
+>Adesso lo puoi modificare (con attenzione!) e quindi salvarlo (Stai attento che sia nuovamente <acronym
+>UTF-8</acronym
+>).</para>
+
+<para
+>Adesso puoi provare l'applicazione e se non sia avvia più correttamente, chiudila e ripristina la copia di riserva del file di configurazione.</para>
+
+<itemizedlist>
+<title
+>Informazioni correlate</title>
+
+
+<listitem
+><para
+><xref linkend="kde-for-administrators"/> ha più informazioni sulla struttura delle cartelle di &kde;, per aiutarti a trovare il file che hai bisogno di modificare.</para>
+</listitem>
+
+</itemizedlist>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="scripting-the-desktop">
+<title
+>Scrivere uno script per il desktop</title>
+
+<para
+>&kde; fornisce un potente sistema di comunicazione interprocesso in &DCOP;, il protocollo di comunicazione del desktop (Desktop COmmmunication Protocol). Usando &DCOP;, puoi controllare un'ampia varietà di funzioni in &kde; dalla riga di comando o da uno script scritto nella tua lingua preferita. Puoi anche ottenere informazioni da applicazioni &kde;: per esempio, molti player multimediali di &kde; forniscono metodi di richiesta al player per avere informazioni sulla traccia in riproduzione.</para>
+
+<para
+>Generalmente parlando, ogni applicazione &kde; fornisce una o più <firstterm
+>interfacce</firstterm
+> &DCOP; che a loro volta forniscono metodi (o, se preferisci, funzioni) che un'altra applicazione può chiamare. Quindi, il primo passo per usare &DCOP;, è di trovare il metodo appropriato per il compito. La strada più veloce per fare ciò è usare l'interfaccia utente <application
+>kdcop</application
+> per i metodi di &DCOP; disponibili.</para>
+
+<para
+>Avvia <application
+>kdcop</application
+> da una &konsole; o dalla mini-<acronym
+>CLI</acronym
+> (la finestra che appare premendo <keycombo action="simul"
+>&Alt;<keycap
+>F2</keycap
+> </keycombo
+>). La finestra <application
+>kdcop</application
+> mostra le applicazioni correntemente in esecuzione che forniscono interfacce &DCOP;, usando una vista ad albero. In generale, per trovare il metodo corretto occorre una piccola ricerca attraverso la vista ad albero, ma un consiglio utile è che l'interfaccia marcata <quote
+>(predefinita)</quote
+> solitamente contiene le funzioni usate più frequentemente.</para>
+
+
+
+<para
+>Per verificare che la funzione faccia ciò che ci aspettiamo, fai doppio clic sulla voce <guilabel
+>impostaColore</guilabel
+>. Per impostare il colore <varname
+>c</varname
+>, fai clic sul pulsante del selettore colore, e scegli un colore. Se il colore deve essere il colore A con la casella, configura l'impostazione. Fai clic su <guilabel
+>OK</guilabel
+> e il colore di sfondo è impostato.</para>
+
+<para
+>Per accedere al metodo &DCOP; dal tuo linguaggio di scripting preferito, puoi usare sia la connessione &DCOP;, se disponibile nel modulo kdebindings, o chiamare l'applicazione a riga di coamando <command
+>dcop</command
+>. Per un uso semplice, chiamare l'applicazione a riga di comando <command
+>dcop</command
+> è sufficiente.</para>
+
+<para
+>Specifichiamo l'applicazione, interfaccia e metodo in quel modo, seguiti dagli argomenti nello stesso ordine nel quale sono mostrati in <application
+>kdcop</application
+>. <command
+>dcop</command
+> ha una grande varietà di opzioni: guarda l'output di <userinput
+><command
+>dcop</command
+> <option
+>--help</option
+></userinput
+>.</para>
+
+<para
+>Abbiamo visto abbastanza teoria: è ora di fare un esempio:</para>
+
+<example>
+<title
+>Uno script per cambiare il colore di sfondo con &DCOP;</title>
+
+<para
+>Con l'applicazione a riga di comando <command
+>dcop</command
+> e un po' di Perl, faremo un semplice script che cambi ciclicamente lo sfondo del desktop attraverso lo spettro.</para>
+
+<para
+>Per prima cosa, cerchiamo il metodo appropriato con <application
+>kdcop</application
+>. Per questo esempio, taglieremo corto: il metodo che vogliamo è <menuchoice
+><guimenu
+>kdesktop</guimenu
+><guisubmenu
+>KBackgroundIface</guisubmenu
+><guimenuitem
+>setColor</guimenuitem
+> </menuchoice
+>. I tipi degli argomenti e dei parametri restituiti della funzione vengono mostrati nello stile del linguaggio C++. Per <methodname
+>setColor</methodname
+>, gli argomenti sono un colore, <varname
+>c</varname
+>, che specifica il nuovo colore dello sfondo, e un valore booleano (vero o falso), <varname
+>isColorA</varname
+>, che specifica se il colore è il primo o il secondo (questo è utile per impostare i gradienti eccetera).</para>
+
+<para
+>Per usare il nostro metodo<methodname
+>setColor</methodname
+> nella riga di comando, scriviamo ciò che segue: <screen
+><prompt
+>%</prompt
+> <userinput
+><command
+>dcop</command
+> kdesktop KBackgroundIface setColor '#ffffff' false</userinput
+>
+</screen>
+</para>
+
+<para
+>Per specificare il colore, usiamo il valore esadecimale RGB, come usato in &HTML;. Nota che è chiuso in apici singole per proteggere il <token
+>#</token
+> dalla shell.</para>
+
+<para
+>Per trovare il valore esadecimale RGB di un colore, apri una qualsiasi finestra di scelta colore in un'applicazione &kde; (per esempio, in &kcontrolcenter;, <menuchoice
+><guimenu
+>Aspetto &amp; Temi</guimenu
+><guimenuitem
+>Colori</guimenuitem
+> </menuchoice
+>), seleziona il colore che desideri e usa il valore dato nella casella di testo <guilabel
+>HTML</guilabel
+>.</para>
+
+
+<para
+>Ecco, è tutto quello di cui abbiamo bisogno da &DCOP;; adesso è necessario solamente scriverci uno script. È una implementazione (molto!) grezza: <programlisting
+><![CDATA[
+$min=49;  # Minimum value of R, G, or B colour
+$max=174; # Maximum value of R, G, or B colour
+$step=5;  # Amount to step colour by on each step
+$sleeptime=15; # Interval in seconds between each step
+
+@start = ($max, $min, $min);
+@colour = @start;
+
+while (1) {
+        foreach (0..5) {
+                my $which = $_ % 3; # Which colour (R, G or B) to change
+                my $updown = $_ % 2; # Whether to increase or decrease the colour value
+                do {
+                        if ($updown == 0) { $colour[$which]+=$step; }
+                        if ($updown == 1) { $colour[$which]-=$step; }
+                        my $dcopcall=sprintf "dcop kdesktop KBackgroundIface setColor '#%x%x%x' true\n", @colour;
+                        system($dcopcall);
+                        sleep $sleeptime;
+                        } while (($colour[$which] 
+>= $min) and ($colour[$which] <= $max));
+                }
+}
+]]>
+</programlisting>
+</para>
+
+<para
+>Avvia semplicemente lo script senza nessun argomento, e cambierà ciclicamente il colore di sfondo attraverso uno spettro leggermente mutato finché non viene ucciso. <foreignphrase lang="fr"
+>Voil&agrave;</foreignphrase
+>!</para>
+
+</example>
+
+<para
+>Naturalmente, Perl non è l'unico linguaggio che puoi usare per scrivere script con &DCOP;&mdash;se preferisci lo scripting shell, è disponibile anch'esso:</para>
+
+<example>
+<title
+>Impostare uno sfondo da internet</title>
+
+<para
+>Lo script seguente prende l'immagine principale dal fumetto <quote
+>User friendly</quote
+> e lo imposta come uno sfondo desktop, usando gli strumenti comunemente disponibili e un po' di &DCOP;:</para>
+
+<programlisting
+><![CDATA[
+#!/bin/sh
+COMICURL=`wget -qO - http://www.userfriendly.org/static/index.html | \
+          grep Latest | sed -e "s,.*SRC=\",," -e "s,\"
+>.*,,"`
+TMPFILE=`mktemp /tmp/$0.XXXXXX` || exit 1
+wget -q -O $TMPFILE $COMICURL
+dcop kdesktop KBackgroundIface setWallpaper $TMPFILE 1
+]]>
+</programlisting>
+
+<para
+>La prima riga dopo #!/bin/sh usa <command
+>wget</command
+> e qualche espressione regolare per estrarre la posizione dell'immagine dalla risorsa &HTML; della pagina principale. La seconda e terza riga scaricano l'immagine, e infine, <command
+>dcop</command
+> imposta l'immagine scaricata come sfondo.</para>
+
+</example>
+
+
+<!-- <itemizedlist>
+<title
+>Related Information</title>
+<listitem
+><para
+>to be written</para>
+</listitem>
+</itemizedlist
+> -->
+
+
+</sect1>
+
+
+<sect1 id="adding-extra-keys">
+<title
+>Aggiungere combinazioni di tasti extra a &kde;</title>
+
+<para
+>Molte tastiere moderne contengono tasti extra che non sono assegnati come impostazione predefinita a nessuna azione.</para>
+
+<para
+>I tasti <quote
+>Multimedia</quote
+> generano spesso un segnale, e può essere scelto semplicemente come combinazione di tasto con un'applicazione a piacere scegliendo qualsiasi altro tasto. Qualche tasto tuttavia, non è individuato e premendolo in una <guilabel
+>Configura scorciatoie</guilabel
+> non ha alcun effetto.</para>
+
+<para
+>Alcuni laptop IBM, d'altra parte, hanno tasti extra vicini alle frecce di sinistra e di destra, che appaiono come <guiicon
+>pagina sinistra</guiicon
+> e <guiicon
+>pagina destra</guiicon
+>.</para>
+
+<procedure>
+<step
+><para
+>Usa <command
+>xev</command
+> per trovare il codice dei tasti. In questo caso sono 233 e 234 </para
+></step>
+<step
+><para
+>Scegli i simboli dei tasti. Qua c'è una varietà abbastanza grande di quelli che non sono usati come predefiniti, così molti sono liberi. Puoi trovare la lista in <filename
+>/usr/X11R6/include/X11/keysymdef.h</filename
+> (o il suo equivalente nel sistema).</para
+></step>
+<step
+><para
+>Crea un file nella tua cartella home chiamata <filename
+>.Xmodmap</filename
+>, e aggiungilo al seguente:</para>
+<screen
+>keycode 233 = Next_Virtual_Screen
+keycode 234 = Prev_Virtual_Screen</screen>
+</step>
+<step
+><para
+>Avvia il comando <userinput
+><command
+>xmodmap</command
+> <filename
+>~/.Xmodmap</filename
+></userinput
+></para
+></step>
+</procedure>
+
+<para
+>A questo punto, dovresti essere in grado di avviare <command
+>xev</command
+> nuovamente e vedere che i tasti generano ora il simbolotasto che hai assegnato. Puoi semplicemente assegnarli a qualsiasi azione normale.</para>
+
+<itemizedlist>
+<title
+>Informazioni correlate</title>
+<listitem
+><para
+>Puoi vedere il manuale di <command
+>xev</command
+> scrivendo <userinput
+>man:/xev</userinput
+> in una finestra di &konqueror; o scrivendo <userinput
+><command
+>man</command
+> xev</userinput
+> in un terminale.</para
+></listitem>
+</itemizedlist>
+
+</sect1>
+
+<sect1 id="keys-for-scripts">
+<title
+>Aggiungere combinazioni di tasti per nuove azioni</title>
+
+<para
+>La maggior parte delle azioni sia nel desktop che nelle applicazioni sono subito disponibili per essere assegnate a una combinazione di tasti. Se l'azione per cui vuoi una scorciatoia è qualcosa che hai scritto da te, o è comunque non disponibile, puoi ancora assegnarle una scorciatoia.</para>
+
+<para
+>Per unire le due sezioni precedenti, forse vuoi assegnare un tasto altrimenti inutilizzato della tua tastiera in uno script o comando dcop. Il nostro esempio qua sarebbe di assegnare i due tasti che abbiamo aggiunto nel <xref linkend="adding-extra-keys"/> per andare al precedente o al prossimo desktop virtuale, due funzioni per le quali avrai bisogno di DCOP (come discusso nel<xref linkend="scripting-the-desktop"/>).</para>
+
+<para
+>Questo può essere realizzato facilmente usando il metodo seguente:</para>
+
+<procedure>
+<step>
+<para
+>Apri &kcontrol;, e nella sezione <guilabel
+>Regionali e Accesso facilitato &amp;</guilabel
+>, seleziona <guilabel
+>Azioni di immissione</guilabel
+></para>
+</step>
+<step>
+<para
+>Scegli <guibutton
+>Nuova azione</guibutton
+></para>
+</step>
+<step>
+<para
+>Dai il nome alla nuova azione, &eg; <userinput
+>Prossimo schermo virtuale</userinput
+></para>
+</step>
+<step>
+<para
+>Seleziona <guilabel
+>Scorciatoia tastiera ->Comando/URL (semplice)</guilabel
+> per <guilabel
+>Action type:</guilabel
+></para>
+</step>
+<step>
+<para
+>Nella scheda <guilabel
+>Scorciatoia da tastiera</guilabel
+>, fai clic sul pulsante che vorresti usare per dare l'avvio al comando. Per questo esempio, vorresti premere quello con l'immagine <guiicon
+>Prossima Pagina</guiicon
+>. <keysym
+>Prossimo_schermo_virtuale</keysym
+> apparirà nell'immagine del tasto.</para>
+</step>
+<step>
+<para
+>Nella scheda <guilabel
+>Impostazioni comando/URL</guilabel
+>, scrivi il comando per avviare nel campo: <userinput
+><command
+>dcop kwin default nextDesktop</command
+></userinput
+></para>
+</step>
+</procedure>
+
+<para
+>Ripeti il precedente con il tasto <keysym
+>Prev_Virtual_Screen</keysym
+> e <userinput
+><command
+>dcop kwin default previousDesktop</command
+></userinput
+>.</para>
+
+<para
+>Adesso scrivendo <keysym
+>Prev_Virtual_Screen</keysym
+> o <keysym
+>Next_Virtual_Screen</keysym
+> ti porterà al desktop virtuale rispettivamente precedente o successivo.</para>
+
+<para
+>Naturalmente puoi assegnare qualsiasi tasto libero a qualsiasi azione.</para>
+
+<itemizedlist>
+<title
+>Informazioni correlate</title
+> 
+<listitem
+><para
+>Vedi la documentazione <application
+>KHotKeys</application
+> guardandola in &khelpcenter; o scrivendo <userinput
+>help:/khotkeys</userinput
+> in una finestra &konqueror;.</para
+></listitem
+> 
+<listitem
+><para
+><xref linkend="adding-extra-keys"/></para
+></listitem>
+<listitem
+><para
+><xref linkend="scripting-the-desktop"/></para
+></listitem>
+</itemizedlist>
+
+</sect1>
+
+<sect1 id="kdebugdialog">
+<sect1info>
+<authorgroup>
+<author
+><personname
+> <firstname
+>Adriaan</firstname
+> <surname
+>de Groot</surname
+> </personname
+> <email
+>groot@kde.org</email
+> </author>
+</authorgroup>
+</sect1info>
+
+<title
+>&kdebugdialog; - Controllare l'output di debug di &kde;</title>
+
+<sect2 id="kdebugdialog-basic-usage">
+<title
+>Uso di base</title>
+
+<para
+>&kdebugdialog; non è presente di defalut nel &kmenu;. Avrai bisogno di avviarlo dalla shell o da mini-CLI col comando <userinput
+><command
+>kdebugdialog</command
+></userinput
+>. &kdebugdialog; mostra una finestra con una lunga lista di aree di debug. Ogni area ha una casella che puoi spuntare o alla quale puoi togliere il segno di spunta per abilitare o disabilitare l'output di debug per quella parte di &kde;.</para>
+
+<para
+>La lista delle aree di debug è ordinata numericamente, non alfabeticamente, quindi kio (127) viene prima di artskde (400). I numeri vanno avanti fino a 200000 circa, ma in realtà ci sono solo 400 aree. Quindi non devi scorrere tutta la lista per trovare l'area di cui hai bisogno. C'è una casella di testo in alto nella finestra di dialogo dove puoi scrivere una parte del nome dell'area che desideri. La lista delle voci che vengono mostrate è filtrata per includere solo quelle aree di debug che contengono il testo che hai immesso. &eg; scrivendo <userinput
+>k</userinput
+> non viene filtrato molto, ma scrivendo <userinput
+>kont</userinput
+> verranno mostrate solamente le aree di debug di &kontact;. Come scorciatoia per attivare/disattivare l'output delle aree di debug , ci sono anche i pulsanti <guibutton
+>seleziona tutto</guibutton
+> e <guibutton
+>deseleziona tutto</guibutton
+> che fanno produrre a &kde; una montagna di output di debug, o una quantità minima.</para>
+</sect2>
+
+<sect2 id="kdebugdialog-fullmode">
+<title
+>KDebugDialog in modalità completa</title>
+
+<!-- this text partly taken from the kdebugdialog handbook -->
+
+<para
+>Nella modalità completa, quella che ottieni avviando kdebugdialog con<userinput
+><command
+>kdebugdialog</command
+> <option
+>--fullmode</option
+></userinput
+>, la stessa lista delle aree di debug sono disponibili come nella modalità semplice, ma puoi selezionare uno per volta dalla casella a cascata. Potresti anche impostare indipendentemente l'output per vari tipi di messaggi: informazioni, avvertimenti, errori e errori fatali. Per ognuno di questo tipo, puoi scegliere i messaggi da inviare. Le scelte sono:</para>
+
+<para
+>File, in quel caso puoi scrivere il nome del file. Questo file è scritto nella tua cartella $<envar
+>HOME</envar
+>.</para>
+
+<para
+>Casella di testo. Ogni messaggio di debug è mostrato in una finestra di informazioni, nella quale devi premere <guibutton
+>OK</guibutton
+> per continuare a usare l'applicazione.</para>
+
+<para
+>Shell, la voce predefinita. I messaggi sono mostrati su stderr, e apparirà sia nelle finestra shell dove viene avviata l'applicazione, o in <filename
+>.xsession-errors</filename
+>.</para>
+
+<para
+>Syslog. Questo invia ogni messaggio di debug al syslog del sistema, che può eseguire il suo proprio processo del messaggio.</para>
+
+<para
+>Niente. Questo elimina l'output di questo tipo di messaggio.</para>
+
+<para
+>Per i messaggi generati da errori fatali, è generalmente una cattiva idea scegliere Niente o Syslog, dato che in entrambi i casi probabilmente non vedrai il messaggio e l'applicazione che si sono imbattuti in un errore fatale, non lasciando così una traccia dell'errore che si è verificato. Per decidere se mostrare o no gli errori fatali si può controllare con la casella di testo <guilabel
+>termina se si verificano errori fatali</guilabel
+> che è spuntata di default &mdash; ma comunque dovresti aspettarti che un'applicazione che si è imbattuta in un errore fatale vada in crash comunque.</para>
+
+<!-- Add links to "further reading" here -->
+<!-- <itemizedlist>
+<title
+>Related Information</title>
+<listitem
+><para
+>to be written</para>
+</listitem>
+</itemizedlist
+>-->
+
+
+
+</sect2>
+</sect1>
+</chapter>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: xml
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:0
+sgml-indent-data:true
+sgml-parent-document:("index.docbook" "book" "chapter")
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

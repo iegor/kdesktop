@@ -1,0 +1,560 @@
+<?xml version="1.0" ?>
+<!DOCTYPE book PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" "dtd/kdex.dtd" [
+ <!ENTITY kappname "kompmgr">
+ <!ENTITY package "kwin">
+ <!ENTITY % Dutch "INCLUDE">
+ <!ENTITY % addindex "IGNORE">
+]>
+
+<book lang="&language;">
+<bookinfo>
+<title
+>Info over &kappname;</title>
+
+<authorgroup>
+<author
+><personname
+><firstname
+>Thomas</firstname
+><surname
+>Luebking</surname
+></personname
+> <email
+>thomas.luebking@web.de</email
+> </author>
+
+&Natalie.Koning; 
+</authorgroup>
+
+<copyright>
+<year
+>2005</year>
+<holder
+>Thomas Luebking</holder>
+</copyright>
+
+<legalnotice
+>&FDLNotice;</legalnotice>
+
+<date
+>2005-01-15</date>
+<releaseinfo
+>2.0.1</releaseinfo>
+
+<abstract>
+<para
+>&kappname; is een "composite rendering engine" die door &kwin; gebruikt wordt.</para>
+<para
+>Dit document is meer een algemene uitleg van wat het doet, hoe het werkt en wat de beperkingen zijn, en niet echt documentatie over hoe u het moet gebruiken (het werkt dan ook automatisch op de achtergrond).</para
+> 
+</abstract>
+
+<keywordset>
+<keyword
+>KDE</keyword>
+<keyword
+>kwin</keyword>
+<keyword
+>render engine</keyword>
+</keywordset>
+</bookinfo>
+
+<chapter id="introduction">
+<title
+>Inleiding</title>
+
+<para
+>&kappname; is gebaseerd op <application
+>xcompmgr</application
+>, Keith Packards referentie implementatie voor het gebruik van de nieuwe X-functies.</para>
+
+<para
+>Een composite manager vangt de uitvoer van de X-windows en rendert deze als een enkele afbeelding, die dan op het scherm geplaatst wordt. Het voordeel van deze werkwijze is dat u bijna alles met de vensterinhoud kunt doen, zoals ze laten samenvloeien (transparantie) of schaduwen aanbrengen. U kunt ze ook inkleuren, een vervelende advertentie op elk venster plaatsen, ze in elkaar drukken, breken, scanlijnen toevoegen, of wat u maar kunt bedenken. U wordt alleen beperkt door de hardware.</para>
+
+</chapter>
+
+<chapter id="xorg">
+<title
+>Xorg</title>
+
+<para
+>Het is noodzakelijk dat u <emphasis
+>X.org 6.8 of nieuwer</emphasis
+> hebt om &kappname; te laten werken. Met X.org 6.7 of ouder of XFree86 werkt het niet.</para>
+
+<sect1 id="xsetup">
+<title
+>Setup</title>
+<para
+>U moet de Composite-extensie expliciet inschakelen. Voeg een nieuwe sectie toe aan uw X.org-configuratiebestand:</para>
+
+<programlisting
+>Section "Extensions"
+    Option "Composite" "Enable"
+EndSection
+</programlisting>
+
+<para
+>Activeer de "Render-acceleration" (grafische versneller) als dit door uw <acronym
+>GPU</acronym
+> (de complexe chip die op moderne grafische kaarten het rekenwerk doet) ondersteunt wordt. Dit wordt het beste ondersteund door <trademark
+>NVIDIA</trademark
+>-kaarten en minder goed door ATI-kaarten.</para>
+
+<programlisting
+>Section "Device"
+....
+....
+    Option     "RenderAccel" "true"
+....
+....
+EndSection</programlisting>
+
+<para
+>&kappname; moet nu beschikbaar zijn. Meer informatie kunt u in het gedeelte <link linkend="problems"
+>Vragen en antwoorden</link
+> vinden.</para>
+
+</sect1>
+
+</chapter>
+
+<chapter id="settings">
+<title
+>Instellingen</title>
+
+<para
+>In dit hoofdstuk wordt beschreven welke parameters u kunt veranderen, wat het resultaat is en het effect op de prestatie.</para>
+
+<sect1 id="translucency">
+<title
+>Transparantie</title>
+
+<para
+>Een transparant object laat licht door. In het geval van vensters op het bureaublad betekent het, dat de inhoud van vensters onderop zichtbaar is door het venster heen dat bovenop ligt.</para>
+
+<para
+>Met transparantie kunt u bepaalde vensters duidelijker herkenbaar maken, een 3-dimensionaal beeld van het bureaublad krijgen, zien waar bedekte vensters zich bevinden, en het ziet er gewoon leuk uit. U betaalt er wel een prijs voor: het gebruikt meer systeembronnen.</para>
+
+<para
+>U kunt transparantie voor de volgende items apart instellen:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Actieve vensters</guilabel
+></term>
+<listitem
+><para
+>We raden u aan om de transparantie voor het actieve venster uit te schakelen. De belangrijkste reden is dat de prestatie vermindert, de tweede reden is dat uw hersenen de irritante informatie die door het venster heen schijnt moet uitfilteren om de inhoud van een transparant venster te kunnen lezen, wat erg vermoeiend is.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Inactieve vensters</guilabel
+></term>
+<listitem
+><para
+>Als u inactieve vensters transparant maakt, worden actieve vensters duidelijker herkenbaar en ze springen direct in het oog. Als u echter een lage waarde kiest, wordt het moeilijker om een inactief venster te zien. Als u een erg lage waarde (&lt; 20&percnt;) kiest, wordt het bijna onmogelijk om vensters in de stapel te onderscheiden, u kunt dan per ongeluk op <guibutton
+>OK</guibutton
+> in een dialoogvenster klikken als u het venster alleen maar wilde activeren. Optimale waarden liggen tussen 60&percnt; en 80&percnt;.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Vensters die verplaatst worden</guilabel
+></term>
+<listitem
+><para
+>Hoewel het een fraai effect oplevert om een zeer transparant (dekking &lt; 20&percnt;) venster te verplaatsen, is er een hoge prijs aan verbonden wat betreft de prestatie, vooral als u schaduwen niet uitschakelt (zie hieronder). Probeer het gewoon en als u merkt dat het systeem te langzaam wordt, laat u de vensters die verplaatst worden ondoorschijnend. Deze waarde heeft ook betrekking op vensters waarvan de grootte aangepast wordt.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Vastgezette vensters</guilabel
+></term>
+<listitem
+><para
+>Omdat vastgezette vensters, zoals Kicker, zelden of nooit verplaatst worden en meestal niet zo groot zijn, heeft het alleen een effect en wordt de prestatie van het systeem niet nadelig beïnvloed.</para
+>  
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Behandel vensters "op voorgrond" als actieve vensters</guilabel
+></term>
+<listitem
+><para
+>Als u een venster op de voorgrond wilt houden, wilt u het in het algemeen in beeld houden, het is dan logisch om het dezelfde herkenbaarheid te geven.</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>ARGB-vensters uitschakelen</guilabel
+></term>
+<listitem
+><para
+>XRender ondersteunt vensters met een alfa-masker, &ie; transparante gedeelten. Op het moment zijn er bijna geen toepassingen die van deze functie gebruik maken, omdat dit weinig zin heeft zonder het gebruik van een composite manager. Dit kan in de toekomst veranderen.</para>
+<para
+>Aan de andere kant stellen de meeste gtk 1.x-toepassingen (&eg; <application
+>xmms</application
+>) zo'n alfa-masker in, dat de vensters bijna onbruikbaar worden (als de onderliggende vensters niet zwart zijn). U kunt de ondersteuning voor ARGB-vensters hier uitschakelen om gtk-toepassingen te kunnen gebruiken. Hopelijk komt er in de nabije toekomst een "patch" om dit te repareren.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</sect1>
+
+<sect1 id="shadows">
+<title
+>Schaduwen</title>
+<para
+>Waarom zou iemand willen dat een venster schaduwen maakt? Misschien alleen omdat het er leuk uitziet, of omdat de vensters beter uit elkaar te houden zijn, of... omdat het er leuk uitziet!</para
+> 
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Schaduwen gebruiken</guilabel
+></term>
+<listitem
+><para
+>Omdat schaduwen wat van de cpu/gpu vergt, kunnen ze uitgeschakeld worden met behoud van algemeen functioneren van het alfa-kanaal.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Grootte van actief venster</guilabel
+></term>
+<term
+><guilabel
+>Grootte van inactief venster</guilabel
+></term>
+<term
+><guilabel
+>Grootte van vastgezet venster</guilabel
+></term>
+<listitem
+><para
+>U kunt verschillende afmetingen voor de schaduwen voor verschillende typen vensters instellen. De waarden zijn niet absoluut, maar afhankelijk van de schermresolutie.</para>
+<para
+>In principe kunt u elke waarde instellen (als u het configuratiebestand in een editor bewerkt, kunt u veel verder gaan dan <quote
+>32</quote
+>), maar grotere schaduwen vergen ook meer van de cpu/gpu.</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Verticale offset</guilabel
+></term>
+<term
+><guilabel
+>Horizontale offset</guilabel
+></term>
+<listitem
+><para
+>Standaard komt er <quote
+>rondom een even brede</quote
+> schaduw, wat impliceert dat het licht van voren komt. Gebruikers die bekend zijn met &MacOS; hebben misschien liever een schaduw met een verticale offset, &Windows;-gebruikers hebben misschien voorkeur voor een offset rechtsonder. U kunt met de waarden experimenteren tot het naar uw zin is.</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Schaduwkleur</guilabel
+></term>
+<listitem
+><para
+>Gewoonlijk zijn schaduwen de afwezigheid van licht en worden ze weergegeven in grijstinten (zodat de diepste schaduwkleur zwart is, er is helemaal geen licht). Maar dit is een virtuele wereld, als u roze schaduwen wilt hebben, waarom ook niet?</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Schaduwen weglaten bij verplaatsen</guilabel
+></term>
+<listitem
+><para
+>Schakel deze optie in als u de prestatie wilt verbeteren (vooral als u transparante vensters verplaatst).</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Schaduwen weglaten bij aanpassen van grootte</guilabel
+></term>
+<listitem
+><para
+>Het is een goed idee om deze optie in te schakelen, of u de vensters nu transparant houdt bij het veranderen van de grootte (verplaatsen) of niet. De schaduw-pixmap van het venster moet continu opnieuw gemaakt worden, wat erg veel van het systeem vergt.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</sect1>
+
+<sect1 id="effects">
+<title
+>Effecten</title>
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Vensters langzaam laten verschijnen</guilabel
+></term>
+<term
+><guilabel
+>Overvloeien bij veranderende dekking</guilabel
+></term>
+<listitem
+><para
+>In plaats van een venster direct op het scherm te laten zetten, wilt u het misschien langzaam laten verschijnen, Dit ziet er indrukwekkend uit, maar het vergt ook indrukwekkend veel van het systeem. Bovendien is het moeilijk om op vensters te reageren die langzaam verschijnen. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><guilabel
+>Verschijnsnelheid</guilabel
+></term>
+<term
+><guilabel
+>Verdwijnsnelheid</guilabel
+></term>
+<listitem
+><para
+>Om de redenen die bij <guilabel
+>Vensters langzaam laten verschijnen</guilabel
+> al genoemd zijn, is het het meest praktisch om een hoge verschijnsnelheid en (voor een leuker visueel effect) een lage verdwijnsnelheid te gebruiken. Dit geeft mooie effecten en een soepel draaiend systeem, bovendien hoeft u niet lang op informatie te wachten.</para
+> 
+</listitem>
+</varlistentry>
+</variablelist>
+</sect1>
+
+</chapter>
+
+<chapter id="problems">
+<title
+>Problemen</title>
+
+<para
+>De gehele Composite-extensie is vrij nieuw, Het kan verscheidene problemen veroorzaken, het kan zelfs X laten crashen, dus <emphasis
+>raden we u dringend aan om op kritieke productie-systemen de Composite-extensie in Xorg.conf zelfs niet in te schakelen</emphasis
+>. Als u echter een ietwat instabiel systeem kunt riskeren, is het toch wel leuk om wat visuele effecten te hebben.</para>
+
+<para
+>In dat geval kunt u wat haperingen opmerken. Hier zijn enkele algemene problemen - en wat u eraan kunt doen. </para>
+
+<qandaset>
+<qandaentry>
+<question>
+<para
+>Ik heb X.org 6.8.x, maar &kappname; wil niet opstarten</para>
+</question>
+<answer>
+<para
+>U moet de Composite-extensie expliciet inschakelen, voeg een nieuwe sectie toe aan /etc/X11/XorgConfig:</para>
+<programlisting
+>Section "Extensions"
+   Option "Composite" "Enable"
+EndSection</programlisting>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Goed, &kappname; werkt, maar het is tergend langzaam</para>
+</question>
+<answer>
+<para
+>Als dit ondersteund wordt door uw <acronym
+>GPU</acronym
+> (hoofdzakelijk <trademark
+>NVIDIA</trademark
+>, en in mindere mate door ATI-kaarten), zorg er dan voor dat u de Render-acceleration (grafische versneller) geactiveerd hebt.</para>
+<programlisting
+>Section "Device"
+....
+....
+Option     "RenderAccel" "true"
+....
+....
+EndSection
+</programlisting>
+
+<para
+>Als het nog steeds langzaam is, kunt u proberen om het geheugengebruik bij te stellen. U kunt ofwel de schermdiepte verlagen (&eg; van 24 naar 16), ofwel de resolutie verlagen (&eg; van 1280x1024 naar 1024x768).</para
+> 
+
+<para
+>Opmerking: de grootte van de CPU-cache schijnt de huidige beperkende factor voor de Composite-extensie te zijn.</para>
+
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Na het inschakelen van de Composite-extensie kan ik geen enkele <acronym
+>GLX</acronym
+>-toepassing meer draaien. Ik heb een <trademark
+>NVIDIA</trademark
+>-kaart.</para>
+</question>
+<answer>
+<para
+>Ter voorkoming van sommige problemen heeft <trademark
+>NVIDIA</trademark
+> de ondersteuning van GLX uitgeschakeld wanneer Coposite geactiveerd is. Het kan weer ingeschakeld worden, maar dit kan problemen veroorzaken bij enkele kernel/driver/GPU-combinaties.</para
+> 
+<programlisting
+>Section "Device"
+....
+....
+Option  "AllowGLXWithComposite" "true"
+....
+....
+EndSection
+</programlisting>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Ik wilde een spelletje doen dat <acronym
+>SDL</acronym
+> (maar geen <acronym
+>GL</acronym
+> gebruikt), zoals <application
+>scummvm</application
+>, maar wanneer de compmgr actief is, zie ik alleen maar een schaduw!</para>
+</question>
+<answer>
+<para
+>Dit is een probleem met het PictType dat door SDL gerapporteerd wordt.</para>
+
+<para
+>Mogelijke oplossing:</para>
+<screen
+>Gebruik, in plaats van het commando <command
+>scummvm</command
+> rechtstreeks, 
+<command
+>SDL_VIDEO_X11_VISUALID=0x24 scummvm</command
+> Dit laat SDL een
+ondersteund type gebruiken en u kunt weer gewoon spelen. </screen>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Toepassing XXX weigert op te starten na het inschakelen van de Composite-extensie.</para>
+<para
+>Toepassing YYY maakt X stuk na het inschakelen van de Composite-extensie.</para>
+<para
+>Toepassing ZZZ ziet er raar uit na het inschakelen van de composite manager.</para>
+</question>
+<answer>
+<para
+>De Composite-extensie is nog steeds in de experimentele fase.</para>
+<para
+>Mogelijke oplossing:</para>
+<para
+>In plaats van <command
+>appName</command
+>, kunt u beter <command
+>XLIB_SKIP_ARGB_VISUALS=1 appName</command
+> gebruiken.</para>
+<para
+>Toepassingen waarvan we weten dat ze problemen veroorzaken:</para>
+<itemizedlist>
+<listitem
+><para
+>Alle gtk1 toepassingen (&eg; <application
+>gmplayer</application
+>, <application
+>xmms</application
+>, <application
+>gaim</application
+>) - weigeren op te starten of zien er raar uit of laten X crashen.</para
+></listitem>
+<listitem
+><para
+>&kuickshow; - laat alleen een zwart frame zien</para
+></listitem>
+<listitem
+><para
+>&Qt; <application
+>Designer</application
+> - laat X crashen</para
+></listitem>
+<listitem
+><para
+>&kopete; - laat X crashen</para
+></listitem>
+<listitem
+><para
+>&kolf; - laat X crashen</para
+></listitem>
+</itemizedlist>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Ik probeer een video te bekijken, maar ik zie alleen artefacten in het Video-venster.</para>
+</question>
+<answer>
+<para
+>U gebruikt <quote
+>xv</quote
+> als video-backend. Dit is de "overlay"-modus, hier wordt de inhoud van de video rechtstreeks, buiten X om, naar het geheugen van de videokaart gestuurd. Daarom schijnt het venster statisch (gekleurde achtergrond) te zijn en wordt niet door de damage-extensie bijgewerkt.</para>
+<para
+>In de toekomst wordt dit hopelijk gerepareerd. Momenteel geeft <application
+>Xine</application
+> de beste resultaten, maar het afspelen van transparante video's gaat, hoe dan ook, traag.</para>
+</answer>
+</qandaentry>
+
+</qandaset>
+</chapter>
+
+<chapter id="credits-and-licenses">
+<title
+>Dankbetuigingen en licenties</title>
+
+<sect1 id="authors">
+<title
+>Auteurs</title>
+<para
+>Thomas Luebking <email
+>baghira-style@gmx.net</email
+> - Editor</para>
+&underFDL; &underGPL; </sect1>
+
+
+</chapter>
+
+</book>
+<!--
+Local Variables:
+mode: sgml
+sgml-omittag: nil
+sgml-shorttag: t
+End:
+-->
+

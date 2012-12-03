@@ -1,0 +1,327 @@
+<chapter id="callback">
+<title
+>Anpassa &kppp; för återuppringning</title>
+
+<para
+>Det här kapitlet är baserat på material som tillhandahållits av Martin H&auml;fner, <email
+>mh@ap-dec717c.physik.uni-karlsruhe.de</email
+>.</para>
+
+<sect1 id="unix-callback-server">
+<title
+>&UNIX; eller &Linux; återuppringningsserver</title>
+
+<para
+>Det här avsnittet introducerar &UNIX; (&Linux;) återuppringning, och hur &kppp; kan anpassas för att ansluta till en &UNIX; återuppringningsserver, i synnerhet till en skriptbaserad &Linux; <link linkend="callback-resources"
+>återuppringningsserver</link
+>.</para>
+
+<sect2>
+<title
+>En introduktion till återuppringning</title>
+
+<para
+>Det finns flera anledningar att fundera på att använda återuppringning. Några av dem är:</para>
+
+<itemizedlist>
+<listitem>
+<para
+>För att öka säkerheten i ditt lokala nätverk</para>
+</listitem>
+<listitem>
+<para
+>För att minska kostnader för externa medarbetare</para>
+</listitem>
+<listitem>
+<para
+>För att hantera telefonkostnader när samtal deklareras som företagskostnader</para>
+</listitem>
+</itemizedlist>
+
+<para
+>Tänk dig att någon ringer numret till din uppringningsserver, och sedan knäcker ett lösenord. Varför bry sig om att underhålla en brandvägg för din Internetanslutning, om det är så lätt att komma åt ditt nätverk?</para>
+
+<para
+>Ett återuppringningsprogram frågar i allmänhet efter ditt namn, och lägger sedan på. Därefter ringer det tillbaka, vanligtvis med ett nummer som är lagrat <emphasis
+>på servern</emphasis
+> i en databas. Klienten svarar och fortsätter med anslutningen som om ingenting hänt. Servern frågar nu efter användarnamn och lösenord, med vetskap om att du är den som du sa du var när du först ringde upp, eller åtminstone att du är där du sa att du var. Anslutningen etableras normalt, och <application
+>pppd</application
+> startas.</para>
+
+<para
+>Nu är den stora frågan, hur talar man om för klienten att den ska svara, när servern ringer tillbaka? Behövs ett speciellt program som <application
+>mgetty</application
+>? Svaret är, <emphasis
+>nej</emphasis
+> du behöver inte något speciellt klientprogram. I allmänhet kan alla klienter användas för en återuppringd förbindelse, man kan till och med använda ett vanligt terminalprogram som <application
+>minicom</application
+> för att ansluta.</para>
+
+<para
+>Det enda du måste göra är att tala om för ditt modem att <command
+>autosvara</command
+> när ett <computeroutput
+>RING</computeroutput
+> upptäcks av modemet. Det här görs med följande modemkommando:</para>
+
+<screen
+><userinput
+><command
+>AT&amp;SO=1</command
+></userinput
+>
+</screen>
+
+<para
+>Det här talar om för modemet att det ska svara efter ett <computeroutput
+>RING</computeroutput
+>.</para>
+
+<para
+>Som många andra klientprogram, kontrollerar &kppp; om anslutningen stängs av servern, och avslutar då den nuvarande sessionen om <computeroutput
+>NO CARRIER</computeroutput
+> upptäcks. Det här är alltså det riktiga problemet med att hantera återuppringning. <computeroutput
+>NO CARRIER</computeroutput
+> upptäcks förstås i det ögonblicket då återuppringningsservern lägger på. Vissa servrar använder därför ett särskilt inloggningsprogram. Så hur löser man det här problemet? Du talar om för modemet att det alltid ska ange <computeroutput
+>CARRIER UP</computeroutput
+> (som inte orsakar några problem om du låter klienten lägga på). Du kan göra detta med följande modemkommando:</para>
+
+<screen
+><userinput
+><command
+>AT&amp;C0</command
+></userinput
+>
+</screen>
+
+<para
+>Om du vill prova det här, kan du först använda ett vanligt terminalprogram som <application
+>minicom</application
+>, och anropa din återuppringningsserver för att se vad som händer.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Inställning av &kppp;</title>
+
+<para
+>Så nu när du har sett teorin i användning, hur ser du till att ställa in &kppp; för att hantera anslutningen? </para>
+
+<para
+>Proceduren är ganska rättfram, enligt följande:</para>
+
+<procedure>
+<step>
+<para
+>Tala först om för modemet att acceptera anslutningar, och inte stoppa förhandlingen när återuppringningsservern lägger på första gången. Du kan lägga till båda de här alternativen under fliken <guilabel
+>Modem</guilabel
+> i &kppp;s inställningar, genom att lägga till strängen <command
+>AT&amp;C0S0=1DT</command
+> i alternativet <guilabel
+>Kommando för att ringa upp</guilabel
+>.</para>
+<para
+>Det finns inga andra ändringar i &kppp;s inställningar. Om du får problem med initiering och återställning av modemet, kontrollera avsnittet <link linkend="callback-troubleshooting"
+>Felsökning</link
+> för mer information.</para>
+</step>
+<step>
+<para
+>Fundera på servern ett ögonblick. Kom ihåg att operativsystemen &UNIX;, &Windows; och Macintosh har olika idéer om hur ett radslut i en textfil ser ut, och därför också i inloggningsprocedurer. Om du ansluter till en &Windows;-server, använd <userinput
+>CR/LF</userinput
+>, om du ansluter till en &UNIX;-server, använd <userinput
+>CR</userinput
+>, och om du ansluter till en Macintosh-server, använd <userinput
+>LF</userinput
+>. </para>
+</step>
+<step>
+<para
+>För de här anvisningarna antar vi att du ringer upp ett &Linux; återuppringningspaket som använder vanlig inloggning (inte <acronym
+>PAP</acronym
+> eller något sådant).</para>
+<para
+>Ställ in <guilabel
+>Autentisering</guilabel
+> under fliken <guilabel
+>Uppringning</guilabel
+> i abonnemangsinställningarna till <guilabel
+>Skriptbaserad</guilabel
+></para>
+</step>
+<step>
+<para
+>Nu måste du bygga upp inloggningsskriptet. Att redigera inloggningsskript är en av de verkligt häftiga funktionerna i &kppp;. Du hittar det under fliken <guilabel
+>Inloggningsskript</guilabel
+> i dialogrutan <guilabel
+>Ändra abonnemanget</guilabel
+>.</para>
+
+<para
+>I det här exemplet kräver användaren <systemitem
+>anvxyz</systemitem
+> att följande skript anropas. Återuppringningsservern känner redan till namntabellen och motsvarande telefonnummer, så du väljer telefonnumret som ska användas med ett alias, av säkerhetshänsyn.</para>
+
+<para
+>Välj alternativ från kombinationsrutan till vänster i dialogrutan för varje linje, och skriv in åtgärden i textrutan till höger. Välj <guibutton
+>Lägg till</guibutton
+> för att lägga till varje linje i skriptet. Du kan använda <guibutton
+>Infoga</guibutton
+> för att lägga till en rad mitt i skriptet, och <guibutton
+>Ta bort</guibutton
+> för att ta bort en rad om du gör ett misstag.</para>
+
+<para
+>Hela skriptet ska se ut ungefär så här (utan kommentarerna, som visas här med ett inledande # tecken)</para>
+
+<screen
+>Expect       ogin:           <lineannotation
+># kom ihåg, vi gör en vanlig terminalinloggning</lineannotation>
+ID           ""              <lineannotation
+># kppp skickar användarnamn som
+                               du ställde in i huvuddialogrutan</lineannotation>
+Expect       for anvxyz:     <lineannotation
+># en lista på tillgängliga nummer
+                               visas, användaren ska välja ett</lineannotation
+> 
+Send         anvxyz-hem      <lineannotation
+># användaren vill bli återuppringd
+                               på sitt hemnummer</lineannotation>
+Expect       ogin:           <lineannotation
+># Återuppringningsprocessen kör nu en
+                               ny anslutning, och alltså en ny inloggning.</lineannotation>
+ID
+Expect       assword:        <lineannotation
+># Skicka nu ditt lösenord</lineannotation>
+Expect       &gt;               <lineannotation
+># Vänta på kommandoprompten
+                               (kan variera)</lineannotation>
+Send         start_ppp       <lineannotation
+># Det här kommandot startar pppd</lineannotation
+>
+</screen>
+
+<para
+>Efter att ha väntat på inloggningsbegäran, skickar användaren sin identitet och väntar på en lista av tillgängliga telefonnummer för det användarnamnet. Därefter talar han om för servern vilket av alla tillgängliga nummer som han vill bli återuppringd med.  &kppp; kan visa en dialogruta för det här, om din plats ofta ändras, t.ex. om du är en försäljare och flyttar från hotell till hotell. Nu väntar sig servern användare och lösenord för inloggning, men under tiden lägger servern på och ringer tillbaka till användaren. Autentiseringsinformationen skickas, och &kppp; väntar på en kommandoprompt, och startar ett litet skript (som heter <filename
+>start_ppp</filename
+> här) som kör igång <application
+>pppd</application
+> på servern.</para>
+					      
+<para
+>Skriptet <filename
+>start_ppp</filename
+> kan se ut ungefär som följer:</para>
+					      
+<programlisting
+>#!/bin/sh
+stty -echo
+exec /usr/sbin/pppd -detach silent modem
+</programlisting>
+					      
+<para
+>Att ställa in en <acronym
+>PPP</acronym
+>-server är förstås utanför det här dokumentets omfattning. Se manualsidorna för <application
+>pppd</application
+> för detaljerad information. En utmärkt beskrivning av en återuppringningsserver finns på <ulink url="http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback"
+> http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback</ulink
+>.</para>
+</step>
+</procedure>
+
+<para
+>Alla andra inställningsdetaljer, som inställning av <application
+>pppd</application
+> eller <acronym
+>IP</acronym
+>-inställningar fungerar som vanligt, och ingen särskild programvara behövs för att svara.</para>
+
+<note>
+<para
+>Återuppringning med &kppp; och andra program som <application
+>mgetty</application
+> eller vilken annat faxprogram som helst kan köras på samma serieport. Det finns inga problem med att svara, eftersom &kppp; skapar en låsfil som talar om för faxprogrammet att ett annat program (i det här fallet förstås &kppp;), använder linjen för tillfället.</para>
+</note>
+
+</sect2>
+
+<sect2 id="callback-troubleshooting">
+<title
+>Felsökning</title>
+
+<para
+>Det finns några kända problem med &kppp; i återuppringningsläge:</para>
+
+<itemizedlist>
+<listitem>
+<para
+>När du initierar modemet att svara automatiskt, måste du återställa det efter din anslutning har avslutats. Annars kommer modemet fortsätta att svara, något som inte är en bra idé om linjen i fråga är din vanliga telefonlinje.</para>
+</listitem>
+<listitem>
+<para
+>&kppp; har vissa småproblem när en linje delas med ett annat program, som <application
+>mgetty</application
+>. Om <application
+>mgetty</application
+> kör via samma modemlinje, kan inte &kppp; initiera modemet på ett riktigt sätt. </para>
+</listitem>
+<listitem>
+<para
+>&kppp; klarar inte av att ge en prompt för viss inmatning från användaren under skriptbaserad inloggning. När exemplet ovan används frågar &kppp; tyvärr också efter användarnamnet andra gången som återuppringningsservern frågar efter det. Du kan bli av med det här genom att hårdkoda ditt användarnamn i inloggningsskriptet (inte särskilt flyttbart eller trevligt, men det fungerar).</para>
+</listitem>
+</itemizedlist>
+
+</sect2>
+
+<sect2 id="callback-resources">
+<title
+>Resurser på Internet för serverprogramvara</title>
+
+<para
+>Paket med programvara för &Linux; återuppringningsservrar är tillgängliga på många ställen.</para>
+
+<para
+>Det välkända programmet <application
+>mgetty</application
+> är mycket kraftfullt, och kan också hantera anslutningar med återuppringning. En beskrivning av hur man ställer in <application
+>mgetty</application
+> för detta syfte är tillgänglig på <ulink url="http://www.dyer.demon.co.uk/slug/tipscrip.htm"
+> http://www.dyer.demon.co.uk/slug/tipscrip.htm</ulink
+>, av Colin McKinnon, <email
+>colin@wew.co.uk</email
+>.</para>
+
+<para
+>Det finns också ett paket färdigt att använda för &Linux; på <ulink url="http://www.icce.rug.nl/docs/programs/callback/callback.html"
+> http://www.icce.rug.nl/docs/programs/callback/callback.html</ulink
+>. Det här paketet underhålls av Frank B. Brokken, <email
+>frank@icce.rug.nl</email
+>. Eftersom inställningen, fastän rättfram, inte är särskilt lätt, har jag skrivit en kort introduktion till det på <ulink url="http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback"
+>http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback/</ulink
+>, som också innehåller en mer allmän introduktion till återuppringning.</para>
+
+</sect2>
+</sect1>
+
+<sect1 id="nt-callback">
+<title
+>&Windows; NT <acronym
+>RAS</acronym
+> återuppringning</title>
+
+<para
+>&Windows; NT använder ett helt annan metod än den som beskrivs ovan. NT kräver en utökning av själva <acronym
+>PPP</acronym
+>-protokollet, benämnd <acronym
+>CBCP</acronym
+> (Call Back Control Protocol). <application
+>pppd</application
+> har stöd för det här protokollet, men du måste kompilera om <application
+>pppd</application
+>. Om någon har erfarenhet av att ansluta till en NT-återuppringningsserver med lyckat resultat, låt oss få veta det.</para>
+
+</sect1>
+</chapter>
+ 

@@ -1,0 +1,889 @@
+<?xml version="1.0" ?>
+<!DOCTYPE book PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" "dtd/kdex.dtd" [
+  <!ENTITY lisa "<application
+>LISa</application
+>">
+  <!ENTITY package "kdenetwork">
+  <!ENTITY reslisa "<application
+>resLISa</application
+>">
+  <!ENTITY kappname "&lisa;"
+><!-- replace kapp here -->
+  <!ENTITY % addindex "IGNORE">
+  <!ENTITY % Danish "INCLUDE"
+><!-- change language only here -->
+]>
+
+<book lang="&language;">
+
+<bookinfo>
+
+<title
+>&lisa;-håndbogen</title>
+
+<authorgroup>
+<author
+><firstname
+>Alexander</firstname
+> <surname
+>Neundorf</surname
+> <affiliation
+> <address
+><email
+>neundorf@kde.org</email
+></address>
+</affiliation>
+</author>
+
+&erik.kjaer.pedersen.role; 
+
+</authorgroup>
+
+<copyright>
+<year
+>2001</year>
+<holder
+>Alexander Neundorf</holder>
+</copyright>
+
+<date
+>2001-07-07</date>
+<releaseinfo
+>0.01.00</releaseinfo>
+
+<abstract>
+<para
+>&lisa; er beregnet til at give en slags <quote
+>netværksomgivelse</quote
+>, men afhænger kun af TCP/IP-protokollen, hverken <acronym
+>SMB</acronym
+> eller lignende kræves.</para>
+
+<para
+>Dette er en håndbog både for <acronym
+>LAN</acronym
+> informationsserveren (&lisa;) og den begrænsede <acronym
+>LAN</acronym
+> informationsserver (&reslisa;)</para>
+
+</abstract>
+
+<keywordset>
+<keyword
+>KDE</keyword>
+<keyword
+>kdenetwork</keyword>
+<keyword
+>LAN</keyword>
+<keyword
+>netværk</keyword>
+<keyword
+>netværksomgivelser</keyword>
+</keywordset>
+
+</bookinfo>
+
+<chapter id="introduction">
+<title
+>Indledning</title>
+
+<para
+>&lisa; er beregnet til at give en slags <quote
+>netværksomgivelse</quote
+>, men afhænger kun af TCP/IP-protokollen, ikke SMB eller noget andet.</para>
+
+<para
+>Den er fuldstændig uafhængig af &kde;/&Qt;.</para>
+
+<para
+>Listen over værtsmaskiner som kører findes via <acronym
+>TCP</acronym
+>-porten 7741.</para>
+
+<para
+>&lisa; understøtter to måder at finde værtsmaskiner:</para>
+
+<orderedlist>
+<listitem>
+<para
+>Du angiver et interval med <acronym
+>IP</acronym
+>-adresser til &lisa;, derefter sender &lisa; en <acronym
+>ICMP</acronym
+>-ekkoforespørgsel til alle angivne <acronym
+>IP</acronym
+>-adresser, og venter på svar.</para>
+</listitem>
+<listitem>
+<para
+>Du kan fortælle &lisa; at den skal køre <command
+>nmblookup</command
+> <option
+>"*"</option
+>. Kommandolinjeværktøjet fra Samba-pakken <command
+>nmblookup</command
+> skal være installeret. <command
+>nmblookup</command
+> <option
+>"*"</option
+> sender en broadcast til de tilsluttede netværk, og alle værtsmaskiner som kører en <acronym
+>SMB</acronym
+>-tjeneste svarer på denne broadcast.</para>
+</listitem>
+
+</orderedlist>
+
+</chapter>
+
+<chapter id="how-it-works">
+<title
+>Hvordan det virker</title>
+
+<para
+>I indstillingsfilen angiver du et interval af IP-adresser som &lisa; skal kontrollere for at se om de kører.</para>
+
+<para
+>I det enkleste tilfælde kan dette være din IP-adresse/undernetsmaske. I såfald kontrollerer &lisa; hver mulig værtsmaskine på netværket for at se om den kører.</para>
+
+<para
+>Værtsmaskinerne undersøges med <acronym
+>ICMP</acronym
+>-ekkoforespørgsler. For at kunne sende og modtage <acronym
+>ICMP</acronym
+>-ekkoforespørgsler og svare skal programmet åbne en såkaldt <quote
+>rå sokkel</quote
+> (raw socket). Derfor behøver det <systemitem class="username"
+>root</systemitem
+>-rettigheder. Denne sokkel åbnes lige efter programmet er startet, og efter at have åbnet soklen med heldigt resultat, så slippes root-rettighederne med det samme (se <filename
+>main.cpp</filename
+> og <filename
+>strictmain.cpp</filename
+>).</para>
+
+<para
+>Hvis du indstiller &lisa; så den også bruger <command
+>nmblookup</command
+>, kommer den til at køre <literal
+>popen("nmblookup \"*\"")</literal
+> og siden tolke resultatet.</para>
+
+<para
+>Eftersom <acronym
+>ICMP</acronym
+>-forespørgsler og broadcast kan forårsage en del netværkstrafik hvis der findes mere end en sådan server som kører i et netværk, samarbejder serverne med hinanden. Inden de begynder at lave kald med ping (eller <command
+>nmblookup</command
+>), sender de en broadcast på port 7741.</para>
+
+<para
+>Hvis nogen svarer på denne broadcast, henter de den fuldstændige liste på værtsmaskiner som er startede via <acronym
+>TCP</acronym
+>-porten 7741 fra denne værtsmaskine og begynder ikke at kalde med ping (eller <command
+>nmblookup</command
+>).</para>
+
+<para
+>Hvis ingen svarer, så begynder værtsmaskinen som sendte broadcasten at kalde værtsmaskiner med ping (eller <command
+>nmblookup</command
+>) og åbner derefter en sokkel som lytter efter de ovennævnte broadcast. Hvis værtsmaskinen modtog et svar på broadcasten, har den ikke soklen som lytter efter broadcaster åben. Så almindeligvis har præcis en af serverne denne sokkel åben og kun denne kommer virkelig til at kalde med ping (eller <command
+>nmblookup</command
+>) til værtsmaskinerne. </para>
+
+<para
+>Med andre ord så er serverne dovne, de arbejder ifølge <quote
+>Jeg gør kun noget hvis ingen anden kan gøre det for mig</quote
+>.</para>
+
+<para
+>Der er en anden funktion som reducerer netværksbelastningen.</para>
+
+<para
+>Lad os antage at du indstillede &lisa; til at opdatere hver 10. minut. Nu kommer du ikke til serveren særlig ofte. Hvis ingen kommer til serveren i den sidste opdateringsperiode, kommer serveren til at opdatere (enten selv, eller fra den som virkelig gør jobbet) og derefter fordoble opdateringsperioden, dvs. næste opdatering vil ske om 20 minutter.</para>
+
+<para
+>Dette sker fire gange, så hvis ingen kommer til serveren med en opdateringsperiode på 10 minutter i lang tid, så øges dens opdateringsperiode til 160 minutter, næsten tre timer. Hvis nogen siden kommer efter data fra serveren, får de en gammel liste (op til 160 minutter gammel). Når dette sker nulstiller serveren sin opdateringsperiode til den oprindelige værdi, dvs. 10 minutter, og starter umiddelbart en opdatering hvis den seneste opdatering gjordes for mere end 10 minutter siden. Dette betyder at hvis du får en meget gammel liste, kan forsøge igen om nogle sekunder, så vil du få en aktuel version.</para>
+
+<para
+>Dette vil have en hurtig effekt for serverne, som ikke kalder med ping (eller nmblookup) selv, eftersom kun en eneste oftest kommer til dem, og det har mindre effekt på serveren som laver kaldet (eller <command
+>nmblookup</command
+>), eftersom denne server kan kommes til fra alle andre servere i netværket.</para>
+
+<para
+>På denne måde er det muligt at mange værtsmaskiner i et netværk kører denne server, men den totale belastning forbliver lav. For brugeren er det ikke nødvendigt at vide om der findes en server (dvs en navneserver eller filserver eller noget andet) i netværket som også kører &lisa;. Brugeren kan altid køre &lisa; lokalt og &lisa; opdager om der er en, transparent for brugeren.</para>
+
+<para
+>Den første klient for &lisa; er en I/O-slave for &kde; 2, så brugeren kan indtaste enten <userinput
+>lan://localhost/</userinput
+> eller <userinput
+>lan:/</userinput
+> hvilket vil kontakte &lisa; på det egne systemet.</para>
+
+<para
+>Hvis der findes en maskine som kører hele tiden og brugeren véd at denne maskine også kører &lisa;, kan &lisa;-klienten bruges direkte med denne server (altså med den ovennævnte I/O-slave <userinput
+>lan://server_navnet/</userinput
+>).</para>
+
+<para
+>Hvis du ikke ønsker at din &lisa; skal deltage i broadcasten, men altid gøre broadcasterne selv, så brug en anden port med kommandolinjeflaget <option
+>--port</option
+> eller <option
+>-p</option
+>. Dette anbefales ikke!</para>
+
+<para
+>Hvis du sender <command
+>SIGHUP</command
+> til &lisa;, læser den sin indstillingsfil igen. Hvis du sender <command
+>SIGUSR1</command
+> til &lisa;, udskriver den en del statusinformation på standardudskriften.</para>
+
+<para
+>Data som sendes via soklen har et enkelt format: <computeroutput
+>&lt;decimal IP-adresse i netværkets byte-rækkefølge&gt;&lt;et blankt tegn 0x20&gt;&lt;fuldstændigt navn på værtsmaskinen&gt;&lt;et afsluttende '\0'&gt;&lt;nylinje '\n'&lt;</computeroutput
+> og den sidste linjen <computeroutput
+>0 succeeded&lt;'\n'&gt;</computeroutput
+> </para>
+
+<para
+>For eksempel,</para>
+
+<screen
+><computeroutput
+>17302538 en_værtsmaskine.etsted.dk
+18285834 linux.etsted.dk
+17827082 navneserver.etsted.dk
+0 succeeded</computeroutput
+></screen>
+
+<para
+>Dette bør gøre det let at tolke.</para>
+
+<para
+>Hvis der er meget strenge sikkerhedsregler i dit netværk, kan nogen opfatte et kald med ping som et potentielt angreb. Hvis du har problemer med dette, så prøv med den begrænsede udgave, &reslisa;.</para
+> 
+
+</chapter>
+
+<chapter id="reslisa">
+<title
+>&reslisa;</title>
+
+<para
+>Hvis du har meget strenge sikkerhedsregler i dit netværk, eller hvis du ikke vil have en anden port åben eller noget andet, kan du bruge &reslisa;.</para>
+
+<para
+>Med &reslisa; kan du ikke kalde hele netværk og adresseintervaller med ping, men du kan give &reslisa; for nærværende op til 64 værtsmaskiner med navn i dens indstillingsfil. Disse vil blive kaldet. Du kan stadigvæk bruge <command
+>nmblookup</command
+>.</para>
+
+<para
+>&reslisa; sender også kun informationen via en sokkel i Unix-domænet, dvs ikke via netværket. Navnet på soklen er <filename
+>/tmp/resLisa-DitIndlogningsnavn</filename
+>, så &reslisa; kan køres sikkert af flere brugere på samme maskine.</para>
+
+<para
+>Eftersom den ikke bør kunne være en sikkerhedsrisiko af nogen slags er det sikkert at installere &reslisa; setuid <systemitem class="username"
+>root</systemitem
+>. <systemitem class="username"
+>root</systemitem
+>-rettighederne slippes direkte efter opstart (se <filename
+>strictmain.cpp</filename
+>), de behøves kun for at oprette en direkte sokkel til at sende <acronym
+>ICMP</acronym
+>-ekkoforespørgsler.</para>
+
+<para
+>Den sender eller tager heller ikke imod broadcaster. Den første klient for den er en I/O-slave for &kde; 2 (for eksempel <userinput
+>rlan://localhost/</userinput
+> i &konqueror;).</para>
+
+</chapter>
+
+<chapter id="config-file-format">
+<title
+>Indstillingsfilen</title>
+
+<para
+>Her er et eksempel på en indstillingsfil:</para>
+
+<screen
+>PingAddresses = 192.168.100.0/255.255.255.0;192.168.100.10-192.168.199.19;192.168.200.1;192-192.168-168.100-199.0-9;
+PingNames = bb_mail;
+AllowedAddresses = 192.168.0.0/255.255.0.0
+BroadcastNetwork = 192.168.100.0/255.255.255.0
+SearchUsingNmblookup = 1                #forsøg også med nmblookup
+FirstWait = 30                          #30 hundrededels sekunder
+SecondWait = -1                         #kun et forsøg
+#SecondWait = 60                         #forsøg to gange, og vent 0,6 sekunder anden gang
+UpdatePeriod = 300                      #opdatér efter 300 sek
+DeliverUnnamedHosts = 0                 #vis ikke værtsmaskiner uden navn
+MaxPingsAtOnce = 256                    #send op til 256 ICMP-ekkoforespørgsler på én gang
+</screen>
+
+<sect1 id="pingaddresses">
+<title
+><option
+>PingAddresses</option
+></title>
+
+<para
+>Dette er formodentlig den vigtigste indgang.</para>
+
+<para
+>Her angiver du hvilke adresser som skal kaldes med ping. Du kan angive flere intervaller, som afgrænses med semikolon.</para>
+
+<para
+>Der findes fire mulige måder at definere adresser:</para>
+
+<variablelist>
+<varlistentry>
+<term
+>IP-adresse/netværksmaske</term>
+<listitem>
+<para
+>192.168.100.0/255.255.255.0, dvs. en <acronym
+>IP</acronym
+>-adresse og den tildelte netværksmaske.</para>
+
+<para
+>Dette behøver ikke være IP-adressen og netmasken på din maskine. Hvis du for eksempel har 10.0.0.0/255.0.0.0 som din egen adresse, skulle du kunne angive 10.1.2.0/255.255.255.0 hvis du kun er interesseret i disse adresser. Den kombinerede <acronym
+>IP</acronym
+>-adresse og netværksmasken skal afgrænses med en skråstreg <quote
+>/</quote
+> og adressen behøver ikke være en rigtig netværksadresse, den kan også være en værtsmaskineadresse i det ønskede netværk, dvs.10.12.34.67/255.0.0.0 er det samme som 10.0.0.0/255.0.0.0 .</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>et interval med <acronym
+>IP</acronym
+>-adresser</term>
+<listitem>
+<para
+>For eksempel: 192.168.100.10-192.168.199.19</para>
+
+<para
+>En <acronym
+>IP</acronym
+>-adresse hvor kald med ping begynder og en anden <acronym
+>IP</acronym
+>-adresse hvor kald slutter.</para>
+
+<para
+>Begge adresser skal være opdelte med et <quote
+>-</quote
+>.</para>
+
+<para
+>For dette eksempel ville det resultere i 199-100+1 = 100, 100*256 = 25 600, 25 600+(19-10+1) = 25 590 adresser</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>En <acronym
+>IP</acronym
+>-adresse, representeret ved interval for hver af de fire decimaltal.</term>
+<listitem>
+<para
+>En <acronym
+>IP</acronym
+>-adresse kan repræsenteres ved sine fire decimaltal, og du kan angive interval for hvert af disse fire tal: 192-192.169-171.100-199.0-9 </para>
+
+<para
+>I dette eksempel kommer alle <acronym
+>IP</acronym
+>-adresser med det første tal 192, det andet tal fra 168 til 168, det tredje tal fra 100 op til 199 og det sidste tal fra 0 op til 9 til at blive kaldt med ping. Dette skulle give 1*1*100*10 = 1 000 adresser.</para>
+
+<para
+>Dette er formodentlig kun anvendeligt i et fåtal af tilfælde. Her skal du angive interval for hvert fjerde tal, altid afgrænsede med <quote
+>-</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>En enkel <acronym
+>IP</acronym
+>-adresse eller et værtsmaskinenavn</term>
+<listitem>
+<para
+><acronym
+>IP</acronym
+>-adressen eller værtsmaskinenavnet for en maskine som du er særligt interesseret i.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+<para
+>Det er også gyldigt at lade denne indgang være tom.</para>
+
+</sect1>
+
+<sect1 id="pingnames">
+<title
+><option
+>PingNames</option
+></title>
+
+<para
+>Her kan du desuden angive navn for værtsmaskiner som skal kaldes med ping. Navnene skal separeres med semikolon.</para>
+
+<para
+>Det er også gyldigt at lade denne indgang være tom.</para>
+
+</sect1>
+
+<sect1 id="allowedaddresses">
+<title
+><option
+>AllowedAddresses</option
+></title>
+
+<para
+>Dette er også meget vigtigt. &lisa; kommer kun til at kalde adresser med ping, acceptere klienter og svare på broadcaster fra adresser som dækkes af adresserne som angives på denne linje. Du kan tilføje op til 32 IP-adresser/netmasker eller enkelte adresser. Adskil dem med semikolon, og anvend ingen mellemrum mellem adresserne!</para>
+
+<para
+>For eksempel, 192.168.0.0/255.255.0.0;192.169.0.0</para>
+
+<para
+>Et helt netværk eller en enkelt adresse er gyldig. Gør altid dette så begrænset som muligt, oftest er din IP-adresse/delnetmaske et godt valg.</para>
+
+</sect1>
+
+<sect1 id="broadcastnetwork">
+<title
+><option
+>BroadcastNetwork</option
+></title>
+
+<para
+>Denne indgang indeholder præcis en IP-adresse/delnetmask. Broadcaster sendes til denne adresse. Sædvanligvis skal dette være din egen IP-adresse/delnetmaske, for eksempel 192.168.0.0/255.255.0.0</para>
+
+</sect1>
+
+<sect1 id="searchusingnmblookup">
+<title
+><option
+>SearchUsingNmblookup</option
+></title>
+
+<para
+>Her kan du angive <parameter
+>0</parameter
+> eller <parameter
+>1</parameter
+>. <parameter
+>1</parameter
+> betyder at &lisa; kører <command
+>nmblookup</command
+> <option
+>"*"</option
+> og tolker udskriften fra denne kommando. Dette giver mindre netværkstrafik end kald med ping, men du får kun rede på værtsmaskiner som har en <acronym
+>SMB</acronym
+>-tjeneste i gang (&Windows;-maskiner eller maskiner som kører Samba).</para>
+
+<para
+>Hvis du aktiverer dette, og desuden angiver <acronym
+>IP</acronym
+>-adresser for kald med ping, så køres <command
+>nmblookup</command
+> først og derefter starter kaldet. Så kaldes kun adresser som ikke allerede afledtes fra <command
+>nmblookup</command
+>. Dette burde mindske netværksbelastningen en lille smule.</para>
+
+</sect1>
+
+<sect1 id="firstwait">
+<title
+><option
+>FirstWait</option
+></title>
+
+<para
+>Hvis &lisa; kalder med ping, dvs hvis den sender <acronym
+>ICMP</acronym
+>-ekkoforespørgsler, sender den et antal forespørgsler på en gang, og ventar siden så mange hundrededels sekunder som du angiver her. Oftest er værdier fra 5 til 50 gode, den maksimale værdi er 99 (som giver 0,99 sekunder, en meget lang tid). Forsøg at sætte denne værdi så lavt som muligt mens alle værtsmaskiner som er startede stadigvæk findes.</para>
+
+</sect1>
+
+<sect1 id="secondwait">
+<title
+><option
+>SecondWait</option
+></title>
+
+<para
+>Efter &lisa; har sendt ekkoforespørgsel første gang, kan det være muligt at visse værtsmaskiner ikke blev fundet. For at forbedre resultatet, kan &lisa; kalde en gang til. Denne gang kaldes kun værtsmaskiner som den ikke fik noget svar fra. Hvis du får et godt resultat med kun at kalde en gang, kan du lukke af for den anden gang ved at angive <userinput
+>-1</userinput
+> for SecondWait.</para>
+
+<para
+>Ellers kan det være en god idé at gøre denne værdi noget større end værdien for <option
+>FirstWait</option
+>, eftersom de værtsmaskiner som ikke blev fundet ved det første forsøg formodentlig er langsommere eller længere væk så at de tager nogle millisekunder længere at svare. Oftest er værdier fra 5 til 50 gode, eller -1 for at lukke for den anden afsøgning. Den maksimale værdi er 99 (som giver 0,99 sekunder, en meget lang tid).</para>
+
+</sect1>
+
+<sect1 id="updateperiod">
+<title
+><option
+>UpdatePeriod</option
+></title>
+
+<para
+>Dette er intervallet som &lisa; venter inden en opdatering. Efter den her tiden gør &lisa; et kald med ping eller <command
+>nmblookup</command
+> eller henter listen med værtsmaskiner fra &lisa;-serveren som virkelig udfører kaldet.</para>
+
+<para
+>Gyldige værdier er mellem 30 sekunder og 1800 sekunder (en halv time). Hvis du har et stort netværk, gør så ikke intervallet for lille (for at holde netværksbelastningen lav). Værdier fra 300 til 900 sekunder (5 til 15 minutter) bør være en god idé.</para>
+
+<para
+>Husk at opdateringsperioden fordobles hvis ingen kommer til serveren, op til fire gange, så intervallet bliver 16 gange den værdi som angives her og nulstilles til værdien som angives her hvis nogen kommer til serveren.</para>
+
+</sect1>
+
+<sect1 id="deliver-unnamed-hosts">
+<title
+><option
+>DeliverUnnamedHosts</option
+></title>
+
+<para
+>Hvis et svar på en ekkoforespørgsel modtages fra en IP-adresse hvor &lisa; ikke kan afgøre navnet, sendes den kun via porten hvis du indstiller dette til 1.</para>
+
+<para
+>Jeg er ikke sikker på at dette er en anvendelig funktion, men måske findes der nogle infrastrukturenheder i netværket som ikke har navne tilldelt, så at de ikke behøver at publiceres. Vælg 0 her hvis du vil lade dem være hemmelige. Vælg 0 hvis du er usikker.</para>
+
+</sect1>
+
+<sect1 id="max-pings-at-once">
+<title
+>MaxPingsAtOnce</title>
+
+<para
+>Når &lisa; sender kald med ping (ekkoforespørgsler), sender den et antal på en gang og venter derefter på svaret. Normalt sendes 256 kald på en gang, og du behøver oftest ikke ændre på denne værdi. Hvis du gør den meget større, kan de interne buffere for modtagelse af svarene på ekkoforespørgsler blive for små. Hvis du gør det for lille bliver opdatering langsommere.</para>
+
+</sect1>
+
+<sect1 id="examples">
+<title
+>Yderligere tre eksempler på filer</title>
+
+<example>
+<title
+>AT GØRE</title>
+
+<para
+>Du er medlem i et lille netværk med 24-bits netværksmaske, dvs. op til 256 værtsmaskiner.</para>
+
+<screen
+>PingAddresses = 192.168.100.0/255.255.255.0
+AllowedAddresses = 192.168.100.0/255.255.255.0
+BroadcastNetwork = 192.168.100.0/255.255.255.0
+SearchUsingNmblookup = 0                         #anvend ikke nmblookup
+FirstWait = 20                                   #20 hundrededels sekunder
+SecondWait = 30                                  #30 hundrededels sekunder ved andet forsøg
+UpdatePeriod = 300                               #opdatér efter 300 sek
+DeliverUnnamedHosts = 0                          #vis ikke værtsmaskiner uden navn
+</screen>
+
+</example>
+
+<example>
+<title
+>Indstillingsfil for værtsmaskiner som kun kører <acronym
+>SMB</acronym
+></title>
+
+<para
+>Du er kun interesseret i værtsmaskiner som kører <acronym
+>SMB</acronym
+>-tjenesten og du har ingen routere i netværket.</para>
+
+<screen
+>AllowedAddresses = 192.168.100.0/255.255.255.0
+BroadcastNetwork = 192.168.100.0/255.255.255.0
+SearchUsingNmblookup = 1                #anvend nmblookup
+UpdatePeriod = 300                      #opdatér efter 300 sek
+DeliverUnnamedHosts = 0                 #vis ikke værtsmaskiner uden navn
+</screen>
+</example>
+
+<example>
+<title
+>Indstillingsfil som anvender både <command
+>nmblookup</command
+> og kald med ping</title>
+
+<para
+>Samme netværk, men her bruges både nmblookup og kald med ping.</para>
+
+<screen
+>PingAddresses = 192.168.100.0/255.255.255.0
+PingNames = bb_mail
+AllowedAddresses = 192.168.0.0/255.255.0.0
+BroadcastNetwork = 192.168.100.0/255.255.255.0
+SearchUsingNmblookup = 1                #forsøg også med nmblookup
+FirstWait = 30                          #30 hundrededels sekunder
+SecondWait = -1                         #forsøg kun en gang
+#SecondWait = 60                         #forsøg to gange, og vent 0,6 sekunder anden gang
+UpdatePeriod = 300                      #opdatér efter 300 sek
+DeliverUnnamedHosts = 0                 #vis ikke værtsmaskiner uden navn
+MaxPingsAtOnce = 256                    #send op til 256 ICMP-ekkoforespørgsler på en gang
+</screen>
+
+</example>
+
+<example>
+<title
+>Indstillingsfil for &reslisa;</title>
+
+<para
+>Og nu en indstillingsfil for &reslisa;, PingAddresses bruges ikke af &reslisa;, ikke heller BroadcastNetwork.</para>
+
+<screen
+>PingNames = bb_mail;en_værtsmaskine;en_anden_værtsmaskine
+AllowedAddresses = 192.168.0.0/255.255.0.0
+SearchUsingNmblookup = 1                # anvend nmblookup
+FirstWait = 30                          #30 hundrededels sekunder
+SecondWait = -1                         #kun et forsøg
+#SecondWait = 60                         #forsøg to gange, og vent 0,6 sekunder anden gang
+UpdatePeriod = 300                      #opdatér efter 300 sek
+DeliverUnnamedHosts = 1                 #vis ikke værtsmaskiner uden navn
+MaxPingsAtOnce = 256                    #send op til 256 ICMP-ekkoforespørgsler på én gang
+</screen>
+
+</example>
+</sect1>
+</chapter>
+
+<chapter id="command-line-options">
+<title
+>Kommandolinjeflag og øvrig brug</title>
+
+<para
+>Følgende kommandolinjeflag understøttes:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><option
+>-v</option
+>, <option
+>--version</option
+></term>
+<listitem>
+<para
+>Udskriver kortfattet versionsinformation.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-h</option
+>, <option
+>--help</option
+></term>
+<listitem>
+<para
+>Giver en oversigt over kommandolinjeflag</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-u</option
+>, <option
+>--unix</option
+></term>
+<listitem>
+<para
+>Led først efter <filename
+>$<envar
+>HOME</envar
+>/.lisarc</filename
+>, derefter efter <filename
+>/etc/lisarc</filename
+>. Dette er den normale opførsel.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-k</option
+>, <option
+>--kde1</option
+></term>
+<listitem>
+<para
+>Led først efter <filename
+>$<envar
+>HOME</envar
+>/.kde/share/config/lisarc</filename
+>, derefter efter <filename
+>$<envar
+>KDEDIR</envar
+>/share/config/lisarc</filename
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-K</option
+>, <option
+>--kde2</option
+></term>
+<listitem>
+<para
+>Leder efter filen <filename
+>lisarc</filename
+>  i hver mappe som returneres ved at køre <userinput
+><command
+>kde-config</command
+> <option
+>--path</option
+> <parameter
+>config</parameter
+></userinput
+></para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-c</option
+>, <option
+>--config=</option
+><parameter
+>FIL</parameter
+></term>
+<listitem>
+<para
+>Læs <parameter
+>FIL</parameter
+> og ingen anden indstillingsfil.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-p</option
+>, <option
+>--port</option
+> <parameter
+>PORTNR</parameter
+></term>
+<listitem>
+<para
+>Start serveren med dette portnummer. Hvis du bruger dette kommer &lisa; ikke til at kunne samarbejde med andre &lisa;-programmer på netværket. Dette er ikke tilgængeligt for &reslisa;</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+     
+<para
+>Hvis du sender signalet SIGHUP til &lisa; eller &reslisa;, kommer den til at læse sin indstillingsfil igen (<userinput
+><command
+>killall</command
+> <option
+>-HUP lisa</option
+></userinput
+>).</para>
+
+<para
+>Hvis du sender signalet SIGUSR1 til &lisa; eller &reslisa;, udskriver den en del statusinformation til standardudskriften (<userinput
+><command
+>killall</command
+> <option
+>-USR1 lisa</option
+></userinput
+>). Du ser ingenting hvis terminalen hvor &lisa;/&reslisa; startedes er afsluttet.</para>
+
+
+
+</chapter>
+
+<chapter id="credits-and-license">
+<title
+>Medvirkende og licenser</title>
+
+<para
+>&lisa; og &reslisa; ophavsret 2000, 2001, Alexander Neundorf</para>
+
+
+
+&erik.kjaer.pedersen.credit; 
+
+<para
+>Hav det godt, Alexander Neundorf <email
+>neundorf@kde.org</email
+></para>
+&underFDL; &underGPL; </chapter>
+
+<appendix id="installation">
+<title
+>Installation</title>
+
+<para
+>&lisa; og &reslisa; behøver libstdc++ (de bruger strengklassen derfra), de <emphasis
+>behøver ikke</emphasis
+> &Qt; eller &kde;.</para>
+
+&install.compile.documentation;
+
+<sect1 id="other-requirements">
+<title
+>Andre krav</title>
+
+<para
+>Både &reslisa; og &lisa; åbner en såkaldt <quote
+>rå sokkel</quote
+> (raw socket) for at sende og modtage <acronym
+>ICMP</acronym
+>-ekkoforespørgsler (kald med ping). For at kunne gøre dette, behøver de <systemitem class="username"
+>root</systemitem
+>-rettigheder.</para>
+
+
+<para
+>&lisa; sørger for en tjeneste på <acronym
+>TCP</acronym
+>-porten 7741, og skal installeres af <systemitem class="username"
+>root</systemitem
+> og startes når systemet sættes i gang. Det afhænger meget af operativsystemet hvordan dette kan opnås.</para>
+
+<para
+>&reslisa; er beregnet til at startes pr brugere, den sørger ikke for noget til netværket. Den skal installeres setuid <systemitem class="username"
+>root</systemitem
+>.</para>
+
+<para
+>Hvis du bruger <userinput
+>rlan</userinput
+> I/O-slaven fra &kde; 2, kan &reslisa; startes automatisk.</para>
+
+<para
+>&lisa; læser filen <filename
+>lisarc</filename
+>, &reslisa; læser filen <filename
+>reslisarc</filename
+>. Hvis du vil kunne indstille begge fra kontrolcentret, skal du starte dem med kommandolinjeflaget <option
+>-K</option
+>.</para>
+
+<para
+>For mere information om hvor de leder efter indstillingsfiler, læs kapitlet om <xref linkend="command-line-options"/>.</para>
+
+</sect1>
+</appendix>
+</book>

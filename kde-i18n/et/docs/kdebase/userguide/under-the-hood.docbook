@@ -1,0 +1,650 @@
+<chapter id="tinkering-under-the-hood">
+<!-- Uncomment the <*info
+> below and add your name to be -->
+<!-- credited for writing this section. -->
+
+<!--
+<chapterinfo>
+<authorgroup>
+<author>
+<firstname
+>Your First Name here</firstname>
+<surname
+>Your Surname here </surname>
+</author>
+</authorgroup>
+</chapterinfo>
+-->
+
+<title
+>&kde; sisemusse piiludes</title>
+
+<sect1 id="hand-editing-config-files">
+
+<sect1info>
+<author
+><personname
+> <firstname
+>Nicolas</firstname
+> <surname
+>Goutte</surname
+> </personname
+> <email
+>goutte@kde.org</email
+> </author>
+</sect1info>
+
+<title
+>Konfiguratsioonifailide redigeerimine käsitsi</title>
+
+<sect2 id="hand-editing-intro">
+<title
+>Sissejuhatus</title>
+<para
+>&kde; konfiguratsioonifaile on väga lihtne redigeerida isegi lihtsa tekstiredaktoriga (näiteks &kate;), sest need kujutavad endast lihtsaid tekstifaile.</para>
+
+<para
+>Tekstifaili näide:</para>
+
+<programlisting
+>[General]
+AutoSave=1
+LastFile=/var/tmp/test.txt</programlisting>
+
+<para
+>Kasutajate isiklikud konfiguratsioonifailid asuvad kataloogis <filename class="directory"
+>.kde/share/config</filename
+> (<filename
+>.kde</filename
+> asemel võib seista ka midagi muud vastavalt keskkonnamuutuja $<envar
+>KDEHOME</envar
+> määratlusele), globaalsed konfiguratsioonifailid aga &kde; paigalduse asukohas alamkataloogis <filename class="directory"
+>share/config</filename
+> (selle asukoha leiab käsuga <command
+>kde-config --prefix</command
+>). Failinimede lõpus seisab tavaliselt rc (sellele ei eelne punkti), näiteks <filename
+>kopeterc</filename
+>.</para>
+
+<warning
+><para
+>Konfiguratsioonifailide redigeerimine käsitsi kujutab endast riski sinu &kde; stabiilsusele. Rakendused ei kontrolli tavaliselt konfiguratsioonifailide sisu. See tähendab, et kui midagi on valesti, ei pruugi konfiguratsioon tööle hakata ja rakendust võib tabada krahh.</para
+></warning>
+
+</sect2>
+
+<sect2 id="hand-editing-backups">
+<title
+>Varukoopiad</title>
+
+<para
+>Seepärast olgu sinu esimeseks reegliks enne konfiguratsioonifaili redigeerimist teha sellest varukoopia. See on kõige mõistlikum salvestada kuhugi mujale kui kataloogi <filename class="directory"
+>.kde</filename
+> (või muusse keskkonnamuutjaga $<envar
+>KDEHOME</envar
+> määratud kataloogi). Varukoopiatest on sageli kasu ka muudel juhtudel: nii võib näiteks mõni suurem krahh hävitada &kde; olulised konfiguratsioonifailid (näiteks sinu &kmail;i seadistused, mida sisaldab fail <filename
+>kmailrc</filename
+>). Selliseid suuri krahhe ei tohiks üldiselt küll ette tulla, aga päris välistada ei ole neid paraku ka võimalik.</para>
+</sect2>
+
+<sect2 id="hand-editing">
+<title
+>Redigeerimine</title>
+
+<para
+>Miks peaks üldse konfiguratsioonifailides midagi muutma? Kindlasti läheb seda vaja, kui soovid rakendada KIOSK-i režiimi. Võib-olla palub mõni arendaja sul midagi proovida, mis aitaks mõne rakenduse probleeme lahendada. Vahest soovid mõnest probleemist vabaneda ilma tervet <filename class="directory"
+>.kde</filename
+> kataloogi eemaldamata. Aga võib-olla soovid hoopis heita pilgu &kde; sisemusse.</para>
+
+<para
+>Mis ka ei ole põhjus, oletame siinkohal, et sa tahad mingit konfiguratsioonifaili käsitsi muutma hakata.</para>
+
+<para
+>Enne seda tuleks kindlasti kontrollida, et seda kasutav rakendus ei tööta. Kui tegemist on mõne tähtsama konfiguratsioonifailiga, oleks mõttekas redigeerimine ette võtta üldse väljaspool &kde; töökeskkonda.</para>
+
+<para
+>Oled valmis? Tee siis failist varukoopia (seda ei tasu kindlasti unustada!), käivita meelepärane tekstiredaktor (oletame, et selleks on &kate;) ja ava fail (ava see kindlasti UTF-8 kodeeringus; &kate; näitab seda kui <quote
+>utf8</quote
+>).</para>
+
+<para
+>Nüüd on sinu ees umbes selline fail:</para>
+
+<programlisting
+>[Group]
+Key1=Value1
+Key2=Value2
+Key3=Value3</programlisting>
+
+<para
+>Seejärel võid seda muutma asuda (aga ole ettevaatlik!) ning siis salvestada (kontrolli taas, et salvestaksid <acronym
+>UTF-8</acronym
+> kodeeringus).</para>
+
+<para
+>Pärast seda tasub testida rakendust. Kui see ei tööta enam korralikult, sulge rakendus ja asenda muudetud fail varasemaga, millest tegid varukoopia.</para>
+
+<itemizedlist>
+<title
+>Lisainfo</title>
+
+
+<listitem
+><para
+><xref linkend="kde-for-administrators"/> pakub rohkem infot &kde; kataloogistruktuuri koha, aidates sul leida faili, mida soovid redigeerida.</para>
+</listitem>
+
+</itemizedlist>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="scripting-the-desktop">
+<title
+>Skriptid ja töölaud</title>
+
+<para
+>&kde; pakub &DCOP;-i ehk töölaua kommunikatsiooniprotokolli (Desktop COmmunications Protocol) näol välja võimsa protsessidevahelise kommunikatsioonisüsteemi. &DCOP;-i abil saab kontrollida &kde; väga paljusid tahke käsurealt või enda lemmikskriptikeeles kirja pandud skriptiga. Samuti saab selle abil infot &kde; rakenduste käest: nii on mitmel &kde; meediamängijal oma meetodid, millega saab rakenduse käest hankida teavet parajasti esitatava pala kohta.</para>
+
+<para
+>Üldiselt pakuvad kõik &kde; rakendused ühe või enamgi &DCOP;-<firstterm
+>liides</firstterm
+>e, mis omakorda pakub meetodid (või, kui sulle rohkem meeldib, siis funktsioonid), mida mõni teine rakendus võib välja kutsuda. See tähendab, et &DCOP;-i kasutamise esimene samm on leida vajalikule ülesandele sobilik meetod. Kõige lihtsam on seda teada saada &DCOP;-i meetodite graafilise kasutajaliidese <application
+>kdcop</application
+> abil.</para>
+
+<para
+>Käivita <application
+>kdcop</application
+> &konsole;st või minikäsurealt (see on aken, mis avaneb kiirklahviga <keycombo action="simul"
+>&Alt;<keycap
+>F2</keycap
+> </keycombo
+>). <application
+>kdcop</application
+> näitab puukujuliselt korraldatuna parajasti töötavaid rakendusi, mis pakuvad &DCOP;-liidest. Üldiselt nõuab sobiva meetodi leidmine puus mõningast otsimist, kuid tasuks tähele panna, et liides <quote
+>(vaikimisi)</quote
+> sisaldab enamasti kõige sagedamini kasutatavaid funktsioone.</para>
+
+
+
+<para
+>Testimaks, et funktsioon teeb seda, mis vaja, tee topeltklõps kirjel <guilabel
+>setColor</guilabel
+>. Värvi <varname
+>c</varname
+> määramiseks klõpsa värvivalija nupul ja vali värv. Märgi kast, millega määrad, et tegemist on värviga A. Klõpsa nupule <guilabel
+>OK</guilabel
+> ning taustavärv ongi määratud.</para>
+
+<para
+>&DCOP; meetodi kasutamiseks oma lemmikskriptikeeles võib pruukida kas &DCOP; seoseid, kui moodul kdebindings neid pakub, või kutsuda välja käsureaprogramm <command
+>dcop</command
+>. Lihtsamate vajaduste rahuldamiseks piisab lihtsalt programmi <command
+>dcop</command
+> väljakutsumisest. &DCOP; meetodi väljakutsumiseks käsurealt tuleb määrata rakendus ja liides, millele meetod kuulub, meetod ise ning argumendid kujul, mis sobib kokku shelliga.</para>
+
+<para
+>Määrata tuleb rakendus, liides ja meetod (just selles järjekorras) ning nende järel argumendid samas järjekorras, nagu neid esitab <application
+>kdcop</application
+>. <command
+>dcop</command
+> pakub veel hulga võtmeid, millega võimaldab tutvuda käsk <userinput
+><command
+>dcop</command
+> <option
+>--help</option
+></userinput
+>.</para>
+
+<para
+>Aitab teooriast - vaatame nüüd näidet:</para>
+
+<example>
+<title
+>Taustavärvi muutmise skript &DCOP;-iga</title>
+
+<para
+>Käsureaprogrammi <command
+>dcop</command
+> ja pisukese Perli abiga loome lihtsa skripti, mis tasapisi vahetab töölaua tausta spektri erinevate värvide vastu.</para>
+
+<para
+>Kõigepealt otsime rakendusega <application
+>kdcop</application
+> üles sobiva meetodi. Antud juhul ei ole meil palju otsida: vajalik meetod on <menuchoice
+><guimenu
+>kdesktop</guimenu
+><guisubmenu
+>KBackgroundIface</guisubmenu
+><guimenuitem
+>setColor</guimenuitem
+> </menuchoice
+>. Argumente funktsiooni tagastustüüpi näidatakse C++ keeles. Meetodi <methodname
+>setColor</methodname
+> argumendid on värv <varname
+>c</varname
+>, mis määrab kindlaks uue taustavärvi, ning tõeväärtus (tõene või väär) <varname
+>isColorA</varname
+>, mis määrab kindlaks, kas värv on esimene või teine (sellest on abi üleminekute jaoks ja muudelgi puhkudel).</para>
+
+<para
+>Kasutamaks meetodit <methodname
+>setColor</methodname
+> käsureal läheb meil vaja järgmist käsku: <screen
+><prompt
+>%</prompt
+> <userinput
+><command
+>dcop</command
+> kdesktop KBackgroundIface setColor '#ffffff' false</userinput
+>
+</screen>
+</para>
+
+<para
+>Värvi määramiseks pruukisime 16-süsteemis RGB-väärtust, nagu seda kasutab &HTML;. Pane tähele, et seda ümbritsevad ühekordsed jutumärgid, et shell ei hakkaks omamoodi tõlgendama märki <token
+>#</token
+>.</para>
+
+<para
+>Värvi 16-süsteemis RGB-väärtuse leidmiseks ava mõnes &kde; rakenduses värvivalija dialoog (näiteks &kcontrolcenter;es <menuchoice
+><guimenu
+>Välismus ja teemad</guimenu
+><guimenuitem
+>Värvid</guimenuitem
+> </menuchoice
+>), vali vajalik värv ning kasuta väärtust, mida näitab tekstikast <guilabel
+>HTML</guilabel
+>.</para>
+
+
+<para
+>See ongi kõik, mida me &DCOP;-ist vajame, nii et nüüd tuleb veel lihtsalt skript valmis kirjutada. Alljärgnev on (äärmiselt!) lihtne variant: <programlisting
+><![CDATA[
+$min=49;  # Minimum value of R, G, or B colour
+$max=174; # Maximum value of R, G, or B colour
+$step=5;  # Amount to step colour by on each step
+$sleeptime=15; # Interval in seconds between each step
+
+@start = ($max, $min, $min);
+@colour = @start;
+
+while (1) {
+        foreach (0..5) {
+                my $which = $_ % 3; # Which colour (R, G or B) to change
+                my $updown = $_ % 2; # Whether to increase or decrease the colour value
+                do {
+                        if ($updown == 0) { $colour[$which]+=$step; }
+                        if ($updown == 1) { $colour[$which]-=$step; }
+                        my $dcopcall=sprintf "dcop kdesktop KBackgroundIface setColor '#%x%x%x' true\n", @colour;
+                        system($dcopcall);
+                        sleep $sleeptime;
+                        } while (($colour[$which] 
+>= $min) and ($colour[$which] <= $max));
+                }
+}
+]]>
+</programlisting>
+</para>
+
+<para
+>Kui käivitad skripti ilma täiendavate argumentideta, vahetab see taustavärvi läbi kogu spektri seni, kuni skripti töö lõpetatakse. <foreignphrase
+>Voil&agrave;</foreignphrase
+>!</para>
+
+</example>
+
+<para
+>Perl ei ole mõistagi ainus keel, milles &DCOP;-i jaoks skripte kirjutada&mdash;kui eelistad shelliskripti, saab ka seda teha:</para>
+
+<example>
+<title
+>Tausta määramine internetist</title>
+
+<para
+>Järgnev skript hangib põhipildi koomiksist <quote
+>User Friendly</quote
+> ja seab selle töölaua taustapildiks, kasutades ära tavalisi tööriistu ja veidi &DCOP;-i abi:</para>
+
+<programlisting
+><![CDATA[
+#!/bin/sh
+COMICURL=`wget -qO - http://www.userfriendly.org/static/index.html | \
+          grep Latest | sed -e "s,.*SRC=\",," -e "s,\"
+>.*,,"`
+TMPFILE=`mktemp /tmp/$0.XXXXXX` || exit 1
+wget -q -O $TMPFILE $COMICURL
+dcop kdesktop KBackgroundIface setWallpaper $TMPFILE 1
+]]>
+</programlisting>
+
+<para
+>Esimene rida pärast #!/bin/sh kasutab programmi <command
+>wget</command
+> ja veidi regulaaravaldiste maagilisi võimeid hankimaks pilt koomiksi pealehekülje &HTML;-lähtekoodist. Teine ja kolmas rida tõmbavad pildi internetist ning lõpuks seab <command
+>dcop</command
+> selle taustapildiks.</para>
+
+</example>
+
+
+<!-- <itemizedlist>
+<title
+>Related Information</title>
+<listitem
+><para
+>to be written</para>
+</listitem>
+</itemizedlist
+> -->
+
+
+</sect1>
+
+
+<sect1 id="adding-extra-keys">
+<title
+>Kiirklahvide lisamine &kde;-le</title>
+
+<para
+>Paljudel klaviatuuridel on tänapäeval lisaklahve, millele ei ole vaikimisi omistatud ühtegi toimingut.</para>
+
+<para
+><quote
+>Multimeediaklahvid</quote
+> tekitavad enamasti signaali ja neile saab omistada mingi kiirkorralduse nagu igale muule klahvile. Mõningaid klahve aga ei tuvastata ning nendele vajutamisel dialoogis <guilabel
+>Kiirklahvide seadistamine</guilabel
+> ei juhtu mitte midagi.</para>
+
+<para
+>Mõnel IBM-i sülearvutil on näiteks täiendavad vasakule ja paremale osutava noolega klahvid, mis näevad välja nagu <guiicon
+>lehekülg vasakule</guiicon
+> ja <guiicon
+>lehekülg paremale</guiicon
+>.</para>
+
+<procedure>
+<step
+><para
+>Käsuga <command
+>xev</command
+> saab teada klahvide koodi. Antud juhul on neiks 233 ja 234. </para
+></step>
+<step
+><para
+>Vali klahvisümbolid. Tervet rida sümboleid vaikimisi ei kasutata, nii et valik peaks olema päris suur. Nende nimekirja leiab failist <filename
+>/usr/X11R6/include/X11/keysymdef.h</filename
+> (sinu süsteemis võib see küll asuda kuskil mujal).</para
+></step>
+<step
+><para
+>Loo oma kodukataloogi fail <filename
+>.Xmodmap</filename
+> ja lisa sinna järgmised read:</para>
+<screen
+>keycode 233 = Next_Virtual_Screen
+keycode 234 = Prev_Virtual_Screen</screen>
+</step>
+<step
+><para
+>Käivita käsk <userinput
+><command
+>xmodmap</command
+> <filename
+>~/.Xmodmap</filename
+></userinput
+></para
+></step>
+</procedure>
+
+<para
+>Nüüd võid uuesti käivitada käsu <command
+>xev</command
+>. Peaksid nägema, et nüüd on ka neil klahvidel oma klahvisümbolid. Seejärel on neile võimalik omistada toiminguid nagu igale muule klahvile.</para>
+
+<itemizedlist>
+<title
+>Lisainfo</title>
+<listitem
+><para
+>Käsu <command
+>xev</command
+> manuaalilehekülje saab avada &konqueror;is <userinput
+>man:/xev</userinput
+> või terminalis <userinput
+><command
+>man</command
+> xev</userinput
+> sisestades.</para
+></listitem>
+</itemizedlist>
+
+</sect1>
+
+<sect1 id="keys-for-scripts">
+<title
+>Uute toimingute kiirklahvide lisamine</title>
+
+<para
+>Enamikule töölaua või rakenduste toimingutele on kiirklahvid juba eelnevalt omistatud. Kui seda aga pole või kui oled loonud mingi omaenda toimingu, siis saad ka sellele kiirklahvi määrata.</para>
+
+<para
+>Lisaks eelmainitule võib sul tekkida tahtmine omistada senikasutamata klahv näiteks mõnele skriptile või DCOP-käsule. Me omistame siinses näites kaks lisatud klahvi (vt. <xref linkend="adding-extra-keys"/>), millega liikuda eelmisele või järgmisele virtuaalsele töölauale, kahele funktsioonile, milleks sul läheb vaja DCOP-i (vt. <xref linkend="scripting-the-desktop"/>).</para>
+
+<para
+>Seda saab kergesti teha nii:</para>
+
+<procedure>
+<step>
+<para
+>Ava &juhtimiskeskus;, vali <guilabel
+>Hõlbustus</guilabel
+> ja seal <guilabel
+>Aktiveerimistoimingud</guilabel
+></para>
+</step>
+<step>
+<para
+>Vali <guibutton
+>Uus toiming</guibutton
+></para>
+</step>
+<step>
+<para
+>Anna uuele toimingule nimi, &eg; <userinput
+>Järgmine virtuaalne töölaud</userinput
+></para>
+</step>
+<step>
+<para
+>Vali <guilabel
+>toimingu tüübiks</guilabel
+> <guilabel
+>Kiirklahv -> Käsk/URL (lihtne)</guilabel
+></para>
+</step>
+<step>
+<para
+>Vajuta kaardil <guilabel
+>Kiirklahv</guilabel
+> nupule, millega soovid käsu käivitada. Antud juhul tuleks siis vajutada klahvi, millel on <guiicon
+>järgmise lehekülje</guiicon
+> pilt. Klahvikujutisele peaks ilmuma <keysym
+>Next_Virtual_Screen</keysym
+>.</para>
+</step>
+<step>
+<para
+>Määra kaardil <guilabel
+>Käsu/URL-i seadistused</guilabel
+> käsk: <userinput
+><command
+>dcop kwin default nextDesktop</command
+></userinput
+></para>
+</step>
+</procedure>
+
+<para
+>Korda sedasama klahviga <keysym
+>Prev_Virtual_Screen</keysym
+>, mille puhul käsk on siis <userinput
+><command
+>dcop kwin default previousDesktop</command
+></userinput
+>.</para>
+
+<para
+>Seejärel peaks klahvi <keysym
+>Prev_Virtual_Screen</keysym
+> või <keysym
+>Next_Virtual_Screen</keysym
+> vajutamine viima sind vastavalt eelmisele või järgmisele virtuaalsele töölauale.</para>
+
+<para
+>Mõistagi võib mis tahes toimingule omistada mis tahes vaba klahvi.</para>
+
+<itemizedlist>
+<title
+>Lisainfo</title
+> 
+<listitem
+><para
+>Põhjalikumalt selgitab seda kõik kiirklahvide (<application
+>KHotKeys</application
+>) dokumentatsioon, millega saab tutvuda &abikeskus;es või &konqueror;is, kui sisestada seal <userinput
+>help:/khotkeys</userinput
+>;.</para
+></listitem
+> 
+<listitem
+><para
+><xref linkend="adding-extra-keys"/></para
+></listitem>
+<listitem
+><para
+><xref linkend="scripting-the-desktop"/></para
+></listitem>
+</itemizedlist>
+
+</sect1>
+
+<sect1 id="kdebugdialog">
+<sect1info>
+<authorgroup>
+<author
+><personname
+> <firstname
+>Adriaan</firstname
+> <surname
+>de Groot</surname
+> </personname
+> <email
+>groot@kde.org</email
+> </author>
+</authorgroup>
+</sect1info>
+
+<title
+>&kdebugdialog; - &kde; silumisväljundi kontrollimine</title>
+
+<sect2 id="kdebugdialog-basic-usage">
+<title
+>Põhiasjad</title>
+
+<para
+>&kdebugdialog; ei ole vaikimisi &kmenu;s, see tuleb käivitada shellist või mini-käsurealt käsuga <userinput
+><command
+>kdebugdialog</command
+></userinput
+>. &kdebugdialog; avab akna, milles on üles loetud kõik silumispiirkonnad. Iga piirkonna ees on märkekast, mida märkides või millest märget eemaldades saab &kde; antud osa silumisväljundi sisse või välja lülitada.</para>
+
+<para
+>Silumispiirkonnad on järjestatud numbrite, mitte tähestiku järgi, mistõttu näiteks kio (127) on eespool kui artskde (400). Numbrid ulatuvad kuskile 200 000 kanti, aga reaalselt on silumispiirkondi 400. Vajaliku piirkonna leidmiseks ei pea mõistagi nimekirja läbi kerima. Dialoogi ülaosas on tekstiväli, millele saad sisestada vajaliku piirkonna nime või kas või osagi sellest. Näidatavate kirjete nimekirja hakatakse kohe filtreerima, et see vastaks sinu sisestatud tekstile - kui &eg; kirjutad <userinput
+>k</userinput
+>, nimekiri veel väga palju ei muutu, aga näiteks <userinput
+>kont</userinput
+> peaks näitama juba ainult &kontact;i silumispiirkondi. Väga kiiresti saab silumisväljundi sisse või välja lülitada nuppudega <guibutton
+>Vali kõik</guibutton
+> ja <guibutton
+>Tühista kõik valikud</guibutton
+>, millest esimene paneb &kde; väljastama tohutut kogust silumisväljundit, teise korral see aga puudub peaaegu täielikult.</para>
+</sect2>
+
+<sect2 id="kdebugdialog-fullmode">
+<title
+>KDebugDialog täisrežiimis</title>
+
+<!-- this text partly taken from the kdebugdialog handbook -->
+
+<para
+>Täisrežiimis, mille saab avada käsuga <userinput
+><command
+>kdebugdialog</command
+> <option
+>--fullmode</option
+></userinput
+>, on näha ikka samad silumispiirkonnad, aga hüpikkastist saab korraga valida neist vaid ühe. Seejärel saab eraldi määrata erinevat laadi väljundi - informatsioon, hoiatus, viga ja fataalne viga -  andmise või mitteandmise ning iga tüübi korral ka määrata, kuhu väljund saadetakse. Valikud on järgmised:</para>
+
+<para
+>Fail: sel juhul tuleks sisestada ka faili nimi. See kirjutatakse sinu kodukataloogi (keskkonnamuutujaga $<envar
+>HOME</envar
+> määratud kataloogi).</para>
+
+<para
+>Sõnumiboks: iga silumisteadet näidatakse infodialoogina. Selles tuleb klõpsata <guibutton
+>OK</guibutton
+>, et rakendus saaks edasi töötada.</para>
+
+<para
+>Shell: see on vaikevõimalus. Teated saadetakse standardveaväljundisse (stderr) ning on näha kas shelliaknas, kus rakendus käivitati, või failis <filename
+>.xsession-errors</filename
+>.</para>
+
+<para
+>Syslog: selle korral saadetakse kõik silumisteated süsteemse logi programmile, mis neid oma reeglite kohaselt edasi töötleb.</para>
+
+<para
+>Puudub: selle korral ei väljastata mingeid seda tüüpi teateid.</para>
+
+<para
+>Fataalsete vigade korral antud teadete puhul ei ole enamasti mõistlik valida puudumist või süsteemset logi, sest sel juhul sa teadet ei näe ning fataalse veaga silmitsi sattunud rakendus sulgub, ilma et et sa aimaksidki, miks nii juhtus. Seda, kas rakendus fataalsete vigade korral suletakse, saab muidugi määrata ka märkekastiga <guilabel
+>Fataalsete vigade puhul katkestatakse</guilabel
+> &mdash; vaikimisi on see sisse lülitatud. Samas on fataalse vea tekkimisel rakenduse krahh nagunii kõige tõenäolisem, mis juhtuda saab.</para>
+
+<!-- Add links to "further reading" here -->
+<!-- <itemizedlist>
+<title
+>Related Information</title>
+<listitem
+><para
+>to be written</para>
+</listitem>
+</itemizedlist
+>-->
+
+
+
+</sect2>
+</sect1>
+</chapter>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: xml
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:0
+sgml-indent-data:true
+sgml-parent-document:("index.docbook" "book" "chapter")
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

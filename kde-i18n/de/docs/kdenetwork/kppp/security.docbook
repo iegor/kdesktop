@@ -1,0 +1,140 @@
+<chapter id="security">
+<title
+>&kppp; und die Sicherheit</title>
+
+<para
+>Dieses Kapitel ist hauptsächlich für Administratoren(<systemitem
+>root</systemitem
+>), Leute mit hohen Sicherheitsansprüchen oder einfach technisch Interessierte. Es ist nicht notwendig, dieses Kapitel zu lesen, wenn Sie nur &Linux; für sich zu Hause laufen lassen (obwohl Sie vielleicht etwas Neues lernen könnten, wenn Sie es lesen).</para>
+
+<sect1 id="security-restricting-access">
+<title
+>Den Zugang zu &kppp; beschränken</title>
+
+<para
+>Ein Systemadministrator möchte vielleicht Zugang zu &kppp; auf diejenigen beschränken, denen es erlaubt ist, es zu benutzen. Es gibt zwei Wege, dies zu tun:</para>
+
+<sect2 id="security-group-permissions">
+<title
+>Den Zugang zu &kppp; durch Gruppenrechte beschränken</title>
+
+<para
+>Man erstellt zunächst eine neue Benutzergruppe (sie könnte z.B. <systemitem
+>dialout</systemitem
+> heissen) und fügt jeden Benutzer, der &kppp; benutzen darf, zu dieser Gruppe hinzu. Dann tippt man folgendes ein:</para>
+
+<screen
+><prompt
+>#</prompt
+> <userinput
+><command
+>chown</command
+> <option
+>root.dialout</option
+> <filename
+>/opt/kde/bin/kppp</filename
+></userinput>
+<prompt
+>#</prompt
+> <userinput
+><command
+>chmod</command
+> <option
+>4750</option
+> <filename
+>/opt/kde/bin/kppp</filename
+></userinput
+>
+</screen>
+
+<para
+>Dabei wird vorausgesetzt, dass sich &kde; in <filename class="directory"
+>/opt/kde</filename
+> befindet und die neue Gruppe <systemitem
+>dialout</systemitem
+> heisst.</para>
+
+</sect2>
+
+<sect2 id="security-kppps-way">
+<title
+>Den Zugang mit den Mitteln von &kppp; beschränken</title>
+
+<para
+>Beim Start überprüft &kppp;, ob eine Datei <filename
+>/etc/kppp.allow</filename
+> existiert. Falls es eine solche Datei gibt, können nur Benutzer, die in dieser Datei aufgelistet sin, eine Verbindung herstellen. Diese Datei muss für jeden Benutzer lesbar sein (natürlich <emphasis
+>nicht</emphasis
+> für jeden schreibbar). Nur Benutzernamen werden erkannt, man kann also keine <acronym
+>UID</acronym
+> verwenden. Hier ein kurzes Beispiel:</para>
+
+<screen
+># /etc/kppp.allow
+# Kommentare und Leerzeilen werden ignoriert.
+#
+
+fred
+karl
+daisy
+</screen>
+
+<para
+>Im obigen Beispei dürfen nur die Benutzer <systemitem
+>fred</systemitem
+>, <systemitem
+>karl</systemitem
+> und <systemitem
+>daisy</systemitem
+> eine Verbindung herstellen. Außerdem darf das jeder Benutzer mit der <acronym
+>UID</acronym
+> 0 (daher muss root nicht explizit genannt werden).</para>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="security-why-suid">
+<title
+>&kppp; hat das <acronym
+>SUID</acronym
+>-Bit gesetzt. Wo bleibt die Sicherheit?</title>
+
+<para
+>Es ist realistisch gesehen nicht möglich, ein Wählprogramm ohne gesetztes <acronym
+>SUID</acronym
+>-Bit zu schreiben, das sicher und dabei für unerfahrene Benutzer einfach zu benutzen ist. &kppp; geht das Sicherheitsproblem mit folgender Strategie an:</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Gleich nach dem Programmstart startet &kppp; einen neuen Prozess.</para>
+</listitem>
+<listitem>
+<para
+>Der Masterprozess (der die <acronym
+>GUI</acronym
+>, Benutzerinteraktion u.ä. verwaltet) legt den <acronym
+>SUID</acronym
+>-Status danach ab und läuft dann mit den normalen Benutzerprivilegien.</para>
+</listitem>
+<listitem>
+<para
+>Der Slaveprozess behält seine Privilegien bei und kümmert sich um alles, für das man <systemitem
+>root</systemitem
+>-Rechte benötigt. Um diesen Teil sicher zu machen, werden hier keine Funktionen der &kde;-/&Qt;-Bibliotheken aufgerufen, sondern nur einfache Funktionen der C-Bibliothek. Der Quellcode für diesen Prozess ist kurz (etwa 500 Zeilen) und gut dokumentiert. Dadurch ist es einfach, Sicherheitslöcher zu entdecken.</para>
+</listitem>
+<listitem>
+<para
+>Master- und Slaveprozess kommunizieren mit standard &UNIX; <acronym
+>IPC</acronym
+>.</para>
+</listitem>
+</itemizedlist>
+
+<para
+>Vielen Dank an Harri Porten für das Schreiben dieses exzellenten Quelltextes. Ich dachte, es sei unmöglich - er schrieb es in einer Woche.</para>
+
+</sect1>
+
+</chapter>

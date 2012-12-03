@@ -1,0 +1,166 @@
+<appendix id="appendix-accounting-template">
+<title
+>Un modello di esempio per il calcolo dei costi telefonici.</title>
+
+<para
+>Se non trovi un file di regole per il tuo stato dovrai scriverne uno seguendo il modello seguente. Non ti preoccupare dato che ciò è veramente semplice.</para>
+
+<para
+>Non ti dimenticare di inviare il file di regole creato al responsabile di &kppp;. Puoi controllare la validità della sintassi del nuovo file di regole con l'opzione a riga di comando di &kppp; <userinput
+><option
+>-r</option
+> <replaceable
+>file_di_regole</replaceable
+></userinput
+> e il file deve essere installato in <filename class="directory"
+>${KDEDIR}/share/apps/kppp/Rules</filename
+> o in <filename class="directory"
+>${HOME}/.kde/share/apps/kppp/Rules</filename
+> prima che tu possa selezionarlo in questa finestra di dialogo.</para>
+
+<programlisting
+>################################################################
+#
+# Note legali/Licenza
+# Questo modello è (c) di Mario Weilguni &lt;mweilguni@kde.org&gt;
+# È rilasciato sotto gli stessi termini del pacchetto kppp, 
+# di cui fa parte
+#
+################################################################
+#
+# Questo è un semplice file di regole per kppp. Puoi usarlo come
+# modello se devi creare un nuovo file di regole. Se fai così,
+# elimina tutti i commenti e aggiungi i tuoi. Ciò permetterà ad
+# altri utenti di controllare il file di regole più facilmente.
+# 
+# Firma il file di tariffe con il tuo nome e il tuo indirizzo di
+# posta elettronica così posso contattarti se necessario.
+#
+# NOTA: le regole definite in questo file non hanno alcun senso
+#       e servono solo a scopi dimostrativi
+#
+# NOTA SUL NOME DEI FILE:
+#        quando crei un file di regole, usa il carattere "_"
+#        nel nome del file al posto degli spazi e usa ".rst"
+#        come estensione
+#           cioè "Italia urbane"
+#          --> file da salvare come "Italia_urbane.rst"
+#
+# Grazie, Bernd Wuebben
+# wuebben@math.cornell.edu / wuebben@kde.org
+################################################################
+
+
+################################################################
+#
+# NOME DEL FILE DI REGOLE. È NECESSARIO per il calcolo dei costi
+# telefonici.
+#
+################################################################
+name=default
+
+################################################################
+# impostazioni di valuta
+################################################################
+
+# definisce EUR (Euro) come valuta da usare (non obbligatorio,
+# la valuta predefinita è "$", dollaro)
+currency_symbol=EUR
+
+# Definisce la posizione del simbolo di valuta.
+# (non obbligatorio, il valore predefinito è "right", destra)
+currency_position=right
+
+# Definisce il numero di cifre significative.
+# (non obbligatorio, il valore predefinito è "2"
+currency_digits=2
+
+
+
+################################################################
+# impostazione di connessione
+################################################################
+
+# NOTA: le regole sono applicate dall'alto al basso - l'ULTIMA
+#       regola che corrisponde è quella usata per il calcolo dei
+#       costi.
+
+# Questo è addebitato ogni volta che ti connetti. Se non hai un
+# addebito alla connessione, inserisci "0" o commenta la riga.
+per_connection=0.0
+
+
+# costo minimo di una connessione. Se i costi di una chiamata
+# sono inferiori di questo valore, allora è usato questo valore
+minimum_costs=0.0
+
+
+# Paghi 0.5 per i primi 180 secondi (3 minuti) senza contare se
+# sei stato connesso per 1 secondo o per 180 secondi.
+# Questa regola avrà priorità durante i primi 180 secondi su
+# qualsiasi altra regola, in particolare sulla regola 'default'.
+# Dai un'occhiata al file costgraphs.gif nella directory docs
+# della distribuzione di kppp per un'illustrazione grafica.
+flat_init_costs=(0.5, 180)
+
+# Questa è la regola predefinita se non vengono applicate altre
+# regole. La prima parte "0.1" è il prezzo di una "unità",
+# mentre "60" è la durata in secondi.
+# In tal modo la regola seguente significa: "Ti vengono
+# addebitati 0.01 ogni 60 secondi"
+default=(0.01, 60)
+
+#
+# regole più complesse:
+#
+
+# "da lunedì a domenica dalle 12:00 fino alle 11:59 i costi
+# sono 0.2 ogni 60 secondi"
+on () between () use (0.02, 60)
+
+# come sopra
+on (monday..sunday) between () use (0.02, 60)
+
+# come sopra. Devi usare una forma a 24 ore per l'orario, o il
+# non calcolo dei costi non sarà fatto correttamente.
+# (Esempio: scrivi 15:00 per le 3 di pomeriggio)
+on (monday..sunday) between (0:00..23:59) use (0.02, 60)
+
+# si applica a venerdì, sabato, domenica e lunedì tra le 8 fino
+# alle 13
+on (friday..monday) between (8:00..13:00) use(0.03, 60)
+
+# ATTENZIONE:
+on (monday..friday) between (21:00..5:00) use (0.04, 60)
+# NON include sabato da mezzanotte alle 5 di notte, solo da
+# lunedì a venerdì, come dice.
+
+# si applica ad una data specificata (Natale)
+on (12/25) between () use (0.03, 60)
+
+# un intervallo di date e un giorno della settimana
+on (12/25..12/27, 12/31, 07/04, monday) between () use (0.04, 60)
+
+# usa questo per Pasqua
+on (easter) between () use (0.03, 60)
+
+# Pasqua + 50 giorni (lunedì di Pentecoste)
+on (easter+50) between () use (0.03, 60)
+
+on (thursday) between (20:00..21:52) use (0.5, 1)
+
+
+# La regola "on()" sopra si riferisce solo al tempo corrente. Puoi creare
+# anche una regola che dipende dal numero di secondi in cui sei stato
+# connesso specificando questo tempo come terzo argomento per "use()".
+# Per esempio, diciamo che il costo di sera è 0.015 al minuto, e diminuisce
+# del 20% dopo un'ora di connessione. Ciò può essere reso in tal modo:
+
+on () between (19:30..08:00) use (0.015, 60)
+on () between (19:30..08:00) use (0.012, 60, 3600)
+
+# Nota che queste regola, come le altre regole, risentono dell'ordine
+# in cui appaiono.
+</programlisting>
+
+</appendix>

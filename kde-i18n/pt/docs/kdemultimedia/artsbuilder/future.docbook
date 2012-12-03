@@ -1,0 +1,401 @@
+<!-- <?xml version="1.0" ?>
+<!DOCTYPE chapter PUBLIC "-//KDE//DTD DocBook XML V4.1.2-Based Variant
+V1.1//EN" "dtd/kdex.dtd">
+To validate or process this file as a standalone document, uncomment
+this prolog. Be sure to comment it out again when you are done -->
+
+<chapter id="future-work">
+<title
+>Trabalho Futuro</title>
+
+<para
+>Esta secção descreve algum do trabalho do &arts; que se encontra em progresso. O desenvolvimento progride rapidamente, por isso esta informação poderá estar desactualizada. Você deverá ver o ficheiro da lista TODO e os arquivos das <link linkend="mailing-lists"
+>listas de correio</link
+> para ver quais as novas funcionalidades que estão planeadas. Sinta-se à vontade para se envolver no novo desenho e implementação. </para>
+
+<para
+>Este é um rascunho do documento que lhe tenta dar uma ideia geral de como as novas tecnologias serão integradas no &arts;. Nomeadamente, cobre o seguinte: </para>
+
+<itemizedlist>
+<listitem
+><para
+>Como é que as interfaces funcionam.</para
+></listitem>
+<listitem
+><para
+>Codificadores - a descodificação de sequências de MP3 ou WAV num formato em que possam ser usados como dados.</para
+></listitem>
+<listitem
+><para
+>Vídeo.</para
+></listitem>
+<listitem
+><para
+>Multi-tarefa.</para
+></listitem>
+<listitem
+><para
+>Sincronização.</para
+></listitem>
+<listitem
+><para
+>Expansão/máscara dinâmicas.</para
+></listitem>
+<listitem
+><para
+>Composição dinâmica.</para
+></listitem>
+<listitem
+><para
+>&GUI;</para
+></listitem>
+<listitem
+><para
+>&MIDI;</para
+></listitem>
+</itemizedlist>
+
+<para
+>Isto ainda é trabalho em progresso. Contudo, deverá ser a base se você quiser ver tecnologias novas no &arts;. Ele dever-lhe-á dar uma ideia geral de como esses problemas serão tratados. Contudo, sinta-se à vontade para corrigir tudo o que verá aqui. </para>
+
+<para
+>As coisas que serão utilizadas pela tecnologia do &arts; (por isso, coordenem os  vossos esforços): </para>
+
+<itemizedlist>
+<listitem>
+<para
+><application
+>KPhone</application
+> (voz sobre <acronym
+>IP</acronym
+>) </para>
+</listitem>
+
+<listitem>
+<para
+>&noatun; (leitor de áudio / vídeo) </para>
+</listitem>
+
+<listitem>
+<para
+>&artscontrol; (programa de controlo do servidor de som, para os âmbitos) </para>
+</listitem>
+
+<listitem>
+<para
+><application
+>Brahms</application
+> (sequenciador de música) </para>
+</listitem>
+
+<listitem>
+<para
+><application
+>Kaiman</application
+> (leitor multimédia do &kde;2 - compatível com o kmedia2) </para>
+</listitem>
+
+<listitem>
+<para
+><application
+>mpglib</application
+>/<application
+>kmpg</application
+> (tecnologia de reprodução de áudio e vídeo <acronym
+>mpg</acronym
+>) </para>
+</listitem>
+
+<listitem>
+<para
+><application
+>SDL</application
+> (camada multimédia directa para jogos que ainda não começou, mas que se tornará óptima) </para>
+</listitem>
+
+<listitem>
+<para
+><application
+>electric ears</application
+> (o autor contactou-me - o estado é desconhecido) </para>
+</listitem>
+</itemizedlist>
+
+<sect1 id="interfaces-how">
+<title
+>Como Funcionam as Interfaces</title>
+
+<!-- I think this is now obsolete and documented elsewhere ? -->
+
+<para
+>As interfaces do &MCOP; são a base do conceito do &arts;. Elas são o equivalente transparente na rede das classes de C++. Sempre que possível, você deverá orientar o seu desenho para as interfaces. Estas consistem em quatro partes: </para>
+
+<itemizedlist>
+<listitem
+><para
+>Sequências síncronas</para
+></listitem>
+<listitem
+><para
+>Sequências assíncronas</para
+></listitem>
+<listitem
+><para
+>Métodos</para
+></listitem>
+<listitem
+><para
+>Atributos</para
+></listitem>
+</itemizedlist>
+
+<para
+>Estes poderão ser misturados da forma que você desejar. As novas tecnologias deverão ser definidas em termos de interfaces. Leia as secções sobre as sequências assíncronas e síncronas, assim como as interfaces do KMedia2, os quais são um bom exemplo sobre como as coisas funcionam </para>
+
+<para
+>As interfaces são especificadas no código <literal role="extension"
+>.idl</literal
+> e executadas através do compilador <command
+>mcopidl</command
+>. Você deriva da classe <classname
+><replaceable
+>NomeInterface</replaceable
+>_impl</classname
+> para as implementar e usa a função <function
+>REGISTER_IMPLEMENTATION(NomeInterface_impl)</function
+> para inserir as implementações do seu objecto no sistema de objectos do &MCOP;. </para>
+
+</sect1>
+
+<sect1 id="codecs">
+<title
+>Codificadores - Descodificação de Dados</title>
+
+<para
+>As interfaces do 'kmedia2' permitem-lhe ignorar que os ficheiros WAV, MP3 entre outros consistem em sequências de dados. Em alternativa, você só implementa os métodos para os tocar. </para>
+
+<para
+>Deste modo, você poderá criar uma rotina de carregamento de WAVE's de forma a que você possa tocar ficheiros WAVE (como PlayObject), mas mais ninguém pode usar o seu código. </para>
+
+<para
+>As sequências assíncronas seriam a alternativa. Você define uma interface que lhe permite passar os blocos de dados para dentro extrair blocos de dados para fora. Isto parece ser mesmo assim no &MCOP;: </para>
+
+<programlisting
+>interface Codificador {
+  entrada async byte stream indata;
+  saida async byte stream outdata;
+};
+</programlisting>
+
+
+<para
+>Claro que os codificadores também poderão fornecer parâmetros para emitir dados adicionais, tais como a informação do formato. </para>
+
+<programlisting
+>interface CodificadorAudioByte {
+  entrada async byte stream indata;
+  saida async byte stream outdata;
+  readonly attribute amostragem, bits, canais;
+};
+</programlisting>
+
+<para
+>Este <interfacename
+>CodificadorAudioByte</interfacename
+>, por exemplo, poder-se-ia ligar a um objecto <interfacename
+>ByteStreamToAudio</interfacename
+> para suportar áudio de vírgula flutuante. </para>
+
+<para
+>Claro, outros tipos de codificadores poderiam envolver directamente a emissão de dados de vídeo, como por exemplo </para>
+
+<programlisting
+>interface CodecVideo {
+  entrada async byte stream indata;
+  saida video stream outdata;      /* nota: as sequências de vídeo ainda não existem */
+};
+</programlisting>
+
+<para
+>Muito provavelmente, o conceito de um codificador deveria se aplicado em vez da forma <quote
+>você sabe como tocar e eu não</quote
+> como, por exemplo, o <interfacename
+>WavPlayObject</interfacename
+> usa no momento. Contudo, alguém precisa de parar e fazer algumas experiências antes de API <acronym
+>API</acronym
+> ser finalizada. </para>
+
+</sect1>
+
+<sect1 id="video">
+<title
+>Vídeo</title>
+
+<para
+>A ideia é fornecer o vídeo como sequências assíncronas de algum tipo de dados nativo do &MCOP; que contenha imagens. Este tipo de dados ainda está por ser criado. Ao fazê-lo, os 'plugins' que lidem com as imagens de vídeo poderão ser ligados da mesma forma que os 'plugins' de áudio. </para>
+
+<para
+>Existem algumas coisas que são importantes não deixar de fora, nomeadamente: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Existem os espaços de cores <acronym
+>RGB</acronym
+> e <acronym
+>YUV</acronym
+>. </para>
+</listitem>
+<listitem>
+<para
+>O formato deverá ser associado de qualquer forma à sequência. </para>
+</listitem>
+<listitem>
+<para
+>A sincronização é importante. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>A ideia é deixar possível a reimplementação da classe <classname
+>VideoFrame</classname
+> (ImagemVideo) para que possa armazenar a informação num segmento de memória partilhada. Ao fazê-lo, até a difusão de vídeo entre os diferentes processos seria possível sem muito trabalho. </para>
+
+<para
+>Contudo, a situação normal para o vídeo é que as coisas estão todas no mesmo processo, desde a descodificação até ao desenho. </para>
+
+<para
+>Foi feita uma implementação em protótipo de emissão de vídeo, a qual poderá obter <ulink url="http://space.twc.de/~stefan/kde/download/video-quickdraw.tar.gz"
+>aqui</ulink
+>. Isto teria de ser integrado no &MCOP; ao fim de algumas experiências. </para>
+
+<para
+>Uma componente de desenho deveria ser fornecida que suportasse o XMITSHM (com o <acronym
+>RGB</acronym
+> e o <acronym
+>YUV</acronym
+>); o Martin Vogt comunicou que estava a fazer algo do género. </para>
+
+</sect1>
+
+<sect1 id="threading">
+<title
+>Multitarefa</title>
+
+<para
+>De momento, o &MCOP; é todo ele monotarefa. Talvez para o vídeo não seja mais possível dar a volta a essa questão. Ok. Existem algumas coisas que têm de ser tratadas com cuidado: </para>
+
+
+<itemizedlist>
+<listitem
+><para
+>SmartWrappers - estes não são seguros em multitarefa devido à contagem de referências insegura, entre outras questões similares. </para>
+</listitem>
+<listitem>
+<para
+>'Dispatcher' / E/S - Também inseguros em multitarefa. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Contudo, o que é possível imaginar é tornar os módulos seguros em multitarefa para ambos os casos de sequências, síncronas e assíncronas. Desta forma - com um sistema de fluxo que suporte multitarefa, você poderá escalonar o fluxo do sinal por dois ou mais processadores. Isto iria ajudar bastante no áudio em sistemas multi-processador. </para>
+
+<para
+>Como iria funcionar: </para>
+
+
+<itemizedlist>
+<listitem>
+<para
+>O Sistema de Fluxo decide que módulos deverão calcular o quê - isto é: </para>
+    <itemizedlist>
+	<listitem
+><para
+>imagens de vídeo (com o método 'process_indata')</para
+></listitem>
+	<listitem
+><para
+>sequências de áudio síncronas ('calculateBlock')</para
+></listitem>
+	<listitem
+><para
+>outras sequências assíncronas, nomeadamente sequências de 'bytes'</para
+></listitem>
+	</itemizedlist>
+</listitem>
+<listitem>
+<para
+>Os módulos poderão calcular estas coisas em tarefas próprias. Para o áudio, faz sentido reutilizar as tarefas (&eg; aplicar em quatro tarefas por quatro processadores, independentemente de estarem a correr 100 módulos). Para a descompressão de vídeo e de 'bytes', poderá ser mais confortável ter uma implementação bloqueante numa tarefa própria, a qual está sincronizada com o resto do &MCOP; pelo sistema de fluxo. </para>
+</listitem>
+
+<listitem>
+<para
+>Os módulos não poderão usar a funcionalidade do &MCOP; (como as invocações remotas) durante a operação multitarefa. </para>
+</listitem>
+</itemizedlist>
+
+</sect1>
+
+<sect1 id="synchronization">
+<title
+>Sincronização</title>
+
+<para
+>O vídeo e o &MIDI; (e o áudio) poderão necessitar de sincronização. Basicamente, baseia-se em marcas temporais. A ideia que existe é anexar as marcas temporais às sequências síncronas, adicionando esse campo a cada pacote. Se você enviar duas imagens de vídeo, simplesmente crie dois pacotes (eles são grandes, de qualquer forma), por isso poderá ter duas marcas temporais diferentes. </para>
+
+<para
+>O áudio deverá ter implicitamente marcas temporais, dado que é síncrono. </para>
+
+</sect1>
+
+<sect1 id="dynamic-composition">
+<title
+>Composição Dinâmica</title>
+
+<para
+>Deveria ser possível dizer: um FX de efeito é composto a partir destes módulos mais simples. O FX deverá funcionar como um módulo de &MCOP; normal (veja a máscara), mas de facto consiste noutros módulos. </para>
+
+<para
+>Isto é necessário para o &arts-builder;. </para>
+
+</sect1>
+
+<sect1 id="gui">
+<title
+>&GUI;</title>
+
+<para
+>Todos os componentes &GUI; serão módulos do &MCOP;. Eles deverão ter atributos do tipo 'size' (tamanho), 'label' (texto), 'color' (cor), ... . Um construtor <acronym
+>RAD</acronym
+> (como o &arts-builder;) deverá ser capaz de os compor visualmente. </para>
+
+<para
+>A &GUI; deverá ser gravável, ao registar os atributos. </para>
+
+</sect1>
+
+<sect1 id="midi-stuff">
+<title
+>&MIDI;</title>
+
+<para
+>A funcionalidade do &MIDI; será implementada como sequências assíncronas. Existem duas opções, em que uma usa estruturas normais de &MCOP; para definir os tipos e o outro para introduzir ainda outros tipos personalizados. </para>
+
+<para
+>Pensa-se que as estruturas normais serão suficientes, isto é, algo do tipo: </para>
+
+<programlisting
+>struct EventoMidi {
+  byte b1,b2,b3;
+  sequence&lt;byte&gt; existe;
+}
+</programlisting>
+
+<para
+>As sequências assíncronas deverão suportar os tipos de sequências personalizados. </para>
+
+</sect1>
+
+</chapter>
+
+

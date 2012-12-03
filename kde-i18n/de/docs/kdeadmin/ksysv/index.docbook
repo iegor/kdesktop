@@ -1,0 +1,1384 @@
+<?xml version="1.0" ?>
+<!DOCTYPE book PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" 
+"dtd/kdex.dtd" [
+  <!ENTITY kappname "&ksysv;">
+  <!ENTITY package "kdeadmin">
+  <!ENTITY % addindex "IGNORE">
+  <!ENTITY % German "INCLUDE"
+> <!-- change language only here -->
+]>
+
+<book lang="&language;">
+<bookinfo>
+<title
+>Das Handbuch zu &ksysv;</title>
+<authorgroup>
+<author
+><firstname
+>Peter</firstname
+> <surname
+>Putzer</surname
+> <affiliation
+> <address
+><email
+>putzer@kde.org</email
+></address>
+</affiliation>
+</author>
+<othercredit role="translator"
+> <firstname
+>Volker</firstname
+><surname
+>Dose</surname
+> <affiliation
+><address
+><email
+>vpdose@cpmgut.toppoint.de</email
+></address
+> </affiliation
+><contrib
+>Deutsche Übersetzung</contrib
+></othercredit
+> 
+</authorgroup>
+
+<date
+>2001-03-21</date>
+<releaseinfo
+>1.03.06</releaseinfo>
+
+<copyright>
+<year
+>1998</year>
+<year
+>2000</year>
+<year
+>2001</year>
+<holder
+>Peter Putzer</holder>
+</copyright>
+
+<legalnotice
+>&FDLNotice;</legalnotice>
+
+<abstract>
+<para
+>Dieses Handbuch beschreibt den KDE System V Init Editor &ksysv;.</para>
+</abstract>
+
+<keywordset>
+<keyword
+>KDE</keyword>
+<keyword
+>KSysV</keyword>
+<keyword
+>Runlevel</keyword>
+<keyword
+>Runlevel Editor</keyword>
+<keyword
+>System V Init</keyword>
+</keywordset>
+</bookinfo>
+
+<chapter id="Introduction">
+<title
+>Einführung</title>
+
+<para
+>Willkommen zum &kde; System V Init Editor, eher bekannt (und im folgenden auch so benannt) als &ksysv;. Dieser Abschnitt führt ein paar Konzepte ein und beschreibt, was Sie mit &ksysv; tun können. </para>
+
+</chapter>
+
+<chapter id="what-is-sysv-init">
+<title
+>Eine kurze Beschreibung von System V Init</title>
+
+<para
+>Die folgende Erläuterung ist <quote
+>geliehen</quote
+>von <application
+>tksysv</application
+> (einer Inspirationsquelle für &ksysv;) </para>
+
+<para
+>Die System V Init entwickelt sich rasch zum Standard für die Kontrolle des Programmstarts beim Hochfahren des Systems in der &Linux; Welt. Und zwar deshalb, weil es leichter zu benutzen, leistungsfähiger und zugleich flexibler ist als die traditionelle <acronym
+>BSD</acronym
+>-Init. </para>
+
+<para
+>Ich werde hier nicht weiter auf geschichtliche Aspekte eingehen (u.a. weil ich darüber selbst nichts weiß :-). </para>
+
+<para
+>Die Init-Binärdatei liegt unter <filename class="directory"
+>/sbin</filename
+> und nicht unter <filename class="directory"
+>/etc</filename
+>. Dies ist deshalb wichtig, weil vielleicht jemand versuchen könnte, eine Maschine auf System V Init umzustellen, ohne eine Neuinstallation und Neuformatierung vorzunehmen. Der &Linux; Kernel sieht zuerst unter <filename class="directory"
+>/etc</filename
+> nach einer Init-Datei. Deshalb müssen Sie sichergehen, dass die alte Init von dort entfernt wurde, falls es dort eine gab. </para>
+
+<para
+>Die SysV Init unterscheidet sich auch dadurch von der <acronym
+>BSD</acronym
+> Init, dass sich die Konfigurationsdateien in einem Unterordner von <filename class="directory"
+>/etc</filename
+> befinden statt direkt in <filename class="directory"
+>/etc</filename
+>. Dieser Ordner heißt <filename class="directory"
+>rc.d</filename
+>. Dort finden Sie <filename
+>rc.sysinit</filename
+> und folgende weitere Ordner: </para>
+
+<itemizedlist>
+<listitem>
+<para>
+<filename class="directory"
+>init.d/</filename>
+</para>
+</listitem>
+<listitem>
+<para>
+<filename class="directory"
+>rc0.d/</filename>
+</para>
+</listitem>
+<listitem>
+<para>
+<filename class="directory"
+>rc1.d/</filename>
+</para>
+</listitem>
+<listitem>
+<para>
+<filename class="directory"
+>rc2.d/</filename>
+</para>
+</listitem>
+<listitem>
+<para>
+<filename class="directory"
+>rc3.d/</filename>
+</para>
+</listitem>
+<listitem>
+<para>
+<filename class="directory"
+>rc4.d/</filename>
+</para>
+</listitem>
+<listitem>
+<para>
+<filename class="directory"
+>rc5.d/</filename>
+</para>
+</listitem>
+<listitem>
+<para>
+<filename class="directory"
+>rc6.d</filename>
+</para>
+</listitem>
+</itemizedlist>
+
+<para
+><filename class="directory"
+>init.d</filename
+> enthält eine ganze Menge Skripte. Grundsätzlich benötigen Sie ein Skript für jeden Systemdienst, den Sie beim Hochfahren des Systems bzw. beim Wechsel auf einen anderen Runlevel starten möchten. Systemdienste beinhalten solche Dinge wie Netzwerk, <acronym
+>NFS</acronym
+>, &Sendmail;, httpd &etc; Systemdienste beinhalten dagegen nicht solche Sachen wie <command
+>setserial</command
+>, das nur einmal gestartet wird. Solche Aufrufe gehören nach <filename
+>rc.local</filename
+>. </para>
+
+<para
+><filename
+>rc.local</filename
+> sollte seinerseits unter <filename class="directory"
+>/etc/rc.d</filename
+> liegen, wenn Sie es benötigen. Die meisten Systeme besitzen diese Datei, auch wenn es eigentlich nicht viel Verwendung dafür gibt. Sie können ebenfalls ein <filename
+>rc.serial</filename
+> in <filename class="directory"
+>/etc/rc.d</filename
+> anlegen, wenn Sie beim Hochfahren etwas ausführen lassen wollen, was mit dem seriellen Anschluss zu tun hat. </para>
+
+<para
+>Der Ablauf ist folgender: </para>
+
+<orderedlist>
+<listitem>
+<para
+>der Kernel sucht an verschiedenen Stellen nach dem Programm init und startet das erste, das er findet. </para
+> 
+</listitem>
+<listitem>
+<para
+>init startet <filename
+>/etc/rc.d/rc.sysinit</filename
+>. </para>
+</listitem>
+<listitem>
+<para
+><filename
+>rc.sysinit</filename
+> tut eine Menge notwendiger Dinge und startet dann <filename
+>rc.serial</filename
+> (wenn es existiert) </para>
+</listitem>
+<listitem>
+<para
+>init startet <filename
+>rc.local</filename
+> </para>
+</listitem>
+<listitem>
+<para
+>init startet alle Skripte für das voreingestellte Runlevel </para>
+</listitem>
+</orderedlist>
+
+
+<para
+>Der standardmäßige Runlevel ist in <filename
+>/etc/inittab</filename
+> eingetragen. Sie sollten im Anfangsbereich eine Zeile wie die folgende sehen: </para>
+
+<screen
+>id:3:initdefault:</screen>
+
+<para
+>An diesem Punkt können Sie einen Blick in die zweite Spalte werfen und wahrscheinlich feststellen, dass der voreingestellte Runlevel 3 ist. Wenn Sie das ändern möchten, dann können Sie <filename
+>/etc/inittab</filename
+> von Hand bearbeiten und die "3" ändern. Seien Sie sehr vorsichtig, wenn Sie an der inittab Änderungen durchführen. Falls Sie doch etwas durcheinandergebracht haben, dann kommen Sie es reparieren, indem Sie das System neu starten und folgendes ausführen: </para>
+
+<screen
+><computeroutput
+>LILO boot:</computeroutput
+> <userinput
+>linux single</userinput
+></screen>
+
+<para
+>Dies <emphasis
+>sollte</emphasis
+> Ihnen ermöglichen, in den Einzelnutzer-Modus zu kommen und die Reparatur vorzunehmen. </para>
+
+<para
+>Aber wie startet es nun all die richtigen Skripte? Wenn Sie <userinput
+><command
+>ls</command
+> <option
+>-l</option
+></userinput
+> eingeben in <filename class="directory"
+>rc3.d</filename
+>, dann sehen Sie wahrscheinlich etwas wie das Folgende: </para>
+
+
+<screen
+>lrwxrwxrwx 1 root root 13 13:11 S10network -&gt; ../init.d/network
+lrwxrwxrwx 1 root root 16 13:11 S30syslog -&gt; ../init.d/syslog
+lrwxrwxrwx 1 root root 14 13:32 S40cron -&gt; ../init.d/cron
+lrwxrwxrwx 1 root root 14 13:11 S50inet -&gt; ../init.d/inet
+lrwxrwxrwx 1 root root 13 13:11 S60nfs -&gt; ../init.d/nfs
+lrwxrwxrwx 1 root root 15 13:11 S70nfsfs -&gt; ../init.d/nfsfs
+lrwxrwxrwx 1 root root 18 13:11 S75keytable -&gt; ../init.d/keytable
+lrwxrwxrwx 1 root root 23 13:11 S80sendmail -&gt; ../init.d/sendmail.init
+lrwxrwxrwx 1 root root 18 13:11 S90lpd -&gt; ../init.d/lpd.init
+lrwxrwxrwx 1 root root 11 13:11 S99local -&gt; ../rc.local</screen>
+
+<para
+>Sie werden bemerken, das sich in diesem Ordner keine richtigen Dateien befinden. Stattdessen ist jeder Eintrag hier eine Verknüpfung zu einem der Skripte im Verzeichnis <filename class="directory"
+>init.d</filename
+>. </para>
+
+<para
+>Die Verknüpfungen haben auch ein <literal
+>S</literal
+> und eine Nummer am Anfang. Das <literal
+>S</literal
+> besagt, dass dieses bestimmte Skript gestartet werden soll, so wie umgekehrt ein <literal
+>K</literal
+> den Stopp bedeuten würde. Die Nummer dient der Sortierung. Tatsächlich startet init alle Systemdienste in der Reihenfolge, in der sie erscheinen. Sie können die Nummern also doppelt vergeben, aber es wird Sie nur selbst durcheinander bringen. Sie benötigen eine zweistellige Zahl, zusammen mit einem großgeschriebenen <literal
+>S</literal
+> oder <literal
+>K</literal
+>, um einen Systemdienst zu starten bzw. anzuhalten. </para>
+
+<para
+>Wie startet und stoppt init eigentlich Systemdienste? Ganz einfach: Jedes der Skripte ist so geschrieben, dass es ein Argument wie <option
+>start</option
+> und <option
+>stop</option
+> akzeptiert. Sie können diese Skripte tatsächlich von Hand auf der Kommandozeile folgendermaßen starten: </para>
+
+<screen
+><userinput
+><command
+>/etc/rc.d/init.d/httpd.init</command
+> <option
+>stop</option
+></userinput
+></screen>
+
+<para
+>Dies würde den httpd-Server anhalten. Init liest den Namen, und wenn der ein <literal
+>K</literal
+> beinhaltet, wird das Skript mit dem Argument <option
+>stop</option
+> aufgerufen. Wenn er ein <option
+>S</option
+> beinhaltet, wird das Skript mit dem Argument <option
+>start</option
+> aufgerufen. </para>
+
+
+<sect1 id="why-all-the-runlevels">
+<title
+>Warum all diese Runlevel?</title>
+
+<para
+>Manche Leute wünschen sich eine einfache Art, Maschinen für viele Zwecke einzurichten. Ich könnte z. B. ein <quote
+>server</quote
+>-Runlevel haben, das nur httpd, sendmail, Netzwerk &etc; laufen lässt. Darüber hinaus könnte ich auch noch einen <quote
+>Benutzer</quote
+>-Runlevel haben, das z. B. <application
+>kdm</application
+> startet. </para>
+
+</sect1>
+
+</chapter>
+
+<chapter id="onscreen-fundamentals">
+<title
+>Grundlagen der Bildschirmabläufe</title>
+
+<para
+>Hier lernen Sie die Benutzung von &ksysv;. Sie sollte nicht sehr schwierig sein, weil das Programm so benutzerfreundlich wie möglich angelegt wurde. </para>
+
+<sect1 id="mouse">
+<title
+>Maus</title>
+
+<para
+>Die Verwendung von &ksysv; mit einer Maus oder einem anderen Zeigegerät ist einfach, um nicht zu sagen trivial: Ziehen Sie einfach einen Eintrag aus dem Bereich der <guilabel
+>Verfügbaren Systemdienste</guilabel
+> auf einen der sechs Runlevel, um ihn auf diesem Level zu starten (bzw. zu stoppen). </para>
+
+<para
+>Sie können Skripte auch zwischen Runleveln verschieben oder die Position innerhalb eines Levels verändern, indem sie es woanders hin ziehen. Dabei wird der Eintrag von seinem ursprünglichen Runlevel (oder seiner Position) entfernt. Dies geschieht nur dann nicht, wenn sie einen Eintrag aus dem Bereich der <guilabel
+>Verfügbaren Systemdienste</guilabel
+> herausziehen. </para>
+
+<note>
+<para
+><emphasis
+>Beachten Sie:</emphasis
+> Einträge werden verschoben, wenn Sie diese in einen neuen Bereich ziehen. Um sie lediglich auf einen neuen Runlevel zu kopieren, müssen Sie ausdrücklich <guimenuitem
+>Kopieren</guimenuitem
+> aus dem Menü <guimenu
+>Bearbeiten</guimenu
+> oder aus dem Kontextmenü wählen und in den Zielbereich <guimenuitem
+>Einfügen</guimenuitem
+> -- sogar dann, wenn derselbe Eintrag bereits zuvor im Zielbereich der Aktion existiert hat. </para>
+</note>
+
+<para
+>Die <quote
+>Sortiernummer</quote
+> eines Eintrags kann manchmal nicht berechnet werden. In so einem Fall müssen Sie die Sortiernummern der umgebenden Einträge bearbeiten, bevor Sie nochmals versuchen können, den Systemdienst einzufügen. </para>
+
+<note>
+<para
+><emphasis
+>Beachten Sie:</emphasis
+> Sortiernummern können von 00 bis 99 reichen, nicht höher. </para>
+</note>
+
+<para
+>Sie können Einträge löschen, indem Sie sie in den <guiicon
+>Papierkorb</guiicon
+> ziehen. </para>
+
+<warning>
+<para
+><emphasis
+>Beachten Sie:</emphasis
+> Gegenwärtig gibt es <emphasis
+>keine</emphasis
+> Möglichkeit, Einträge wiederherzustellen, die in den <guiicon
+>Papierkorb</guiicon
+> geworfen wurden. Seien Sie also vorsichtig. </para>
+</warning>
+
+</sect1>
+
+<sect1 id="keyboard">
+<title
+>Tastatur</title>
+
+<para
+>Sie können die <keycap
+>Tabulator</keycap
+>-Taste benutzen, um die verschiedenen Arbeitsbereiche zu aktivieren (<guilabel
+>Verfügbare Systemdienste</guilabel
+>, <guilabel
+>Runlevel 1 Start</guilabel
+>, <guilabel
+>Runlevel 1 Stop</guilabel
+> &etc;) sowie die Cursor-Tasten, um eine Auswahl ober- oder unterhalb der bisherigen zu treffen. </para>
+
+<para
+>Um einen Eintrag in einen anderen Runlevel zu verschieben, verschieben Sie ihn mit <guimenuitem
+>Ausschneiden</guimenuitem
+> in die Zwischenablage (Sie können auch <keycombo action="simul"
+>&Strg; <keycap
+>X</keycap
+></keycombo
+> benutzen) und fügen Sie ihn in den gewünschten Runlevel mit <guimenuitem
+>Einfügen</guimenuitem
+> (mit <keycombo action="simul"
+>&Strg; <keycap
+>V</keycap
+></keycombo
+>) ein. </para>
+
+<para
+>Um die Sortiernummer oder den Namen eines Eintrags manuell zu ändern, drücken Sie die <keycap
+>Eingabe</keycap
+>-Taste, um den Eigenschaften-Dialog zu öffnen. Benutzen Sie die <keycap
+>Tabulator</keycap
+>-Taste, um zwischen verschiedenen Feldern zu wechseln. Schließen Sie den Dialog durch erneutes Drücken der <keycap
+>Eingabe</keycap
+>-Taste, um die Änderungen zu akzeptieren, oder drücken Sie <keycap
+>Esc</keycap
+>, um die Änderungen zu verwerfen. </para>
+
+</sect1>
+
+<sect1 id="the-menu-entries">
+<title
+>Die Menü-Einträge</title>
+
+<para
+>Es folgt eine ausführliche Erläuterung der Menüs von &ksysv;. </para>
+
+<sect2>
+<title
+>Das Menü <guimenu
+>Datei</guimenu
+></title>
+
+<para
+>Wegen der Gefahr des Datenverlusts erfordern alle Einträge im Menü <guimenu
+>Datei</guimenu
+> eine Bestätigung, bevor sie ausgeführt werden. </para>
+
+<variablelist>
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Datei</guimenu
+> <guimenuitem
+>Zuletzt gespeicherte Konfiguration...</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para
+>Alle durchgeführten Änderungen verwerfen und die letzte gespeicherte Konfiguration aufrufen. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><shortcut
+> <keycombo action="simul"
+>&Ctrl; <keycap
+>O</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Datei</guimenu
+> <guimenuitem
+>Öffnen...</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Eine gespeicherte Konfiguration laden.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><shortcut
+> <keycombo action="simul"
+>&Ctrl; <keycap
+>S</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Datei</guimenu
+> <guimenuitem
+>Einstellungen speichern...</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para
+><action
+>Macht Ihre Änderungen dauerhaft wirksam.</action
+> Es werden keine Sicherungsdateien angelegt. Seien Sie also vorsichtig. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Datei</guimenu
+> <guimenuitem
+>Speichern unter...</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Eine Kopie der neuen Konfiguration speichern.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><shortcut
+> <keycombo action="simul"
+>&Ctrl; <keycap
+>L</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Datei</guimenu
+> <guimenuitem
+>Protokolldatei speichern...</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Speichert den Ablauf der durchgeführten Änderungen.</action
+> <!-- FIXME: find out what the log is of.  Assume -->
+<!-- changes made, but best check -->
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><shortcut
+> <keycombo action="simul"
+>&Ctrl; <keycap
+>P</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Datei</guimenu
+> <guimenuitem
+>Protokolldatei drucken...</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Die Protokolldatei ausdrucken.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><shortcut
+> <keycombo action="simul"
+>&Ctrl; <keycap
+>Q</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Datei</guimenu
+> <guimenuitem
+>Beenden</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para
+><action
+>Beendet</action
+> &ksysv;. </para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</sect2>
+
+<sect2>
+<title
+>Das Menü <guimenu
+>Bearbeiten</guimenu
+></title>
+
+<variablelist>
+<varlistentry>
+<term>
+<menuchoice
+><shortcut
+> <keycombo action="simul"
+>&Ctrl; <keycap
+>Z</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Bearbeiten</guimenu
+> <guimenuitem
+>Rückgängig</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Macht die letzte nicht gespeicherte Änderung rückgängig.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><shortcut
+> <keycombo action="simul"
+>&Ctrl; <keycap
+>Umschalt</keycap
+> <keycap
+>Z</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Bearbeiten</guimenu
+> <guimenuitem
+>Wiederherstellen</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Letzte rückgängig gemachte Aktion wieder herstellen.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><shortcut
+> <keycombo action="simul"
+>&Ctrl; <keycap
+>X</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Bearbeiten</guimenu
+> <guimenuitem
+>Ausschneiden</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Schneidet den gerade ausgewählten Systemdienst aus und kopiert den Eintrag in die Zwischenablage.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><shortcut
+> <keycombo action="simul"
+>&Ctrl; <keycap
+>C</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Bearbeiten</guimenu
+> <guimenuitem
+>Kopieren</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Kopiert den gerade ausgewählten Systemdienst in die Zwischenablage, ohne ihn zu löschen.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><shortcut
+> <keycombo action="simul"
+>&Ctrl; <keycap
+>V</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Bearbeiten</guimenu
+> <guimenuitem
+>Einfügen</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Fügt den Inhalt der Zwischenablage an der aktuellen Cursorposition ein.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Bearbeiten</guimenu
+> <guimenuitem
+>Eigenschaften</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Öffnet den Dialog Eigenschaften für den gerade ausgewählten Systemdienst.</action>
+</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</sect2>
+
+<sect2>
+<title
+>Das Menü <guimenu
+>Extras</guimenu
+></title>
+
+<variablelist>
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Extras</guimenu
+> <guimenuitem
+>Systemdienst starten ...</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Startet den angewählten Systemdienst.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Extras</guimenu
+> <guimenuitem
+>Systemdienst anhalten ...</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Den angewählten Systemdienst anhalten.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Extras</guimenu
+> <guimenuitem
+>Systemdienst neu starten ...</guimenuitem
+>  </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Den angewählten Systemdienst neu starten.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Extras</guimenu
+> <guimenuitem
+>Systemdienst bearbeiten...</guimenuitem
+>  </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Den angewählten Systemdienst bearbeiten.</action
+><!-- FIXME: Add some more "meat" to 
+-->
+<!-- this one! -->
+</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</sect2>
+
+<sect2>
+<title
+>Das Menü <guimenu
+>Einstellungen</guimenu
+></title>
+
+<variablelist>
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Einstellungen</guimenu
+> <guimenuitem
+>Werkzeugleiste anzeigen</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Anzeige der Werkzeugleiste ein- und ausschalten.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Einstellungen</guimenu
+> <guimenuitem
+>Statusleiste anzeigen</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Anzeige der Statusleiste ein- und ausschalten.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Einstellungen</guimenu
+> <guimenuitem
+>Protokolldatei anzeigen</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Schaltet die Anzeige der Protokolldatei in einem extra Fenster ein oder aus (alle Vorgänge, Fehlermeldungen &etc; werden in einer Protokolldatei gespeichert).</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Einstellungen</guimenu
+> <guimenuitem
+>Einstellungen speichern</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Alle bisher erwähnten Einstellungen gelten nur bis zum nächsten Systemstart, es sei denn, Sie wählen diesen Menüpunkt. Dies gilt einschließlich der Fenstergröße und -aufteilung.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Einstellungen</guimenu
+> <guimenuitem
+>Kurzbefehle festlegen...</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Die Zuordnungen von Tastendrücken zu Aktionen verändern.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Einstellungen</guimenu
+> <guimenuitem
+>Werkzeugleisten einrichten...</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Die Werkzeugleisten nach Ihren Wünschen anpassen.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Einstellungen</guimenu
+> <guimenuitem
+>SysV-Init Editor einrichten...</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para
+><action
+>Das Verhalten von &ksysv; anpassen.</action
+> </para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</sect2>
+
+<sect2>
+<title
+>Das Menü <guimenu
+>Hilfe</guimenu
+></title>
+&help.menu.documentation; </sect2>
+
+</sect1>
+
+</chapter>
+
+<chapter id="Configuration">
+<title
+>Konfiguration</title>
+
+<para
+>Alle Einstellungen werden gespeichert in <filename
+>$<envar
+>KDEHOME</envar
+>/share/config/ksysvrc</filename
+>. Voreinstellungen werden der globalen Datei (<filename
+>$<envar
+>KDEDIR</envar
+>/share/config/ksysvrc</filename
+>) entnommen, falls sie verfügbar ist. Andernfalls werden sie von &ksysv; wiederhergestellt. Änderungen an den Voreinstellungen werden gespeichert in einer lokalen <filename
+>ksysvrc</filename
+>. </para>
+
+<sect1 id="recognized-sections">
+<title
+>Gültige Abschnitte der Konfigurationsdateien</title>
+
+<para
+>Abschnitte und Schlüsselwerte der Konfigurationsdateien, die vom Programm erkannt werden, sowie ihre Voreinstellungen: </para>
+
+<sect2>
+<title
+>&lsqb;Path Settings&rsqb;</title>
+
+<segmentedlist>
+<segtitle
+>Schlüsselwert</segtitle>
+<segtitle
+>Standard</segtitle>
+<segtitle
+>Beschreibung</segtitle>
+<seglistitem>
+<seg
+>ScriptPath</seg>
+<seg
+><filename class="directory"
+>/etc/rc.d/init.d</filename
+></seg>
+<seg
+>Pfad zu den Skripten für das Starten und Stoppen der Systemdienste.</seg>
+</seglistitem>
+
+<seglistitem>
+<seg
+>RunlevelPath</seg>
+<seg
+><filename class="directory"
+>/etc/rc.d</filename
+></seg>
+<seg
+>Pfad zu den Unterordnern der Runlevel.</seg>
+</seglistitem>
+
+</segmentedlist>
+
+</sect2>
+
+<sect2>
+<title
+>&lsqb;Colors&rsqb;</title>
+
+
+<segmentedlist>
+<segtitle
+>Schlüsselwert</segtitle>
+<segtitle
+>Standard</segtitle>
+<segtitle
+>Beschreibung</segtitle>
+<seglistitem>
+<seg
+>Geändert</seg>
+<seg
+>rot</seg>
+<seg
+>Farbe für geänderte Einträge</seg>
+</seglistitem>
+
+<seglistitem>
+<seg
+>Neu</seg>
+<seg
+>blau</seg>
+<seg
+>Farbe für neue Einträge</seg>
+</seglistitem>
+
+</segmentedlist>
+
+</sect2>
+
+<sect2>
+<title
+>&lsqb;Geometry&rsqb;</title>
+
+<segmentedlist>
+<segtitle
+>Schlüsselwert</segtitle>
+<segtitle
+>Standard</segtitle>
+<segtitle
+>Beschreibung</segtitle>
+<seglistitem>
+<seg
+>Width</seg>
+<seg
+></seg>
+<seg
+>Breite des Fensters von &ksysv;</seg>
+</seglistitem>
+
+<seglistitem>
+<seg
+>Height</seg>
+<seg
+></seg>
+<seg
+>Höhe des Fensters von &ksysv;</seg>
+</seglistitem>
+</segmentedlist>
+
+</sect2>
+
+<sect2>
+<title
+>&lsqb;Other Settings&rsqb;</title>
+
+<segmentedlist>
+<segtitle
+>Schlüsselwert</segtitle>
+<segtitle
+>Standard</segtitle>
+<segtitle
+>Beschreibung</segtitle>
+<seglistitem>
+<seg
+>Werkzeugleiste</seg>
+<seg
+>true</seg>
+<seg
+>Ob die Werkzeugleiste ein- oder ausgeschaltet ist</seg>
+</seglistitem>
+
+<seglistitem>
+<seg
+>Statusleiste</seg>
+<seg
+>true</seg>
+<seg
+>Ob die Statusleiste ein- oder ausgeschaltet ist</seg>
+</seglistitem>
+
+<seglistitem>
+<seg
+>ShowLog</seg>
+<seg
+>true</seg>
+<seg
+>Ob das Protokollfenster an- oder ausgeschaltet ist</seg>
+</seglistitem>
+
+<seglistitem>
+<seg
+>PanningFactor</seg>
+<seg
+>80</seg>
+<seg
+>100 - PanningFactor = Prozentsatz des Fenster für die Anzeige der Protokolldatei</seg>
+</seglistitem>
+</segmentedlist>
+
+</sect2>
+
+</sect1>
+
+</chapter>
+
+<chapter id="questions-and-answers">
+<title
+>Fragen und Antworten</title>
+
+<qandaset>
+<qandaentry>
+<question>
+<para
+>Ich habe mit den Standard-Runleveln herumexperimentiert, und jetzt startet die Maschine beständig neu. Was kann ich tun? </para>
+</question>
+<answer>
+<para
+>Geben Sie am <acronym
+>LILO</acronym
+>-Prompt <userinput
+>linux single</userinput
+> ein und drücken Sie die <keycap
+>Eingabe</keycap
+>-Taste, um im Einzelnutzer-Modus zu starten. Dann bearbeiten Sie die Datei <filename
+>/etc/inittab</filename
+> und ändern der standardmäßige Runlevel auf einen vernünftigen Wert (<literal
+>3</literal
+> sollte normalerweise in Ordnung sein). </para>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Meine Maschine <quote
+>hängt</quote
+> kurz nach dem Neustart. </para>
+</question>
+<answer>
+<para
+>Bitte schauen Sie bei Frage 1 nach! </para>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Ich habe einige Systemdienste mit &ksysv; zur Ausführung unter Runlevel X vorgesehen, aber sie werden nicht ausgeführt. </para>
+</question>
+
+<answer>
+<para
+>Wenn Sie SuSE oder Delix (DLD) benutzen, dann müssen Sie zusätzliche Dateien in <filename class="directory"
+>/etc</filename
+> bearbeiten, die nur in diesen Distributionen vorhanden sind. Bitte lesen Sie die Details im Handbuch der Distribution nach. </para>
+<para>
+<note>
+<para
+>Die Art, wie Systemdienste in diesen Distributionen gestartet werden, vereinfacht die Konfiguration für die proprietären Einrichtungsprogramme dieser Distributionen, entspricht aber leider keinem Standard. Die Autoren von &ksysv; planen eine Erweiterung des Programms für diesen Ansatz. </para>
+</note>
+</para>
+<para
+>Falls Sie eine andere Distribution verwenden: Überprüfen Sie bitte, ob alle Konfigurationsdateien vorhanden sind, die vom jeweiligen Systemdienst benötigt werden (und auch, ob sie sich im richtigen Verzeichnis befinden). Manche Dienste (wie z. B. <application
+>Apache</application
+> bzw. <command
+>httpd</command
+>) beenden sich einfach ohne Nachricht, wenn ihre Konfigurationsdateien nicht vorhanden oder falsch eingerichtet sind. </para>
+</answer>
+</qandaentry>
+
+</qandaset>
+
+</chapter>
+
+<chapter id="standard-runlevels">
+<title
+>Standardbedeutung der Runlevel</title>
+
+<para
+>Die Bedeutung der &Linux;-Runlevel variiert von Distribution zu Distribution, kann sogar von Version zu Version unterschiedlich sein. Falls Sie eine andere Distribution benutzen, senden Sie mir bitte Informationen über die Runlevel, damit diese diesem Handbuch zugefügt werden können. </para>
+
+<variablelist>
+<varlistentry>
+<term
+>&RedHat;</term>
+<listitem>
+<variablelist>
+<varlistentry>
+<term
+>Runlevel 0:</term>
+<listitem>
+<para
+>Halt (fährt die Maschine runter) </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>Runlevel 1:</term>
+<listitem>
+<para
+>Einzelbenutzermodus </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>Runlevel 2:</term>
+<listitem>
+<para
+>Konsolenmodus, ohne <acronym
+>NFS</acronym
+>. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>Runlevel 3:</term>
+<listitem>
+<para
+>Konsolenmodus mit allen Netzdiensten. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>Runlevel 4:</term>
+<listitem>
+<para
+>Nicht verwendet. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>Runlevel 5:</term>
+<listitem>
+<para
+>Mehrbenutzer-Modus -- mit X11 und vollem Netzwerk </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>Runlevel 6:</term>
+<listitem>
+<para
+>Neustart </para>
+</listitem>
+</varlistentry>
+</variablelist>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</chapter>
+
+<chapter id="credits">
+<title
+>Lizenz</title>
+<para
+>&ksysv; Copyright &copy; 1997-1998 Peter Putzer</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Peter Putzer, <email
+>putzer@kde.org</email
+> - Entwickler </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Handbuch: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Peter Putzer, <email
+>putzer@kde.org</email
+> </para>
+</listitem>
+<listitem
+><para
+>Eric Bischoff, <email
+>e.bischoff@noos.fr</email
+> - Bearbeiter </para>
+</listitem>
+</itemizedlist>
+<para
+>Übersetzer: Thomas Diehl <email
+>th.diehl@gmx.net</email
+></para
+> <para
+>Übersetzer: Volker Dose <email
+>vpdose@cpmgut.toppoint.de</email
+></para
+> 
+&underFDL; &underGPL; </chapter>
+
+<appendix id="installation">
+<title
+>Installation</title>
+
+&install.intro.documentation;
+&install.compile.documentation;
+</appendix>
+
+</book>
+<!--
+Local Variables:
+mode: sgml
+sgml-omittag: nil
+sgml-shorttag: t
+End:
+-->
+

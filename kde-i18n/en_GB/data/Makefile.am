@@ -1,0 +1,4 @@
+
+TOPLEVEL_LANG = en_GB
+SUBDIRS = $(AUTODIRS)
+

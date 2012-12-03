@@ -1,0 +1,1275 @@
+<chapter id="project-management">
+
+<chapterinfo>
+  <authorgroup>
+    <author
+><firstname
+>Bernd</firstname
+><surname
+>Pol</surname
+></author>
+    <author
+><firstname
+>Ian</firstname
+><surname
+>Wadham</surname
+></author>
+    <!-- ROLES_OF_TRANSLATORS -->
+  </authorgroup>
+</chapterinfo>
+
+<title
+>Сборка и управление проектом</title>
+
+<para
+>Здесь затрагиваются только компилируемые языки, такие как C++, &Java;, фортран. </para>
+
+<para
+>В руководстве затронуты такие темы:</para>
+<itemizedlist>
+  <listitem
+><para
+><link linkend="automake-manager-summary"
+>Краткое описание &automanag;</link
+> </para
+></listitem>
+  <listitem
+><para
+><link linkend="automake-manager-operation"
+>Использование менеджера Automake</link
+> содержит основы работы &automanag;, </para
+></listitem>
+</itemizedlist>
+
+<sect1 id="automake-manager-summary">
+<title
+>Краткое описание &automanag;</title>
+
+<para
+>В главе <link linkend="unixdev-buildsystems"
+>Системы сборки</link
+> был изложен краткий обзор систем сборки, часто использующихся в UNIX. Здесь они рассматриваются подробнее. </para>
+<para
+>Существует некоторая неразбериха с тем, как называть программы такого типа, в &GNU; описаниях Automake, Autoconf и Libtool, называет их <quote
+>системами сборки</quote
+> (build systems). QMake называет себя <quote
+>средством для написания файлов Makefile для разных компиляторов и платформ</quote
+> (<quote
+>a tool to write Makefiles for different compilers and platforms</quote
+>) . В KDE также часто используется термин <quote
+>системы управления проектом</quote
+> (<quote
+>project management systems</quote
+>). Мы будем использовать последний для обозначения встроенных окружений в &kdevelop;, которые организуют и собирают проекты. В этой секции, однако, он будет использоваться в смысле <quote
+>автоматизированные системы сборки</quote
+>. </para>
+
+<sect2 id="automake-manager-summary-buildsys">
+<title
+>Потребность в автоматизированных системах сборки</title>
+
+<para
+>Если у вас простая программа <quote
+>Hello World</quote
+>, написанная на чистом C, вы можете скомпилировать и скомпоновать её с помощью &gcc; <parameter
+>-o hello hello.c</parameter
+> и запустить командой <command
+>./hello</command
+>, так что вам даже не и не нужен <filename
+>Makefile</filename
+>. </para>
+<para
+>Если же у вас программа, написанная на C, с несколькими модулями и заголовочными файлами, и вы сделали её исключительно для себя, вам будет нужен простой <filename
+>Makefile</filename
+>, который легко написать собственноручно (см. <userinput
+>info make</userinput
+>). </para>
+<para
+>Проблемы возникают когда: </para>
+<itemizedlist>
+  <listitem
+><para
+>Ваш исходный код, документация, графическое оформление, звуки, файлы интернационализации, файлы с информацией и т.д. расположены в более чем одном каталоге, </para
+></listitem>
+  <listitem
+><para
+>У вас иерархическая структура каталогов с исходниками, </para
+></listitem>
+  <listitem
+><para
+>Вы используете библиотеки, не являющиеся стандартными библиотеками набора &UNIX;, такие как &Qt; или библиотеки &kde;, </para
+></listitem>
+  <listitem
+><para
+>Вы используете пред-процессор для генерирования части исходного кода, например, MOC pre-compiler от Qt, </para
+></listitem>
+  <listitem
+><para
+>Вы хотите распространять ваше приложение в Сети, для людей с другим дистрибутивом &UNIX;/&Linux;, набором программного и аппаратного обеспечения, </para
+></listitem>
+  <listitem
+><para
+>Вам нужна автоматическая установка и удаление установленной программы, </para
+></listitem>
+  <listitem
+><para
+>Вы хотите сделать своё приложение частью &kde;. </para
+></listitem>
+</itemizedlist>
+
+<para
+>Если хотя бы одна из перечисленных ситуаций применима к вам, тогда вам потребуется <emphasis
+>система сборки</emphasis
+>. В примере выше мы использовали &gcc; для компиляции и сборки программы <quote
+>Hello World</quote
+>, но не все компиляторы C имеют название <quote
+>&gcc;</quote
+>. Так что, если вы будете распространять своё приложение, вполне может найтись человек, имеющий другой компилятор в своей системе. И здесь на помощь приходят файлы Makefile, содержащие такие данные, как, например, имя компилятора в данной системе. </para>
+<para
+>Система сборки заботится о том, чтобы ваше приложение можно было автоматически скомпилировать на любой совместимой платформе. </para>
+<itemizedlist>
+  <listitem
+><para
+>Она найдёт расположение библиотек, </para
+></listitem>
+  <listitem
+><para
+>скомпилирует и </para
+></listitem>
+  <listitem
+><para
+>установит компоненты вашего приложения </para
+></listitem>
+  <listitem
+><para
+>в корректные каталоги системы </para
+></listitem>
+</itemizedlist>
+
+<para
+>Коротко, система сборки предлагает простой и безопасный метод компилирования и установки вашего приложения в конечной системе. как было сказано <link linkend="makesystems"
+>выше</link
+>, &kdevelop; поставляется с тремя автоматизированными системами сборки и возможностью создавать файлы Makefile вручную: </para>
+<itemizedlist>
+  <listitem
+><para
+><link linkend="automake-project"
+>Automake</link
+>, использующий стандартные инструменты разработки &GNU;. </para
+></listitem>
+  <listitem
+><para
+><link linkend="qmake-project"
+>QMake</link
+>, использующий менеджер проектов trolltech. </para
+></listitem>
+  <listitem
+><para
+><link linkend="ant-project"
+>ANT</link
+>, использующий менеджер проекта Apache ANT (для &Java;) </para
+></listitem>
+  <listitem
+><para
+><link linkend="custom-project"
+>Специальный</link
+> позволит вам писать файлы <filename
+>Makefile</filename
+> самостоятельно. </para
+></listitem>
+</itemizedlist>
+
+<important>
+<para
+>Один из этих вариантов вам нужно будет выбрать при создании нового проекта, и <emphasis
+>выбор будет трудно сменить позже</emphasis
+>, так что заранее определите, какая система сборки наиболее подходит вам. </para>
+</important>
+
+</sect2
+> <!--  automake-manager-summary-buildsys -->
+
+<sect2 id="automake-references">
+<title
+>Руководства по Autoconf/Automake/Libtool</title>
+<para
+>Доступно несколько руководств по системе сборки &GNU;  (<command
+>Autoconf</command
+>, <command
+>Automake</command
+> и <command
+>Libtool</command
+>), используемой менеджером  &automanag;. </para>
+<itemizedlist>
+  <listitem
+><para
+>Краткое <ulink url="http://www.asmodeus.com.ua/library/soft/GNU/autoconf/autoconf-ru_toc.html"
+>руководство autoconf</ulink
+> (<ulink url="http://www.kdevelop.org/index.html?filename=tutorial_autoconf.html"
+>оригинал на английском</ulink
+>), написанное Кристофером Картисом, и доступное на домашней странице KDevelop. В нём делается акцент на основные этапы редактирования <filename
+>Makefile</filename
+>. </para
+></listitem>
+  <listitem
+><para
+>Более подробное руководство можно найти в большом сборнике руководств <ulink url="http://www.amath.washington.edu/~lf/tutorials/autoconf/toolsmanual_toc.html"
+><quote
+>Разработка ПО с GNU</quote
+></ulink
+>. </para
+></listitem>
+  <listitem
+><para
+>Книжку про <quote
+>Autoconf, Automake, and Libtool</quote
+> можно найти по адресу <ulink url="http://sources.redhat.com/autobook"
+></ulink
+>. Это наиболее полное введение в &GNU; Autotools. Также прочитать о GNU Automake на русском вы можете здесь: <ulink url="http://www.asmodeus.com.ua/library/soft/GNU/automake/automake-ru_toc.html"
+></ulink
+> </para
+></listitem>
+</itemizedlist>
+
+</sect2
+> <!--  automake-references -->
+
+<sect2 id="automake-manager-basics">
+<title
+>Что делает &automanag;?</title>
+
+<para
+><link linkend="applicationwizard"
+>Мастеру приложений</link
+> потребуется инициализировать файлы <filename
+>Makefile.am</filename
+> при создании проекта, использующего Систему сборки &GNU;, например <menuchoice
+><guimenuitem
+>C++</guimenuitem
+> <guimenuitem
+>KDE</guimenuitem
+></menuchoice
+>. В процессе разработки, &automanag; создаёт файлы <filename
+>Makefile.am</filename
+> для проектов, использующих Систему сборки &GNU;, и сопровождает их. </para>
+<para
+>В каждом каталоге вашего проекта, содержащего файлы, которые требуется компилировать или устанавливать, находится один файл <filename
+>Makefile.am</filename
+>. В нём находятся указания ко компиляции, сборки и установке, а также список подкаталогов, также имеющих <filename
+>Makefile.am</filename
+>. </para>
+
+<note
+><para
+>Каталоги вашего проекта и исходники могут быть разбросаны в структуре любой глубины, или же в подкаталогах одного уровня. </para
+></note>
+
+<para
+>Цель Системы сборки &GNU; &mdash; создать структуру исходников, которую можно скомпилировать, построить и установить на любой системе &UNIX; или &Linux;, используя простые команды: </para>
+
+<screen
+>./configure
+make
+make install    # с правами "root".
+</screen>
+
+<para
+>и удалить установленную программу командой <command
+>make uninstall</command
+> (также от root). </para>
+
+<para
+>Как это работает? <command
+>configure</command
+> &mdash; это сценарий, который <itemizedlist>
+  <listitem
+><para
+>собирает информацию о системе, на которой работает, например, какой компилятор в ней установлен и какие библиотеки доступны и где, а потом </para
+></listitem>
+  <listitem
+><para
+>рекурсивно создаёт файлы <filename
+>Makefile</filename
+> используя <filename
+>Makefile.in</filename
+> как шаблон. </para
+></listitem>
+</itemizedlist>
+</para>
+<para
+>Файлы <filename
+>Makefile.in</filename
+> &mdash; это <quote
+>входные</quote
+> файлы, шаблоны с базовой информацией для файлов <filename
+>Makefile</filename
+>, которые будут созданы из них путём заполнения в них определённой, зависимой от системы, информации. Всё это происходит под управлением <command
+>Automake</command
+>. </para>
+<para
+>Процесс перехода от <filename
+>Makefile.am</filename
+> (<filename
+>.am</filename
+> означает шаблон <quote
+>Automake</quote
+>) к <filename
+>Makefile</filename
+> управляется &promanag;, через утилиту <command
+>Autoconf</command
+>, макрос <command
+>M4</command
+> и пр. </para>
+<para
+>Когда выполняется <command
+>make</command
+>, он автоматически собирает информацию об окружении, такую как путь к компиляторам и библиотекам. Аналогично, <command
+>make install</command
+> перемещает компоненты приложения, такие как исполнимые файлы, документацию, в корректные места окружения. </para>
+
+<para
+>Если вы распространяете ваше приложение как <quote
+>tarball</quote
+> (архив, который можно создать в  KDevelop), в нём будут включены файлы <filename
+>Makefile.in</filename
+> и скрипт <filename
+>configure</filename
+>, чтобы его можно было собрать и установить на системе, где нет <command
+>Automake</command
+>, <command
+>Autoconf</command
+> или KDevelop. Файлы <filename
+>Makefile.am</filename
+> также включаются, для того случая, когда потребуется безболезненно вмешаться в исходный код. </para>
+<note
+><para
+>Правила усложняются если вы также распространяете программу через хранилище, основанное на web, такое как .     &cvs;  &kde; </para
+></note>
+
+</sect2
+> <!--  automake-manager-basics -->
+
+<sect2 id="automake-manager-basics-summary">
+<title
+>Подытожим возможности Automake Manager</title>
+
+<itemizedlist>
+  <listitem
+><para
+>Генерирование файлов <filename
+>Makefile.am</filename
+> в подкаталогах (называемых <quote
+>subprojects</quote
+>). </para
+></listitem>
+  <listitem
+><para
+>Обновление файлов <filename
+>Makefile.am</filename
+> при изменении структуры проекта. </para
+></listitem>
+  <listitem
+><para
+>Обновление файлов <filename
+>Makefile.am</filename
+> при добавлении или удалении файлов из проекта. </para
+></listitem>
+  <listitem
+><para
+>Настройка параметров сборки или установки отдельных файлов, изменение <filename
+>Makefile.am</filename
+> в соответствии с этим. </para
+></listitem>
+  <listitem
+><para
+>Настройка параметров, используемых при сборке и установке (например имена библиотек). </para
+></listitem>
+</itemizedlist>
+
+</sect2
+> <!--  automake-manager-basics-summary -->
+
+<sect2 id="automake-file-contents">
+<title
+>Содержание файлов Automake</title>
+
+<para
+>Файл <filename
+>Makefile.am</filename
+> содержит строки с  именами переменных, знаком равно и списком файлов или значением параметра. Имена <quote
+>переменных</quote
+> состоят из двух частей, например <varname
+>bin_PROGRAMS</varname
+>, <varname
+>myapp_SOURCES</varname
+> или <varname
+>kdelnk_DATA</varname
+>. Вторая часть называется <emphasis
+>первичной</emphasis
+> (<emphasis
+>primary</emphasis
+>) и представляет что-то, что нужно собрать или установить. Первая часть называется <emphasis
+>приставкой</emphasis
+> (<emphasis
+>prefix</emphasis
+>) и представляет: </para>
+<itemizedlist>
+  <listitem
+><para
+><emphasis
+>Каталог</emphasis
+>, куда нужно устанавливать (например <filename
+>bin</filename
+>), </para
+></listitem>
+  <listitem
+><para
+><emphasis
+>Спецификатор</emphasis
+> (например <varname
+>myapp</varname
+> для <varname
+>SOURCES</varname
+>, это говорит о том, что исходные файлы, перечисленные поле <varname
+>myapp_SOURCES</varname
+> входят в сборку <filename
+>myapp</filename
+>), </para
+></listitem>
+  <listitem
+><para
+>Специальная <emphasis
+>приставка</emphasis
+> <varname
+>noinst</varname
+> (<quote
+>no installation</quote
+>), используется для перечисления заголовочных файлов (<filename
+>.h</filename
+>), </para
+></listitem>
+  <listitem
+><para
+>Специальная приставка <varname
+>EXTRA</varname
+> для вещей, зависящих от конфигурации системы. </para
+></listitem>
+</itemizedlist>
+
+<para
+>Для подробностей о <command
+>Automake</command
+> и файлах <filename
+>Makefile.am</filename
+> см. <userinput
+>info Automake</userinput
+>. </para>
+<para
+>&automanag; создаёт и обновляет переменные и их значения. Далее приведён пример <filename
+>Makefile.am</filename
+> для приложения с названием <filename
+>myapp</filename
+>. </para>
+
+<screen
+>## Makefile.am для myapp
+
+# устанавливаемая программы.  её имя используется
+# для всех переменных Makefile.am
+bin_PROGRAMS = myapp
+
+# путь include для X, qt и KDE
+INCLUDES = $(all_includes)
+
+# пути к библиотекам.
+myapp_LDFLAGS = $(KDE_RPATH) $(all_libraries)
+
+# библиотеки, с которыми компоновать.
+myapp_LDADD   = $(LIB_KFILE) $(LIB_KDEPRINT)
+
+# что компилировать для myapp
+myapp_SOURCES = main.cpp myapp.cpp myappview.cpp
+
+# заголовки
+noinst_HEADERS = myapp.h myappview.h
+
+# разрешить automoc обрабатывать все исходные meta файлы (moc)
+METASOURCES = AUTO
+
+KDE_ICON = myapp
+
+# куда пойдёт файл kdelnk
+kdelnkdir = $(kde_appsdir)/Utilities
+kdelnk_DATA = myapp.desktop
+
+# куда пойдёт XML-GUI файл ресурсов
+rcdir = $(kde_datadir)/myapp
+rc_DATA = myappui.rc
+
+AM_CXXFLAGS = -DMY_C++_PREPROCESSOR_OPTION
+</screen>
+
+<para
+>Как вы видите, большинство пунктов справа &mdash; набор символов в форме <varname
+>$(xxx)</varname
+>. Это <emphasis
+>переменные окружения</emphasis
+>, определённые в собственно окружении &kde;. Они заменяются действительными значениями когда <command
+>./configure</command
+> генерирует файлы <filename
+>Makefile</filename
+> из шаблонов. </para>
+
+<para
+>Также, команда <command
+>./configure --help</command
+> отобразит список вещей, которые вы можете изменить во время сборки/компиляции. В частности, команда: <screen>
+./configure --prefix=/где/вы/желаете
+</screen
+> будет перенаправлять устанавливаемые файлы куда вы захотите, сменой значения внутренней переменной <varname
+>$(prefix)</varname
+> на <filename class="directory"
+>/где/вы/желаете</filename
+>. </para>
+
+</sect2
+> <!-- automake-file-contents -->
+
+</sect1
+> <!--  automake-manager-summary -->
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+<sect1 id="automake-manager-operation">
+<title
+>Использование менеджера Automake</title>
+
+<para
+>В этой главе вы найдёте краткое описание элементов &automanag; и как их использовать. В частности: <itemizedlist>
+  <listitem
+><para
+><link linkend="automake-manager-operation-window"
+>Окно &automanag;</link
+> описывает структуру окна &automanag;. </para
+></listitem>
+  <listitem
+><para
+><link linkend="automake-manager-operation-survey-window"
+>Элементы верхнего окна</link
+>. </para
+></listitem>
+  <listitem
+><para
+><link linkend="automake-manager-operation-detail-window"
+>Элементы нижнего окна с деталями</link
+>. </para
+></listitem>
+  <listitem
+><para
+><link linkend="automake-manager-operation-navigate"
+>Навигация по &automanag;</link
+> содержит список основных действий, которые вы можете выполнять в &automanag;. </para
+></listitem>
+  <listitem
+><para
+><link linkend="automake-manager-operation-popups"
+>Контекстные меню в &automanag;</link
+> описывает окна, появляющиеся после выбора какого-либо действия в &automanag;. </para
+></listitem>
+</itemizedlist>
+</para>
+
+<sect2 id="automake-manager-operation-window">
+<title
+>Окно &automanag;</title>
+
+<informaltable frame="none">
+<tgroup cols="2"
+><tbody
+><row>
+  <entry
+><inlinemediaobject>
+    <imageobject>
+      <imagedata fileref="automakemanager.png" format="PNG"/>
+    </imageobject>
+  </inlinemediaobject
+></entry>
+  <entry valign="top"
+><itemizedlist>
+    <listitem
+><para
+>&automanag; запускается в отдельном окне. Верхняя часть называется <emphasis
+>Верхним окном</emphasis
+>, а нижняя &mdash; <emphasis
+>окном деталей</emphasis
+>. Между ними располагается разделитель, который можно перетаскивать для регулировки размеров верхнего и нижнего окон. В режиме IDEAl можно также изменять ширину окна. </para
+></listitem>
+    <listitem
+><para
+>Вверху каждого окна есть <emphasis
+>панель инструментов</emphasis
+>, кнопки на которой активируются, когда выбирается элемент из списка в окне. роме того действия над элементами можно совершать через их контекстные меню. </para
+></listitem>
+    <listitem
+><para
+>В режиме IDEAl также есть две дополнительные кнопки, слева на заголовке окна &ndash; треугольная стрелка вправо и точка. Первая <emphasis
+>закрывает окно</emphasis
+>, а вторая <emphasis
+>сохраняет его открытым</emphasis
+> даже если активировано другое окно &kdevelop; (иначе окно &automanag; будет автоматически закрыто сразу после передачи фокуса на другое окно). </para
+></listitem>
+  </itemizedlist
+></entry>
+</row
+></tbody
+></tgroup>
+</informaltable>
+
+</sect2
+> <!-- automake-manager-operation-window -->
+
+<sect2 id="automake-manager-operation-survey-window">
+<title
+>Окно Overall View</title>
+
+<para
+>Окно Overall View содержит древовидный список каталогов вашего проекта, содержащих программные файлы, документацию или другие данные. В каждом из них находится файл <filename
+>Makefile.am</filename
+>, называемый в &automanag; <emphasis
+>подпроектом</emphasis
+> (<emphasis
+>subproject</emphasis
+>). Как показано на рисунке, есть три стандартных подпроекта: </para>
+
+<itemizedlist>
+  <listitem
+><para
+><filename
+>src</filename
+> &ndash; исходники вашего приложения, </para
+></listitem>
+  <listitem
+><para
+><filename
+>doc</filename
+> &ndash; руководство приложения (Handbook), </para
+></listitem>
+  <listitem
+><para
+><filename
+>po</filename
+> &ndash; файлы перевода, содержащие перевод всей текстовой информации вашего приложения (например, заголовки окон, пункты меню, названия кнопок). </para
+></listitem>
+</itemizedlist>
+
+<para
+>Обратите внимание, что <filename
+>doc</filename
+> всегда содержит подкаталог <filename
+>en</filename
+>. Это потому, что основной язык документации KDE &mdash; английский  (en). Если ваше приложение станет частью KDE, команды перевода KDE переведёт его с английского на другие языки, размещаемые в других каталогах, например <filename
+>ru</filename
+> (русский) или <filename
+>uk</filename
+> (украинский). Сообщения в файле <filename
+>po</filename
+> также будут переведены, что позволит использовать ваше приложение людям, не знающим английский. </para>
+
+<note
+><para
+>Подкаталоги <filename
+>doc</filename
+> и <filename
+>po</filename
+> служат для разных целей. <filename
+>doc</filename
+> содержит <emphasis
+>документацию</emphasis
+>, такую как руководство, <filename
+>po</filename
+> содержит сообщения для перевода <emphasis
+>пользовательского интерфейса</emphasis
+>, встроенного в исходники данного приложения. </para
+></note>
+
+<para
+>Окно Общее просмотр (Overall View) также служит как средство навигации. Если вы выберите подпроект, подробности о нём будут отображены в окне Detail View. </para>
+
+</sect2
+> <!-- automake-manager-operation-survey-window -->
+
+<sect2 id="automake-manager-operation-detail-window">
+<title
+>Окно Detail View</title>
+
+<para
+>Окно Detail View содержит древовидный список файлов подпроекта, выделенного в окне Overall View, а также правила компиляции, сборки и установки для них. </para>
+
+<sect3>
+<title
+>Цели</title>
+
+<para
+>Древовидный список в Detail View имеет два уровня. Верхний состоит из т.н. <emphasis
+>целей</emphasis
+> (target) &automanag;, и нижний содержит списки файлов, составляющие каждую цель. </para>
+
+<para
+>Принцип цели &automanag; отличается от цели <filename
+>Makefile</filename
+>. Коротко:</para>
+<itemizedlist>
+  <listitem
+><para
+>Определение способа компиляции, сборки и установки набора файлов, известно как <emphasis
+>цель</emphasis
+> в &automanag;, и как <emphasis
+>переменная</emphasis
+> в <command
+>Automake</command
+>. </para
+></listitem>
+  <listitem
+><para
+><emphasis
+>Цель</emphasis
+> в <command
+>make</command
+> &mdash; параметр команды <command
+>make</command
+> (например <userinput
+>make install</userinput
+>, <userinput
+>make clean</userinput
+>). </para>
+  <para
+>Тем не менее, все переменные файла  <filename
+>Makefile.am</filename
+> представляют<emphasis
+>подцель</emphasis
+> (sub-target) в <command
+>make</command
+>. </para
+></listitem>
+</itemizedlist>
+
+</sect3>
+</sect2
+> <!-- automake-manager-operation-detail-window -->
+
+<sect2 id="automake-manager-operation-navigate">
+<title
+>Навигация в &automanag;</title>
+
+<para
+>При щелчке в окне Overall View или Detail View на <symbol
+>+</symbol
+> или <symbol
+>-</symbol
+>, рядом с именем подпроекта или цели, приведёт развёртыванию или свёртыванию дерева. </para>
+
+<variablelist>
+<varlistentry>
+<term
+>Jткрытие файла для правки</term>
+<listitem>
+<para
+>При щелчке на файле в окне "Детали", он откроется в окне редактирования .       &kdevelop;</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Активирование кнопок &automanag;</term>
+<listitem>
+<para
+>При щелчке на имени подпроекта в окне Overall View или цели в Detail View, активируются некоторые кнопки панели инструментов.</para>
+
+<note>
+  <para
+>Рекомендуется использовать <emphasis
+>контекстные меню</emphasis
+> вместо панели инструментов, т.к. так легче видеть и понимать что вы делаете. </para>
+  <para
+>Действия над подпроектами и целями широко действуют на структуру, компиляцию, сборку и установку вашего приложения. </para>
+</note>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Контекстные меню</term>
+<listitem>
+<para
+>В контекстном меню подпроекта, цели или файла можно выбрать действия над ними, например, добавить цель в подпроект, добавить или удалить файл из цели (не с диска). </para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</sect2
+> <!-- automake-manager-operation-navigate -->
+
+<sect2 id="automake-manager-operation-popups">
+<title
+>Контекстные меню &automanag;</title>
+
+<para
+>Далее изложен обзор контекстных меню &automanag;. Более подробное их описание вы найдёте в следующей главе. </para>
+<!-- ### add a link to this chapter when ready -->
+
+<sect3 id="automake-manager-operation-popups-file">
+<title
+>Контекстное меню файла</title>
+
+<para
+>На рисунке ниже показано контекстное меню для значка <filename
+>hi-16app-myapp.png</filename
+> из цели <guilabel
+>Icon data in myapp</guilabel
+> подпроекта <guilabel
+>myapp/src</guilabel
+>. </para>
+
+<informaltable frame="none">
+<tgroup cols="2"
+><tbody
+><row>
+  <entry
+><inlinemediaobject>
+    <imageobject>
+      <imagedata fileref="automake-file-popup.png" format="PNG"/>
+    </imageobject>
+  </inlinemediaobject
+></entry>
+  <entry valign="bottom"
+><itemizedlist>
+    <listitem
+><para
+>Действие по умолчанию &mdash; <guimenuitem
+>Удалить</guimenuitem
+> файл из цели. </para
+></listitem>
+    <listitem
+><para
+>Подменю <guimenuitem
+>CVS</guimenuitem
+> содержит действия над файлом, касающиеся CVS. </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Открыть в</guimenuitem
+> позволяет открыть файл любой командой (например, в нашем случае, мы можем открыть значок в <application
+>KIcon</application
+>). </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Perforce</guimenuitem
+> &mdash; проприетарный пакет, аналогичный CVS. </para
+></listitem>
+  </itemizedlist
+></entry>
+</row
+></tbody
+></tgroup>
+</informaltable>
+
+</sect3
+> <!-- automake-manager-operation-popups-file -->
+
+<sect3 id="automake-manager-operation-popups-target">
+<title
+>Контекстное меню цели</title>
+
+<para
+>На рисунке ниже, выбрана цель <guilabel
+>myapp (Program in bin)</guilabel
+> подпроекта <guilabel
+>myapp/src</guilabel
+>. </para>
+
+<informaltable frame="none">
+<tgroup cols="2"
+><tbody
+><row>
+  <entry
+><inlinemediaobject>
+    <imageobject>
+      <imagedata fileref="automake-target-popup.png" format="PNG"/>
+    </imageobject>
+  </inlinemediaobject
+></entry>
+  <entry valign="bottom"
+><itemizedlist>
+    <listitem
+><para
+><guimenuitem
+>Параметры</guimenuitem
+> только для целей, содержащих исходные файлы. Вы сможете указать ключи компоновщика и пути, по которым производить поиск библиотек, а также вы можете указать список библиотек, с которыми нужно компоновать ваше приложение. </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Создать файл</guimenuitem
+> приведёт к созданию нового файла. </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Добавить существующие файлы</guimenuitem
+> приведёт к добавлению файла. </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Удалить</guimenuitem
+> приведёт к удалению цели и всех её файлов с диска. </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Сделать цель активной</guimenuitem
+> только для целей, содержащих исходные файлы. Активирует текущую цель &mdash; новые файлы всегда добавляются в неё </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Собрать цель</guimenuitem
+> приведёт к сборке текущей цели. </para
+></listitem>
+  </itemizedlist
+></entry>
+</row
+></tbody
+></tgroup>
+</informaltable>
+
+</sect3
+> <!-- automake-manager-operation-popups-target -->
+
+<sect3 id="automake-manager-operation-popups-subproject">
+<title
+>Контекстное меню подпроекта</title>
+
+<para
+>Меню <emphasis
+>подпроекта</emphasis
+> позволяет делать масштабные изменения в структуре вашего проекта, а также способ его компиляции, сборки и установки. </para>
+
+
+<informaltable frame="none">
+<tgroup cols="2"
+><tbody
+><row>
+  <entry
+><inlinemediaobject>
+    <imageobject>
+      <imagedata fileref="automake-subproject-popup.png" format="PNG"/>
+    </imageobject>
+  </inlinemediaobject
+></entry>
+  <entry valign="bottom"
+><itemizedlist>
+    <listitem
+><para
+><guimenuitem
+>Параметры</guimenuitem
+> содержит параметры компиляции, сборки и установки проекта. В появившемся диалоге будут вкладки Compiler, Includes, Prefixes и Build Order. </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Добавить подпроект</guimenuitem
+> создаст новый подкаталог в структуре проекта и начальный файл Makefile.am. </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Добавить цель</guimenuitem
+> откроет диалог, где вы сможете установить правила компиляции, сборки и установки файлов подпроекта. </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Добавить сервис</guimenuitem
+> (... в процессе написания ...) </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Добавить приложение</guimenuitem
+> (... в процессе написания ...) </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Добавить существующие подпроекты...</guimenuitem
+> (... в процессе написания ...) </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Удалить подпроект</guimenuitem
+> &mdash; правильный способ удаления подпроекта. При этом также "подправятся" файлы <filename
+>Makefile.am</filename
+>. Кроме того, будет предложено удалить все файлы, находящиеся в подкаталоге. Используйте это с осторожностью. </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Собрать</guimenuitem
+> приведёт к сборке текущего подпроекта. </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Пересоздать</guimenuitem
+> (... в процессе написания ...) </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Очистить</guimenuitem
+> (... в процессе написания ...) </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Установить</guimenuitem
+> (... в процессе написания ...) </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Установить (с правами root)</guimenuitem
+> (... в процессе написания ...) </para
+></listitem>
+  </itemizedlist
+></entry>
+</row
+></tbody
+></tgroup>
+</informaltable>
+
+</sect3
+> <!-- automake-manager-operation-popups-subproject -->
+
+</sect2
+> <!-- automake-manager-operation-popups -->
+
+</sect1
+> <!-- automake-manager-operation -->
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+<sect1 id="autoproject">
+<title
+>Automake</title>
+<indexterm zone="autoproject"
+><primary
+><command
+>autoproject</command
+></primary
+></indexterm>
+<indexterm zone="autoproject"
+><primary
+>&automake;</primary
+></indexterm>
+<indexterm zone="autoproject"
+><primary
+>&autoconf;</primary
+></indexterm>
+<indexterm zone="autoproject"
+><primary
+>&libtool;</primary
+></indexterm>
+
+<para
+>(... в процессе написания ...) </para>
+
+
+<sect2 id="autoconf">
+<title
+>Autoconf</title>
+<indexterm zone="autoconf"
+><primary
+>скрипт <filename
+>configure</filename
+></primary
+></indexterm>
+<indexterm zone="autoconf"
+><primary
+>скрипт <filename
+>config.status</filename
+></primary
+></indexterm>
+<indexterm zone="autoconf"
+><primary
+><filename
+>Makefile.in</filename
+></primary
+></indexterm>
+<indexterm zone="autoconf"
+><primary
+><filename
+>config.h.in</filename
+></primary
+></indexterm>
+
+<para
+><filename
+>Makefile.in</filename
+> в <filename
+>Makefile</filename
+> </para>
+
+<programlisting
+>prefix = @prefix@
+INSTALL = @INSTALL@
+build_triplet = @build@
+CXX = @CXX@
+</programlisting>
+
+<programlisting
+>prefix = /home/bernd/kde3
+INSTALL = /usr/bin/ginstall -c -p
+build_triplet = i686-pc-linux-gnu
+CXX = g++
+</programlisting>
+
+<para
+><filename
+>config.h.in</filename
+> в <filename
+>config.h</filename
+> </para>
+
+<programlisting
+>/* Define if you have libz */
+#undef HAVE_LIBZ
+/* Размер `int', как подсчитано sizeof. */
+#undef SIZEOF_INT
+</programlisting>
+
+<programlisting
+>/* Define if you have libz */
+#define HAVE_LIBZ 1
+/* Размер `int', как подсчитано sizeof. */
+#define SIZEOF_INT 4
+</programlisting>
+
+</sect2
+> <!-- autoconf -->
+
+
+<sect2 id="automake">
+<title
+>Automake</title>
+
+<para
+>(... в процессе написания ...) </para>
+
+</sect2
+> <!--automake  -->
+
+
+<sect2 id="automake-manager">
+<title
+>&automanag;</title>
+
+<figure id="screenshot-automake-manager" float="1">
+<title
+>Снимок экрана менеджера automake</title>
+<mediaobject>
+<imageobject
+><imagedata fileref="automake-manager.png"/></imageobject>
+</mediaobject>
+</figure>
+
+</sect2
+> <!-- automake-manager -->
+
+
+<sect2 id="automakelibrary">
+<title
+>Сборка и установка библиотек</title>
+
+<para>
+<itemizedlist>
+<listitem
+><para
+>-rpath </para
+></listitem>
+<listitem
+><para
+>PIC </para
+></listitem>
+<listitem
+><para
+>static </para
+></listitem>
+<listitem
+><para
+>plugins: no-undefined </para
+></listitem>
+</itemizedlist>
+</para>
+
+</sect2
+> <!-- automakelibrary -->
+
+</sect1
+> <!-- autoproject -->
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+<sect1 id="customproject">
+<title
+>Специальные файлы makefile и сценарии сборки</title>
+<indexterm zone="customproject"
+><primary
+><filename
+>Makefile</filename
+></primary
+></indexterm>
+<indexterm zone="customproject"
+><primary
+><filename
+>build.xml</filename
+></primary
+></indexterm>
+
+<para
+>(... в процессе написания ...) </para>
+
+</sect1
+> <!-- customproject -->
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+<sect1 id="compileroptions">
+<title
+>Параметры компилятора</title>
+
+<para
+>(... в процессе написания ...) </para>
+
+</sect1
+> <!-- compileroptions -->
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+<sect1 id="makeoptions">
+<title
+>Параметры make</title>
+
+<para
+>(... в процессе написания ...) </para>
+
+</sect1
+> <!-- makeoptions -->
+
+</chapter
+> <!-- project-management -->

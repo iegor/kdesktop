@@ -1,0 +1,138 @@
+<chapter id="security">
+<title
+>&kppp; y los asuntos de seguridad</title>
+
+<para
+>Esta sección está mayormente indicada para los administradores (<systemitem
+>root</systemitem
+>) con importantes demandas en seguridad, o simplemente a quién tenga un interés técnico. No es necesario leerlo si únicamente utiliza &Linux; a nivel doméstico, aunque siempre puede aprender algo.</para>
+
+<sect1 id="security-restricting-access">
+<title
+>Restricción de acceso a &kppp;</title>
+
+<para
+>Un administrador de sistema puede querer restringir el acceso a según quién utilice &kppp;. Hay dos maneras de acometer esto.</para>
+
+<sect2 id="security-group-permissions">
+<title
+>Restricción de acceso con permisos de grupo</title>
+
+<para
+>Cree un nuevo grupo (quizá llamado <systemitem
+>dialout</systemitem
+> o similar), y ponga a todos los usuarios a los que se les permita usar &kppp; en ese grupo. Después teclee en la línea de órdenes:</para>
+
+<screen
+><prompt
+>#</prompt
+> <userinput
+><command
+>chown</command
+> <option
+>root.dialout</option
+> <filename
+>/opt/kde/bin/kppp</filename
+></userinput>
+<prompt
+>#</prompt
+> <userinput
+><command
+>chmod</command
+> <option
+>4750</option
+> <filename
+>/opt/kde/bin/kppp</filename
+></userinput
+>
+</screen>
+
+<para
+>Esto asume que &kde; está instalado en <filename class="directory"
+> /opt/kde/</filename
+> y que el nuevo grupo se llama <systemitem
+>dialout</systemitem
+>.</para>
+
+</sect2>
+
+<sect2 id="security-kppps-way">
+<title
+>Restricción de acceso por el método de &kppp;</title>
+
+<para
+>Antes de hacer nada, &kppp; comprueba si hay un archivo llamado <filename
+>/etc/kppp.allow</filename
+>. Si dicho archivo existe, sólo les estará permitido llamar a los usuarios nombrados en el mismo. El archivo debe ser legible (pero por supuesto <emphasis
+>NO</emphasis
+> puede ser escrito). Sólo se reconocen los nombres de usuario, así que no se pueden utilizar identificadores de usuario (<acronym
+>UID</acronym
+>) en este archivo. Este es un pequeño ejemplo:</para>
+
+<screen
+># /etc/kppp.allow
+# comment lines like this are ignored
+# as well as empty lines
+
+fred
+karl
+daisy
+</screen>
+
+<para
+>En el ejemplo anterior, sólo los usuarios <systemitem
+>fred</systemitem
+>, <systemitem
+>karl</systemitem
+> y <systemitem
+>daisy</systemitem
+> pueden efectuar llamadas, así como cualquier usuario con un <acronym
+>UID</acronym
+> de 0 (de modo que no hay que incluir a root específicamente).</para>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="security-why-suid">
+<title
+>¿&kppp; tiene el bit <acronym
+>SUID</acronym
+> activo? ¿Qué pasa con la seguridad?</title>
+
+<para
+>Es virtualmente imposible escribir un sistema de llamadas telefónicas sin el bit <acronym
+>SUID</acronym
+> que sea al mismo tiempo fiable y sencillo de utilizar para los usuarios inexpertos. &kppp; aborda los problemas de seguridad con la siguiente estrategia.</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Inmediatamente después de iniciarse, &kppp; se divide.</para>
+</listitem>
+<listitem>
+<para
+>El proceso maestro, que se ocupa de todas las operaciones del entorno gráfico (como la interacción con el usuario), abandona el estado <acronym
+>SUID</acronym
+> tras la división, y se ejecuta con privilegios de usuario normal.</para>
+</listitem>
+<listitem>
+<para
+>El proceso esclavo mantiene sus privilegios, y es el responsable de todas las acciones que necesitan privilegios de <systemitem
+>root</systemitem
+>. Para mantener esta parte segura, aquí no se utiliza ninguna llamada a las bibliotecas de &kde; o &Qt;, sólo se hacen llamadas a bibliotecas sencillas. El código fuente de este proceso es corto (unas 500 líneas) y está muy bien documentados, así que es fácil buscar agujeros de seguridad.</para>
+</listitem>
+<listitem>
+<para
+>Los procesos maestro y esclavo se comunican a través del <acronym
+>IPC</acronym
+> estándar de &UNIX;.</para>
+</listitem>
+</itemizedlist>
+
+<para
+>Un agradecimiento especial a Harri Porten por escribir este excelente segmento de código. Se pensaba que era imposible, pero el lo resolvió en una semana.</para>
+
+</sect1>
+
+</chapter>

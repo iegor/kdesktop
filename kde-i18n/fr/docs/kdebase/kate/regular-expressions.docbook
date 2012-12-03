@@ -1,0 +1,1028 @@
+<appendix id="regular-expressions">
+<appendixinfo>
+<authorgroup>
+<author
+>&Anders.Lund; &Anders.Lund.mail;</author>
+&traducteurJoelleCornavin; 
+</authorgroup>
+</appendixinfo>
+
+<title
+>Expressions rationnelles</title>
+
+<synopsis
+>Cette annexe contient une introduction brève mais, nous l'espérons, suffisante et
+complète à l'univers des <emphasis
+>expressions rationnelles</emphasis
+>. Elle
+documente les expressions rationnelles sous la forme disponible dans &kate;, qui
+n'est pas compatible avec les expressions rationnelles de Perl ni avec celles par exemple de
+<command
+>grep</command
+>.</synopsis>
+
+<sect1>
+
+<title
+>Introduction</title>
+
+<para
+>Les <emphasis
+>expressions rationnelles</emphasis
+> offrent un moyen de décrire certains contenus possibles d'une chaîne de texte d'une manière comprise par une petite partie de logiciel, de sorte qu'il peut examiner si une chaîne correspond et, également dans le cas d'applications avancées, avec la possibilité d'enregistrer certaines parties ou le texte correspondant.</para>
+
+<para
+>Un exemple : supposons que vous vouliez rechercher dans un texte des paragraphes qui commencent par l'un des noms « Henri » ou « Pernille » suivi d'une certaine forme du verbe « dire ».</para>
+
+<para
+>Lors d'une recherche normale, vous commenceriez par rechercher le premier nom, « Henri », éventuellement suivi de « di » comme ceci : <userinput
+>Henri di</userinput
+> et tout en cherchant des correspondances, vous auriez à  écarter celles qui ne sont pas au début d'un paragraphe, ainsi que celles dans lesquelles le mot commençant par les lettres « di » n'était ni « dit », « disait » ou similaire. Puis, naturellement à répéter tout cela avec le nom suivant...</para>
+
+<para
+>Grâce aux expressions rationnelles, ce pourrait être chose faite en une seule recherche et avec un degré de précision supérieur.</para>
+
+<para
+>Pour ce faire, les expressions rationnelles définissent des règles pour spécifier en détail la généralisation d'une chaîne à faire correspondre. Notre exemple, que nous pourrions littéralement exprimer ainsi :  « une ligne commençant soit par « Henri », soit par « Pernille » (en suivant le cas échéant jusqu'à 4 blancs ou tabulations) suivie d'une espace, suivie de « di », puis soit de « t » soit de « sait »  », pourrait être spécifiée par l'expression rationnelle suivante :</para
+> <para
+><userinput
+>^[ \t]{0,4}(Henri|Pernille) di(t|sait)</userinput
+></para>
+
+<para
+>L'exemple ci-dessus démontre la totalité des quatre concepts majeurs des expressions rationnelles modernes, à savoir :</para>
+
+<itemizedlist>
+<listitem
+><para
+>Motifs</para
+></listitem>
+<listitem
+><para
+>Assertions</para
+></listitem>
+<listitem
+><para
+>Quantificateurs</para
+></listitem>
+<listitem
+><para
+>Références arrière</para
+></listitem>
+</itemizedlist>
+
+<para
+>Le signe (<literal
+>^</literal
+>) commençant l'expression est une assertion, qui n'est vraie que si la chaîne correspondante suivante est au début d'une ligne.</para>
+
+<para
+>Les chaînes « <literal
+>[ \t]</literal
+> » et « <literal
+>(Henri|Pernille) di(t|sait)</literal
+> » sont des motifs. Le premier est une <emphasis
+>classe de caractères</emphasis
+> qui correspond soit à un blanc, soit à une tabulation (horizontale) ; l'autre motif contient d'abord un sous-motif correspondant soit à « <literal
+>Henri</literal
+> » <emphasis
+>soit</emphasis
+> à « <literal
+>Pernille</literal
+> », puis un élément correspondant à la chaîne exacte « <literal
+>di</literal
+> » et, pour finir, un sous-motif correspondant soit à « <literal
+>t</literal
+> » <emphasis
+>soit </emphasis
+> à « <literal
+>sait</literal
+> ».</para>
+
+<para
+>La chaîne <literal
+>{0,4}</literal
+> est un quantificateur indiquant  « n'importe quel endroit de 0 à 4 de la précédente ».</para>
+
+<para
+>Du fait qu'un logiciel d'expressions rationnelles prenant en charge le concept de <emphasis
+>références arrière</emphasis
+> enregistre la partie entière correspondante de la chaîne ainsi que des sous-modèles entourés de parenthèses, ce qui fournit un moyen d'accès à ces références, nous pourrions obtenir soit l'entière correspondance (lors de la recherche d'un document texte dans un éditeur avec une expression rationnelle qui est souvent marquée comme sélectionnée), soit le nom trouvé, soit la dernière partie du verbe.</para>
+
+<para
+>Tout compte fait, l'expression correspondra là où nous le voulions, et seulement là.</para>
+
+<para
+>Les sections suivantes vont décrire en détail la manière de construire et d'utiliser des motifs, des classes de caractères, des assertions, des quantificateurs et des références arrière ; la dernière section donnera quelques exemples utiles.</para>
+
+</sect1>
+
+<sect1 id="regex-patterns">
+
+<title
+>Motifs</title>
+
+<para
+>Les motifs consistent en chaînes littérales et en classes de caractères. Les motifspeuvent contenir des sous-motifs, qui sont des motifs entourés de parenthèses.</para>
+
+<sect2>
+<title
+>Échapper des caractères</title>
+
+<para
+>Dans les motifs ainsi que dans les classes de caractères, certains caractères ont une signification particulière. Pour faire correspondre littéralement n'importe lequel de ces caractères, ils doivent être marqués ou <emphasis
+>échappés</emphasis
+> pour faire savoir au logiciel d'expressions rationnelles qu'il devra interpréter de tels caractères dans leur signification littérale.</para>
+
+<para
+>Ceci est effectué en ajoutant au début du caractère une barre oblique inverse (<literal
+>\</literal
+>).</para>
+
+
+<para
+>Comme le logiciel d'expressions rationnelles ignorera silencieusement l'échappement d'un caractère qui n'a aucune signification spéciale dans le contexte, l'échappement par exemple d'un « j » (<userinput
+>\j</userinput
+>) est fiable. Si vous doutez qu'un caractère puisse avoir une signification spéciale, vous pouvez donc l'échapper en toute sécurité.</para>
+
+<para
+>L'échappement de la cause inclut le caractère barre oblique inverse lui-même, pour obtenir une telle correspondance, vous devrez écrire <userinput
+>\\</userinput
+>.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Classes de caractères et abréviations</title>
+
+<para
+>Une <emphasis
+>classe de caractères</emphasis
+> est une expression qui correspond à l'un des ensembles définis de caractères. Dans les expressions rationnelles, les classes de caractères sont définies en plaçant les caractères licites de la classe entre crochets, <literal
+>[]</literal
+>, ou en utilisant une des classes abrégées décrites ci-dessous.</para>
+
+<para
+>Les classes de caractères simples contiennent juste un ou plusieurs caractères littéraux, par exemple <userinput
+>[abc]</userinput
+> (correspondant soit aux lettres « a », « b » soit à « c »), soit à <userinput
+>[0123456789]</userinput
+> (correspondant à n'importe quel chiffre).</para>
+
+<para
+>Du fait que lettres et chiffres ont un ordre logique, vous pouvez les abréger en en spécifiant des plages : <userinput
+>[a-c]</userinput
+> est égal à <userinput
+>[abc]</userinput
+> et <userinput
+>[0-9]</userinput
+> est égal à <userinput
+>[0123456789]</userinput
+>. La combinaison de ces structures (constructs), par exemple <userinput
+>[a-fynot1-38]</userinput
+> est totalement licite (le dernier correspondrait bien sûr soit à « a », « b », « c », « d », « e », « f », « y », « n », « o », « t », « 1 », « 2 », « 3 », soit à « 8 »).</para>
+
+<para
+>Comme les majuscules sont des caractères différents de leurs équivalents en minuscules, pour créer une classe de caractères sans casse correspondant à un « a » ou à un « b », de toute façon, vous devez l'écrire <userinput
+>[aAbB]</userinput
+>.</para>
+
+<para
+>Il est bien sûr possible de créer une classe « négative » correspondant à « tout sauf ». Pour placer un caractère (<literal
+>^</literal
+>) au début de la classe : </para>
+
+<para
+><userinput
+>[^abc]</userinput
+>correspondra à n'importe quel caractère <emphasis
+>sauf</emphasis
+> à « a » ,« b » ou « c ».</para>
+
+<para
+>En plus des caractères littéraux, certaines abréviations sont définies, ce qui facilite encore un peu plus les choses : <variablelist>
+
+<varlistentry>
+<term
+><userinput
+>\a</userinput
+></term>
+<listitem
+><para
+>Correspond au caractère <acronym
+>ASCII</acronym
+> du bip (BEL, 0x07).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\f</userinput
+></term>
+<listitem
+><para
+>Correspond au caractère <acronym
+>ASCII</acronym
+> de saut de page (FF, 0x0C).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\n</userinput
+></term>
+<listitem
+><para
+>Correspond au caractère <acronym
+>ASCII</acronym
+> de retour à la ligne (LF, 0x0A, interligne Unix).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\r</userinput
+></term>
+<listitem
+><para
+>Correspond au caractère <acronym
+>ASCII</acronym
+> de retour chariot (CR, 0x0D).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\t</userinput
+></term>
+<listitem
+><para
+>Correspond au caractère <acronym
+>ASCII</acronym
+> de tabulation horizontale (HT, 0x09).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\v</userinput
+></term>
+<listitem
+><para
+>Correspond au caractère <acronym
+>ASCII</acronym
+> de tabulation verticale (VT, 0x0B).</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><userinput
+>\xhhhh</userinput
+></term>
+
+<listitem
+><para
+>Correspond au caractère Unicode équivalant au nombre hexadécimal hhhh (entre 0x0000 et 0xFFFF). \0ooo (&cad;, \zéro ooo) correspond au caractère <acronym
+>ASCII</acronym
+>/Latin-1 équivalant au nombre octal ooo (entre 0 et 0377).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>.</userinput
+> (point)</term>
+<listitem
+><para
+>Correspond à n'importe quel caractère (dont le saut de ligne).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\d</userinput
+></term>
+<listitem
+><para
+>Correspond à un chiffre. Égal à <literal
+>[0-9]</literal
+>.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\D</userinput
+></term>
+<listitem
+><para
+>Correspond à un caractère autre qu'un chiffre. Égal à <literal
+>[^0-9]</literal
+> ou à <literal
+>[^\d]</literal
+>.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\s</userinput
+></term>
+<listitem
+><para
+>Correspond à un caractère d'espacement. Pratiquement égal à <literal
+>[\t\n\r]</literal
+>.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\S</userinput
+></term>
+<listitem
+><para
+>Correspond à un caractère autre qu'un caractère d'espacement. Pratiquement égal à <literal
+>[^ \t\r\n]</literal
+> et égal à<literal
+>[^\s]</literal
+>.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\w</userinput
+></term>
+<listitem
+><para
+>Correspond à n'importe quel « caractère mot » &mdash;  dans ce cas, une lettre ou un chiffre quelconque. Notez que le soulignement (<literal
+>_</literal
+>) n'est pas concordant comme c'est le cas avec les expressions rationnelles Perl. Égal à <literal
+>[a-zA-Z0-9]</literal
+>.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\W</userinput
+></term>
+<listitem
+><para
+>Correspond à n'importe quel caractère autre qu'un mot - à n'importe quoi sauf des lettres ou des nombres. Égal à <literal
+>[^a-zA-Z0-9]</literal
+> ou <literal
+>[^\w]</literal
+>.</para
+></listitem>
+</varlistentry>
+
+
+</variablelist>
+
+</para>
+
+<para
+>Les classes abrégées peuvent être placées à l'intérieur d'une classe personnalisée, par exemple pour correspondre à un caractère mot, un blanc ou un point, vous pourriez écrire <userinput
+>[\w \.]</userinput
+>.</para
+> 
+
+<note
+> <para
+>La notation POSIX des classes, <userinput
+>[:&lt;nom classe&gt;:]</userinput
+> n'est actuellement pas prise en charge.</para
+> </note>
+
+<sect3>
+<title
+>Caractères ayant des significations particulières à l'intérieur des classes de caractères</title>
+
+<para
+>Les caractères suivants ont une signification spéciale à l'intérieur de la structure (construct) de classe de caractères « [ ] » et doivent être échappés pour être littéralement inclus dans une classe :</para>
+
+<variablelist>
+<varlistentry>
+<term
+><userinput
+>]</userinput
+></term>
+<listitem
+><para
+>Termine la classe de caractères. Doit être échappé à moins qu'il ne soit le tout premier caractère dans la classe (peut suivre un caret ^ non échappé).</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><userinput
+>^</userinput
+> (caret)</term>
+<listitem
+><para
+>Désigne une classe négative s'il s'agit du premier caractère. Doit être échappé pour correspondre littéralement s'il s'agit du premier caractère dans la classe.</para
+></listitem
+> 
+</varlistentry>
+<varlistentry>
+<term
+><userinput
+>-</userinput
+> (tiret)</term>
+<listitem
+><para
+>Désigne une plage logique. Doit toujours être échappé au sein d'une classe de caractères.</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><userinput
+>\</userinput
+> (barre oblique inverse)</term>
+<listitem
+><para
+>Le caractère d'échappement. Doit toujours être échappé.</para
+></listitem>
+</varlistentry>
+
+</variablelist>
+
+</sect3>
+
+</sect2>
+
+<sect2>
+
+<title
+>Alternatives : correspond à  « un parmi »</title>
+
+<para
+>Si vous souhaitez faire correspondre un motif parmi un ensemble de motifs de substitution, vous pouvez les séparer à l'aide de <literal
+>|</literal
+> (caractère barre verticale).</para>
+
+<para
+>Par exemple, pour trouver soit « Jean » soit «  Henry », vous utiliserez une expression <userinput
+>Jean|Henry</userinput
+>.</para>
+
+</sect2>
+
+<sect2>
+
+<title
+>Sous-motifs</title>
+
+<para
+>Les <emphasis
+>sous-motifs</emphasis
+> sont des motifs entourés de parenthèses  ils ont plusieurs utilisations dans le monde des expressions rationnelles.</para>
+
+<sect3>
+
+<title
+>Spécification d'alternatives</title>
+
+<para
+>Vous pouvez utiliser un sous-motif pour grouper un ensemble d'alternatives au sein d'un motif plus grand. Les alternatives sont séparées par le caractère « | » (barre verticale).</para>
+
+<para
+>Par exemple, pour faire correspondre l'un des mots « int », « float » ou « double », vous pouvez utiliser le motif <userinput
+>ent|flottant|double</userinput
+>. Lorsque vous voulez seulement en trouver un s'il est suivi d'un caractère d'espacement et ensuite de certaines lettres, placez les alternatives à l'intérieur d'un sous-motif : <userinput
+>(int|float|double)\s+\w+</userinput
+>.</para>
+
+</sect3>
+
+<sect3>
+
+<title
+>Capture des correspondances de texte (références arrière)</title>
+
+<para
+>Si vous voulez employer une référence arrière, faites appel à un sous-motif pour avoir la partie souhaitée du motif en mémoire.</para>
+
+<para
+>Par exemple, si vous souhaitez trouver deux occurrences du même mot séparées par une virgule et le cas échéant d'un caractère d'espacement, vous pouvez écrire <userinput
+>(\w+),\s*\1</userinput
+>. Le sous-motif <literal
+>\w+</literal
+> trouvera une partie des caractères du mot et l'expression entière correspondra si ceux-ci étaient suivis d'une virgule, de 0 ou plusieurs caractères d'espacement et ensuite une partie égale de caractères mots (la chaîne <literal
+>\1</literal
+> référence <emphasis
+>le premier sous-motif entouré de parenthèses</emphasis
+>).</para>
+
+<!-- <para
+>See also <link linkend="backreferences"
+>Back references</link
+>.</para
+> -->
+
+</sect3>
+
+<sect3 id="lookahead-assertions">
+<title
+>Assertions avant</title>
+
+<para
+>Une assertion avant est un sous-motif commençant soit par <literal
+>?=</literal
+>, soit par <literal
+>?!</literal
+>.</para>
+
+<para
+>Par exemple, pour faire correspondre la chaîne littérale « Jean » mais seulement si elle n'est pas suivie de « XIII », vous pourriez utiliser cette expression : <userinput
+>Jean(?! XXIII)</userinput
+>. (Celle-ci trouverait « Jean Bart » ainsi que « Jean Sans Peur », mais ignorerait les autres correspondances.)</para>
+
+<para
+>Les sous-motifs utilisés pour les assertions ne sont pas capturés.</para>
+
+<para
+>Reportez-vous également à la section <link linkend="assertions"
+>Assertions</link
+>.</para>
+
+</sect3>
+
+</sect2>
+
+<sect2 id="special-characters-in-patterns">
+<title
+>Caractères ayant une signification spéciale à l'intérieur des motifs</title>
+
+<para
+>Les caractères suivants ont une signification à l'intérieur d'un motif et doivent être échappés si vous voulez les faire correspondre littéralement : <variablelist>
+
+<varlistentry>
+<term
+><userinput
+>\</userinput
+> (barre oblique inverse)</term>
+<listitem
+><para
+>Le caractère d'échappement.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>^</userinput
+> (caret)</term>
+<listitem
+><para
+>Déclare le début de la chaîne.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>$</userinput
+></term>
+<listitem
+><para
+>Déclare la fin de la chaîne.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>()</userinput
+> (parenthèses gauche et droite)</term>
+<listitem
+><para
+>Désigne des sous-motifs.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>{}</userinput
+> (accolades gauche et droite)</term>
+<listitem
+><para
+>Désigne des quantificateurs numériques.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>[]</userinput
+> (crochets gauche et droit)</term>
+<listitem
+><para
+>Désigne des classes de caractères.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>|</userinput
+> (barre verticale)</term>
+<listitem
+><para
+>OU logique. Sépare des alternatives.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>+</userinput
+> (signe plus)</term>
+<listitem
+><para
+>Quantificateur, 1 ou plus.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>*</userinput
+> (astérisque)</term>
+<listitem
+><para
+>Quantificateur, 0 ou plus.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>?</userinput
+> (point d'interrogation)</term>
+<listitem
+><para
+>Un caractère optionnel. Peut être interprété comme un quantificateur, 0 ou 1.</para
+></listitem>
+</varlistentry>
+
+</variablelist>
+
+</para>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="quantifiers">
+<title
+>Quantificateurs</title>
+
+<para
+>Les <emphasis
+>quantificateurs</emphasis
+> permettent à une expression rationnelle de faire correspondre un nombre ou une plage spécifiés de nombres soit d'un caractère, soit d'une classe de caractères, soit d'un sous-motif.</para>
+
+<para
+>Les quantificateurs sont entourés d'accolades (<literal
+>{</literal
+> et <literal
+>}</literal
+>) et ont la forme générale <literal
+>{[minimum-occurrences][,[maximum-occurrences]]}</literal
+> </para>
+
+<para
+>L'usage est mieux expliqué par l'exemple : <variablelist>
+
+<varlistentry>
+<term
+><userinput
+>{1}</userinput
+></term>
+<listitem
+><para
+>Exactement 1 occurrence.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>{0,1}</userinput
+></term>
+<listitem
+><para
+>Zéro ou 1 occurrence.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>{,1}</userinput
+></term>
+<listitem
+><para
+>La même chose, avec moins de travail ;).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>{5,10}</userinput
+></term>
+<listitem
+><para
+>Au moins 5 mais 10 occurrences au maximum.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>{5,}</userinput
+></term>
+<listitem
+><para
+>Au moins 5 occurrences, aucun maximum.</para
+></listitem>
+</varlistentry>
+
+</variablelist>
+
+</para>
+
+<para
+>De plus, il y a quelques abréviations : <variablelist>
+
+<varlistentry>
+<term
+><userinput
+>*</userinput
+> (astérisque)</term>
+<listitem
+><para
+>Similaire à <literal
+>{0,}</literal
+>, trouve n'importe quel nombre d'occurrences.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>+</userinput
+> (signe plus)</term>
+<listitem
+><para
+>Similaire à <literal
+>{1,}</literal
+>, au moins 1 occurrence.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>?</userinput
+> (point d'interrogation)</term>
+<listitem
+><para
+>Similaire à <literal
+>{0,1}</literal
+>, zéro ou 1 occurrence.</para
+></listitem>
+</varlistentry>
+
+</variablelist>
+
+</para>
+
+<sect2>
+
+<title
+>Avidité</title>
+
+<para
+>Lors de l'utilisation de quantificateurs sans aucun maximum, les expressions rationnelles tentent par défaut de correspondre à la chaîne recherchée autant qu'il est possible ; ce comportement est communément qualifié d'<emphasis
+>avide</emphasis
+>.</para>
+
+<para
+>Les logiciels modernes d'expressions rationnelles fournissent le moyen d'«invalider l'avidité », bien que dans un environnement graphique, ce soit à l'interface de vous assurer l'accès à cette fonctionnalité. Par exemple, une boîte de dialogue de recherche offrant une recherche d'expressions rationnelles pourrait être dotée d'une case à cocher étiquetée « Correspondance minimale », tout comme elle devrait indiquer si l'avidité est le comportement par défaut.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Dans des exemples de contexte</title>
+
+<para
+>Voici quelques exemples d'utilisation de quantificateurs :</para>
+
+<variablelist>
+
+<varlistentry>
+<term
+><userinput
+>^\d{4,5}\s</userinput
+></term>
+<listitem
+><para
+>Correspond aux chiffres dans « 1234 aller » et « 12345 maintenant », mais ni dans « 567 onze » ni dans « 223459 quelque_part ».</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\s+</userinput
+></term>
+<listitem
+><para
+>Correspond à un ou plusieurs caractères d'espacement.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>(bla){1,}</userinput
+></term>
+<listitem
+><para
+>Correspond à tous les « blablabla » et les « bla » dans « blancheur » ou « embla ».</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>/?&gt;</userinput
+></term>
+<listitem
+><para
+>Fait correspondre « /&gt; » dans « &lt;élément_fermé/&gt; » ainsi que « &gt; » dans « &lt;élément_ouvert&gt; ».</para
+></listitem>
+</varlistentry>
+
+</variablelist>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="assertions">
+<title
+>Assertions</title>
+
+<para
+>Les <emphasis
+>assertions</emphasis
+> permettent à une expression rationnelle de ne correspondre que sous certaines conditions contrôlées.</para>
+
+<para
+>Une assertion n'a pas besoin d'un caractère pour correspondre, elle étudie plutôt le cadre d'une correspondance possible avant de la reconnaître. Par exemple, l'assertion <emphasis
+>limite de mot</emphasis
+> n'essaie pas de trouver un caractère autre qu'un mot par rapport à un mot un à sa position, elle s'assure au contraire qu'il n'y a aucun caractère mot. Cela signifie que l'assertion peut correspondre là où il n'y a aucun caractère, &cad; aux extrémités d'une chaîne recherchée.</para>
+
+<para
+>Certaines assertions ont réellement besoin d'un motif auquel correspondre, sauf la partie de la chaîne concordante qui ne fera pas partie du résultat de la correspondance de l'expression entière.</para>
+
+<para
+>Les expressions rationnelles telles qu'elles sont documentées ici prennent en charge les assertions suivantes : <variablelist>
+
+<varlistentry
+> 
+<term
+><userinput
+>^</userinput
+> (caret : début de chaîne)</term
+> 
+<listitem
+><para
+>Correspond au début de la chaîne recherchée.</para
+> <para
+>L'expression <userinput
+>^Pierre</userinput
+> correspondra à « Pierre » dans la chaîne « Pierre, bonjour ! », mais non dans « Bonjour, Pierre ! ». </para
+> </listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>$</userinput
+> (fin de chaîne)</term>
+<listitem
+><para
+>Correspond à la fin de la chaîne recherchée.</para>
+
+<para
+>L'expression <userinput
+>pas\?$</userinput
+> correspondra au dernier « vous » dans la chaîne « Vous n'avez pas fait cela, n'est-ce pas ? », mais nulle part dans « Vous n'avez pas fait cela, n'est-ce pas ? ».</para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\b</userinput
+> (limite de mot)</term>
+<listitem
+><para
+>Correspond s'il y a un caractère mot d'un côté et aucun caractère mot de l'autre.</para>
+<para
+>Ceci est utile pour trouver des fins de mots, par exemple les deux extrémités pour trouver un mot entier. L'expression <userinput
+>\ben\b</userinput
+> correspondra au « en » isolé dans la chaîne  « Il est entré en cassant un carreau », mais non au « en » de « entré ».</para
+></listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\B</userinput
+> (limite autre qu'un mot)</term>
+<listitem
+><para
+>Correspond partout où « \b » ne correspond pas.</para>
+<para
+>Cela signifie qu'elle correspondra par exemple à l'intérieur des mots : l'expression <userinput
+>\Ben\B</userinput
+> correspondra dans « rentier » mais non dans « entré » ni dans « Je suis en France ».</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>(?=MOTIF</userinput
+> (assertion avant positive)</term>
+<listitem
+><para
+>Une assertion avant examine la partie de la chaîne suivant une correspondance possible. L'assertion avant positive empêche la chaîne de correspondre si le texte suivant la correspondance possible ne concorde pas avec le <emphasis
+>MOTIF</emphasis
+> de l'assertion, mais le texte mis en correspondance par celui-ci ne sera pas inclus dans le résultat.</para>
+<para
+>L'expression <userinput
+>pratique(?=\w)</userinput
+> correspondra à « pratique » dans « pratiquement » mais non dans « C'était très pratique ! ».</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>(?MOTIF)</userinput
+> (assertion avant négative)</term>
+
+<listitem
+><para
+>L'assertion avant négative empêche une correspondance possible d'être reconnue si la partie suivante de la chaîne recherchée ne correspond pas à son <emphasis
+>MOTIF</emphasis
+>.</para>
+<para
+>L'expression <userinput
+>const \w+\b(?!\s*&amp;)</userinput
+> correspondra à « const char » dans la chaîne « const char* foo », alors qu'elle ne pourra pas correspondre à « const QChaîne » dans « const QChaîne&amp; barre », du fait que l'entité « &amp; » correspond au motif d'assertion avant négative.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+</para>
+
+</sect1>
+
+<!-- TODO sect1 id="backreferences">
+
+<title
+>Back References</title>
+
+<para
+></para>
+
+</sect1 -->
+
+</appendix>

@@ -1,0 +1,1405 @@
+<appendix id="highlight">
+<appendixinfo>
+<authorgroup>
+<author
+><personname
+><firstname
+></firstname
+></personname
+></author>
+<othercredit role="translator"
+> <firstname
+>Thomas</firstname
+> <surname
+>Diehl</surname
+> <affiliation
+> <address
+><email
+>thd@kde.org</email
+></address
+> </affiliation
+> <contrib
+>GUI-Übersetzung</contrib
+></othercredit
+> <othercredit role="translator"
+> <firstname
+>Matthias</firstname
+><surname
+>Schulz</surname
+> <affiliation
+> <address
+><email
+>matthias.schulz@kdemail.net</email
+></address
+> </affiliation
+> <contrib
+>Deutsche Übersetzung</contrib
+></othercredit
+> 
+</authorgroup>
+</appendixinfo>
+<title
+>Arbeiten mit Syntax-Hervorhebungen</title>
+
+<sect1 id="highlight-overview">
+
+<title
+>Überblick</title>
+
+<para
+>Syntax-Hervorhebungen bewirken, dass der Editor den Text automatisch in verschiedenen Farben und Schriftstilen anzeigt, abhängig von der Funktion der Zeichenkette in Beziehung zum Zweck des Dokumentes. Zum Beispiel können in Quelltext Kontrollbefehle fett dargestellt werden, während Daten und Kommentare andere Farben als der Rest des Textes bekommen. Dies verbessert die Lesbarkeit des Textes erheblich und verhilft damit dem Autor zu mehr Effizienz und Produktivität.</para>
+
+<mediaobject>
+<imageobject
+><imagedata format="PNG" fileref="highlighted.png"/></imageobject>
+<textobject
+><phrase
+>Eine Perl-Funktion, mit Hervorhebungen angezeigt.</phrase
+></textobject>
+<caption
+><para
+>Eine Perl-Funktion, mit Hervorhebungen angezeigt.</para>
+</caption>
+</mediaobject>
+
+<mediaobject>
+<imageobject
+><imagedata format="PNG" fileref="unhighlighted.png"/></imageobject>
+<textobject
+><phrase
+>Die selbe Perl-Funktion, ohne Hervorhebungen.</phrase
+></textobject>
+<caption
+><para
+>Die selbe Perl-Funktion, ohne Hervorhebungen.</para
+></caption>
+</mediaobject>
+
+<para
+>Welche der beiden ist einfacher zu lesen?</para>
+
+<para
+>&kate; enthält ein flexibles, konfigurierbares und leistungsfähiges System für Syntax-Hervorhebungen, und die Standarddistribution enthält bereits Definitionen für eine Anzahl von Programmiersprachen, Markup- und Skriptsprachen sowie andere Textformaten. Außerdem können Sie eigene Definitionen in einfachen &XML;-Dateien erstellen.</para>
+
+<para
+>&kate; erkennt auf Basis des &MIME;-Typs, der Dateiendung oder des Inhalts des Dokumentes bereits beim Öffnen des Dokumentes automatisch die richtigen Regeln für die Syntax-Hervorhebungen. Wenn die automatische Auswahl nicht die richtigen Regeln ausgewählt hat, können Sie dies manuell korrigieren (<menuchoice
+><guimenu
+>Dokument</guimenu
+> <guisubmenu
+>Hervorhebungsmodus</guisubmenu
+></menuchoice
+>).</para>
+
+<para
+>Die Schriftstile und Farben, die von jeder Syntax-Hervorhebungsdefinition benutzt werden, können auf der Seite <link linkend="config-dialog-editor-appearance"
+>Erscheinungsbild</link
+> des <link linkend="config-dialog"
+>Einrichtungsdialogs</link
+> festgelegt werden, die Einrichtung der &MIME;-Typen, auf die diese angewendet werden, ist auf der Seite <link linkend="config-dialog-editor-highlighting"
+>Hervorhebungen</link
+> möglich.</para>
+
+<note>
+<para
+>Syntax-Hervorhebungen sind dazu gedacht die Lesbarkeit von Text zu verbessern, aber nicht dazu geeignet die Richtigkeit des Quelltextes zu überprüfen. Die Erstellung der Regeln für die Hervorhebungen ist kompliziert, abhängig davon, welches Format Sie benutzen. In manchen Fällen sind die Autoren der Regeln stolz, wenn 98% des Textes korrekt hervorgehoben werden, meistens jedoch sehen Sie die nicht korrekten 2% nur bei seltenen Konstruktionen.</para>
+</note>
+
+<tip>
+<para
+>Sie können weitere oder aktualisierte Syntax-Hervorhebungsdefinitionen von der &kate;-Webseite durch Klicken auf <guibutton
+>Herunterladen</guibutton
+> im Dialog <link linkend="config-dialog-editor-highlighting"
+>Hervorhebungen einrichten</link
+> des <link linkend="config-dialog"
+>Einrichtungsdialogs</link
+> einrichten bzw. aktualisieren.</para>
+</tip>
+
+</sect1>
+
+<sect1 id="katehighlight-system">
+
+<title
+>Das &kate; Syntax-Hervorhebungssystem</title>
+
+<para
+>Dieser Abschnitt behandelt die Mechanismen des &kate; Syntax-Hervorhebungssystems genauer. Wenn Sie selbst Definitionen erstellen oder verändern möchten, sollten Sie diesen genau lesen.</para>
+
+<sect2 id="katehighlight-howitworks">
+
+<title
+>Wie es funktioniert</title>
+
+<para
+>Immer, wenn Sie ein Dokument öffnen, ist eines der ersten Dinge, die &kate; macht, festzustellen, welche Syntaxdefinition für dieses Dokument benutzt werden soll. Während Sie den Text lesen und neuen Text eingeben, analysiert das Syntax-Hervorhebungssystem den Text anhand der Regeln in der Syntaxdefinition und markiert ihn dementsprechend. </para>
+
+<para
+>Wenn Sie Text eingeben, wird der neue Text sofort analysiert und markiert.</para>
+
+<para
+>Die Syntaxdefinitionen, die in &kate; benutzt werden, sind &XML;-Dateien, die Folgendes enthalten <itemizedlist>
+<listitem
+><para
+>Regeln für das Erkennen von Text, organisiert in Kontextblöcken</para
+></listitem>
+<listitem
+><para
+>Listen mit Schlüsselworten</para
+></listitem>
+<listitem
+><para
+>Stildefinitionen</para
+></listitem>
+</itemizedlist>
+</para>
+
+<para
+>Beim Analysieren von Text werden die Erkennungsregeln in der Reihenfolge, in der sie definiert wurden, überprüft und wenn der Anfang des aktuellen Textes mit einer Definition übereinstimmt, wird der zugehörige Kontext benutzt. Der nächste Startpunkt wird nach dem Ende des erkannten Bereichs gesetzt und von dort aus wird eine neue Schleife für die Regeln mit dem Kontext der gerade gefundenen Regel gestartet.</para>
+
+</sect2>
+
+<sect2 id="highlight-system-rules">
+<title
+>Regeln</title>
+
+<para
+>Die Erkennungsregeln sind das Herzstück des Syntax-Hervorhebungssystems. Eine Regel besteht aus einer Zeichenkette, einem Zeichen oder einem <link linkend="regular-expressions"
+>regulären Ausdruck</link
+>. Mit diesen wird der zu analysierende Text verglichen. Sie enthalten Informationen, welche Darstellung für das erkannte Stück Text verwendet werden soll und ob entweder zu einem explizit angegebenem Kontext oder zum vorher vom Text benutzten Kontext gewechselt werden soll.</para>
+
+<para
+>Die Regeln sind in Kontextgruppen organisiert. Eine Kontextgruppe wird für die grundlegenden Textkonzepte innerhalb des Formates benutzt, &zb; für Textteile in Anführungszeichen oder Kommentarblöcke in Programmquelltext. Dadurch wird sichergestellt, dass sich das Syntax-Hervorhebungssystem nicht unnötig durch alle Regeln hindurcharbeiten muss und dass einige Zeichenketten im Text abhängig vom aktuellen Kontext unterschiedlich behandelt werden können. </para>
+
+<para
+>Kontexte können dynamisch generiert werden, um das Benutzen von Daten in Regeln zu erlauben, die nur auf diese Instanz zutreffen.</para>
+
+</sect2>
+
+<sect2 id="highlight-context-styles-keywords">
+<title
+>Kontextstile und Schlüsselwörter</title>
+
+<para
+>In einigen Programmiersprachen werden Integerzahlen durch den Compiler (das Programm, das den Quelltext in ein ausführbares Programm übersetzt) anders behandelt als Gleitkommazahlen, und es gibt Zeichen, die eine spezielle Bedeutung innerhalb einer in Anführungszeichen eingeschlossenen Zeichenkette haben. In solchen Fällen ist es sinnvoll, diese unterschiedlich darzustellen, so dass sie beim Lesen einfach vom umgebenden Text zu unterscheiden sind. Auch wenn diese keine speziellen Kontexte repräsentieren, können sie durch das Syntax-Hervorhebungssystem erkannt und anders dargestellt werden.</para>
+
+<para
+>Eine Syntaxdefinition kann so viele verschiedene Stile beinhalten, wie für das Format notwendig sind.</para>
+
+<para
+>In vielen Formaten gibt es Listen mit Wörtern, die einem speziellen Konzept zugehörig sind. In Programmiersprachen sind &zb; die Kontrollanweisungen ein Konzept, die Datentypen ein anderes und die eingebauten Funktionen ein drittes. Das Syntax-Hervorhebungssystem von &kate; kann benutzt werden, um solche Wörter anhand der Listen zu finden und zur Hervorhebung der Konzepte im Text zu markieren.</para>
+
+</sect2>
+
+<sect2 id="kate-highlight-system-default-styles">
+<title
+>Standardstile</title>
+
+<para
+>Wenn Sie eine C++-Quelltextdatei, eine &Java;-Quelltextdatei und eine <acronym
+>HTML</acronym
+>-Datei in &kate; öffnen, sehen Sie dass auch in unterschiedlichen Formaten und damit unterschiedlichen Worten, die spezielle Behandlung bekommen, die benutzten Farben dieselben sind. Der Grund dafür ist, dass &kate; vordefinierte Standardstile benutzt, die von den individuellen Syntaxdefinitionen verwendet werden.</para>
+
+<para
+>Dadurch wird die Erkennung von ähnlichen Konzepten in verschiedenen Textformaten einfach. Kommentare &zb; gibt es in fast allen Programmiersprachen, Skripten und Markup-Sprachen; diese werden in allen Sprachen gleich dargestellt, so dass Sie sich auf die Arbeit konzentrieren können und nicht über den Zweck einzelner Einträge nachdenken müssen.</para>
+
+<tip>
+<para
+>Alle Stile in einer Syntaxdefinition nutzen einen der Standardstile. Einige wenige Syntaxdefinitionen nutzen mehr Stile als Standardstile vorhanden sind. Wenn Sie ein Format sehr oft benutzen, kann es die Arbeit wert sein, den Einrichtungsdialog zu starten und nachzusehen, ob mehrere Konzepte die selben Stile benutzen. In der Programmiersprache Perl &zb; gibt es zwei Typen von Zeichenketten, so dass Sie die Hervorhebung durch eine etwas andere Darstellung des zweiten Typs verbessern können. Alle <link linkend="kate-highlight-default-styles"
+>verfügbaren Standardstile</link
+>, werden weiter unten erklärt.</para>
+</tip>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="katehighlight-xml-format">
+<title
+>Die Hervorhebungsdefinition für das &XML; Format</title>
+
+<sect2>
+<title
+>Überblick</title>
+
+<para
+>Dieser Abschnitt ist ein Überblick über die Hervorhebungsdefinition für das &XML;-Format.. Es beschreibt die Hauptbestandteile, deren Bedeutung und Verwendung. Im nächsten Kapitel werden die Erkennungsregeln detailliert beschrieben.</para>
+
+<para
+>Die formale Definition, auch als <acronym
+>DTD</acronym
+> bekannt, wird in der Datei <filename
+>language.dtd</filename
+> gespeichert, die in Ihrem System im Ordner <filename
+>$<envar
+>KDEDIR</envar
+>/share/apps/kate/syntax</filename
+> stehen sollte. </para>
+
+<variablelist>
+<title
+>Hauptbestandteile der &kate;-Hervorhebungsdefinitionen</title>
+
+<varlistentry>
+<term
+>Eine Hervorhebungsdefinitionsdatei enthält einen Kopf mit der XML-Version und dem Dokumententyp:</term>
+<listitem>
+<programlisting
+>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!DOCTYPE language SYSTEM &quot;language.dtd&quot;&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Die Wurzel der Definitionsdatei ist das Element <userinput
+>language</userinput
+>. Verfügbare Eigenschaften sind:</term>
+
+<listitem>
+<para
+>Notwendige Eigenschaften:</para>
+<para
+><userinput
+>name</userinput
+> setzt den Namen der Sprache. Dieser erscheint nachher in Menüs und in Dialogen.</para>
+<para
+>Die Eigenschaft <userinput
+>section</userinput
+> definiert die Kategorie.</para>
+<para
+><userinput
+>extensions</userinput
+> definiert die Dateinamenerweiterungen wie z. B. &quot;*.cpp;*.h&quot;.</para>
+
+<para
+>Optionale Eigenschaften: </para>
+<para
+><userinput
+>mimetype</userinput
+> ordnet Dateien basierend auf deren &MIME;-Type zu.</para>
+<para
+><userinput
+>version</userinput
+> definiert die aktuelle Version der Definitionsdatei.</para>
+<para
+><userinput
+>kateversion</userinput
+> definiert die letzte unterstützte Version von &kate;.</para>
+<para
+><userinput
+>casesensitive</userinput
+> definiert, ob bei den Schlüsselwörtern Groß-/Kleinschreibung unterschieden wird oder nicht.</para>
+<para
+><userinput
+>priority</userinput
+> ist notwendig, wenn eine andere Hervorhebungsdefinitionsdatei die gleichen Dateinamenerweiterung benutzt. Die Definitionsdatei mit der höheren Priorität wird dann benutzt.</para>
+<para
+><userinput
+>author</userinput
+> enthält den Namen des Autors und dessen E-Mail-Adresse.</para>
+<para
+><userinput
+>license</userinput
+> enthält die Lizenz der Datei, normalerweise wird hier die LGPL, GPL oder eine andere benutzt.</para>
+<para
+><userinput
+>hidden</userinput
+> definiert, ob der Name in Menüs von &kate; erscheinen soll.</para>
+<para
+>Die nächste Zeile könnte wie folgt aussehen:</para>
+<programlisting
+>&lt;language name=&quot;C++&quot; version=&quot;1.00&quot; kateversion=&quot;2.4&quot; section=&quot;Sources&quot; extensions=&quot;*.cpp;*.h&quot; /&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Als nächstes kommt das Element <userinput
+>highlighting</userinput
+>, das das optionale Element <userinput
+>list</userinput
+> und die notwendigen Elemente <userinput
+>contexts</userinput
+> und <userinput
+>itemDatas</userinput
+> enthält.</term>
+<listitem>
+<para
+><userinput
+>list</userinput
+>-Elemente enthalten eine Liste von Schlüsselwörtern. In diesem Fall sind die Schlüsselwörter <emphasis
+>class</emphasis
+> und <emphasis
+>const</emphasis
+>. Sie können so viele hinzufügen, wie Sie brauchen.</para>
+<para
+>Das Element <userinput
+>contexts</userinput
+> enthält alle Kontexte. Der erste Kontext ist Standard bei Start der Hervorhebungen. Es gibt zwei Regeln im Kontext <emphasis
+>Normal Text</emphasis
+>, die auf die Liste mit Schlüsselwörtern mit dem Namen <emphasis
+>somename</emphasis
+> und eine Regel, die Anführungszeichen entdeckt und zum Kontext <emphasis
+>string</emphasis
+> umschaltet. Weitere Informationen zu Regeln finden Sie im nächsten Kapitel.</para>
+<para
+>Der dritte Teil ist das Element <userinput
+>itemDatas</userinput
+>. Es enthält alle Farb- und Schriftartstile, die durch die Kontexte und Regeln benötigt werden. In diesem Beispiel werden <userinput
+>itemData</userinput
+>, <emphasis
+>Normal Text</emphasis
+>, <emphasis
+>String</emphasis
+> und <emphasis
+>Keyword</emphasis
+> benutzt. </para>
+<programlisting
+>&lt;highlighting&gt;
+    &lt;list name=&quot;somename&quot;&gt;
+      &lt;item&gt; class &lt;/item&gt;
+      &lt;item&gt; const &lt;/item&gt;
+    &lt;/list&gt;
+    &lt;contexts&gt;
+      &lt;context attribute=&quot;Normal Text&quot; lineEndContext=&quot;#pop&quot; name=&quot;Normal Text&quot; &gt;
+        &lt;keyword attribute=&quot;Keyword&quot; context=&quot;#stay&quot; String=&quot;somename&quot; /&gt;
+        &lt;DetectChar attribute=&quot;String&quot; context=&quot;string&quot; char=&quot;&amp;quot;&quot; /&gt;
+      &lt;/context&gt;
+      &lt;context attribute=&quot;String&quot; lineEndContext=&quot;#stay&quot; name=&quot;string&quot; &gt;
+        &lt;DetectChar attribute=&quot;String&quot; context=&quot;#pop&quot; char=&quot;&amp;quot;&quot; /&gt;
+      &lt;/context&gt;
+    &lt;/contexts&gt;
+    &lt;itemDatas&gt;
+      &lt;itemData name=&quot;Normal Text&quot; defStyleNum=&quot;dsNormal&quot; /&gt;
+      &lt;itemData name=&quot;Keyword&quot; defStyleNum=&quot;dsKeyword&quot; /&gt;
+      &lt;itemData name=&quot;String&quot; defStyleNum=&quot;dsString&quot; /&gt;
+    &lt;/itemDatas&gt;
+  &lt;/highlighting&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Der letzte Teil der Hervorhebungsdefinition ist der optionale Abschnitt <userinput
+>general</userinput
+>. Dieser kann Informationen über Schlüsselwörter, Codeausblendungen, Kommentare und Einrückungen enthalten.</term>
+
+<listitem>
+<para
+>Der Abschnitt <userinput
+>comment</userinput
+> definiert, mit welcher Zeichenkette eine einzelne Kommentarzeile beginnt. Sie können außerdem mehrzeilige Kommentare definieren, indem Sie <emphasis
+>multiLine</emphasis
+> mit der zusätzlichen Eigenschaft <emphasis
+>end</emphasis
+> benutzen. Diese werden benutzt, wenn Sie das Tastaturkürzel für <emphasis
+>Kommentar / Kommentar entfernen</emphasis
+> drücken.</para>
+<para
+>Der Abschnitt <userinput
+>keywords</userinput
+> definiert, ob in den Schlüsselwortlisten nach Groß- und Kleinschreibung unterschieden wird oder nicht. Andere Eigenschaften werden später erläutert.</para>
+<programlisting
+>&lt;general&gt;
+    &lt;comments&gt;
+      &lt;comment name="singleLine" start="#"/&gt;
+    &lt;/comments&gt;
+    &lt;keywords casesensitive="1"/&gt;
+  &lt;/general&gt;
+&lt;/language&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+
+</sect2>
+
+<sect2 id="kate-highlight-sections">
+<title
+>Die Abschnitte im Einzelnen</title>
+<para
+>Dieser Teil beschreibt alle verfügbaren Eigenschaften für Kontexte, itemDatas, Schlüsselwörter, Kommentare, Codeausblendungen und Einrückungen. </para>
+
+<variablelist>
+<varlistentry>
+<term
+>Das Element <userinput
+>context</userinput
+> gehört in die Gruppe <userinput
+>contexts</userinput
+>. Ein Kontext selbst definiert spezielle Regeln, wie zum Beispiel, was geschehen soll, wenn das Hevorhebungssystem ein Zeilenende erreicht. Die verfügbaren Eigenschaften sind:</term>
+
+
+<listitem>
+<para
+>Der Kontextname <userinput
+>name</userinput
+>. Regeln benutzen diesen Namen, um festzulegen, zu welchem Kontext umgeschaltet wird, wenn die Regel zutrifft.</para>
+<para
+>Der Kontext <userinput
+>lineEndContext</userinput
+> definiert den Kontext, zu dem das Hervorhebungssystem umschaltet, wenn es ein Zeilenende erreicht. Das kann entweder der Name eines anderen Kontextes sein, <userinput
+>#stay</userinput
+> um den Kontext nicht umzuschalten, (&zb; tue nichts) oder <userinput
+>#pop</userinput
+> das bewirkt, dass der Kontext verlassen wird. Es ist möglich, &zb; zu<userinput
+>#pop#pop#pop</userinput
+> verwenden.</para>
+<para
+><userinput
+>lineBeginContext</userinput
+> definiert den Kontext, der an einem Zeilenanfang verwendet wird. Standard hierfür ist: #stay.</para>
+<para
+><userinput
+>fallthrough</userinput
+> definiert,ob das Hevorhebungssystem zu dem in fallthroughContext definiertem Kontext umschaltet, wenn keine Regel zutrifft Standard ist hier : <emphasis
+>false</emphasis
+>.</para>
+<para
+><userinput
+>fallthroughContext</userinput
+> definiert den nächsten Kontext, wenn keine Regel zutrifft.</para>
+<para
+><userinput
+>dynamic</userinput
+> Wenn <emphasis
+>zutreffend</emphasis
+>, erinnert sich der Kontext an Zeichenketten und Platzhalter, die durch dynamische Regeln gespeichert wurden. Dies wird &zb; für HERE-Dokumente benötigt. Standard: <emphasis
+>false</emphasis
+>.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Das Element <userinput
+>itemData</userinput
+> ist in der Gruppe <userinput
+>itemDatas</userinput
+>. Es definiert die Schriftarten und Schriftfarben. So ist es möglich, Ihre eigenen Schriftarten und -farben festzulegen. Wir empfehlen jedoch, bei den vordefinierten Einstellungen zu bleiben, so dass in unterschiedlichen Sprachen trotzdem die gleichen Farben angezeigt werden. Manchmal ist es doch nötig, die Farben und Schriftarten zu ändern. Der Name der Eigenschaft und defStyleNum müssen angeben werden, alle anderen können verwendet werden, sind aber nicht unbedingt nötig. Die verfügbaren Eigenschaften sind:</term>
+
+<listitem>
+<para
+><userinput
+>name</userinput
+> setzt den Namen von itemData. Kontexte und Regel benutzen diesen Namen in ihrer Eigenschaft <emphasis
+>attribute</emphasis
+>, um den Bezug zum itemData herzustellen.</para>
+<para
+><userinput
+>defStyleNum</userinput
+> definiert, welcher Stil standardmäßig benutzt wird. Die verfügbaren Stile werden später näher erläutert.</para>
+<para
+><userinput
+>color</userinput
+> definiert eine Farbe. Erlaubte Formate hierfür sind: '#rrggbb' oder '#rgb'.</para>
+<para
+><userinput
+>selColor</userinput
+> definiert die Farbe für die Hervorhebung.</para>
+<para
+><userinput
+>italic</userinput
+> Wenn <emphasis
+>zutreffend</emphasis
+>, dann wird der Text in Kursivschrift dargestellt.</para>
+<para
+><userinput
+>bold</userinput
+> Wenn <emphasis
+>zutreffend</emphasis
+>, dann wird der Text in Fettschrift dargestellt.</para>
+<para
+><userinput
+>underline</userinput
+> Wenn <emphasis
+>zutreffend</emphasis
+>, dann wird der Text unterstrichen dargestellt.</para>
+<para
+><userinput
+>strikeout</userinput
+> Wenn <emphasis
+>zutreffend</emphasis
+>, dann wird der Text durchgestrichen dargestellt.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Das Element <userinput
+>keywords</userinput
+> in der Gruppe <userinput
+>general</userinput
+> definiert Eigenschaften von Schlüsselwörtern. Verfügbare Eigenschaften sind:</term>
+
+<listitem>
+<para
+><userinput
+>casesensitive</userinput
+> kann <emphasis
+>true</emphasis
+> oder <emphasis
+>false</emphasis
+> sein. Wenn es <emphasis
+>true</emphasis
+>ist, dann wird bei allen Schlüsselwörtern die Groß- und Kleinschreibung beachtet.</para>
+<para
+><userinput
+>weakDeliminator</userinput
+> ist eine Liste von Zeichen, die nicht als Wortbegrenzung wirken. Der Punkt <userinput
+>'.'</userinput
+> ist zum Beispiel eine Wortbegrenzung. Nehmen Sie an, ein Schlüsselwort in einer <userinput
+>list</userinput
+> enthält einen Punkt, diese Schlüsselwort kann nur dann erkannt werden, wenn Sie den Punkt als <userinput
+>weakDeliminator</userinput
+> festlegen.</para>
+<para
+><userinput
+>additionalDeliminator</userinput
+> definiert zusätzliche Wortbegrenzungen.</para>
+<para
+><userinput
+>wordWrapDeliminator</userinput
+> definiert Zeichen, nach denen ein Zeilenumbruch erfolgen kann.</para>
+<para
+>Standard für Wortbegrenzer und Zeilenumbruchbegrenzer sind die Zeichen <userinput
+>.():!+,-&lt;=&gt;%&amp;*/;?[]^{|}~\</userinput
+>, Leerzeichen (<userinput
+>' '</userinput
+>) und der Tabulator (<userinput
+>'\t'</userinput
+>).</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Das Element <userinput
+>comment</userinput
+> in der Gruppe <userinput
+>comments</userinput
+> definiert Eigenschaften für Kommentare, die für <menuchoice
+> <guimenu
+>Extras</guimenu
+><guimenuitem
+>Kommentar</guimenuitem
+> </menuchoice
+> und <menuchoice
+> <guimenu
+>Extras</guimenu
+><guimenuitem
+>Kommentar entfernen</guimenuitem
+></menuchoice
+> benutzt werden. Verfügbare Eigenschaften hierfür sind:</term>
+
+<listitem>
+<para
+><userinput
+>name</userinput
+> ist entweder <emphasis
+>singleLine</emphasis
+> oder <emphasis
+>multiLine</emphasis
+>. Wenn Sie <emphasis
+>multiLine</emphasis
+> auswählen, müssen auch die Eigenschaften <emphasis
+>end</emphasis
+> und <emphasis
+>region</emphasis
+> benutzt werden.</para>
+<para
+><userinput
+>start</userinput
+> definiert die Zeichenkette, die einen Kommentart beginnt. In C++ ist dies zum Beispiel &quot;/*&quot;.</para>
+<para
+><userinput
+>end</userinput
+> definiert die Zeichenkette, die einen Kommentar beendet. In C++ ist dies zum Beispiel &quot;*/&quot;.</para>
+<para
+><userinput
+>region</userinput
+> sollte der Name von ausblendbaren Mehrzeilenkommentaren sein. Nehmen Sie an, Sie haben <emphasis
+>beginRegion="Comment"</emphasis
+> ... <emphasis
+>endRegion="Comment"</emphasis
+> in Ihren Regeln, dann sollten Sie <emphasis
+>region="Comment"</emphasis
+> benutzen. Auf diesem Wege funktioniert das automatische Entfernen von Kommentaren auch dann, wenn Sie nicht den gesamten Text des mehrzeiligen Kommentars auswählen. Es muss nur der Cursor innerhalb des mehrzeiligen Kommentars stehen.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Das Element <userinput
+>folding</userinput
+> in der Gruppe <userinput
+>general</userinput
+> definiert Eigenschaften für ausblendbaren Code. Verfügbare EIgenschaften sind:</term>
+
+<listitem>
+<para
+><userinput
+>indentationsensitive</userinput
+> Wenn <emphasis
+>true</emphasis
+>, werden die Codeausblendungsmarkierungen basiert auf Einrückungen gesetzt, wie zum Beispiel in der Scriptsprache Python. Normalerweise brauchen Sie dies nicht zu setzen, Standard ist <emphasis
+>false</emphasis
+>.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Das Element <userinput
+>indentation</userinput
+> in der Gruppe <userinput
+>general</userinput
+> definiert, welche Einrücker benutzt werden. Wir empfehlen jedoch, dieses Element nicht zu benutzen, da der Typ des Einrückers normalerweise durch den Dateityp oder durch Hinzufügen einer Modezeile zur Textdatei gesetzt wird. Wenn Sie trotzdem einen Einrücker bestimmen, dann zwingen Sie den Nutzer eine bestimmte Einrückung zu verwenden, die dieser eventuell nicht nutzen möchte. Verfügbare Eigenschaften sind:</term>
+
+<listitem>
+<para
+><userinput
+>mode</userinput
+> ist der Name des Einrückers. Verfügbare Einrücker sind zur Zeit: <emphasis
+>normal, cstyle, csands, xml, python</emphasis
+> und <emphasis
+>varindent</emphasis
+>.</para>
+</listitem>
+</varlistentry>
+
+
+</variablelist>
+
+
+</sect2>
+
+<sect2 id="kate-highlight-default-styles">
+<title
+>Verfügbare Standardstile</title>
+<para
+>Standardstile wurden als <link linkend="kate-highlight-system-default-styles"
+> kurze Zusammenfassung</link
+> bereits erklärt. Standardstile sind vordefinierte Schriftarten und -farben.</para>
+<variablelist>
+<varlistentry>
+<term
+>Hier nur noch einmal die Liste der verfügbaren Standardstile:</term>
+<listitem>
+<para
+><userinput
+>dsNormal</userinput
+>, benutzt für normalen Text.</para>
+<para
+><userinput
+>dsKeyword</userinput
+>, benutzt für Schlüsselwörter.</para>
+<para
+><userinput
+>dsDataType</userinput
+>, benutzt für Datentypen.</para>
+<para
+><userinput
+>dsDecVal</userinput
+>, benutzt für Dezimalwerte.</para>
+<para
+><userinput
+>dsBaseN</userinput
+>, benutzt für Werte mit einer anderen Zahlenbasis als 10.</para>
+<para
+><userinput
+>dsFloat</userinput
+>, benutzt für Gleitkommazahlen.</para>
+<para
+><userinput
+>dsChar</userinput
+>, benutzt für einzelne Buchstaben.</para>
+<para
+><userinput
+>dsString</userinput
+>, benutzt für Zeichenketten.</para>
+<para
+><userinput
+>dsComment</userinput
+>, benutzt für Kommentare.</para>
+<para
+><userinput
+>dsOthers</userinput
+>, benutzt für 'andere' Dinge.</para>
+<para
+><userinput
+>dsAlert</userinput
+>, benutzt für Warnhinweise.</para>
+<para
+><userinput
+>dsFunction</userinput
+>, benutzt für Funktionsaufrufe.</para>
+<para
+><userinput
+>dsRegionMarker</userinput
+>, benutzt für Markierungen von Bereichen.</para>
+<para
+><userinput
+>dsError</userinput
+>, benutzt für Hervorhebungen von Fehlern und für fehlerhafter Syntax.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="kate-highlight-rules-detailled">
+<title
+>Hervorhebungs-Erkennungsregeln</title>
+
+<para
+>Dieser Abschnitt beschreibt die Hervorhebungs-Erkennungsregeln</para>
+
+<para
+>Jede Regel kann auf Null oder mehrere Zeichen am Anfang der untersuchten Zeichenkette zutreffen. Wenn eine Übereinstimmung gefunden wird, wird den erkannten Zeichen der Stil oder die <emphasis
+>Eigenschaft</emphasis
+>, die durch die Regel festgelegt wurde, zugeordnet, Außerdem kann die Regel ein Umschalten des aktuellen Kontexts anfordern.</para>
+
+<para
+>Eine Regel sieht wie folgt aus:</para>
+
+<programlisting
+>&lt;RuleName attribute=&quot;(identifier)&quot; context=&quot;(identifier)&quot; [rule specific attributes] /&gt;</programlisting>
+
+<para
+>Die <emphasis
+>attribute</emphasis
+> (Eigenschaft) legt den Namen des Stils fest, der für die erkannten Zeichen benutzt werden soll und der <emphasis
+>context</emphasis
+> (Kontext) legt den Kontext fest, der ab hier benutzt werden soll.</para>
+
+<para
+>Der <emphasis
+>context</emphasis
+> (Kontext) kann durch Folgendes identifiziert werden:</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Einen <emphasis
+>identifier</emphasis
+>, der der Name eines anderen Kontextes ist.</para>
+</listitem>
+<listitem>
+<para
+>Eine Anweisung, die vorgibt, im aktuellen Kontext zu bleiben (<userinput
+>#stay</userinput
+>), oder zu einem vorher in der Zeichenkette benutzten Kontext zurückzuspringen (<userinput
+>#pop</userinput
+>).</para>
+<para
+>Zum Zurückgehen über mehrere Schritte kann das Schlüsselwort #pop wiederholt werden: <userinput
+>#pop#pop#pop</userinput
+></para>
+</listitem>
+</itemizedlist>
+
+<para
+>Regeln können <emphasis
+>child rules</emphasis
+>(Unterregeln) haben, deren Einhaltung nur dann untersucht wird, wenn die Einhaltung der Hauptregel erkannt wurde. Der gesamten erkannten Zeichenkette wird die durch die Hauptregel festgelegte <emphasis
+>attribute</emphasis
+> (Eigenschaft) zugeordnet. Eine Regel mit Unterregel sieht &zb; so aus:</para>
+
+<programlisting
+>&lt;RuleName (attributes)&gt;
+  &lt;ChildRuleName (attributes) /&gt;
+  ...
+&lt;/RuleName&gt;
+</programlisting>
+
+
+<para
+>Regelspezifische Eigenschaften sind unterschiedlich und werden im Folgenden beschrieben.</para>
+
+
+<itemizedlist>
+<title
+>Gemeinsame Eigenschaften</title>
+<para
+>Alle Regeln haben die folgenden Eigenschaften gemeinsam und sind immer verfügbar, wenn <userinput
+>(common attributes)</userinput
+> erscheint. <emphasis
+>attribute</emphasis
+> und <emphasis
+>context</emphasis
+> sind notwendige Eigenschaften, alle anderen sind optional, müssen also nicht benutzt werden. </para>
+
+<listitem>
+<para
+><emphasis
+>attribute</emphasis
+>: Eine Eigenschaft zeigt auf ein bestimmtes <emphasis
+>itemData</emphasis
+>-Element.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>context</emphasis
+>: Legt den Kontext fest, zu dem das Hervorhebungssystem umschaltet, wenn die Regel als zutreffend erkannt wird.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>beginRegion</emphasis
+>: Beginnt einen Codeausblenungsblock. Standard ist: unset.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>endRegion</emphasis
+>: Beendet eine Codeausblendungsblock. Standard ist: unset.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>lookAhead</emphasis
+>: Wenn <emphasis
+>true</emphasis
+>, dann wird das Vervorhebungsystem die Länge der Übereinstimmung nicht verarbeiten. Standard ist: <emphasis
+>false</emphasis
+>.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>firstNonSpace</emphasis
+>: Trifft nur dann zu, wenn die Zeichenkette als erstes nach Zwischenräumen in der Zeile erkannt wird. Standard ist: <emphasis
+>false</emphasis
+>.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>column</emphasis
+>: Trifft nur dann zu, wenn die Spalte zutrifft. Standard ist: unset.</para>
+</listitem>
+</itemizedlist>
+
+<itemizedlist>
+<title
+>Dynamische Regeln</title>
+<para
+>Einige Regeln erlauben die Benutzung der optionalen Eigenschaft <userinput
+>dynamic</userinput
+>, Standard ist hier <emphasis
+>false</emphasis
+>.Wenn diese Eigenschaft auf <emphasis
+>true</emphasis
+> gesetzt wird, kann eine Regel in ihren Eigenschaften <userinput
+>string</userinput
+> oder <userinput
+>char</userinput
+> Platzhalter verwenden, die den zutreffenden Text aus einer als <emphasis
+>regulärem Ausdruck</emphasis
+> formulierten Regel enthält. Diese Regel muss direkt in den gegenwärtigen Kontext umgeschaltet haben. In einem <userinput
+>string</userinput
+> wird der Platzhalter <replaceable
+>%N</replaceable
+> (wobei N eine Zahl sein muss) ersetzt durch das Ergebnis für <replaceable
+>N</replaceable
+> aus dem aufrufenden regulären Ausdruck. In einem <userinput
+>char</userinput
+> muss der Platzhalter auch eine Zahl <replaceable
+>N</replaceable
+> sein und wird durch das erste Zeichen aus dem Ergebnis für <replaceable
+>N</replaceable
+> aus dem aufrufenden regulären Ausdruck ersetzt. Immer wenn eine Regel diese Eigenschaft erlaubt, dann enthält diese ein <emphasis
+>(dynamic)</emphasis
+>.</para>
+
+<listitem>
+<para
+><emphasis
+>dynamic</emphasis
+>: kann <emphasis
+>(true oder false)</emphasis
+> sein.</para>
+</listitem>
+</itemizedlist>
+
+<sect2 id="highlighting-rules-in-detail">
+<title
+>Die Regeln im Einzelnen:</title>
+
+<variablelist>
+<varlistentry>
+<term
+>DetectChar</term>
+<listitem>
+<para
+>Findet ein einzelnes bestimmtes Zeichen. Häufig zum Finden des Endes von Zeichenketten in Anführungszeichen benutzt.</para>
+<programlisting
+>&lt;DetectChar char=&quot;(character)&quot; (common attributes) (dynamic) /&gt;</programlisting>
+<para
+>Die Eigenschaft <userinput
+>char</userinput
+> definiert das zu erkennende Zeichen.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Detect2Chars</term>
+<listitem>
+<para
+>Findet zwei bestimmte Zeichen in einer bestimmten Reihenfolge.</para>
+<programlisting
+>&lt;Detect2Chars char=&quot;(character)&quot; char1=&quot;(character)&quot; (common attributes) (dynamic) /&gt;</programlisting>
+<para
+>Die Eigenschaft <userinput
+>char</userinput
+> definiert das erste zu erkennende Zeichen, <userinput
+>char1</userinput
+> das zweite.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>AnyChar</term>
+<listitem>
+<para
+>Findet ein Zeichen aus einem bestimmten Satz von Zeichen.</para>
+<programlisting
+>&lt;AnyChar String=&quot;(string)&quot; (common attributes) /&gt;</programlisting>
+<para
+>Die Eigenschaft <userinput
+>String</userinput
+> definiert den Satz der Zeichen.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>StringDetect</term>
+<listitem>
+<para
+>Findet eine bestimmte Zeichenkette.</para>
+<programlisting
+>&lt;StringDetect String=&quot;(string)&quot; [insensitive=&quot;true|false&quot;] (common attributes) (dynamic) /&gt;</programlisting>
+<para
+>Die Eigenschaft <userinput
+>String</userinput
+> definiert die zu erkennende Zeichenkette. Die Eigenschaft <userinput
+>insensitive</userinput
+> ist standardmäßig auf <userinput
+>false</userinput
+> gesetzt und wird an die Zeichenketten-Vergleichsfunktion übergeben. Wenn der Wert auf <userinput
+>true</userinput
+> gesetzt wird, wird Groß- und Kleinschreibung ignoriert.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>RegExpr</term>
+<listitem>
+<para
+>Prüft die Übereinstimmung mit einem regulären Ausdruck.</para>
+<programlisting
+>&lt;RegExpr String=&quot;(string)&quot; [insensitive=&quot;true|false&quot;] [minimal=&quot;true|false&quot;] (common attributes) (dynamic) /&gt;</programlisting>
+<para
+>Die Eigenschaft <userinput
+>String</userinput
+> definiert den regulären Ausdruck.</para>
+<para
+>Die Eigenschaft <userinput
+>insensitive</userinput
+> ist standardmäßig auf <userinput
+>false</userinput
+> gesetzt und wird an die Funktion zur Auswertung des regulären Ausdrucks übergeben.</para>
+<para
+>Die Eigenschaft <userinput
+>minimal</userinput
+> ist standardmäßig auf <userinput
+>false</userinput
+> gesetzt und wird an die Funktion zur Auswertung des regulären Ausdrucks übergeben.</para>
+<para
+>Weil die Regeleinhaltung immer am Anfang der aktuellen Zeichenkette geprüft wird, kann mit dem Hochzeichen (<literal
+>^</literal
+>) angegeben werden, dass die Regeleinhaltung nur am Anfang der Zeile untersucht werden soll.</para>
+<para
+>Sehen Sie unter <link linkend="regular-expressions"
+>Reguläre Ausdrücke</link
+> für weitere Informationen zu diesen nach.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>keyword</term>
+<listitem>
+<para
+>Erkennt ein Schlüsselwort aus einer angegebenen Liste.</para>
+<programlisting
+>&lt;keyword String=&quot;(list name)&quot; (common attributes) /&gt;</programlisting>
+<para
+>Die Eigenschaft <userinput
+>String</userinput
+> definiert die Schlüsselwortliste durch deren Name. Eine Liste mit diesem Namen muss vorhanden sein.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Int</term>
+<listitem>
+<para
+>Erkennt eine ganze Zahl(integer).</para>
+<para
+><programlisting
+>&lt;Int (common attributes) (dynamic) /&gt;</programlisting
+></para>
+<para
+>Diese Regel hat keine speziellen Eigenschaften. Unterregeln werden häufig dazu benutzt, um Kombinationen von <userinput
+>L</userinput
+> und <userinput
+>U</userinput
+> nach der Zahl zu erkennen, die den Typ der Integerzahl im Programm beschreiben. Eigentlich sind alle Regel als Unterregeln erlaubt, aber die <acronym
+>DTD</acronym
+> erlaubt nur die Unterregel <userinput
+>StringDetect</userinput
+>.</para>
+<para
+>Das folgende Beispiel trifft auf Integerzahlen, gefolgt vom Zeichen 'L' zu. <programlisting
+>&lt;Int attribute="Decimal" context="#stay" &gt;
+  &lt;StringDetect attribute="Decimal" context="#stay" String="L" insensitive="true"/&gt;
+&lt;/Int&gt;
+</programlisting
+></para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Float</term>
+<listitem>
+<para
+>Findet eine Gleitkommazahl.</para>
+<para
+><programlisting
+>&lt;Float (common attributes) /&gt;</programlisting
+></para>
+<para
+>Diese Regel hat keine speziellen Eigenschaften. <userinput
+>AnyChar</userinput
+> ist als Unterregel erlaubt und wird normalerweise dazu benutzt, um Kombinationen zu finden. Sehen Sie in der Beschreibung der Regel <userinput
+>Int</userinput
+> für nähere Informationen hierzu nach.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HlCOct</term>
+<listitem>
+<para
+>Findet eine oktale Zahl.</para>
+<para
+><programlisting
+>&lt;HlCOct (common attributes) /&gt;</programlisting
+></para>
+<para
+>Diese Regel hat keine speziellen Eigenschaften.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HlCHex</term>
+<listitem>
+<para
+>Findet eine Hexadezimalzahl.</para>
+<para
+><programlisting
+>&lt;HlCHex (common attributes) /&gt;</programlisting
+></para>
+<para
+>Diese Regel hat keine speziellen Eigenschaften.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HlCStringChar</term>
+<listitem>
+<para
+>Findet ein Steuerzeichen.</para>
+<para
+><programlisting
+>&lt;HlCStringChar (common attributes) /&gt;</programlisting
+></para>
+<para
+>Diese Regel hat keine speziellen Eigenschaften.</para>
+
+<para
+>Solche Zeichen sind durch druckbare Zeichen dargestellte nichtdruckbare Zeichen, die in Programmquelltexten häufig benutzt werden. &zb;: <userinput
+>\n</userinput
+> (Zeilenvorschub) oder <userinput
+>\t</userinput
+> (TAB)</para>
+
+<para
+>Die folgenden Zeichen werden erkannt, wenn sie einem <literal
+>\</literal
+> folgen: <userinput
+>abefnrtv&quot;'?</userinput
+>. Zusätzlich werden auch hexadezimale (<userinput
+>\xff</userinput
+>) oder oktale (<userinput
+>\033</userinput
+>) Zahlen nach einem <literal
+>\</literal
+> erkannt.</para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HlCChar</term>
+<listitem>
+<para
+>Findet ein C Zeichen.</para>
+<para
+><programlisting
+>&lt;HlCChar (common attributes) /&gt;</programlisting
+></para>
+<para
+>Diese Regel hat keine speziellen Eigenschaften.</para>
+
+<para
+>Trifft zu, wenn C Zeichen in einfachen Anführungszeichen (Beispiel: <userinput
+>'c'</userinput
+>) vorkommen. In den Anführungszeichen kann ein einfaches Zeichen oder Sonderzeichen (Beispiel: <userinput
+>'
+'</userinput
+>) stehen. Für Zeichenfolgen von Sonder zeichen sehen Sie unter HlCStringChar nach.</para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>RangeDetect</term>
+<listitem>
+<para
+>Findet eine Zeichenkette mit definierten Anfangs- und Endzeichen.</para>
+<programlisting
+>&lt;RangeDetect char=&quot;(character)&quot;  char1=&quot;(character)&quot; (common attributes) /&gt;</programlisting>
+<para
+><userinput
+>char</userinput
+> definiert das Zeichen am Anfang des Bereichs, <userinput
+>char1</userinput
+> das Zeichen am Ende des Bereichs.</para>
+<para
+>Diese Regel ist für das Finden von kleinen Zeichenketten in Anführungszeichen nützlich, kann aber wegen der verwendeten Funktion keine über mehrere Zeilen gehenden Zeichenketten finden.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>LineContinue</term>
+<listitem>
+<para
+>Findet das Zeilenende.</para>
+<programlisting
+>&lt;LineContinue (common attributes) /&gt;</programlisting>
+<para
+>Diese Regel hat keine speziellen Eigenschaften.</para>
+<para
+>Diese Regel wird zum Umschalten des Kontextes am Ende einer Zeile benutzt, wenn das letzte Zeichen ein Linksschrägstrich (<userinput
+>'\'</userinput
+>) ist. Dies wird in C/C++ zum Fortsetzen von Makros oder Zeichenketten gebraucht.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>IncludeRules</term>
+<listitem>
+<para
+>Schließt Regeln aus einem anderen Kontext, einer anderen Sprache oder einer anderen Datei ein.</para>
+<programlisting
+>&lt;IncludeRules context=&quot;contextlink&quot; [includeAttrib=&quot;true|false&quot;] /&gt;</programlisting>
+
+<para
+>Die Eigenschaft <userinput
+>context</userinput
+> definiert, welcher Kontext eingeschlossen werden soll.</para>
+<para
+>Wenn diese eine einfache Zeichenkette ist, dann werden alle definierten Regeln in den gegenwärtigen Kontext eingeschlossen. Beispiel: <programlisting
+>&lt;IncludeRules context=&quot;anotherContext&quot; /&gt;</programlisting
+></para>
+
+<para
+>Wenn die Zeichenkette mit <userinput
+>##</userinput
+>, dann verwendet das Hervorhebungssystem eine andere Sprachdefinition mit dem angegebenen Namen. Beispiel: <programlisting
+>&lt;IncludeRules context=&quot;##C++&quot; /&gt;</programlisting
+></para>
+<para
+>Wenn die Eigenschaft <userinput
+>includeAttrib</userinput
+> <emphasis
+>true</emphasis
+> ist, dann wird die Zieleigenschaft zu der aus der Quelle geändert. Dies wird zum Beispiel für Kommentare gebraucht, wenn der Text, der durch den eingeschlossenen Kontext anders hervorgehoben wird, als im gegenwärtigen Kontext. </para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>DetectSpaces</term>
+<listitem>
+<para
+>Finde Zwischenräume.</para>
+<programlisting
+>&lt;DetectSpaces (common attributes) /&gt;</programlisting>
+
+<para
+>Diese Regel hat keine speziellen Eigenschaften.</para>
+<para
+>Benutzen Sie diese Regel, wenn Sie wissen, dass jetzt mehrere Zwischenräume folgen, zum Beispiel am Anfang von eingerückten Zeilen. Diese Regel überspringt mehrere Zwischenräume mit einem Mal, ohne diese einzeln auf die Einhaltung von anderen Regeln zu testen und dann nach Nichtzutreffen einzeln zu überspringen.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>DetectIdentifier</term>
+<listitem>
+<para
+>Finde Zeichenketten als Bezeichner (als regulärer Ausdruck: [a-zA-Z_][a-zA-Z0-9_]*).</para>
+<programlisting
+>&lt;DetectIdentifier (common attributes) /&gt;</programlisting>
+
+<para
+>Diese Regel hat keine speziellen Eigenschaften.</para>
+<para
+>Benutzen Sie diese Regel zum Überspringen von Wörtern mit einem Mal, ohne die Zeichen im Wort einzeln auf die Einhaltung von anderen Regeln zu testen und dann nach Nichtzutreffen zu überspringen.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</sect2>
+
+<sect2>
+<title
+>Tips &amp; Tricks</title>
+
+<itemizedlist>
+<para
+>Wenn Sie einmal verstanden haben, wie das Umschalten zwischen Kontexten funktioniert, dann ist es einfach Hervorhebungsdefinitionen zu schreiben. Sie sollten jedoch sorgfältig entscheiden, welche Regel in welcher Situation Sie verwenden. Reguläre Ausdrücke sind sehr leistungsfähig, aber verglichen mit einfachen Regeln langsam. Sie sollten daher die folgenden Tipps beachten. </para>
+
+<listitem>
+<para
+>Wenn Sie nur zwei Zeichen vergleichen, dann benutzen Sie <userinput
+>Detect2Chars</userinput
+> an Stelle von <userinput
+>StringDetect</userinput
+>. Das Gleiche gilt für <userinput
+>DetectChar</userinput
+>.</para>
+</listitem>
+<listitem>
+<para
+>Reguläre Ausdrücke sind einfach zu benutzen, aber oft gibt es einen anderen viel schnelleren Weg, um das gleiche Ergebnis zu erreichen. Nehmen Sie an, Sie wollen feststellen, ob das Zeichen <userinput
+>'#'</userinput
+> das erste Zeichen einer Zeile ist. Ein regulärer Ausdruck dafür wäre: <programlisting
+>&lt;RegExpr attribute=&quot;Macro&quot; context=&quot;macro&quot; String=&quot;^\s*#&quot; /&gt; </programlisting
+> Sie können aber auch die wesentlich schnellere Lösung: <programlisting
+>&lt;DetectChar attribute=&quot;Macro&quot; context=&quot;macro&quot; char=&quot;#&quot; firstNonSpace=&quot;true&quot; /&gt;</programlisting
+> benutzen. An Stelle des regulären Ausdrucks <userinput
+>'^#'</userinput
+> können Sie <userinput
+>DetectChar</userinput
+> mit der Eigenschaft <userinput
+>column=&quot;0&quot;</userinput
+> benutzen. Die Eigenschaft <userinput
+>column</userinput
+> zählt Zeichenbasiert, so dass auch ein Tabulator nur ein Zeichen ist. </para>
+</listitem>
+<listitem>
+<para
+>Sie können zwischen Kontexten umschalten, ohne Zeichen zu verarbeiten. Nehmen Sie an, Sie wollen den Kontext umschalten, wenn Sie die Zeichenkette <userinput
+>*/</userinput
+> finden, aber Sie müssen diese Zeichenkette im nächsten Kontext verarbeiten. Die folgende Regel trifft zu und die Eigenschaft <userinput
+>lookAhead</userinput
+> sorgt dafür, dass die zutreffende Zeichenkette für den folgenden Kontext bereitgehalten wird. <programlisting
+>&lt;Detect2Chars attribute=&quot;Comment&quot; context=&quot;#pop&quot; char=&quot;*&quot; char1=&quot;/&quot; lookAhead=&quot;true&quot; /&gt;</programlisting>
+</para>
+</listitem>
+<listitem>
+<para
+>Benutzen Sie <userinput
+>DetectSpaces</userinput
+>, wenn Sie wissen, dass mehrere Zwischenräume vorkommen.</para>
+</listitem>
+<listitem>
+<para
+>Benutzen Sie <userinput
+>DetectIdentifier</userinput
+> an Stelle des regulären Ausdrucks <userinput
+>'[a-zA-Z_]\w*'</userinput
+>.</para>
+</listitem>
+<listitem>
+<para
+>Benutzen Sie Standardstile wann immer das möglich ist. Die Nutzer finden dadurch eine vertraute Umgebung vor.</para>
+</listitem>
+<listitem>
+<para
+>Sehen Sie in anderen XML-Dateien nach, wie andere Nutzer komplizierte Regeln geschrieben haben.</para>
+</listitem>
+<listitem>
+<para
+>Sie können jede XML-Datei mit dem Befehl <command
+>xmllint --dtdvalid language.dtd mySyntax.xml</command
+> auf korrekte Syntax prüfen.</para>
+</listitem>
+<listitem>
+<para
+>Wenn Sie komplexe reguläre Ausdrücke oft wiederholen, können Sie  <emphasis
+>ENTITIES</emphasis
+> benutzen. Beispiel:</para>
+<programlisting
+>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE language SYSTEM "language.dtd"
+[
+        &lt;!ENTITY myref    "[A-Za-z_:][\w.:_-]*"&gt;
+]&gt;
+</programlisting>
+<para
+>Nun können Sie <emphasis
+>&amp;myref;</emphasis
+> an Stelle des regulären Ausdrucks benutzen.</para>
+</listitem>
+</itemizedlist>
+</sect2>
+
+</sect1>
+
+</appendix>

@@ -1,0 +1,327 @@
+<chapter id="callback">
+<title
+>Konfiguracja połączeń zwrotnych w &kppp;</title>
+
+<para
+>Rozdział bazuje na materiale udostępnionym przez Martin'a H&auml;fner'a, <email
+>mh@ap-dec717c.physik.uni-karlsruhe.de</email
+></para>
+
+<sect1 id="unix-callback-server">
+<title
+>Serwer połączeń zwrotnych w systemach &UNIX; lub &Linux;</title>
+
+<para
+>Ten rozdział stanowi  wprowadzenie do technologii połączeń zwrotnych w systemach &UNIX; (&Linux;) oraz ich konfiguracji w programie &kppp;. Szczególną uwagę  zwrócono na konfigurację połączenia do opartego na skryptach <link linkend="callback-resources"
+>serwera połączeń zwrotnych</link
+> w systemie &Linux; callback serwer</para>
+
+<sect2>
+<title
+>Wprowadzenie do połączeń zwrotnych</title>
+
+<para
+>Wykorzystanie technologii połączeń zwrotnych może być przydatne z wielu powodów, np.:</para>
+
+<itemizedlist>
+<listitem>
+<para
+>dla podniesienie poziomu bezpieczeństwa sieci</para>
+</listitem>
+<listitem>
+<para
+>w celu zmniejszenie kosztów połączeń dla współpracowników</para>
+</listitem>
+<listitem>
+<para
+>do kontroli kosztów telefonów, gdy są one kosztami uzyskania przychodów w firmie</para>
+</listitem>
+</itemizedlist>
+
+<para
+>Wyobraźmy sobie sytuację, w której ktoś dzwoni na numer serwera dostępowego sieci i łamie hasło dostępu. Po co instalować i utrzymywać sieciowe zapory, skoro dostęp do sieci jest taki prosty?</para>
+
+<para
+>Oprogramowanie połączeń zwrotnych, najpierw prosi o podanie nazwy użytkownika, a następnie rozłącza się. Następnie serwer dzwoni na numer, zdefiniowany przez administratora i przechowywany <emphasis
+>na serwerze</emphasis
+> w bazie danych. Komputer inicjujący połączenie, odbiera telefon i kontynuuje proces łączenia dalej tak jakby nic się nie stało. Serwer wymaga teraz podania nazwy użytkownika i hasła, wiedząc że nikt nie próbuje podszyć się pod autoryzowanego użytkownika. Następuje ostateczne nawiązanie połączenia i uruchomienie aplikacji <application
+>pppd</application
+>.</para>
+
+<para
+>Należy odpowiedzieć sobie teraz na pytanie, jak zmusić komputer użytkownika inicjującego połączenie, do odebrania telefonu gdy serwer oddzwoni. Czy niezbędny jest specjalny program, taki jak np.<application
+>mgetty</application
+>? Odpowiedź brzmi <emphasis
+>nie</emphasis
+>, nie ma potrzeby uruchamiania specjalnych programów, właściwie każdy program typu terminal np.<application
+>minicom</application
+> może być wykorzystany w tej sytuacji.</para>
+
+<para
+>Niezbędne jest tylko wysłanie do modemu polecenia włączającej tryb <command
+>Automatycznej odpowiedzi</command
+>, dzięki czemu modem "podniesie słuchawkę" gdy odbierze sygnał: <computeroutput
+>RING</computeroutput
+>. Polecenie sterujące dla modemu wygląda następująco:</para>
+
+<screen
+><userinput
+><command
+>AT&amp;SO=1</command
+></userinput
+>
+</screen>
+
+<para
+>Polecenie nakazuje modemowi podniesienie słuchawki po wykryciu sygnału dzwonienia <computeroutput
+>RING</computeroutput
+>.</para>
+
+<para
+>Jak wiele innych programów typu klient, &kppp; sprawdza czy połączenie zostało zamknięte przez serwer, a następnie przerywa sesję połączeniową po wykryciu sygnału <computeroutput
+>NO CARRIER</computeroutput
+> z modemu. Stanowi to pewne utrudnienie przy konfiguracji połączeń zwrotnych. Sygnał <computeroutput
+>NO CARRIER</computeroutput
+> będzie odebrany w momencie gdy serwer się rozłączy i trudno oczekiwać iż modem będzie pokazywać stan <computeroutput
+>CARRIER UP</computeroutput
+> przez cały czas. Niektóre rozwiązania połączeń zwrotnych wymagają specjalnego oprogramowania po stronie klienta aby uzyskać zamierzone działanie, jednak możliwe jest takie skonfigurowanie modemu aby to osiągnąć. Można to zrobić za pomocą następującego polecenia::</para>
+
+<screen
+><userinput
+><command
+>AT&amp;C0</command
+></userinput
+>
+</screen>
+
+<para
+>W celu przetestowania działania tego polecenia, można wykorzystać program <application
+>minicom</application
+>, zadzwonić na numer serwera połączeń zwrotnych i zobaczyć co się stanie.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Konfiguracja programu &kppp;</title>
+
+<para
+>Po przedstawieniu teoretycznych założeń działania połączeń zwrotnych, należy omówić szczegóły konfiguracji programu &kppp; do obsługi połączenia zwrotnego. </para>
+
+<para
+>Procedura jest całkiem prosta, i wygląda następująco:</para>
+
+<procedure>
+<step>
+<para
+>Najpierw należy nakazać modemowi, aby akceptował połączenia przychodzące, oraz aby nie przerywał procedury negocjacji protokołów w chwili gdy serwer połączeń zwrotnych rozłączy się po raz pierwszy. Możesz ustawić obie opcje w karcie <guilabel
+>Modem</guilabel
+> okna konfiguracyjnego &kppp;, poprzez wpisanie <command
+>AT&amp;C0S0=1DT</command
+> w polu: <guilabel
+>Polecenie dzwonienia</guilabel
+>.</para>
+<para
+>Nie ma potrzeby dokonywania innych zmian w konfiguracji programu &kppp;. Jeżeli jednak pojawią się problemy we współpracy z modemem, to należy poszukać dodatkowych informacji w rodziale <link linkend="callback-troubleshooting"
+>Rozwiązywanie problemów</link
+> niniejszej dokumentacji.</para>
+</step>
+<step>
+<para
+>Konfiguracja połączenia zwrotnego po stronie serwera jest w dużym stopniu uzależniona od wykorzystywanego systemu operacyjnego. Systemy operacyjne &UNIX;, &Windows; orazMacintosh wykorzystują różne kody znaków końca linii, i podczas procedury logowania należy się do tego dostosować. Jeżeli następuje połączenie do serwera systemu &Windows; należy używać znaków: <userinput
+>CR/LF</userinput
+>, jeżeli jest to serwer &UNIX; to koniec linii określa się za pomocą <userinput
+>CR</userinput
+>, natomiast w przypadku serwera Macintosh jest to znak <userinput
+>LF</userinput
+> </para>
+</step>
+<step>
+<para
+>W niniejszej instrukcji przyjęto założenie, że połączenie następuje z serwerem zwrotnym opartym o system &Linux;, używającym standardowego polecenia login (tzn. nie jest to specjalny protokół autoryzacji typu <acronym
+>PAP</acronym
+> itp.).</para>
+<para
+>W polu wyboru <guilabel
+>Uwierzytelnianie</guilabel
+> w karcie <guilabel
+>Dzwonienie</guilabel
+> okna konfiguracji nowego połączenia, należy wybrać opcję <guilabel
+>Oparte na skrypcie</guilabel
+></para>
+</step>
+<step>
+<para
+>Następnie, należy utworzyć skrypt logowania. Narzędzie edycji skryptów, jest jedną z najciekawszych możliwości programu &kppp; Narzędzie jest dostępne w oknie dialogowym <guilabel
+>Ustawienia połączenia</guilabel
+> w karcie <guilabel
+>Skrypt</guilabel
+>.</para>
+
+<para
+>W przedstawionym przykładzie, użytkownik <systemitem
+>userxyz</systemitem
+> powinien mieć ustawiony następujący skrypt logowania. Ponieważ serwer połączeń zwrotnych ma skonfigurowaną tablicę nazw użytkowników i odpowiadające im numery telefonów, należy skonfigurować tu użytkownika z nazwą alternatywną (inną niż nazwa użytkownika na serwerze), dla celów bezpieczeństwa.</para>
+
+<para
+>Dla każdej linii skryptu, należy wybrać kryteria z listy wyboru po lewej stronie okna dialogowego, i wpisać parametry dotyczące wybranej akcji po prawej stronie listy wyboru. Naciśnięcie przycisku <guibutton
+>Dodaj</guibutton
+> spowoduje dodanie odpowiedniej linii do skryptu. Można wstawić linię w środku edytowanego skryptu za pomocą przycisku <guibutton
+>Wstaw</guibutton
+>, zaś usunięcie linii odbywa się za pomocą przycisku <guibutton
+>Usuń</guibutton
+>.</para>
+
+<para
+>Kompletny skrypt połączeniowy powinien wyglądać następująco (znak # oznacza komentarz):</para>
+
+<screen
+>Expect       ogin:           <lineannotation
+># wykorzystywany jest standardowy terminal</lineannotation>
+ID           ""              <lineannotation
+># program kppp wysyła nazwę użytkownika ustawioną
+ w głównym oknie logowania</lineannotation>
+Expect       for userxyz:    <lineannotation
+># lista dostępnych numerów zostaje
+wyświetlona, użytkownik powinien jeden z nich wybrać</lineannotation
+> 
+Send         userxyz-home    <lineannotation
+># użytkownik prosi o połączenie zwrotne
+na numer telefonu domowego</lineannotation>
+Expect       ogin:           <lineannotation
+># proces połączenia zwrotnego jest kontynuowany
+serwer nawiązuje nowe połączenie, dlatego też pojawia się pytanie o login.</lineannotation>
+Send          ID
+Expect       assword:        <lineannotation
+># następnie należy wysłać hasło</lineannotation>
+Send        password
+Expect       &gt;            <lineannotation
+># oczekiwanie na pojawienie się znaku zachęty
+(może on różnie wyglądać)</lineannotation>
+Send         start_ppp       <lineannotation
+># uruchomienie demona pppd na serwerze</lineannotation
+>
+</screen>
+
+<para
+>Po otrzymaniu żądania zalogowania, użytkownik wysyła swoją nazwę i oczekuje na listę dostępnych dla niego numerów telefonicznych. Następnie przesyła do serwera, informację o wybranym numerze, dla celów nawiązania połączenia zwrotnego. W programie &kppp; może pojawiać się okno dialogowe z informacją o oferowanych przez serwer numerach, co może być przydatne gdy użytkownik często zmienia swoją lokalizację, np. jest przedstawicielem handlowym i dzwoni z różnych hoteli. Po dokonaniu wyboru, serwer rozłącza się i nawiązuje połączenie dzwoniąc na wybrany przez użytkownika numer, a następnie ponownie prosi o podanie nazwy użytkownika i hasła. Po przesłaniu informacji o autoryzacji, &kppp; oczekuje na pojawienie się znaku zachęty, a następnie uruchamia krótki skrypt (tutaj: <filename
+>start_ppp</filename
+>), który uruchamia demona <application
+>pppd</application
+> na serwerze.</para>
+					      
+<para
+>Skrypt <filename
+>start_ppp</filename
+> może wyglądać następująco:</para>
+					      
+<programlisting
+>#!/bin/sh
+stty -echo
+exec /usr/sbin/pppd -detach silent modem
+</programlisting>
+					      
+<para
+>Uruchomienie i konfiguracja serwera <acronym
+>PPP</acronym
+> wykracza poza zakres niniejszej instrukcji. Więcej informacji na ten temat dostępne jest na stronach dokumentacji programu <application
+>pppd</application
+>. Obszerny opis zagadnień związanych z serwerami połączeń zwrotnych można znaleźć tutaj:  <ulink url="http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback"
+> http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback</ulink
+></para>
+</step>
+</procedure>
+
+<para
+>Pozostałe zagadnienia konfiguracyjne tzn. ustawienie <application
+>pppd</application
+> konfiguracja adresu <acronym
+>IP</acronym
+> są ustawiane standardowo, nie ma potrzeby uruchamiania żadnych dodatkowych programów.</para>
+
+<note>
+<para
+>Program &kppp; jak też i pozostałe programy takie jak <application
+>mgetty</application
+> lub faxgetty, mogą wykorzystywać ten sam port szeregowy. Nie stanowi to problemu, gdyż program &kppp; tworzy specjalny plik zabezpieczający, który informuje inne aplikacje iż &kppp; zajmuje linię w tym momencie. Dzięki temu nie ma konfliktów w dostępnie do portu szeregowego, nie zdarzy się sytuacja, aby jednocześnie korzystała z niego więcej niż jedna aplikacja.</para>
+</note>
+
+</sect2>
+
+<sect2 id="callback-troubleshooting">
+<title
+>Rozwiązywanie problemów</title>
+
+<para
+>Istnieje kilka znanych problemów w działaniu programu &kppp; w trybie połączeń zwrotnych.</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Po przestawieniu trybu pracy modemu na automatyczną odpowiedź, konieczne może być wyzerowanie modemu po zakończeniu połączenia. W innym przypadku, modem będzie kontynuował "podnoszenie słuchawki", co nie jest pożądane w przypadku gdy jest to też linia telefoniczna.</para>
+</listitem>
+<listitem>
+<para
+>Program &kppp; może mieć niewielkie problemy podczas jednoczesnego wykorzystania linii przez inne programu jak np. <application
+>mgetty</application
+>. Jeżeli <application
+>mgetty</application
+> działa i wykorzystuje linię modemową, &kppp; nie będzie mógł poprawnie zainicjować modemu. </para>
+</listitem>
+<listitem>
+<para
+>Program &kppp; nie jest w stanie odpytywać użytkownika w trakcie wykonywania skryptu logowania. Powoduje to niestety, iż tak jak w podanym wyżej skrypcie przykładowym, &kppp; pyta o nazwę użytkownika dwa razy, drugi raz po oddzwonieniu przez serwer połączeń zwrotnych. Można tego uniknąć poprzez zakodowanie nazwy użytkownika na stałe w skrypcie logowania (nie jest to rozwiązanie elastyczne, ale działa).</para>
+</listitem>
+</itemizedlist>
+
+</sect2>
+
+<sect2 id="callback-resources">
+<title
+>Zasoby internetowe o serwerach połączeń zwrotnych</title>
+
+<para
+>Oprogramowanie serwera połączeń zwrotnych dla systemu &Linux; dostępne jest w wielu miejscach</para>
+
+<para
+>Dobrze znany program <application
+>mgetty</application
+> ma możliwości obsługi połączeń zwrotnych. Opis konfiguracji połączeń zwrotnych w <application
+>mgetty</application
+> dostępy jest pod adresem: <ulink url="http://www.dyer.demon.co.uk/slug/tipscrip.htm"
+> http://www.dyer.demon.co.uk/slug/tipscrip.htm</ulink
+>, autorem opisu jest: Colin McKinnon, <email
+>colin@wew.co.uk</email
+>.</para>
+
+<para
+>Dostęþny jest również gotowy do zastosowania pakiet dla systemu &Linux;: <ulink url="http://www.icce.rug.nl/docs/programs/callback/callback.html"
+> http://www.icce.rug.nl/docs/programs/callback/callback.html</ulink
+>. Jego opiekunem jest Frank B. Brokken, <email
+>frank@icce.rug.nl</email
+>. Chociaż jego konfiguracja jest stosunkowo prosta, to na poniższej stronie dostępne jest krótkie wprowadzenie: <ulink url="http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback"
+>http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback/</ulink
+>. Strona ta zawiera również ogólne wprowadzenie do zagadnień związanych z połączeniami zwrotnymi.</para>
+
+</sect2>
+</sect1>
+
+<sect1 id="nt-callback">
+<title
+>Połączenia zwrotne w module <acronym
+>RAS</acronym
+> systemu &Windows; NT </title>
+
+<para
+>System &Windows; stosuje całkowicie odmienne podejście w zakresie połączeń zwrotnych. Wymagane jest rozszerzenie protokołu <acronym
+>PPP</acronym
+> nazywane<acronym
+>CBCP</acronym
+> (Call Back Control Protocol - Protokół Połączeń Zwrotnych). Program demona <application
+>pppd</application
+> oferuje wsparcie dla tego protokołu, lecz konieczne w tym celu może być ponowne skompilowanie aplikacji <application
+>pppd</application
+>. Twórcy programu proszą o wszelkie informacje od osób, które odniosły sukces przy łączeniu się do serwera połączeń zwrotnych w systemie NT.</para>
+
+</sect1>
+</chapter>

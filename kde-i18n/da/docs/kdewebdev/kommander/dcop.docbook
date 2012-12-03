@@ -1,0 +1,227 @@
+<?xml version="1.0"  encoding="UTF-8" ?>
+
+<sect1 id="dcop-interface">
+<sect1info>
+<title
+>&DCOP; Funktioner</title>
+<authorgroup>
+<author
+><firstname
+></firstname
+> <surname
+></surname
+> <affiliation
+><address
+> <email
+></email>
+</address
+></affiliation>
+</author>
+
+&rune.laursen.role; 
+
+</authorgroup>
+</sect1info>
+
+<title
+>&DCOP; Funktioner</title>
+
+<para
+>&DCOP; kan kaldes på flere måder i &kommander;. Den første er konsolmetoden </para>
+<para
+>dcop kmdr-executor-@pid KommanderIf changeWidgetText minKontrol <quote
+>ny tekst</quote
+> </para>
+<para
+>Dette antager at du er inde i en &kommander;-fil og har adgang til specialen @pid, som indeholder procesID'et. Faktisk er de lettere at erstatte <quote
+>kmdr-executor-@pid</quote
+> med @dcopid. Du kan dog bruge denne syntaks (naturligvis uden specialerne), fra kommandolinjen eller et hvilket som helst eksternt script, for at ændre &kommander;-vinduet. </para>
+<para
+>Fordi &kommander; ikke har en fuldstændig fortolker i sit alfastadium, hvis du vil bruge den meget hurtigere interne &DCOP; fra et andet applikationsvindue (konsol &DCOP; er meget langsomt) er det meget mere kompliceret fordi du skal give meget information, inklusive en prototype af kaldet. Det ovenstående kald ville blive til: </para>
+<para
+>@dcop(@dcopid, KommanderIf, <quote
+>enableWidget(QString, bool)</quote
+>, Widget, true) </para>
+<para
+>Da dette blev skrevet skulle man være klar over at indlejre &DCOP;-kald inde i scriptsprogstrukturer (som <application
+>bash</application
+> betyder at man skal bruge konsolmetodekald. <emphasis
+>Hvis du bruger interne &DCOP;-kld , vil alle &kommander;-specialer blive udført først og dernæst scriptet.</emphasis
+> </para>
+<para
+>Der er en ny og simpel måde at bruge &DCOP; på, i &kommander; ved at bruge en objektsyntaks. Lad os sige at du vil ændre teksten i en kontrols navn @linjeEditor1. Det ville se således ud: </para>
+<para
+>@LineEdit1.changeWidgetText(New text) </para>
+<para
+>Som du kan se er den nye syntaks meget let, såvel som visuel konsistent med funktionsgrupper. Alle &DCOP;-referencer her vil bruge den nye objektsyntaks som vist ovenfor. <emphasis
+> Læg mærke til at hvis du refererer til en kontrol vh. &DCOP; fra et andet vindue eller en anden applikation, er den første parameter altid kontrollens navn. Alle funktioner der er vist her starter med den anden parameter.</emphasis
+> </para>
+
+<sect2 id="dcop-globals">
+<title
+>&DCOP; til globale variable</title>
+<variablelist>
+<varlistentry>
+<term
+>global(QString variableName)</term>
+<listitem>
+<para
+>Returnerer værdien af den specficerede globale variabel. Når et script køres inde fra &kommander;-vinduet, vil alle (non-globale) variabler sat i dette script, holde op med at eksistere efter scriptet er kørt færdigt og vil derfor ikke være til rådighed for andre scriptprocesser eller i en ny instans af den kaldende proces. Det globale <quote
+>virkefelt</quote
+> betyder at variablen eksisterer for alle processer i vinduet indtil dette vindue lukkes. Du kan ændre disse variabler på et hvilket som helst tidspunk, med et nyt kald til <function
+>@setGlobal</function
+>. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>setGlobal(QString variableName, QString value)</term>
+<listitem>
+<para
+>Opretter en variabel som er global for vinduesprocessen og tildeler værdien til den. Denne værdi kan hentes med global(QString variabelNavn) eller tildeles en ny værdi. </para>
+</listitem>
+</varlistentry>
+</variablelist>
+</sect2>
+
+<sect2 id="dcop-all">
+<title
+>&DCOP; til alle kontroller</title>
+
+<variablelist>
+<varlistentry>
+<term
+>changeWidgetText(QString text)</term>
+<listitem>
+<para
+>Dette skal omdøbes til setWidgetText og dette navn bliver sikker overflødiggjort. Det fjerner teksten der vises i kontrollen og erstatter det med den givne tekst. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>enableWidget(bool enable)</term>
+<listitem>
+<para
+>Aktiverer eller deaktiverer en kontrol. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>associatedText</term>
+<listitem>
+<para
+>Returnerer teksten associeret med den angivne kontrol. Dette er ikke det samme den viste tekst. Det skulle laves sådan her: <quote
+>@kontrolTekst</quote
+> eller tekst og eller scripting brugt til at ankomme ved den viste værdi. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>setAssociatedText(QString text)</term>
+<listitem>
+<para
+>Den sætter &kommander;s standard Text-streng. Den sættes typisk til <quote
+>@widgeText</quote
+> for at vise hvad der indtastes i kontrollen. Det er usandsynligt at du får behov for det, men hvis du gør er det her det foregår. Dette gælder for alle kontroller der kan indeholde data. </para>
+</listitem>
+</varlistentry>
+</variablelist>
+</sect2>
+
+<sect2 id="dcop-box">
+<title
+>&DCOP; til listeboks- og kombinationsfelt-kontroller</title>
+<variablelist>
+<varlistentry>
+<term
+>addListItem(QString item, int index)</term>
+<listitem>
+<para
+>Tilføjer et element til en listebokskontrol ved det specificerede indeks. Listeindekset starter ved nul For at tilføje til slutinngen af en liste, bruges -1. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>addListItems(QStringList items, int index)</term>
+<listitem>
+<para
+>Dette tilføjer en liste af strenge på én gang. Listen skal afsluttes af <acronym
+>EOL</acronym
+>(\n - nye linjer). Dette er nyttigt eftersom du kan bruge bash til at hente listen ret smertefrit. F.eks. ved at bruge @exec(ls -l ~/projekter | grep kmdr) for elementer, giver dig en katalogudskrift af &kommander;-filer i din projektmappe. Listeindeks starter ved nul. Brug -1 for at tilføje til slutningen af en liste. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>addUniqueItem(QString item)</term>
+<listitem>
+<para
+>addUniqueItem tilføjer et element til slutningen af listen, men kun hvis det er unikt. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>clearList</term>
+<listitem>
+<para
+>Fjerner alle indgange. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>removeListItem(int index)</term>
+<listitem>
+<para
+>Fjerner elementet ved det angivne indeks. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>item(int index)</term>
+<listitem>
+<para
+>Returnerer elementets tekst ved det angivne indeks. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>setCurrentListItem(int index)</term>
+<listitem>
+<para
+>Sætter det aktuelle (eller markerede) element til det angivne indeks. Gælder for listefelt- og kombinationsbokskontroller. </para>
+</listitem>
+</varlistentry>
+</variablelist>
+</sect2>
+
+<sect2 id="dcop-button">
+<title
+>&DCOP; for afkrydsningsfelt- og radioknapkontroller</title>
+<variablelist>
+<varlistentry>
+<term
+>setChecked(QString widgetName, bool checked)</term>
+<listitem>
+<para
+>Afkrydser eller fjerner afkrysdning i afkrydsningsfelt- og radioknapkontroller. </para>
+</listitem>
+</varlistentry>
+</variablelist>
+</sect2>
+
+<sect2 id="dcop-tab">
+<title
+>&DCOP; for fanebladskontroller</title>
+<variablelist>
+<varlistentry>
+<term
+>setCurrentTab(QString widgetName, int index)</term>
+<listitem>
+<para
+>Markér fanebladet ved indeks for fanebladskontroller. Indeks starter ved nul. </para>
+</listitem>
+</varlistentry>
+</variablelist>
+</sect2>
+
+
+</sect1>

@@ -1,0 +1,138 @@
+<chapter id="security">
+<title
+>&kppp; et les problèmes de sécurité</title>
+
+<para
+>Cette section est principalement pour les superutilisateurs (<systemitem
+>root</systemitem
+>) qui ont des demandes en haute sécurité, ou simplement les gens techniquement intéressés. Ce n'est pas nécessaire de lire cela si vous utilisez seulement &Linux; à la maison pour vous, mais vous pouvez apprendre une chose ou deux dans tous les cas.</para>
+
+<sect1 id="security-restricting-access">
+<title
+>Restreindre les accès à &kppp;</title>
+
+<para
+>Un administrateur système peut vouloir restreindre l'accès à ceux qui sont autorisés à utiliser &kppp;. Il y a deux manières principales de faire cela.</para>
+
+<sect2 id="security-group-permissions">
+<title
+>Restreindre l'accès avec les permissions de groupe</title>
+
+<para
+>Créez un nouveau groupe (vous pouvez le nommer <systemitem
+>numérotation</systemitem
+> ou similaire), et mettez-y tous les utilisateurs qui sont autorisés à utiliser &kppp;. Alors saisissez dans le prompt :</para>
+
+<screen
+><prompt
+>#</prompt
+> <userinput
+><command
+>chown</command
+> <option
+>root.dialout</option
+> <filename
+>/opt/kde/bin/kppp</filename
+></userinput>
+<prompt
+>#</prompt
+> <userinput
+><command
+>chmod</command
+> <option
+>4750</option
+> <filename
+>/opt/kde/bin/kppp</filename
+></userinput
+>
+</screen>
+
+<para
+>Cela suppose que &kde; a été installé dans <filename class="directory"
+> /opt/kde/</filename
+> et que votre nouveau groupe est nommé <systemitem
+>dialout</systemitem
+>.</para>
+
+</sect2>
+
+<sect2 id="security-kppps-way">
+<title
+>Restreindre l'accès à la manière de &kppp;</title>
+
+<para
+>Avant de faire quoi que ce soit, &kppp; vérifie s'il y a un fichier nommé <filename
+>/etc/kppp.allow</filename
+>. Si un tel fichier existe, seuls les utilisateurs nommés dans ce fichier sont autorisés à numéroter. Ce fichier doit être lisible par tout le monde (mais bien sûr <emphasis
+>NON</emphasis
+> accessible en écriture). Seuls les noms de login sont reconnus, ainsi vous ne pouvez pas utiliser <acronym
+>UID</acronym
+> dans ce fichier. Voici un court exemple :</para>
+
+<screen
+># /etc/kppp.allow
+# les lignes commentées comme celle-ci sont ignorées
+# tout comme les lignes vides
+
+fred
+karl
+daisy
+</screen>
+
+<para
+>Dans l'exemple ci-dessus, seuls les utilisateurs <systemitem
+>fred</systemitem
+>, <systemitem
+>karl</systemitem
+> et <systemitem
+>daisy</systemitem
+> sont autorisés à numéroter, tout comme chaque utilisateur avec un <acronym
+>UID</acronym
+> de 0 (ainsi vous n'avez pas à mettre explicitement root dans le fichier).</para>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="security-why-suid">
+<title
+>&kppp; a le bit <acronym
+>SUID</acronym
+> ? Que se passe-t-il au niveau sécurité ?</title>
+
+<para
+>Il est virtuellement impossible d'écrire un numéroteur sans le bit <acronym
+>SUID</acronym
+> qui est à la fois sûr et facile à utiliser pour les utilisateurs non expérimentés. &kppp; répond aux problèmes de sécurité avec la stratégie suivante.</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Immédiatement après que le programme débute, &kppp; fourche.</para>
+</listitem>
+<listitem>
+<para
+>Le processus maître, qui gère toutes les opérations de l'interface graphique comme l'interaction utilisateur, abandonne le droit  <acronym
+>SUID</acronym
+> après la division/séparation en plusieurs processus, et tourne/continue avec les privilèges normaux de l'utilisateur.</para>
+</listitem>
+<listitem>
+<para
+>Le processus esclave garde ses privilèges, et est responsable de toutes les actions qui ont besoin des privilèges <systemitem
+>root</systemitem
+>. Pour garder cette partie sûre, aucune bibliothèque &kde; ou &Qt; n'est appelée ici, il y a juste de simples appels de bibliothèques. Le code source pour ce processus est court (environ 500 lignes) et bien documenté, ainsi il est facile pour vous de vérifier s'il y a des trous de sécurité.</para>
+</listitem>
+<listitem>
+<para
+>Les processus maître et esclave communiquent avec le standard &UNIX; <acronym
+>IPC</acronym
+>.</para>
+</listitem>
+</itemizedlist>
+
+<para
+>Remerciement spécial à Harri Porten pour avoir écrit cette excellente partie de code. Il semblait que cela était impossible, mais il l'a fait en une semaine.</para>
+
+</sect1>
+
+</chapter>

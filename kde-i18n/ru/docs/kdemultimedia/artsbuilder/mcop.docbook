@@ -1,0 +1,1958 @@
+<!-- <?xml version="1.0" ?>
+<!DOCTYPE chapter PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" "dtd/kdex.dtd">
+To validate or process this file as a standalone document, uncomment
+this prolog. Be sure to comment it out again when you are done -->
+
+<chapter id="mcop">
+<title
+>&MCOP;: Потоки и объектные модели</title>
+
+<sect1 id="mcop-overview">
+
+<title
+>Описание</title>
+
+<para
+>&MCOP; используется в &arts; для: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Связи между объектами. </para>
+</listitem>
+
+<listitem>
+<para
+>Прозрачности работы в сети. </para>
+</listitem>
+
+<listitem>
+<para
+>Описания интерфейсов объектов. </para>
+</listitem>
+
+<listitem>
+<para
+>Независимости от языка. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Важным составляющим &MCOP; является <emphasis
+>язык описания интерфейса</emphasis
+> &IDL;, с помощью которого описано большинство интерфейсов &arts; и <acronym
+>API</acronym
+>. </para>
+
+<para
+>Чтобы использовать &IDL;, интерфейсы из C++ компилируются &IDL;-компилятором вместе с кодом C++. При реализации интерфейса вы наследуете от базового класса &IDL;, созданного компилятором. При использовании интерфейсов это можно сделать с помощью надстраивания функциональности. Таким образом, &MCOP; может пользоваться своим протоколом, даже если объект нелокален. Так вы получаете прозраночть работы в сети. </para>
+
+<para
+>В этой главе описываются основные черты объектной модели, получаемой при использовании &MCOP;, сам протокол и его использование в C++ (связывание языков) и т.д. </para>
+
+</sect1>
+
+<sect1 id="interfaces">
+
+<title
+>Интерфейсы и &IDL;</title>
+
+<para
+>Большинство сервисов &arts; (к примеру, модули и звуковой сервер) определены в терминах <acronym
+>интерфейсов</acronym
+>. А интерфейсы описаны в формате, не зависящем от языка: &IDL;. </para>
+
+<para
+>Таким образом, многие детали вроде формата потоков медиаданных, прозрачность сети и зависимости от языка программирования можно скрыть в описании интерфейса. Инструмент &mcopidl; преобразовывает определение интерфейса для конкретного языка программирования (сейчас поддерживается только C++). </para>
+
+<para
+>Инструмент генерирует каркасный класс с основными функциями. Ваши собственные классы будут от него наследовать. </para>
+
+<para
+>&IDL; использующийся в &arts; похож на язык, использующийся в <acronym
+>CORBA</acronym
+> and <acronym
+>DCOM</acronym
+>. </para>
+
+<para
+>Файлы &IDL; могут содержать: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Директивы #include для других файлов &IDL;. </para>
+</listitem>
+
+<listitem>
+<para
+>Объявления перечисляемых типов и структур, как в C/C++. </para>
+</listitem>
+
+<listitem>
+<para
+>Объявления интерфейсов. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Интерфейсы в &IDL; - это почти то же самое, что класс в C++ или структура в C, но с некоторыми ограничениями. Как и в C++, интерфейсы наследовать от других интерфейсов. В определение интерфейса можно включать: потоки, атрибуты и методы. </para>
+
+<sect2 id="streams">
+
+<title
+>Потоки</title>
+
+<para
+>Потоки определяют медиаданные, они являются важнейшими компонентами модуля. Формат потока: </para>
+
+<para
+>[ async ] in|out [ multi ] <replaceable
+>тип</replaceable
+> stream <replaceable
+>имя</replaceable
+> [ , <replaceable
+>имя</replaceable
+> ] ; </para>
+
+<para
+>Направленность потоков зависит от квалификатора (выход или вход). Аргумент типа определяет тип данных (один из перечисленных ниже типов атрибутов), однако поддерживаются ещё не все типы. Во многих модулях типом потока ставится аудио, это внутренний формат данных. Несколько потоков одного типа могут быть объявлены через запятую. </para>
+
+<para
+>По умолчанию потоки синхронны, т.е. передача данных идёт постоянно и на определённой частоте, как <acronym
+>PCM</acronym
+>-аудио. Если вы установите параметр async, поток будет асинхронным, т.е. данные будут передаваться с перерывами. Примером асинхронных потоков могут служить &MIDI;-сообщения. </para>
+
+<para
+>Ключевое слово multi, допустимое только для входных потоков, указывает на то, что поток может принимать переменное количество входов. Это удобно при создании таких устройств, как микшеры, которые могут принимать любое количество входных потоков. </para>
+
+</sect2>
+<sect2 id="attributes">
+
+<title
+>Атрибуты</title>
+
+<para
+>Атрибуты - это данные, ассоциирующиеся с объектом интерфейса. Они определяются как переменные-члены классов в C++ и могут быть одного из простейших типов данных: boolean, byte, long, string или float - а такжеструктурами, определёнными пользователем, перечисляемого типа (enum) или последовательностью с переменной длиной (используется &lt;type&gt;). Лучше всего атрибуты помечать как доступные только для чтения. </para>
+
+</sect2>
+<sect2 id="methods">
+
+<title
+>Методы</title>
+
+<para
+>Как и в C++, методы могут определяться в интерфейсах. Тип параметров метода может быть таким же, у атрибута. Ключевое слово oneway показывает, что метод возвращает какое-то значение сразу и выполняется асинхронно. </para>
+
+</sect2>
+
+<sect2 id="standardinterfaces">
+
+<title
+>Стандартные интерфейсы</title>
+
+<para
+>В &arts; уже определены несколько стандартных модульных интерфейсов, например, <interfacename
+>StereoEffect</interfacename
+> и <interfacename
+>SimpleSoundServer</interfacename
+>. </para>
+
+</sect2>
+
+<sect2 id="example">
+<title
+>Пример</title>
+
+<para
+>Простым примером модуля &arts; может служить модуль постоянных задержек из файла <filename
+>kdemultimedia/arts/modules/artsmodules.idl</filename
+>. Определение интерфейса приведено ниже. </para>
+
+<programlisting
+>interface Synth_CDELAY : SynthModule {
+        attribute float time;
+        in audio stream invalue;
+        out audio stream outvalue;
+};
+</programlisting>
+
+<para
+>Модуль наследует от <interfacename
+>SynthModule</interfacename
+>. Этот интерфейс, описанный в <filename
+>artsflow.idl</filename
+>, определяет методы, использующиеся во всех модулях-синтезаторах. </para>
+
+<para
+>Эффект CDELAY задерживает звуковой стереопоток на время, указанное как параметр с плавающей точкой. В определении интерфейса есть атрибут типа float для хранения длительности задержки. Он определяет два входных аудиопотока и два выходных. Никаких других методов, кроме тех, от которых он наследует, не требуется. </para>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="more-about-streams">
+<title
+>Подробнее о потоках</title>
+
+<para
+>В этом разделе вы найдёте дополнительную информацию о потоках. </para>
+
+<sect2 id="stream-types">
+<title
+>Типы потоков</title>
+
+<para
+>Есть несколько вариантов реализации потоков в модуле. Вот несколько примеров: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Увеличение сигнала в два раза. </para>
+</listitem>
+
+<listitem>
+<para
+>Выборочное изменение частоты. </para>
+</listitem>
+
+<listitem>
+<para
+>Декодирование сигналов. </para>
+</listitem>
+
+<listitem>
+<para
+>Чтение &MIDI;-событий из <filename class="devicefile"
+>/dev/midi00</filename
+> и добавление их в поток. </para>
+</listitem
+> 
+</itemizedlist>
+
+<para
+>Первый случай очень прост: получив 200 сэмплов на входе, модуль воспроизводит 200 сэмплов на выходе. Т.е. выходные данные производятся только после получения входных. </para>
+
+<para
+>Во втором случае при 200 входных сэмплов производится другое число выходных. Это зависит от выполненного преобразования, но их количество известно заранее. </para>
+
+<para
+>В третьем случае всё ещё сложнее. Нельзя угадать заранее, сколько байтов будет сгенерировано из 200 сэмплов (возможно, гораздо больше, но...). </para>
+
+<para
+>В последнем случае модуль активизируется сам по себе и иногда генерирует данные. </para>
+
+<para
+>В &arts;-0.3.4 поддерживались потоки только первого типа, и большинство задач выполнялись. Возможно, это и требуется при написании модулей обработки аудиоданных. Со сложными типами потоков возникают проблемы, т.к. их очень сложно программировать и большая часть функций часто не нужна. Поэтому мы решили использовать два типа потоков: синхронные и асинхронные. </para>
+
+<para
+>Характеристики синхронных потоков: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Модули должны обрабатывать входные данные любой длины (при условии, что их достаточно). </para>
+</listitem>
+
+<listitem>
+<para
+>У всех потоков одна частота модуляции. </para>
+</listitem>
+
+<listitem>
+<para
+>Функция <function
+>calculateBlock()</function
+> будет вызываться в том случае, если есть достаточное количество входных данных и указатели содержат ссылки на данные. </para>
+</listitem
+> 
+
+<listitem>
+<para
+>Резервирование и освобождение не выполняются. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Асинхронные потоки работают по-другому: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Модули могут формировать данные время от времени, с меняющейся частотой модуляции или только если они не ограничены правилом <quote
+>на запрос любой длины нужно отвечать</quote
+>. </para>
+</listitem>
+
+<listitem>
+<para
+>В асинхронных потоках частоты модуляции могут быть совершенно разными. </para>
+</listitem>
+
+<listitem>
+<para
+>Исходящие потоки: содержат открытые функции для размещения пакетов, пересылки и учёта данных (используя этот механизм, вы будете знать, когда следует передать очередную порцию данных). </para>
+</listitem>
+
+<listitem>
+<para
+>Входящие потоки: вызов происходит при получении нового пакета, вам нужно послать ответ, когда он будет обработан (вы можете послать сообщение об этом позже, если пакет кем-нибудь обработан, он будет освобождён/использовано заново). </para>
+</listitem>
+</itemizedlist>
+
+<para
+>В определении потоков используется ключевое слово <quote
+>async</quote
+> для указания асинхронного потока. Если вы, к примеру, решили преобразовать ваш асинхронный поток байтов в синхронный поток сэмплов, интерфейс должен выглядеть так: </para>
+
+<programlisting
+>interface ByteStreamToAudio : SynthModule {
+    async in byte stream indata;   // the asynchronous input sample stream
+
+    out audio stream left,right;   // the synchronous output sample streams
+};
+</programlisting>
+
+</sect2>
+
+<sect2 id="async-streams">
+<title
+>Использование асинхронных потоков</title>
+
+<para
+>Предположим, вам нужно написать модуль, воспроизводящий звук асинхронно. Его интерфейс будет выглядеть следущим образом: </para>
+
+<programlisting
+>interface SomeModule : SynthModule
+{
+    async out byte stream outdata;
+};
+</programlisting>
+
+<para
+>Как посылать данные? Первый способ называется <quote
+>принудительная доставка</quote
+>. В асинхронных потоках данные посылаются пакетами. Это значит, что вы посылаете отдельные пакеты байтов, как в примере выше. Вся процедура состоит в том, чтобы разместить пакет, заполнить его и послать. </para>
+
+<para
+>Вот пример кода. Сначала пакет размещается: </para>
+
+<programlisting
+>DataPacket&lt;mcopbyte&gt; *packet = outdata.allocPacket(100);
+</programlisting>
+
+<para
+>Потом он заполняется: </para>
+
+<programlisting
+>//для fgets необходим указатель (char *)
+char *data = (char *)packet-&gt;contents;
+
+//как видите, размер пакета можно уменьшить после размещения
+if(fgets(data,100,stdin))
+    packet-&gt;size = strlen(data);
+else
+    packet-&gt;size = 0;
+</programlisting>
+
+<para
+>И теперь посылаем: </para>
+
+<programlisting
+>packet-&gt;send();
+</programlisting>
+
+<para
+>Как видите, это достаточно просто. Но если пакеты нужно посылать с такой скоростью, чтобы получатель успевал их обрабатывать, нужен другой подход - <quote
+>доставка с задержкой</quote
+>. Сначала вы посылаете какое-то количество пакетов, в то время, когда получатель по очереди их обрабатывает, формируете новые и опять посылаете их. </para>
+
+<para
+>Вызов производится командой setPull. Например: </para>
+
+<programlisting
+>outdata.setPull(8, 1024);
+</programlisting>
+
+<para
+>Это значит, что вы хотите посылать пакеты через outdata и начать с 8, а когда получатель обработает несколько, восполнить их. </para>
+
+<para
+>После этого нужно указать метод заполнения пакетов. Он может выглядеть так: </para>
+
+<programlisting
+>void request_outdata(DataPacket&lt;mcopbyte&gt; *packet)
+{
+    packet-&gt;size = 1024;  //не больше 1024
+    for(int i = 0;i &lt; 1024; i++)
+        packet-&gt;contents[i] = (mcopbyte)'A';
+    packet-&gt;send();
+}
+</programlisting>
+
+<para
+>Вот и всё. Когда закончатся пакеты, установите размер пакетов в ноль, что предотвратит их дальнейшую отправку. </para>
+
+<para
+>Заметьте, что очень важно называть метод определённым образом: <methodname
+>request_<replaceable
+>имя потока</replaceable
+></methodname
+>. </para>
+
+<para
+>Мы обсудили, как отправлять данные. Получать их намного проще. Предположим, есть простой фильтр ToLower, который преобразовывает все буквы в нижний регистр: </para>
+
+<programlisting
+>interface ToLower {
+    async in byte stream indata;
+    async out byte stream outdata;
+};
+</programlisting>
+
+<para
+>Очень простое использование: </para>
+
+<programlisting
+>class ToLower_impl : public ToLower_skel {
+public:
+    void process_indata(DataPacket&lt;mcopbyte&gt; *inpacket)
+    {
+        DataPacket&lt;mcopbyte&gt; *outpacket = outdata.allocPacket(inpacket-&gt;size);
+
+        //преобразование в нижние регистр
+        char *instring = (char *)inpacket-&gt;contents;
+        char *outstring = (char *)outpacket-&gt;contents;
+
+        for(int i=0;i&lt;inpacket-&gt;size;i++)
+            outstring[i] = tolower(instring[i]);
+
+        inpacket-&gt;processed();
+        outpacket-&gt;send();
+    }
+};
+
+REGISTER_IMPLEMENTATION(ToLower_impl);
+</programlisting>
+
+<para
+>И опять обратите внимание на имя метода <methodname
+>process_<replaceable
+>имя потока</replaceable
+></methodname
+>. </para>
+
+<para
+>Как видите, при получении пакета вызывается функция (в нашем случае это <function
+>process_indata</function
+>). А чтобы показать, что пакет обработан, нужно вызвать метод <methodname
+>processed()</methodname
+>. </para>
+
+<para
+>Совет по использованию: если обработка проходит медленно (к примеру, если нужно ждать вывода данных звуковой картой), не вызывайте processed() сразу же, а только после того, как пакет будет действительно обработан. Тогда отправитель будет знать, сколько времени требуется на самом деле. </para>
+
+<para
+>Т.к. асинхронные потоки синхронизируются не очень хорошо, старайтесь использовать синхронные, а асинхронные только в крайнем случае.  </para>
+
+</sect2>
+
+<sect2 id="default-streams">
+<title
+>Стандартные потоки</title>
+
+<para
+>Предположим, есть 2 объекта, например, AudioProducer и AudioConsumer. У AudioProducer есть выходной поток, а у AudioConsumer - входной. Соединяя их, вы будете использовать эти потоки. С помощью стандартных потоков соединение упрощается: не нужно указывать порты. </para>
+
+<para
+>Пусть теперь у нас есть объекты стререозвука, у каждого есть <quote
+>левый </quote
+> и <quote
+>правый</quote
+> порт. Очень хочется, чтобы подключение было как можно проще. Но как система узнает, какие порты соединять? Тут опять помогут стандартные потоки: можно указать несколько потоков по порядку. Поэтому, когда вы будете подключать два выходных стандартных потока к двум входным, не нужно будет указывать порты, а соответствие будет правильным. </para>
+
+<para
+>Конечно, это не ограничено стреозвуком. Любое количество потоков можно сделать стандартным при необходимости, а функция связи будет проверять совпадение количества стандартных потоков двух объектов (в необходимом направлении), если вы не укажете порты. </para>
+
+<para
+>Ключевое слово default в &IDL; может указывать в описании потока или в отдельной строке. Например: </para>
+
+<programlisting
+>interface TwoToOneMixer {
+    default in audio stream input1, input2;
+    out audio stream output;
+};
+</programlisting>
+
+<para
+>В этом примере у объекта два входных порта будут соединены по умолчанию. Порядок определяется по строке со словом default. Поэтому у такого объекта: </para>
+
+<programlisting
+>interface DualNoiseGenerator {
+    out audio stream bzzt, couic;
+    default couic, bzzt;
+};
+</programlisting>
+
+<para
+>Соединение <quote
+>couic</quote
+> с <quote
+>input1</quote
+> и <quote
+>bzzt</quote
+> с <quote
+>input2</quote
+> будет установлено автоматически. Заметьте, что в этом случае единственный выходной порт будет стандартным (смотрите ниже). Синтаксис генератора шума удобен для описания другого порядка или выбора только некоторых портов по умолчанию. Направления портов будет назначать &mcopidl;, поэтому не указывайте их. Входные и выходные порты можно записать в одной строке, важен лишь порядок. </para>
+
+<para
+>Есть несколько правил наследования: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Если в &IDL; указан стандартный список, пользуйтесь им. В него могут быть добавлены родительские порты, независимо от того, были ли они стандартными. </para>
+</listitem>
+
+<listitem>
+<para
+>Иначе наследоваться будут родительские порты по умолчанию в таком порядке: родитель1 порт1, родитель1 порт2, ..., родитель2 порт1, ... Если есть общий предок с двумя родительскими ветвями, по умолчанию использоваться будет первый попавшийся в списке порт. </para>
+</listitem>
+
+<listitem>
+<para
+>Если порта по умолчанию нет, но есть одночный поток в каком-то направлении, используйте его как стандартый для этого направления. </para>
+</listitem>
+</itemizedlist>
+
+</sect2>
+
+</sect1>
+<sect1 id="attribute-change-notify">
+<title
+>Флаги смены атрибута</title>
+
+<!-- TODO: This should be embedded better into the context - I mean: the
+ context should be written ;-). -->
+
+<para
+>Флаги смены атрибута - это способ показать, что атрибут изменился. Они похожи на сигналы и функции внешнего вызова в &Qt; или Gtk. Например, если есть элемент &GUI; ползунок, отмечающий значение от 0 до 100, то должен быть объект, работающий с этим значением (к примеру, он может управлять громкостью сигнала). Будет удобно, если объект будет знать, изменился ли уровень громкости. Связь между отправителем и получателем. </para>
+
+<para
+>В &MCOP; есть возможность контролировать изменения атрибутов. Независимо от того, что объявлено в &IDL;, <quote
+>атрибут</quote
+> может (и должен) изменяться, а также получать сообщения об изменении. Например, если у вас было два &IDL;-интерфейса: </para>
+
+<programlisting
+>interface Slider {
+         attribute long min,max;
+         attribute long position;
+ };
+ interface VolumeControl : Arts::StereoEffect {
+     attribute long volume; // 0..100
+ };
+</programlisting>
+
+<para
+>Вы можете их связать с помощью флагов изменения. В этом случае связь будет выглядеть так (код на C++): </para>
+
+<programlisting
+>#include &lt;connect.h&gt;
+using namespace Arts;
+[...]
+connect(slider,"position_changed",volumeControl,"volume");
+</programlisting>
+
+<para
+>Как видите, у каждого атрибута есть два разных потока: для отправки извещений об изменении вызывается <function
+><replaceable
+>имя атрибута</replaceable
+> _changed</function
+> и для получения &mdash; <function
+>attributename</function
+>. </para>
+
+<para
+>Важно знать, что флаги изменения совместимы с асинхронными потоками. А также они "прозрачны", поэтому вы можете связать атрибут типа float элемента &GUI; с асинхронным потоком модуля синтезатора на другом компьютере. Естественно, изменение флага <emphasis
+>не будет синхронным </emphasis
+>, т. к. на передачу уходит некоторое время. </para>
+
+<sect2 id="sending-change-notifications">
+
+<title
+>Отправка извещений об изменении</title>
+
+<para
+>Если вы используете объекты с атрибутами, извещение об изменении нужно посылать каждый раз, когда атрибут меняется. Код выглядит приблизительно так: </para>
+
+<programlisting
+>void KPoti_impl::value(float newValue)
+ {
+     if(newValue != _value)
+     {
+         _value = newValue;
+         value_changed(newValue); // &lt;- послать извещение
+     }
+ }
+</programlisting>
+ 
+<para
+>Мы рекомендуем такой код для всех создаваемых объектов, чтобы флаги изменения могли использовать другие люди. Однако не стоит посылать извещения слишком часто, поэтому если вы обрабатываете сигнал, будет удобно записывать, когда было послано последнее извещение, чтобы не посылать его с каждым сэмплом. </para>
+
+</sect2>
+
+<sect2 id="change-notifications-apps">
+<title
+>Приложения для изменения флага</title>
+
+<para
+>Будет особенно полезно менять флаг вместе с оболочками (которые, к примеру, визуализируют аудио данные), элементами gui, контроля и мониторинга. Такой код находится в <filename class="directory"
+>kdelibs/arts/tests</filename
+> а экспериментальая реализация artsgui - в <filename class="directory"
+>kdemultimedia/arts/gui</filename
+>. </para>
+
+<!-- TODO: can I markup links into the source code - if yes, how? -->
+
+<!-- LW: Linking into the source is problematic - we can't assume people are
+reading this on a machine with the sources available, or that they aren't
+reading it from a website. We're working on it! -->
+
+</sect2>
+</sect1>
+
+<sect1 id="the-mcoprc-file">
+
+<title
+>Файл <literal role="extension"
+>.mcoprc</literal
+></title>
+
+<para
+>Файл <literal role="extension"
+>.mcoprc</literal
+> (в каталоге home каждого пользователя) может быть использован для настройки &MCOP;. Сейчас возможно следущее: </para>
+
+<variablelist>
+
+<varlistentry>
+<term
+>GlobalComm</term>
+<listitem>
+<para
+>Имя интерфейса для глобальной связи. Глобальная связь необходима для того, чтобы находить другие объекты и получать личные данные пользователя. Для разных &MCOP;-клиентов/серверов, которые должны быть как-то связаны, нужен общий объект GlobalComm для разделения информации между ними. Возможные значения: <quote
+>Arts::TmpGlobalComm</quote
+> для связи посредством каталога <filename class="directory"
+>/tmp/mcop-<replaceable
+>имя пользователя</replaceable
+></filename
+> (который будет только на локальном компьютере) и <quote
+>Arts::X11GlobalComm</quote
+> для связи через свойства корневого окна сервера X11. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>TraderPath</term>
+
+<listitem>
+<para
+>Указывает, в каком каталоге хранится информация о трейдере. Вы можете перечислить несколько, разделив их запятой. </para>
+</listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+>ExtensionPath</term>
+
+<listitem>
+<para
+>Указывает, из каких каталогов загружаются расширения (в форме общих библиотек). Несколько значений разделяются запятой. </para>
+</listitem>
+
+</varlistentry>
+</variablelist>
+
+<para
+>Вот пример использования: </para>
+
+<programlisting
+># $HOME/.mcoprc file
+GlobalComm=Arts::X11GlobalComm
+
+#если вы разработчик, будет удобно добавлять путь к каталогу трейдера
+#т.е. вы сможете использовать добавлять компоненты, не устанавливая их
+TraderPath="/opt/kde2/lib/mcop","/home/joe/mcopdevel/mcop"
+ExtensionPath="/opt/kde2/lib","/home/joe/mcopdevel/lib"
+</programlisting>
+
+</sect1>
+
+<sect1 id="mcop-for-corba-users">
+<title
+>&MCOP; для пользователей <acronym
+>CORBA</acronym
+></title>
+
+<para
+>Если вы пользовались <acronym
+>CORBA</acronym
+> раньше, вы заметите, что &MCOP; очень похож на эту технологию. Вообще-то до версии 0.4 &arts; использовал <acronym
+>CORBA</acronym
+>. </para>
+
+<para
+>Основная идея <acronym
+>CORBA</acronym
+> такая же: вы создаёте объекты (компоненты). В &MCOP; ваши объекты доступны как обычные классы, в том числе и для удалённого сервера. Для этого нужно определить интерфейс объектов в файле &IDL;, так же, как и в <acronym
+>CORBA</acronym
+>. Однако есть несколько различий. </para>
+
+<sect2 id="corba-missing">
+<title
+>Функции <acronym
+>CORBA</acronym
+>, которые отсутствуют в &MCOP;</title>
+
+<para
+>В &MCOP; нет параметров <quote
+>вход</quote
+> и <quote
+>выход</quote
+> вызова методов. Параматры всегда входящие, а возвращаемый код всегда исходящий. Это значит, что интерфейс: </para>
+
+<programlisting
+>// CORBA idl
+interface Account {
+  void deposit( in long amount );
+  void withdraw( in long amount );
+  long balance();
+};
+</programlisting>
+
+<para
+>пишется как </para>
+
+<programlisting
+>// MCOP idl
+interface Account {
+  void deposit( long amount );
+  void withdraw( long amount );
+  long balance();
+};
+</programlisting>
+
+<para
+>в &MCOP;. </para>
+
+<para
+>Нет обработки исключений. В &MCOP; есть другие способы для обхода ошибок. </para>
+
+<para
+>Здесь нет типа union и typedef. Не знаю, большой ли это недостаток... </para>
+
+<para
+>Нет поддержки передачи интерфейсов и обращения к объектам </para>
+
+</sect2>
+
+<sect2 id="corba-different">
+<title
+>Функции <acronym
+>CORBA</acronym
+>, отличающиеся в &MCOP;</title>
+
+<para
+>В &MCOP; последовательности определяются так: <quote
+>последовательность<replaceable
+>тип</replaceable
+></quote
+>. Нет необходимости писать typedef. Например, вместо  </para>
+
+<programlisting
+>// CORBA idl
+struct Line {
+    long x1,y1,x2,y2;
+};
+typedef sequence&lt;Line&gt; LineSeq;
+interface Plotter {
+    void draw(in LineSeq lines);
+};
+</programlisting>
+
+<para
+>вы напишете </para>
+
+<programlisting
+>// MCOP idl
+struct Line {
+    long x1,y1,x2,y2;
+};
+interface Plotter {
+    void draw(sequence&lt;Line&gt; lines);
+};
+</programlisting>
+
+</sect2>
+
+<sect2 id="no-in-corba">
+<title
+>Функции &MCOP;, которых нет в <acronym
+>CORBA</acronym
+></title>
+
+<para
+>Вы можете объявить потоки, которые будут обрабатываться платформой &arts;. Объявление потоков похоже на объявление атрибутов. Например: </para>
+
+<programlisting
+>// MCOP idl
+interface Synth_ADD : SynthModule {
+    in audio stream signal1,signal2;
+    out audio stream outvalue;
+};
+</programlisting>
+
+<para
+>Это значит, что ваш объект будет принимать два входящих синхронных аудиопотока signal1 и signal2. "Синхронный" значит, что эти потоки обязательно будут выдавать определённое количество данных. Т. е. если вызывается ваш объект и ему передаётся 200 сэмплов (signal1 + signal2), он выдаст 200 сэмплов. </para>
+
+</sect2>
+
+<sect2 id="mcop-binding">
+<title
+>Связь &MCOP; с C++</title>
+
+<para
+>Основные отличия от <acronym
+>CORBA</acronym
+>: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Для работы со строками используется класс C++ <acronym
+>STL</acronym
+> <classname
+>string</classname
+>. Если они хранятся в последовательности, они хранятся <quote
+>просто тпе</quote
+>, т.е. они считаются простым типом. Поэтому им необходимо копирование. </para>
+</listitem>
+
+<listitem>
+<para
+>long - обычный тип long (32 бита). </para>
+</listitem>
+
+<listitem>
+<para
+>Последовательности используют класс C++ <acronym
+>STL</acronym
+> <classname
+>vector</classname
+>. </para>
+</listitem>
+
+<listitem>
+<para
+>Все структуры созданы из класса &MCOP; <classname
+>Type</classname
+> и сгенерированы компилятором &IDL;. Если они хранятся в массиве, для того, чтобы избежать копирования, хранятся только ссылки. </para>
+</listitem>
+</itemizedlist>
+</sect2>
+
+<sect2 id="implementing-objects">
+<title
+>Создание объектов &MCOP;</title>
+
+<para
+>После компиляции их нужно извлечь из класса <classname
+>_skel</classname
+>. Например, если вы определили ваш интерфейс так: </para>
+
+<programlisting
+>// MCOP idl: hello.idl
+interface Hello {
+    void hello(string s);
+    string concat(string s1, string s2);
+    long sum2(long a, long b);
+};
+</programlisting>
+
+<para
+>Вы компилируете его, вызвав <userinput
+><command
+>mcopidl</command
+> <parameter
+>hello.idl</parameter
+></userinput
+>, при этом сгенерируется <filename
+>hello.cc</filename
+> и <filename
+>hello.h</filename
+>. Чтобы эти файлы использовать, нужно определить C++ класс, который будет наследовать каркас: </para>
+
+<programlisting
+>//заголовочный файл C++ - hello.h - включается ранее
+class Hello_impl : virtual public Hello_skel {
+public:
+    void hello(const string&amp; s);
+    string concat(const string&amp; s1, const string&amp; s2);
+    long sum2(long a, long b);
+};
+</programlisting>
+
+<para
+>И, наконец, можете пользоваться методами как в обычном C++ </para>
+
+<programlisting
+>// файл, использующий C++ 
+
+// как видите, строки передаются указателями
+void Hello_impl::hello(const string&amp; s)
+{
+    printf("Hello '%s'!\n",s.c_str());
+}
+
+// а если это возвращаемое значение, всё как с "обычной" строкой
+string Hello_impl::concat(const string&amp; s1, const string&amp; s2)
+{
+    return s1+s2;
+}
+
+long Hello_impl::sum2(long a, long b)
+{
+    return a+b;
+}
+</programlisting>
+
+<para
+>После этого вы получите объекты, которые могут "общаться" с помощью &MCOP;. Теперь осталось их создать (это делается так же, как в C++): </para>
+
+<programlisting
+>Hello_impl server;
+</programlisting>
+
+<para
+>И как только вы добавите ссылку </para>
+
+<programlisting
+>string reference = server._toString();
+    printf("%s\n",reference.c_str());
+</programlisting>
+
+<para
+>и перейдете в цикл ожидания </para>
+
+<programlisting
+>Dispatcher::the()-&gt;run();
+</programlisting>
+
+<para
+>Люди смогут обращаться к нему </para>
+
+<programlisting
+>// этот код может содержаться где угодно
+// (даже на другом компьютере с другой архитектурой)
+
+    Hello *h = Hello::_fromString([the object reference printed above]);
+</programlisting>
+
+<para
+>и вызывать методы: </para>
+
+<programlisting
+>if(h)
+        h-&gt;hello("test");
+    else
+        printf("Access failed?\n");
+</programlisting>
+
+</sect2>
+</sect1>
+
+<sect1 id="mcop-security">
+<title
+>Безопасность в &MCOP;</title>
+
+<para
+>Так как передача данных между серверами &MCOP; идёт по протоколу <acronym
+>TCP</acronym
+>, любой (если вы подключены к Интернету) может попробовать подключиться к сервисам &MCOP;. Поэтому рекомендуется использовать аутентификацию клиентов. В &MCOP; используется протокол md5-auth </para>
+
+<para
+>В md5-auth отбор клиентов, которые могут подключиться, происходит так: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Предполагается, что любой может получить ваш секретный пароль. </para>
+</listitem>
+
+<listitem>
+<para
+>При каждом подключении клиента проверяется, знает ли он секретный пароль, при этом пароль не пересылается по сети, чтобы любой, прослушивающий сеть, не мог его получить. </para>
+</listitem>
+
+</itemizedlist>
+
+<para
+>Чтобы назначить каждому клиенту свой секретный пароль, &MCOP; запишет его в каталоге <filename class="directory"
+>mcop</filename
+> (<filename class="directory"
+>/tmp/mcop-<envar
+>USER</envar
+>/secret-cookie</filename
+>). Конечно, вы можете его скопировать на другой компьютер. Однако в этом случае нужен безопасный способ копирования, например, <command
+>scp</command
+> (из <application
+>ssh</application
+>). </para>
+
+<para
+>Шаги аутентификации: </para>
+
+<procedure>
+<step>
+<para
+>[Сервер] генерирует новый (случайный) пароль R </para>
+</step>
+
+<step>
+<para
+>[Сервер] посылает его клиенту </para>
+</step>
+
+<step>
+<para
+>[Клиент] читает "секретный пароль" S из файла </para>
+</step>
+
+<step>
+<para
+>[Клиент] с помощью алгоритма MD5 преобразует пароли R и S и формирует пароль M </para>
+</step>
+
+<step>
+<para
+>[Клиент] посылает M серверу </para>
+</step>
+
+<step>
+<para
+>[Сервер] проверяет, действительно ли преобразование R и S даёт пароль M, полученный от клиента. Если да, аутентификация прошла успешно. </para>
+</step>
+
+</procedure>
+
+<para
+>Этот алгоритм обеспечивает безопасность при условии, что </para>
+
+<orderedlist>
+<listitem>
+<para
+>Секретный и случайный пароли <quote
+>достаточно случайны</quote
+> и </para>
+</listitem>
+
+<listitem>
+<para
+>Алгоритм искажения MD5 не позволяет восстановить <quote
+>исходный текст</quote
+>, т.е. секретный S и случайный R пароли (который все знают) из преобразованного пароля M. </para>
+</listitem>
+</orderedlist>
+
+<para
+>Каждое новое подключение по протоколу &MCOP; начинается с аутентификации. Это выглядит так: </para>
+
+<procedure>
+
+<step>
+<para
+>Сервер посылает сообщение ServerHello, в котором описываются все известные протоколы аутентификации. </para>
+</step>
+
+<step>
+<para
+>Клиент посылает сообщение ClientHello с информацией об аутентификации. </para>
+</step>
+
+<step>
+<para
+>Сервер посылает сообщение AuthAccept. </para>
+</step>
+</procedure>
+
+<para
+>Чтобы понять, как действительно работает система безопасности, нужно посмотреть, как обрабатываются сообщения во время аутентификации: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Пока не завершится этап аутентификации, никаких других сообщений сервер принимать не будет. Например, если он ожидает сообщение <quote
+>ClientHello</quote
+>, а получает mcopInvocation, связь разрывается. </para>
+</listitem>
+
+<listitem>
+<para
+>Если клиент вообще не посылает допустимых сообщений &MCOP; во время аутентификации, связь разрывается. </para>
+</listitem>
+
+<listitem>
+<para
+>Если клиент пытается послать слишком большое сообщение (4096 байтов во время аутентификации), оно обрезается до 0 байтов, и сервер считает, что сообщение не было послано. Это необходимо, чтобы неаутентифицированный пользователь не мог послать сообщение в 100 мегабайт и израсходовал всю память сервера. </para>
+</listitem>
+
+<listitem>
+<para
+>Если клиент присылает искажённое сообщение ClientHello, соединение разрывается. </para>
+</listitem>
+
+<listitem>
+<para
+>Кроме того, нужно указать время ожидания на случай, если клиент вообще ничего не посылает. </para>
+</listitem>
+</itemizedlist>
+
+</sect1>
+
+<sect1 id="mcop-protocol">
+<title
+>Описание потокола &MCOP;</title>
+
+<sect2 id="mcop-protocol-intro">
+<title
+>Введение</title>
+
+<para
+>Протокол очень похож на <acronym
+>CORBA</acronym
+>, но он был расширен, чтобы выполнять все необходимые операции в реальном времени. </para>
+
+<para
+>Вы можете создать объектную мультимедиа-модель, которую можно будет использовать для связи между компонентами в одном адресном пространстве (в одной задаче), а также между компонентами в различных потоках, задачах и на разных узлах. </para>
+
+<para
+>Он будет доработан, чтобы выполнение проходило очень быстро и подходило "общительным" приложениям. Например, потоки видео - одно из приложений &MCOP;, где большая часть реализаций <acronym
+>CORBA</acronym
+> явно проигрывает. </para>
+
+<para
+>Определения интерфейсов полностью реализуют следующую функуиональность: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Непрерывные потоки данных (например, аудиоданные). </para>
+</listitem>
+
+<listitem>
+<para
+>Потоки событий (например, &MIDI;-события). </para>
+</listitem>
+
+<listitem>
+<para
+>Счётчик ссылок. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>и наиболее важные особенности <acronym
+>CORBA</acronym
+> , например: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Вызовы синхронных методов. </para>
+</listitem>
+
+<listitem>
+<para
+>Вызовы асинхронных методов. </para>
+</listitem>
+
+<listitem>
+<para
+>Создание определённых пользователем типов. </para>
+</listitem>
+
+<listitem>
+<para
+>Множественное наследование. </para>
+</listitem>
+
+<listitem>
+<para
+>Передача ссылок на объекты. </para>
+</listitem>
+</itemizedlist>
+
+</sect2>
+
+<sect2 id="mcop-protocol-marshalling">
+<title
+>Упаковка сообщений &MCOP;</title>
+
+<para
+>Идеи/цели дизайна: </para>
+
+<itemizedlist>
+
+<listitem>
+<para
+>Упаковка объектов должна быть проста в использовании. </para>
+</listitem>
+
+<listitem>
+<para
+>При распаковке получатель должен знать, сообщение какого типа он собирается распаковывать. </para>
+</listitem>
+
+<listitem>
+<para
+>Получатель должен использовать всю информацию, поэтому пропуски информации обычно бывают только в таких случаях: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Если вы знаете, что получите блок байтов, вам не нужно проверять каждый из них на наличие маркера конца передачи. </para>
+</listitem>
+
+<listitem>
+<para
+>Если вы собираетесь получить строку, не нужно читать её до нулевого байта, чтобы вычислить длину, но </para>
+</listitem>
+
+<listitem>
+<para
+>При получении массива строк нужно отслеживать длину каждой строки, чтобы узнать, когда закончится массив. Хотя если вы используете строки для чего-то важного, это нужно делать в любом случае. </para>
+</listitem>
+</itemizedlist>
+
+</listitem>
+
+<listitem>
+<para
+>Снижение непроизводительных издержек. </para>
+</listitem>
+</itemizedlist>
+
+<!-- TODO: Make this a table -->
+
+<para
+>Упаковка сообщений различных типов показана в таблице ниже: </para>
+
+<informaltable>
+<tgroup cols="3">
+<thead>
+<row>
+<entry
+>Тип</entry>
+<entry
+>Процедура упаковки</entry>
+<entry
+>Результат</entry>
+</row>
+</thead>
+
+<tbody>
+<row>
+<entry
+><type
+>void</type
+></entry>
+<entry
+>в поток ничего не записывается</entry>
+<entry
+></entry>
+</row>
+
+<row>
+<entry
+><type
+>long</type
+></entry>
+<entry
+>занимает четыре байта, и самый важный из них - первый; например, число 10001025 (0x989a81) будет упаковано так:</entry>
+<entry
+><literal
+>0x00 0x98 0x9a 0x81</literal
+></entry>
+</row>
+
+<row>
+<entry
+><type
+>enum</type
+></entry>
+<entry
+><para
+>см. <type
+>long</type
+></para
+></entry>
+<entry
+></entry>
+</row>
+
+<row>
+<entry
+><type
+>byte</type
+></entry>
+<entry
+><para
+>занимает один байт; например, число 0x42 будет упаковано так:</para
+></entry>
+<entry
+><literal
+>0x42</literal
+></entry>
+</row>
+
+<row>
+<entry
+><type
+>string</type
+></entry>
+<entry
+><para
+>см. <type
+>long</type
+>; отличия: содержит длину строки и последовательность символов, которая обязательно оканчивается нулевым байтом (он включён в длину)</para>
+<important>
+<para
+>длина строки должна включать последний нулевой байт!</para>
+</important>
+<para
+>например, <quote
+>hello</quote
+> упаковывается так:</para
+></entry>
+<entry
+><literal
+>0x00 0x00 0x00 0x06 0x68 0x65 0x6c 0x6c 0x6f 0x00</literal
+></entry>
+</row>
+
+<row>
+<entry
+><type
+>boolean</type
+></entry>
+<entry
+><para
+>см. байт; содержит 0, если <returnvalue
+>false</returnvalue
+>, и 1 если <returnvalue
+>true</returnvalue
+>; значение <returnvalue
+>true</returnvalue
+> выглядит так:</para
+></entry>
+<entry
+><literal
+>0x01</literal
+></entry>
+</row>
+
+<row>
+<entry
+><type
+>float</type
+></entry>
+<entry
+><para
+>упаковывается в соответствии с четырёхбайтовым представлением IEEE754 -подробнее об этом можно узнать здесь: <ulink url="http://twister.ou.edu/workshop.docs/common-tools/ numerical_comp_guide/ncg_math.doc.html"
+> http://twister.ou.edu/workshop.docs/common-tools/numerical_comp_guide/ncg_math.doc.html</ulink
+> и здесь: <ulink url="http://java.sun.com/docs/books/vmspec/2nd-edition/html/Overview.doc.html"
+>http://java.sun.com/docs/books/vmspec/2nd-edition/html/Overview.doc.html</ulink
+>; например, значение 2.15 будет выглядеть так:</para
+></entry>
+<entry
+><literal
+>0x9a 0x99 0x09 0x40</literal
+></entry>
+</row>
+
+<row>
+<entry
+><type
+>struct</type
+></entry>
+<entry
+><para
+>используется содержимое структуры; для этого не нужны дополнительные префиксы или суффиксы; например, структура </para>
+<programlisting
+>struct test {
+    string name;        // это "hello"
+    long value;         // это 10001025  (0x989a81)
+};
+</programlisting>
+<para
+>будет упакована так:</para
+></entry>
+<entry>
+<literallayout
+>0x00 0x00 0x00 0x06   0x68 0x65 0x6c 0x6c
+0x6f 0x00 0x00 0x98   0x9a 0x81
+</literallayout
+></entry>
+</row>
+
+<row>
+<entry
+><type
+>последовательность</type
+></entry>
+<entry
+><para
+>последовательность располагается так: количество элементов и сами элементы друг за другом</para>
+<para
+>поэтому последовательность а из 3 элементов типа long, с a[0] = 0x12345678, a[1] = 0x01 и [2] = 0x42 будет упакована так:</para
+></entry>
+<entry>
+<literallayout
+>0x00 0x00 0x00 0x03   0x12 0x34 0x56 0x78
+0x00 0x00 0x00 0x01   0x00 0x00 0x00 0x42
+</literallayout>
+</entry>
+</row>
+</tbody>
+</tgroup>
+</informaltable>
+
+<para
+>При обращении к простому типу используется его имя. У структур и перечисляемых типов есть собственные имена. Последовательности являются указателями на *<replaceable
+>обычные типы</replaceable
+>, поэтому обращение к последовательности элементов типа long будет таким: <quote
+>*long</quote
+>, а к последовательности структур Header: <quote
+>*Header</quote
+>. </para>
+
+</sect2>
+
+<sect2 id="mcop-protocol-messages">
+<title
+>Сообщения</title>
+
+<para
+>Формат заголовка сообщения &MCOP; определяется такой структурой: </para>
+
+<programlisting
+>struct Header {
+    long magic;          // значение 0x4d434f50: MCOP
+    long messageLength;
+    long messageType;
+};
+</programlisting>
+
+<para
+>Возможные типы сообщений: </para>
+
+<programlisting
+>mcopServerHello                = 1
+ mcopClientHello                = 2
+ mcopAuthAccept                        = 3
+ mcopInvocation                        = 4
+ mcopReturn                                = 5
+ mcopOnewayInvocation   = 6
+</programlisting>
+
+<para
+>Несколько замечаний о сообщениях &MCOP;: </para>
+
+
+<itemizedlist>
+<listitem>
+<para
+>Каждое сообщение начинается с заголовка. </para>
+</listitem>
+
+<listitem>
+<para
+>Некоторые сообщения должны отбрасываться сервером, если процесс аутентификации ещё не пройден. </para>
+</listitem>
+
+<listitem>
+<para
+>После получения заголовка, можно получать всё сообщение целиком без просмотра его содержимого. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Значение messageLength в заголовке в некоторых случаях бывает лишним. </para>
+
+<para
+>Однако это простой (и быстрый) способ обработки неблокового сообщения. С его  помощью сообщения могут быть получены в фоновом режиме. Если одновременно установлено несколько соединений, они будут параллельными. Вам не нужно будет проверять содержимое всего сообщения (чтобы узнать, когда оно закончится), нужен только заголовок. Это упрощает кодирование. </para>
+
+<para
+>После получения сообщения оно может быть распаковано и обработано за один проход, без рассматривания случаев, когда получены не все данные (это гарантирует messageLength). </para>
+
+</sect2>
+
+<sect2 id="mcop-protocol-invocations">
+<title
+>Вызовы</title>
+
+<para
+>Для вызова удалённого метода нужно послать структуру, приведённую ниже, в теле сообщения &MCOP; с messageType = 1 (mcopInvocation): </para>
+
+<programlisting
+>struct Invocation {
+    long objectID;
+    long methodID;
+    long requestID;
+};
+</programlisting>
+
+<para
+>после этого параметры передаются как структура, т.е. если вы вызываете string concat(string s1, string s2), отправьте такую структуру: </para>
+
+<programlisting
+>struct InvocationBody {
+    string s1;
+    string s2;
+};
+</programlisting>
+
+
+<para
+>Если нужен метод однонаправленный - т.е. асинхронный без возвращения значения - это был он. Иначе вы получите сообщение с messageType = 2 (mcopReturn) </para>
+
+<programlisting
+>struct ReturnCode {
+    long requestID;
+    &lt;resulttype&gt; result;
+};
+</programlisting>
+
+
+<para
+>где &lt;resulttype&gt; - это тип результата. Вы можете написать только requestID, если тип метода был void. </para>
+
+<para
+>Таким образом, concat(string s1, string s2) вернёт код </para>
+
+<programlisting
+>struct ReturnCode {
+    long   requestID;
+    string result;
+};
+</programlisting>
+
+</sect2>
+
+<sect2 id="mcop-protocol-inspecting">
+<title
+>Изучение интерфейсов</title>
+
+<para
+>Чтобы вызвать объект, нужно знать, какие методы можно использовать во время работы с ним. Значения 0, 1, 2, и 3 methodID определены для конкретных задач: </para>
+
+<programlisting
+>long _lookupMethod(MethodDef methodDef);				// methodID всегда 0
+string _interfaceName();								// methodID всегда 1
+InterfaceDef _queryInterface(string name);				// methodID всегда 2
+TypeDef _queryType(string name);						// methodID всегда 3
+</programlisting>
+
+<para
+>чтобы это прочесть, необходима сруктура </para>
+
+<programlisting
+>struct MethodDef {
+	string  methodName;
+	string  type;
+	long    flags;        // установить в 0 (необходимо для потоков)
+	sequence&lt;ParamDef&gt; signature;
+};
+
+struct ParamDef {
+	string name;
+	long   typeCode;
+};
+</programlisting>
+
+<para
+>в полях параметров содержатся компоненты, определяющие типы параметров. Тип возвращаемого значения зависит от типа MethodDef. </para>
+
+<para
+>Строго говоря, только методы <methodname
+>_lookupMethod()</methodname
+> и <methodname
+>_interfaceName()</methodname
+> разные для всех объектов, а <methodname
+>_queryInterface()</methodname
+> и <methodname
+>_queryType()</methodname
+> всегда одинаковы. </para>
+
+<para
+>Что же такое methodID? Если вы вызываете метод, нужно передавать его номер, т.к. цифры в запросе &MCOP; обрабатываются гораздо быстрее строк. </para>
+
+<para
+>Итак, как же получить номер метода? Зная его подпись - MethodDef (в которой содержится имя, тип и информация о параметрах) - вы можете передать её в _lookupMethod объекта, вызывающего метод. Так как _lookupMethod настроен на methodID 0, проблем с этим не будет. </para>
+
+<para
+>Если же вы не знаете подписи, с помощью _interfaceName, _queryInterface и _queryType можно узнать, какие методы поддерживаются. </para>
+</sect2>
+
+<sect2 id="mcop-protocol-typedefs">
+<title
+>Определения типов</title>
+
+<para
+>Определённые пользователем типы данных описаны с помощью структуры <structname
+>TypeDef</structname
+>: </para>
+
+<programlisting
+>struct TypeComponent {
+        string type;
+        string name;
+};
+
+struct TypeDef {
+        string name;
+
+        sequence&lt;TypeComponent&gt; contents;
+};
+</programlisting>
+
+</sect2>
+</sect1>
+
+<sect1 id="why-not-dcop">
+<title
+>Почему &arts; не использует &DCOP;</title>
+
+<para
+>В связи с тем, что в &kde; отказались от <acronym
+>CORBA</acronym
+> полностью и используют вместо него &DCOP;, обычно возникает вопрос, почему это не делается в &arts;. Тем не менее в <classname
+>KApplication</classname
+> есть хорошая поддержка &DCOP; для интеграции с libICE. </para>
+
+<para
+>Возможно, многие захотят спросить, зачем нужен &MCOP;, если есть &DCOP;, поэтому скажу сразу. Поймите меня правильно, я не хочу сказать, что <quote
+>&DCOP; - это плохо</quote
+>. Я просто хочу сказать, что <quote
+>&DCOP; не подходит &arts;</quote
+> (хотя это хорошее решение для других задач). </para>
+
+<para
+>Во-первых, нужно понять, для чего был написан &DCOP;. Созданный за два дня на встрече &kde;-2, он должен был быть как можно более простым, <quote
+>легковесным</quote
+> протоколом связи. При разработке были упущены все сколько-нибудь сложные вопросы, например, подробное описание, как упаковывать типы данных. </para>
+
+<para
+>Хотя в &DCOP; не важны некоторые вещи (например, как нужно посылать строку, чтобы обеспечить прозрачность сети?) - они необходимы. Поэтому всё, чего не может делать &DCOP;, добавлено в &Qt;. В основном, это управление типами (с помощью оператора сериализации &Qt;). </para>
+
+<para
+>&DCOP; замечательно работает, позволяя приложениям &kde; отправлять простые сообщения вроде <quote
+>открыть в окне http://www.kde.org</quote
+> или <quote
+>данные о конфигурации изменились</quote
+>. Однако в &arts; важно другое. </para>
+
+<para
+>Идея заключается в том, что небольшие модули &arts; должны общаться с помощью таких структур данных, как <quote
+>события midi</quote
+> и<quote
+>указатели на позицию в песне</quote
+>. </para>
+
+<para
+>Это сложные типы данных, которые должны пересылаться различными объектами как потоки или параметры. В &MCOP; есть возможность определить сложные типы через простые (похожие на структуры или массивы в C++). В &DCOP; программист должен сам писать, например, классы и проверять, что они правильно сериализуются (к примеру, поддержка потокового оператора в &Qt;). </para>
+
+<para
+>Но в этом случае они будут доступны только для C++, так как нельзя разработать язык, который будет распознавать все типы модулей (которые не будут самоописывающимися). </para>
+
+<para
+>Почти та же проблема с интерфейсами. В объектах &DCOP; информация о связях, иерархии наследования и т. д. закрыта. И если вам нужно написать приложение, которое должно показывать, <quote
+>какие атрибуты есть у этого объекта</quote
+>, у вас ничего не получится. </para>
+
+
+<para
+>Матиас (Matthias) рассказал, что есть специальная функция <quote
+>functions</quote
+> для каждого объекта, которая определяет, какие методы поддерживает объект. Она пропускает информацию об атрибутах (параметрах), потоках и наследовании. </para>
+
+<para
+>Это серьёзно нарушает целостность таких приложений, как &arts-builder;. Но не следует забывать, что &DCOP; разрабатывался не как объектная модель (как &Qt; с <application
+>moc</application
+> и подобными), не как что-то вроде <acronym
+>CORBA</acronym
+>, а только для обеспечения связи между приложениями. </para>
+
+<para
+>Отличие &MCOP; состоит в том, что он должен работать с потоками, которые являются основным способом сообщения между объектами. В <acronym
+>CORBA</acronym
+>-версии &arts; приходилось разделять <quote
+>объекты SynthModule</quote
+>, которые создавали потоки, и <quote
+>интерфейс <acronym
+>CORBA</acronym
+></quote
+>. </para>
+
+<para
+>Основную часть кода занимала реализация взаимодействия <quote
+>объектов SynthModule</quote
+> и <quote
+>интерфейсов <acronym
+>CORBA</acronym
+> </quote
+>, она должна быть органичной, но не была, т.к. в <acronym
+>CORBA</acronym
+> не было даже понятия "поток". Взгляните на этот код (что-то вроде <filename
+>simplesoundserver_impl.cc </filename
+>). Он выглядит намного лучше! Потоки можно объявлять в интерфейсах модулей, а их использование выглядит естественно. </para>
+
+<para
+>Этого нельзя отрицать. Одной из причин написания &MCOP;, была скорость. Вот несколько объяснений, почему &MCOP; будет работать быстрее &DCOP;. </para>
+
+
+<para
+>Вызов в &MCOP; содержит заголовок из 6 чисел типа long: </para>
+
+<itemizedlist>
+<listitem
+><para
+>magic <quote
+>MCOP</quote
+>;</para
+></listitem>
+<listitem
+><para
+>тип сообщения (вызов);</para
+></listitem>
+<listitem
+><para
+>размер запроса в байтах;</para
+></listitem>
+<listitem
+><para
+>идентификатор запроса;</para
+></listitem>
+<listitem
+><para
+>идентификатор цели;</para
+></listitem>
+<listitem
+><para
+>илентификатор метода.</para
+></listitem>
+</itemizedlist>
+
+<para
+>После этого последуют параметры. Заметьте, что распаковка при этом очень быстра. Вы можете использовать стандартные функции для распаковки объекта или метода, что сводит сложность кодирования к минимуму. </para>
+
+<para
+>Сравним этот вариант с &DCOP;. В нём будет по крайней мере: </para>
+
+<itemizedlist>
+<listitem
+><para
+>строка целевого объекта вроде <quote
+>myCalculator</quote
+>;</para
+></listitem
+> 
+<listitem
+><para
+>строка <quote
+>addNumber(int,int)</quote
+>, указывающая метод;</para
+></listitem>
+<listitem
+><para
+>информация о протоколе, добавленная libICE, а также другие дополнительные данные, которых я не знаю.</para
+></listitem>
+</itemizedlist>
+
+<para
+>Распаковывать все это гораздо сложнее, ведь вам придется обрабатывать строки, искать функции и т. д. </para>
+
+<para
+>В &DCOP; все запросы проходят через сервер (<application
+>DCOPServer</application
+>). Это значит, что синхронный вызов выглядит так: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Задача-клиент посылает вызов. </para>
+</listitem>
+
+<listitem>
+<para
+><application
+>DCOPserver</application
+> (посредник) получает его, решает, куда нужно отправить запрос, и отправляет его <quote
+>настоящему</quote
+> серверу. </para>
+</listitem
+> 
+
+<listitem>
+<para
+>Этот сервер получает вызов, выполняет запрос и отправляет результат. </para>
+</listitem>
+
+<listitem>
+<para
+><application
+>DCOPserver</application
+> (посредник) получает результат и... посылает его клиенту. </para>
+</listitem>
+
+<listitem>
+<para
+>Клиент декодирует ответ. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>В &MCOP; тот же вызов выглядит по-другому: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Задача-клиент посылает вызов. </para>
+</listitem>
+
+<listitem>
+<para
+>Этот сервер получает вызов, выполняет запрос и отправляет результат. </para>
+</listitem>
+
+<listitem>
+<para
+>Клиент декодирует ответ. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Если и то, и другое было выполнено правильно, всё равно передача запроса через &MCOP; в два раза быстрее. И всё же есть причины выбрать&DCOP;: если запущено 20 приложений, все они связаны друг с другом, в &DCOP; нужно 20 соединения, а в &MCOP; 200. Однако в работе с мультимедиа это не распространено. </para>
+
+<para
+>Я пробовал сравнивать &MCOP; и &DCOP;, делая вызов как сложение двух чисел, подправив testdcop. Но не смог получить точные результаты для &DCOP;. Метод вызывался в том же процессе, где был вызов &DCOP;, и я не знал, как избавиться от одного сообщения об отладке, пришлось перенаправить выход. </para>
+
+<para
+>В тесте использовлись один объект и одна функция. С увеличением количества объектов и функций результаты &DCOP; ухудшаются, а у &MCOP; остаются прежними. Кроме того, задача <application
+>dcopserver</application
+> не была подключена к другим приложениям. Возможно, в этом случае, работа маршрутизатора была бы медленнее. </para>
+
+<para
+>Наконец, полученный результат: чуть больше 2000 вызовов в секунду у &DCOP; и чуть больше 8000 вызовов в секунду у &MCOP;. В четыре раза. И я знаю, что это не предел &MCOP; (для сравнения: mico в <acronym
+>CORBA</acronym
+> совершает 1000-1500 вызовов в секунду). </para>
+
+<para
+>Если вы хотите более точных данных, напишите небольшие приложения для сравнения с &DCOP; и пришлите их мне. </para>
+
+<para
+>В <acronym
+>CORBA</acronym
+> была возможность использовать однажды вызванный объект как <quote
+>отдельный серверный процесс</quote
+> или как <quote
+>библиотеку</quote
+>. Можно было использовать один и тот же код, а <acronym
+>CORBA</acronym
+> уже сам решала, что делать. Насколько я знаю, в &DCOP; такое невозможно. </para>
+
+<para
+>С другой стороны, в &MCOP; это обязательно должно быть. Поэтому вы можете прослушивать какой-то эффект в &artsd;, а при этом редактор звуковых файлов использует его в своем пространстве задачи. </para>
+
+<para
+>Если &DCOP; - это способ передачи данных между приложениями, то &MCOP; - связь внутри приложений. Это особенно важно для потоков мультимедиа, т.к. можно запускать несколько объектов параллельно. </para>
+
+<para
+>Хотя &MCOP; ещё этого не поддерживает, возможность помечать приоритет остаётся. Например, так: <quote
+>это событие &MIDI; намного важнее этого вызова</quote
+>. Или так: <quote
+>должно быть получено вовремя</quote
+>. </para>
+
+<para
+>С другой стороны, в &MCOP; может быть интергрирована передача потоков, объединённая с <acronym
+>QoS</acronym
+>. Если это будет сделано, &MCOP; не будет работать медленнее, чем <acronym
+>TCP</acronym
+>, но будет проще в использовании. </para>
+
+<para
+>Нет необходимости писать связующее ПО для мультимедиа в &Qt;, иначе оно станет &Qt;-зависимым. </para>
+
+<para
+>Насколько я знаю, тип пересылаемых по &DCOP; данных не важен, поэтому &DCOP; может использоваться отдельно от &Qt;. Вот пример повседневного использования в &kde;: пользователи посылают типы <classname
+>QString</classname
+>, <classname
+>QRect</classname
+>, <classname
+>QPixmap</classname
+>, <classname
+>QCString</classname
+>, ... Они используют сериализацию &Qt;. Поэтому если кто-то решит включить поддержку &DCOP;, например, в GNOME, он не сможет использовать типы <classname
+>QString</classname
+> и др.  и ему придётся эмулировать работу &Qt; с потоками или посылать строку, пиксельные изображения и типы rect, что, конечно, никуда не годится. </para>
+
+<para
+>&arts; не привязан к &kde;, он может работать как с &Qt; и X11, так и без них, и даже без &Linux; (я знаю людей, у которых он нормально работает в распространённых коммерческих ОС). </para>
+
+<para
+>Я считаю, что компоненты, написанные не для &GUI;, не должны от него зависеть, чтобы была возможность более широкого их распространения среди разработчиков. </para>
+
+<para
+>Я понимаю, что использование двух протоколов <acronym
+>IPC</acronym
+> неудобно, однако переход на &DCOP; я не считаю выходом. При желании можно попытаться объединить два протокола. Можно даже научить &MCOP; говорить на <acronym
+>IIOP</acronym
+>, получится <acronym
+>CORBA</acronym
+> <acronym
+>ORB</acronym
+> ;). </para>
+
+<para
+>Мы разговаривали с Матиасом Этрихом (Matthias Ettrich) о будущем двух протоколов и нашли множество путей их развития. Например, &MCOP; мог бы осуществлять передачу сообщений в &DCOP;, это бы сблизило протоколы. </para>
+
+<para
+>Поэтому возможными решениями могли бы быть: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Создание шлюза &MCOP; - &DCOP;, который осуществлял бы взаимодействие этих протоколов. Если вы заинтересовались, спешу сообщить, что рабочий прототип уже существует. </para>
+</listitem>
+
+<listitem>
+<para
+>Интеграция в &MCOP; всего, чего пользователи ожидают от &DCOP;. Попытаться работать только с ним. Кто-нибудь может добавить в &MCOP;<quote
+>сервер-посредник</quote
+> :) </para>
+</listitem>
+
+<listitem>
+<para
+>Сделать основой &DCOP; не libICE, а &MCOP; и постепенно их объединять. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>А можно использовать протоколы по их предназначению (оно ведь разное у каждого) и не пытаться их объединить. </para>
+
+</sect1>
+</chapter>

@@ -1,0 +1,323 @@
+<chapter id="callback">
+<title
+>Configurazione di &kppp; per la richiamata</title>
+
+<para
+>Questo capitolo è basato sul materiale fornito da Martin H&auml;fner, <email
+>mh@ap-dec717c.physik.uni-karlsruhe.de</email
+></para>
+
+<sect1 id="unix-callback-server">
+<title
+>server di richiamata &UNIX; o &Linux; </title>
+
+<para
+>Questa sezione introduce l'argomento della richiamata in ambito &UNIX; (&Linux;), e come &kppp; può essere configurato per connettersi ad un server di richiamata &UNIX;, specialmente ad un <link linkend="callback-resources"
+>server di richiamata</link
+> &Linux; basato su script</para>
+
+<sect2>
+<title
+>Una introduzione alla richiamata</title>
+
+<para
+>Ci sono molte ragioni per considerare l'utilizzo della richiamata, alcune di queste sono:</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Aumentare la sicurezza della tua rete locale</para>
+</listitem>
+<listitem>
+<para
+>Ridurre i costi per i collaboratori esterni</para>
+</listitem>
+<listitem>
+<para
+>Controllare le spese telefoniche quando queste sono dichiarate come spese di lavoro</para>
+</listitem>
+</itemizedlist>
+
+<para
+>Pensa a qualcuno che si connette al tuo server dial-in, e ne scopre la password. Perché disturbarsi a mantenere un firewall per la tua connessione ad internet se accedere alla tua rete è così facile?</para>
+
+<para
+>Un software di richiamata, normalmente, risponde, chiede il nome e quindi chiude la chiamata per poi richiamarti al numero che hai impostato nel database <emphasis
+>del server</emphasis
+>. Il client (il tuo computer) a questo punto risponde alla richiamata del server e continua, con la chiamata in ingresso, come se nulla fosse accaduto. Il server ora chiede nuovamente il nome utente e la password per verificare che il client sia veramente chi ha detto di essere alla prima chiamata. La connessione ora è stabilita normalmente e <application
+>pppd</application
+> viene avviato.</para>
+
+<para
+>Ora la domanda è come dire al client di rispondere alla richiamata del server. Ti servirà un'applicazione speciale come <application
+>mgetty</application
+>? La risposta è <emphasis
+>no</emphasis
+>, non ti serve un programma client speciale. Generalmente qualsiasi client può essere usato per accettare connessioni da un server di richiamata, potresti anche usare un semplice programma di terminale come <application
+>minicom</application
+> per collegarti!</para>
+
+<para
+>L'unica cosa da fare è dire al tuo modem di rispondere automaticamente (<command
+>AutoAnswer</command
+>) quando si accorge che una chiamata (<computeroutput
+>RING</computeroutput
+>) sta arrivando. Questo viene fatto con i seguenti comandi da impartire al modem:</para>
+
+<screen
+><userinput
+><command
+>AT&amp;SO=1</command
+></userinput
+>
+</screen>
+
+<para
+>Questo dice al modem di rispondere dopo uno squillo (<computeroutput
+>RING</computeroutput
+>).</para>
+
+<para
+>Come un sacco di altri programmi client, &kppp; controlla se la connessione è stata chiusa dal server e di conseguenza chiude la sessione se rileva un <computeroutput
+>NO CARRIER</computeroutput
+>. Questo, dunque, è il vero problema durante la configurazione della richiamata. <computeroutput
+>NO CARRIER</computeroutput
+> sarà sicuramente rilevato nel momento in cui il server di richiamata chiude la chiamata. Per questa ragione alcuni server di richiamata utilizzano degli speciali programmi per l'autenticazione. Quindi, come risolvi il problema? Basta che imposti il tuo modem per rimanere sempre in uno stato di <computeroutput
+>CARRIER UP</computeroutput
+> (il che non causa nessun problema se dici al programma client di chiudere la linea quando finisce la connessione). Puoi fare ciò con i seguenti comandi per il modem:</para>
+
+<screen
+><userinput
+><command
+>AT&amp;C0</command
+></userinput
+>
+</screen>
+
+<para
+>Se vuoi verificarne il funzionamento, prima devi usare un qualsiasi programma di terminale come <application
+>minicom</application
+>, e chiamare il tuo server di richiamata per vedere ciò che accade.</para>
+
+</sect2>
+
+<sect2>
+<title
+>la configurazione di &kppp;</title>
+
+<para
+>Ora che hai visto come in teoria vanno fatte le cose, come fai a settare &kppp; per gestire la connessione? </para>
+
+<para
+>la procedura è più o meno precisamente la seguente</para>
+
+<procedure>
+<step>
+<para
+>Prima di tutto dì al modem di accettare le connessioni in ingresso e di non fermare la negoziazione quando il server di richiamata chiuderà la chiamata per la prima volta. Puoi aggiungere entrambe queste opzioni nella scheda <guilabel
+>Modem</guilabel
+> della configurazione di &kppp;, aggiungendo all'opzione <guilabel
+>Stringa di chiamata</guilabel
+> il testo <command
+>AT&amp;C0S0=1DT</command
+></para>
+<para
+>Non ci sono altri cambiamenti da fare nella configurazione di &kppp;. Se incontri problemi nell'inizializzazione e reset del modem controlla la sezione<link linkend="callback-troubleshooting"
+> Risoluzione problemi</link
+> per maggiori informazioni.</para>
+</step>
+<step>
+<para
+>Pensa per un momento al tuo Server. Ricorda che i sistemi operativi &UNIX;, &Windows; e Macintosh hanno opinioni differenti riguardo a come terminare una riga in un file di testo e quindi, anche nelle procedure di autenticazione. Se ti stai collegando ad un server &Windows; usa <userinput
+>CR/LF</userinput
+>, se ti colleghi ad un server &UNIX;, usa <userinput
+>CR</userinput
+>. Se invece ti stai collegando ad un server Macintosh usa l'opzione <userinput
+>LF</userinput
+> </para>
+</step>
+<step>
+<para
+>Per queste istruzioni assumiamo che tu stia chiamando un server di richiamata &Linux;, il quale utilizza una procedura di autenticazione generica (non <acronym
+>PAP</acronym
+> o simili).</para>
+<para
+>Imposta <guilabel
+>Via script</guilabel
+>, come metodo di <guilabel
+>Autenticazione</guilabel
+> nella scheda <guilabel
+>Effettua chiamata</guilabel
+> della finestra di dialogo di configurazione dell'account, in &kppp;</para>
+</step>
+<step>
+<para
+>Adesso devi creare lo script di login. La modifica di script di login è una delle utilissime funzioni di &kppp;. Puoi trovarla nella scheda <guilabel
+>Script di accesso</guilabel
+> nella finestra di dialogo <guilabel
+>Modifica account</guilabel
+>.</para>
+
+<para
+>In questo esempio l'utente <systemitem
+>userxyz</systemitem
+> ha bisogno del seguente script per essere richiamato. Il server di richiamata ha già una tabella di nomi e dei rispettivi numeri di telefono, così, per questioni di sicurezza, puoi scegliere il numero di telefono al quale essere richiamato tramite un alias.</para>
+
+<para
+>Per ogni linea, scegli il criterio dal menu a tendina che si trova nella parte sinistra della finestra di dialogo e digita l'azione da eseguire nella casella di testo alla sua destra. Premi il bottone <guibutton
+>Aggiungi</guibutton
+> per aggiungere le singole linee allo script. Puoi inserire una linea nel mezzo dello script utilizzando il pulsante <guibutton
+>Inserisci</guibutton
+>, e con <guibutton
+>Rimuovi</guibutton
+> puoi eliminare una linea se hai commesso qualche errore.</para>
+
+<para
+>Il tuo script dovrebbe risultare più o meno come questo (senza i commenti, che quì sono le linee che iniziano con #)</para>
+
+<screen
+>Expect       ogin:           <lineannotation
+># Ricorda che utilizziamo il login generico </lineannotation>
+ID           ""              <lineannotation
+># kppp invia il nome utente che hai configurato
+nella finestra principale</lineannotation>
+Expect       for userxyz:    <lineannotation
+># mostra una lista di numeri dalla quale scegliere dove essere richiamato</lineannotation
+> 
+Send         userxyz-home    <lineannotation
+># l'utente ha scelto di essere richiamato al
+suo numero di casa</lineannotation>
+Expect       ogin:           <lineannotation
+># Ora si è nel vivo del processo di richiamata
+con una nuova connessione e quindi con un nuovo login.</lineannotation>
+ID
+Expect       assword:        <lineannotation
+># Ora manda la password</lineannotation>
+Expect       &gt;            <lineannotation
+># Aspetta per il prompt dei comandi (il
+prompt può variare)</lineannotation>
+Send         start_ppp       <lineannotation
+># questo comando fa partire il demone pppd</lineannotation
+>
+</screen>
+
+<para
+>Dopo aver atteso la richiesta di login, l'utente manda il suo ID e aspetta per una lista di numeri disponibili, quindi dice al server quale di questi numeri deve essere usato per essere richiamato. &kppp; può aprire una finestra di dialogo per la scelta di questi numeri, se il luogo dal quale chiedi la richiamata cambia spesso &eg; sei un agente di commercio e ti sposti da hotel ad hotel. Ora il server è in attesa di nome utente e passoword, ma nel frattempo chiude la chiamata e ti richiama al numero scelto. Le informazioni di login sono inviate e &kppp; aspetta per il prompt dei comandi e quindi avvia un piccolo script (che quì chiamiamo <filename
+>start_ppp</filename
+> con il quale avvia <application
+>pppd</application
+> sul server.</para>
+					      
+<para
+>lo script <filename
+>start_ppp</filename
+> può risultare qualcosa di simile:</para>
+					      
+<programlisting
+>#!/bin/sh
+stty -echo
+exec /usr/sbin/pppd -detach silent modem
+</programlisting>
+					      
+<para
+>Sicuramente la configurazione di un server <acronym
+>PPP</acronym
+> non è negli scopi di questo documento. Per informazioni più dettagliate consultare le pagine di manuale (man pages) di <application
+>pppd</application
+>. Una descrizione eccellente di un server di richiamata può essere trovata all'indirizzo <ulink url="http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback"
+> http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback</ulink
+></para>
+</step>
+</procedure>
+
+<para
+>Tutte le altre relative configurazioni, come quelle di <application
+>pppd</application
+> oppure quelle <acronym
+>IP</acronym
+>, funzionano normalmente. Non sono pertanto richiesti software particolari per prendere la linea.</para>
+
+<note>
+<para
+>La richiamata con &kppp; e altri programmi come <application
+>mgetty</application
+> o faxgetty, possono funzionare sulla stessa porta seriale. Non ci sono problemi con le chiamate in ingresso, perché &kppp; crea un file speciale (detto lock file) che dirà alle altre applicazioni che la linea in quel momento è usata da un'altra applicazione (in questo caso &kppp;).</para>
+</note>
+
+</sect2>
+
+<sect2 id="callback-troubleshooting">
+<title
+>Risoluzione dei problemi</title>
+
+<para
+>Ci sono alcuno problemi conosciuti, dati dall'utilizzo di &kppp; in modalità di richiamata:</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Quando il modem è stato configurato per rispondere automaticamente, è necessario resettarlo quando si chiude la connessione, altrimenti lui continuerà a rispondere alla linea alla quale è connesso, il che non è una buona idea se la linea in questione è la vostra linea principale.</para>
+</listitem>
+<listitem>
+<para
+>&kppp; ha qualche problema quando condivide una linea con altri programmi come <application
+>mgetty</application
+>. se <application
+>mgetty</application
+> è in esecuzione sulla stessa linea, &kppp; non riesce ad inizializzare correttamente il modem. </para>
+</listitem>
+<listitem>
+<para
+>&kppp; non è in grado di chiedere all'utente alcuni tipi di istruzioni durante un login basato su script. Sfortunatamente, utilizzando lo script di esempio di cui sopra, &kppp; chiede il nome utente anche la seconda volta che il server di richiamata la richiede. Puoi risolvere il problema impostando la tua userid all'interno dello script (soluzione non molto elegante e pratica, ma funziona).</para>
+</listitem>
+</itemizedlist>
+
+</sect2>
+
+<sect2 id="callback-resources">
+<title
+>Risorse internet per programmi server</title>
+
+<para
+>Server di richiamata basati su &Linux; disponibili in molti posti.</para>
+
+<para
+>Il famoso <application
+>mgetty</application
+> è un programma molto potente ed è anche capace di gestire connessioni in richiamata. Una descrizione di come configurare <application
+>mgetty</application
+> per questa funzione la puoi trovare su <ulink url="http://www.dyer.demon.co.uk/slug/tipscrip.htm"
+> http://www.dyer.demon.co.uk/slug/tipscrip.htm</ulink
+>, di Colin McKinnon, <email
+>colin@wew.co.uk</email
+>.</para>
+
+<para
+>Esiste anche un pacchetto pronto all'uso per &Linux; su <ulink url="http://www.icce.rug.nl/docs/programs/callback/callback.html"
+> http://www.icce.rug.nl/docs/programs/callback/callback.html</ulink
+>. Questo pacchetto è gestito da Frank B. Brokken, <email
+>frank@icce.rug.nl</email
+>. Essendo la configurazione di questo certamente non semplice, ho scritto una piccola introduzione sul suo utilizzo su <ulink url="http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback"
+>http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback/</ulink
+> che contiene anche una introduzione sulla richiamata in generale.</para>
+
+</sect2>
+</sect1>
+
+<sect1 id="nt-callback">
+<title
+>Richiamata <acronym
+>RAS</acronym
+> con &Windows; NT</title>
+
+<para
+>&Windows; NT utilizza un sistema completamente differente da quello descritto sopra. NT ha bisogno di una estensione al protocollo <acronym
+>PPP</acronym
+>, chiamata <acronym
+>CBCP</acronym
+> (Call Back Control Protocol). <application
+>Pppd</application
+> supporta questo protocollo ma dovresti ricompilarlo. Se qualcuno sia mai riuscito con una connessione ad un server di richiamata NT, per favore, ce lo faccia sapere.</para>
+
+</sect1>
+</chapter>

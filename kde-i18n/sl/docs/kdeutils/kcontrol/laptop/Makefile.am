@@ -1,0 +1,4 @@
+KDE_LANG = sl
+SUBDIRS = $(AUTODIRS)
+KDE_DOCS = kcontrol/laptop
+KDE_MANS = AUTO

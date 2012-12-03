@@ -1,0 +1,4 @@
+KDE_LANG = nl
+SUBDIRS = $(AUTODIRS)
+KDE_DOCS = kcontrol/colors
+KDE_MANS = AUTO

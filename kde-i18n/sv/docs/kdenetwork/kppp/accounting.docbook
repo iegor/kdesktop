@@ -1,0 +1,162 @@
+<appendix id="appendix-accounting-template">
+<title
+>Ett exempel på en mall för telefonkostnadshantering.</title>
+
+<para
+>Om du inte hittar en regel för ditt område måste du skriva en genom att använda följande mall. Bli inte rädd, det är väldigt enkelt.</para>
+
+<para
+>Glöm inte att skicka in reglerna som du just har skapat till underhållaren av &kppp;. Reglerna som du har skapat kan kontrolleras så att de har giltig syntax med &kppp;s kommandoradsväljaren <userinput
+><option
+>-r</option
+> <replaceable
+>regelfil</replaceable
+></userinput
+>, och måste installeras i <filename class="directory"
+>${KDEDIR}/share/apps/kppp/Rules</filename
+> eller i <filename class="directory"
+>${HOME}/.kde/share/apps/kppp/Rules</filename
+> innan du kan välja dem i den här dialogrutan.</para>
+
+<programlisting
+>################################################################
+#
+# Licens
+# Den här mallen är (c) av Mario Weilguni &lt;mweilguni@kde.org&gt;
+# Den licensieras under samma villkor som kppp-paketet, 
+# som den är en del av
+#
+################################################################
+#
+# Det här är ett prov på en regeluppsättning för kppp. Du kan använda
+# det som en mall när du måste skapa dina egna regeluppsättningar. Om
+# du gör det, ta bort alla kommentarer och lägg till dina egna. Det här gör
+# att andra användare lättare kan kontrollera din regeluppsättning.
+# 
+# Var snäll signera tariffilen med ditt namn och e-postadress
+# så att jag kan kontakta dig om nödvändigt.
+#
+# Observera: reglerna i den här regeluppsättningen är inte särskilt vettiga
+#            och är endast i demonstrationssyfte
+#
+# Not om filnamn:
+#	när du skapar din egen regeluppsättning, använd "_" i filnamn
+#	istället för blanktecken och använd filändelsen ".rst
+#	   t.ex. "Sverige lokala samtal"
+#          --> filen ska sparas som "Sverige_lokala_samtal.rst"
+#
+# Tack, Bernd Wuebben
+# wuebben@math.cornell.edu / wuebben@kde.org
+################################################################
+
+
+################################################################
+#
+# Namn för regeluppsättningen. Det BEHÖVS av revisionssyfte.
+#
+################################################################
+name=default
+
+################################################################
+# valutainställningar
+################################################################
+
+# definierar att SEK (Svenska kronor) ska användas som
+# valutasymbol (inte helt nödvändigt, förval = "$")
+currency_symbol=SEK
+
+# Definiera platsen för valutasymbolen.
+# (inte helt nödvändigt, förval är höger: "right")
+currency_position=right 
+
+# Definiera antalet signifikanta siffror.
+# (inte helt nödvändigt, förval är "2"
+currency_digits=2
+
+
+
+################################################################
+# anslutningsinställningar
+################################################################
+
+# Observera: regler används ovanifrån och neråt, den
+#            SISTA regeln som passar in är den som används
+#            för kostnadsberäkningar.
+
+# Det här ändras så fort du ansluter. Om du inte behöver betala
+# för varje anslutning, använd "0" här eller kommentera bort det.
+per_connection=0.0
+
+
+# minimal kostnad per anslutning. Om kostnaden för ett
+# telefonsamtal är mindre än detta värde, så används detta istället
+minimum_costs=0.0
+
+
+# Du betalar 0.74 för de första 180 sekunderna (3 minuter) oberoende
+# av om du är ansluten 1 sekund eller 180 sekunder.
+# Den här regeln får prioritet över alla andra regler under
+# de första 180 sekunderna, i synnerhet den 'förvalda' regeln
+# Ta en titt på costgraphs.gif i katalogen docs
+# i kppp-distributionen för en grafisk illustration.
+flat_init_costs=(0.74,180)
+
+# Det här är den förvalda regeln som används om ingen annan
+# passar. Den första komponenten "0.1" är priset för en
+# "enhet", medan "72" är längden i sekunder.
+# Därför betyder den följande regeln: "Var 72:a sekund läggs
+# 0,1 SEK till i räkningen"
+default=(0.1, 72)
+
+#
+# mer komplicerade regler:
+#
+
+# "på måndag till söndag från 12,00  till 23,59 är kostnaden
+# 0,2 var 72:a sekund"
+on () between () use (0.2, 2)
+
+# samma som ovan
+on (monday..sunday) between () use (0.2, 2)
+
+# samma som ovan. Du måste använda 24-timmarstid, annars kommer inte
+# beräkningen fungera riktigt. (Exempel: skriv 15:00 för 3 på eftermiddagen)
+on (monday..sunday) between (0:00..23:59) use (0.2, 2)
+
+# gäller på fredag, lördag, söndag och måndag från 8 till 13
+on (friday..monday) between (8:00..13:00) use(0.3,72)
+
+# Observera:
+on(monday..friday) between (21:00..5:00) use (0.4,2)
+# innefattar INTE lördag 0:00-5:00, bara måndag..fredag, som det säger.
+
+# gäller på ett givet datum (juldagen)
+on (12/25) between () use (0.3,72)
+
+# ett intervall med datum och en veckodag
+on (12/25..12/27, 12/31, 07/04, monday) between () use (0.4, 72)
+
+# använd det här för påsk
+on (easter) between () use (0.3,72)
+
+# påsk + 50 days (pingstmåndagen)
+on (easter+50) between () use (0.3,72)
+
+on (thursday) between (20:00..21:52) use (8.2, 1)
+
+
+# Reglerna "on()" ovan hör bara ihop med nuvarande tid. Du kan också
+# skapa en regel som beror på antalet sekunder som du har varit ansluten
+# genom att ange den här tiden som ett tredje argument till "use()".
+# Till exempel, låt oss anta att normal taxa på kvällen är 0,20 per minut,
+# och den går ner 20% efter en timmes anslutningstid. Det här kan anges
+# som:
+
+on () between (19:30..08:00) use (0.20, 60)
+on () between (19:30..08:00) use (0.16, 60, 3600)
+
+# Observera att de här reglerna, som alla andra, beror på i vilken
+# ordning de anges.
+</programlisting>
+
+</appendix>

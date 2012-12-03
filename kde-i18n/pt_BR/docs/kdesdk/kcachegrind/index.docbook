@@ -1,0 +1,1034 @@
+<?xml version="1.0" ?>
+<!DOCTYPE book PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" "dtd/kdex.dtd" [
+  <!ENTITY kcachegrind '<application
+>KCachegrind</application
+>'>
+  <!ENTITY cachegrind "<application
+>Cachegrind</application
+>">
+  <!ENTITY calltree "<application
+>Calltree</application
+>">
+  <!ENTITY callgrind "<application
+>Callgrind</application
+>">
+  <!ENTITY valgrind "<application
+>Valgrind</application
+>">
+  <!ENTITY oprofile "<application
+>OProfile</application
+>">
+  <!ENTITY kappname "&kcachegrind;">
+  <!ENTITY package "kdesdk">
+  <!ENTITY % addindex "IGNORE">
+  <!ENTITY % Brazilian-Portuguese "INCLUDE">
+]>
+
+<!-- ................................................................ -->
+
+<book lang="&language;">
+
+<bookinfo>
+<title
+>O Manual do &kcachegrind;</title>
+
+<authorgroup>
+<author
+><firstname
+>Josef</firstname
+> <surname
+>Weidendorfer</surname
+> <affiliation
+> <address
+><email
+>Josef.Weidendorfer@gmx.de</email
+></address>
+</affiliation>
+</author>
+
+<othercredit role="translator"
+><firstname
+>Marcus</firstname
+><surname
+>Gama</surname
+><affiliation
+><address
+><email
+>marcus.gama@gmail.com</email
+></address
+></affiliation
+><contrib
+>Tradução</contrib
+></othercredit
+> 
+
+</authorgroup>
+
+<copyright>
+<year
+>2002-2004</year>
+<holder
+>Josef Weidendorfer</holder>
+</copyright>
+<legalnotice
+>&FDLNotice;</legalnotice>
+
+<date
+>2004-07-27</date>
+<releaseinfo
+>0.4.6</releaseinfo>
+
+<abstract>
+<para
+>O &kcachegrind; é uma ferramenta de visualização de dados de auditoria, escrito usando o ambiente &kde;. </para>
+</abstract>
+
+<keywordset>
+<keyword
+>KDE</keyword>
+<keyword
+>kdesdk</keyword>
+<keyword
+>Cachegrind</keyword>
+<keyword
+>Callgrind</keyword>
+<keyword
+>Valgrind</keyword>
+<keyword
+>Auditoria</keyword>
+</keywordset>
+
+</bookinfo>
+
+
+<chapter id="introduction">
+<title
+>Introdução</title>
+
+<para
+>O &kappname; é um navegador para dados produzidos por ferramentas de auditoria. Este capítulo esclarece para que serve um auditoria, como ela é feita, e fornece alguns exemplos de ferramentas de auditoria disponíveis. </para>
+
+<sect1 id="introduction-profiling">
+<title
+>Auditoria</title>
+
+<para
+>Quando você desenvolve um programa, um dos últimos passos muitas vezes envolve otimizações de desempenho. Como não faz sentido otimizar funções raramente usada, uma vez que elas não consumirão muito tempo de execução, você precisa saber em qual parte do seu programa a maior parte do tempo é consumido. </para>
+
+<para
+>Para um código sequencial, coletar dados estatísticos das características em tempo de execução como a quantidade de tempo gasto nas funções e linhas de código normalmente é o suficiente. Isto é chamado Auditoria. O programa é executado sob controle de uma ferramenta de auditoria, que fornece um resumo de um execução ao final dela. Em contraste, para código paralelo, problemas de desempenho tipicamente são causados quando um processamento está esperando por dados de outro. Como este tempo de espera normalmente não pode ser facilmente atribuído, aqui é melhor gerar uma trilha de eventos ocorridos na linha de tempo. O KCachegrind não pode visualizar este tipo de dado. </para>
+
+<para
+>Após analisar os dados da auditoria produzida, deve ser fácil ver os trechos mais importantes e pontos de estrangulamento do código. Por exemplo, suposições sobre a contagem de chamadas podem ser verificadas, e identificadas regiões do código que pode ser otimizadas. Além disso,  sucesso da otimização pode ser verificado novamente com a execução de outra auditoria. </para>
+</sect1>
+
+<sect1 id="introduction-methods">
+<title
+>Métodos de Auditoria</title>
+
+<para
+>A medida exata do tempo decorrido ou de eventos ocorridos na execução de uma região do código (por exemplo uma função) necessida que código adicional para medidas seja inserido antes a após da referida região. Este código cronometra o tempo ou conta a ocorrência de um evento, e calcula a diferença. Assim, o código original teve que ser mudado antes da execução. Isto é chamado instrumentação. A instrumentação pode ser feita pelo próprio programador, pelo compilador ou pelo sistema em tempo de execução. Como as regiões de interesse normalmente estão aninhadas, o cômputo geral da medida sempre influencia a medida em si. Assim, a instrumentação deve ser feita seletivamente e os resultados devem ser interpretados com cuidado. É claro, isto torna a análise do desempenho por medidas exatas um processo muito complexo.</para>
+
+<para
+>A medição exata é possível em função os contadores de hardware (incluindo contadores incrementados em um tique de tempo) fornecidos nos processadores modernos, que são incrementados sempre que um evento acontece. Como nós desejamos atribuir eventos para regiões de código, sem os contadores, nós teríamos que manipular cada evento incrementando um contador para a região de código atual por nós mesmos. Fazer isto no software é claramente impossível; mas na suposição que a distribuição do evento pelo código fonte é semelhante quando procuramos somente a cada enésimo evento ao invés de evento por evento, nós construímos um método de medição que é ajustável em função do todo. Isto é chamado Amostragem. Amostragem Baseada em Tempo (do inglês TBS) é feita usando um temporizador que regularmente verifica o contador do programa para criar um histograma ao longo do código do programa. Amostragem Baseada em Evento (do inglês EBS) é feita aproveitando os contadores de hardware dos modernos processadores, e é feita usando um modo onde um manipulador de interrupção é chamado em um contador abaixo do fluxo, gerando um histograma da distribuição do evento correspondente. No manipulador, o contador do evento está sempre reinicializado para o 'n' do método de amostragem. A vantagem da amostragem é que o código não precisa ser mudado, mas ela ainda deve atentar para uma restrição: a suposição acima será mais correta se n for pequeno, mas quanto menor o n, maior o todo do manipulador de interrupção.</para>
+
+<para
+>Outro método de medição é simular coisas acontecendo no sistema do computador ao executar o código fornecido, isto é, executar uma simulação dirigida. A simulação é sempre derivada a partir mais ou menos da precisão do modelo da máquina. No entanto, com modelos mais detalhados que se aproximem bastante da realidade, o tempo de simulação pode ser inaceitavelmente alto na prática. A vantagem é que a arbitrária e complexa medição/simulação do código pode ser inserida em um código sem distorçer os resultados. Fazer isto diretamente antes da execução (chamada instrumentação em tempo de execução), usando o binário original, é muito confortável para o usuário: nenhuma recompilação é necessária. O método se torna usável quando simulamos somente partes de uma máquina com um modelo simples. Além disso, resultados produzidos por modelos simples frequentemente são mais fáceis de entender: o problema com o hardware real é que frequentemente estes resultados incluem efeitos de sobreposição das diferentes partes da máquina.</para>
+</sect1>
+
+<sect1 id="introduction-tools">
+<title
+>Ferramentas de Auditoria</title>
+
+<para
+>A ferramenta de auditoria mais conhecida do GCC é o <application
+>gprof</application
+>: Você precisa compilar seu programa com a opção <option
+>-pg</option
+>; executar o programa gera um arquivo <filename
+>gmon.out</filename
+>, que será transformado para uma forma legível pelos humanos com o <command
+>gprof</command
+>. Uma desvantagem é a necessidade do passo de recompilação para preparar o executável, que deve ser ligado estaticamente. O método usado aqui é instrumentação gerada na compilação que está medindo arcos de chamadas ocorrendo entre funções e gerando contagens de chamadas, em conjunto com o TBS, que fornece um histograma da distribuição do tempo pelo código. Usando ambas as informações, é possível calcular heuristicamente o tempo inclusivo das funções, isto é o tempo gasto em uma função juntamente com todas as funções chamadas a partir dela. </para>
+
+<para
+>Para medições exatas da ocorrência de eventos, existem bibliotecas com funções capazes de ler os contadores de desempenho do hardware. As mais conhecidas aqui são o remendo PerfCtr para o Linux, e as bibliotecas independentes de arquitetura PAPI e PCL. Ainda assim, a medição exata necessida de instrumentação do código, como indicado acima. Pode-se usar as bibliotecas propriamente ditas ou usar sistemas de instrumentação automática como o ADAPTOR (para instrumentação de código FORTRAN) ou DynaProf (injeção de código através do DynInst).</para>
+
+<para
+>O &oprofile; é uma ampla ferramenta de auditoria para Linux que usa Amostragem.</para>
+
+<para
+>Em muitos aspectos, uma maneira confortável de Auditoria é usar o Cachegrind ou Callgring, que são simuladores usando o ambiente de trabalho de instrumentação em tempo de execução do &valgrind;. Isto porque não é necessário acessar contadores de hardware (algo frequentemente difícil com as instalações Linux atuais), e binários para serem auditados podem ser deixados sem modificações, sendo uma boa alternativa em relação a outras ferramentas de auditoria. A desvantagem do retardo da simulação pode ser reduzida fazendo a simulação somente das partes do programa que interessam, e talvez somente em algumas poucas interações de um loop. Sem instrumentação de simulação/medição, o uso do Valgrind somente possui um retardo no intervalo de 3 à 5. E quando somente o gráfico de chamadas e contadores de chamadas são relevantes, o simulador de cache pode ser desligado. </para>
+
+<para
+>A simulação de cache é o primeiro passo na aproximação de tempos reais, uma vez que nos modernos sistemas, o tempo de execução é muito sensível à exploração das chamadas caches (pequenos e rápidos buffers que aceleram acessos repetitivos às mesmas células de memória). O &cachegrind; faz simulação de cache travando os acessos à memória. Os dados produzidos incluem número de instruções/acesso à dados na memória e perdas nas caches de nível 1 e 2, e relaciona-o às linhas de código e funções do programa executável. Através da combinação destas contagens de perdas, usando típicas latências perdidas, uma estimativa do tempo gasto pode ser fornecida. </para>
+
+<para
+>O Callgrind é uma extensão do &cachegrind; que constrói um gráfico de chamadas do programa em tempo real, &ie; como as funções chamam umas às outras e quantos eventos ocorrem durante a execução de uma função. Além disso, os dados da auditoria a serem coletados podem ser separados por contexto de linhas de execução e sequência de chamadas. Ele pode fornecer dados de auditoria no nível instrução para permitir anotação do código desassemblado. </para>
+</sect1>
+
+<sect1 id="introduction-visualization">
+<title
+>Visualização</title>
+
+<para
+>Ferramentas de auditoria produzem tipicamente uma grande quantidade de dados. O desejo de facilmente navegar pelo gráfico de chamadas, além de rapidamente alternar o modo de ordenação das funções e exibir diferentes tipos de eventos, motivaram este aplicativo GUI que permitirá a execução destas tarefas. </para>
+
+<para
+>O &kappname; é um visualizador de dados de auditoria preenchendo estas necessidades. A despeito de ter sido programado inicialmente para navegar dados do &cachegrind; e &calltree;, existem conversores disponíveis capazes de exibir dados de auditoria produzidos por outras ferramentas. No apêndice, uma descrição do formato do arquivo do Cachegrind/Callgrind é fornecida. </para>
+
+<para
+>Além de uma lista de funções ordenadas de acordo com medidas de custo exclusivas ou inclusivas, e opcionalmente agrupadas por arquivo fonte, biblioteca compartilhada ou classe C++, os recursos do &kappname; incluem diversas formas de visualização para uma função selecionada, quais sejam <itemizedlist>
+<listitem
+><para
+>uma visão de gráfico de chamadas, que mostra uma seção do gráfico de chamadas ao redor da função selecionada,</para>
+</listitem>
+<listitem
+><para
+>uma visão de mapa em árvore, que permite visualizar chamadas aninhadas relacionadas juntas com métrica de custo inclusiva para rápida detecção visual de funções problemáticas,</para>
+</listitem>
+<listitem
+><para
+>código fonte e visões anotadas desassembladas, permitindo ver detalhes do custo relacionado às linhas de código e instruções assembler.</para>
+</listitem>
+</itemizedlist>
+
+</para>
+</sect1>
+</chapter>
+
+<chapter id="using-kcachegrind">
+<title
+>Usando o &kcachegrind;</title>
+
+<sect1 id="using-profile">
+<title
+>Gerando Dados para Visualizar</title>
+
+<para
+>Primeiro, devemos gerar dados de desempenho medindo os aspectos das características em tempo de execução de um aplicativo, usando uma ferramenta de auditoria. O &kcachegrind; propriamente dito não inclui nenhuma ferramenta de auditoria, mas pode ser melhor aproveitado em conjunto com o &callgrind;, e usando um conversor, pode também ser usado para visualizar dados produzidos com o &oprofile;. Apesar do escopo deste manual não ser o de documentar como auditar com estas ferramentas, a próxima seção fornece um pequeno tutorial para início rápido que você pode tomar como base. </para>
+
+<sect2>
+<title
+>&callgrind;</title>
+
+<para
+>O &callgrind; está disponível em <ulink url="http://kcachegrind.sf.net"
+> http://kcachegrind.sf.net</ulink
+>. Observe que ele era anteriormente chamado de &calltree;, mas o nome foi abandonado. </para>
+
+<para
+>O uso mais comum é preceder a linha de comando que inicia seu aplicativo com o <application
+>callgrind</application
+>, como em <blockquote
+><para
+><command
+>callgrind meuprograma meusargs</command
+></para
+></blockquote
+>. Ao término do programa, um arquivo <filename
+>callgrind.out.pid</filename
+> será gerado o qual pode ser carregado para o &kcachegrind;. </para>
+
+<para
+>Um uso mais avançado é gerar dados de auditoria sempre que uma determinada função de seu aplicativo é chamada. Por exemplo, para o <command
+>konqueror</command
+>, para ver dados de auditoria somente para renderização de uma página web, você pode decidir gerar os dados sempre que você selecionar o ítem de menu Ver/Recarregar. Isto corresponde a uma chamada ao <symbol
+>KonqMainWindow::slotReload</symbol
+>. Use <blockquote
+><para
+><command
+> callgrind --dump-before=KonqMainWindow::slotReload konqueror </command
+></para
+></blockquote
+> Isto produzirá múltiplos arquivos de dados de auditoria com uma sequência numérica crescente no final dos nomes de arquivo. Um arquivo sem um número no final (terminando somente no PID do processo) também será produzido. Carregando este arquivo no &kcachegrind;, todos os outros serão também carregados, e podem ser vistos na Visão Geral de Partes e Lista de Partes. </para>
+
+</sect2>
+
+<sect2>
+<title
+>&oprofile;</title>
+
+<para
+>O &oprofile; está disponível em <ulink url="http://oprofile.sf.net"
+>http://oprofile.sf.net</ulink
+>. Siga as instruções de instalação no site web. Mas antes, verifique se sua distribuição já não fornece-o empacotado (como a SuSE). </para>
+
+<para
+>Uma ampla auditoria do sistema somente é permitida ao usuário root, onde todas as ações do sistema podem ser observadas. Logo, o descrito a seguir deve ser feito como root. Primeiro, configure o processo de auditoria, usando a GUI <command
+>oprof_stat</command
+> ou a ferramenta de linha de comando opcontrol. A configuração padrão deve estar no modo tempo (TBS, veja a introdução). Para iniciar a medição, execute <command
+>opcontrol -s</command
+>. Então execute o aplicativo a ser analisado, e após isso, execute um <command
+>opcontrol -d</command
+>. Isto gravará todos os resultados medidos em arquivos sob o diretório <filename
+>/var/lib/oprofile/samples/</filename
+>. Para ser capaz de visualizar os dados no &kcachegrind;, coloque-os em um diretório vazio: <blockquote
+><para
+><command
+> opreport -gdf | op2callgrind </command
+></para
+></blockquote
+> Isto produzirá uma grande quantidade de arquivos, um para cada programa que está em execução no sistema. Cada um deles pode ser carregado no &kcachegrind; conforme desejar. </para>
+
+</sect2>
+</sect1>
+
+<sect1 id="using-basics">
+<title
+>Fundamentos da Interface com o Usuário</title>
+
+<para
+>Ao iniciar o &kcachegrind; com um arquivo de dados de auditoria como argumento, ou após carregar um através do Arquivo/Abrir, você verá uma barra lateral contendo a lista de funções à esquerda, e na parte principal à direita, uma área com visualizações para a função selecionada. Esta área de visualização pode ser configurada arbitrariamente para mostrar múltiplas visualizações de uma vez. </para>
+
+<para
+>Na primeira inicialização, esta área será dividida em uma parte superior e inferior, cada uma com diferentes visualizações selecionáveis por abas. Para mover as visualizações, use o menu de contexto das abas, e ajuste os divisores entre as visualizações. Para alternar rapidamente entre as diferentes disposições de visualização, use Ver/Disposição/Duplicar, mude a disposição e alterne entre as disposições com Ver/Disposição/Próximo (ou melhor de acordo com os atalhos de teclado). </para>
+
+<para
+>O importante para a visualização é o tipo de evento ativo: para o &callgrind;, isto é por exemplo Perdas de Cache ou Estimativa de Ciclo, para o &oprofile;, isto é "Temporizador" no caso mais simples. Você pode mudar o tipo de evento através da caixa combinada na barra de ferramentas ou na visão de Tipo de Evento. Uma primeira visão geral das características em tempo de execução deve ser fornecida quando você seleciona a função <symbol
+>main</symbol
+> na lista à esquerda, e observa a visualização do gráfico de chamadas. Nele, você vê as chamadas ocorrendo em seu programa. Observe que a visão do gráfico de chamadas somente mostra funções com alta contagem de eventos. Executar um duplo-clique em uma função no gráfico, mudará a representação para mostrar as funções ao redor da selecionada. </para>
+
+<para
+>Se desejar explorar mais a GUI, além deste manual, dê uma olhada na seção de documentação do site web <ulink url="http://kcachegrind.sf.net"
+>http://kcachegrind.sf.net</ulink
+>. Além disso, cada widget no &kcachegrind; possui ajuda do tipo <quote
+>O Que é Isso</quote
+>. </para>
+</sect1>
+
+</chapter>
+
+
+<chapter id="kcachegrind-concepts">
+<title
+>Conceitos Básicos</title>
+
+<para
+>Este capítulo explana alguns conceitos do &kcachegrind; e introduz termos usados na interface. </para>
+
+<sect1 id="concepts-model">
+<title
+>O Modelo de Dados para Dados de Auditoria</title>
+
+<sect2>
+<title
+>Entidades de Custo</title>
+
+<para
+>Contagem de custos de eventos (como Perdas na L2) são atribuídas a entidades de custo, que são ítens com relacionamentos com o código fonte ou estrutura de dados de um programa fornecido. Entidades de custo não somente podem ser código simples ou posições de dados, mas também posições de referência. Por exemplo, uma chamada tem uma fonte e um alvo, ou um endereço de dados pode ter um tipo de dado e uma posição do código onde sua alocação ocorreu. </para>
+
+<para
+>As entidades de custo reconhecidas pelo KCacheGrind são fornecidas a seguir. Posições Simples: <itemizedlist
+> <listitem
+><para
+> Instrução. Uma instrução assembler em um endereço esecificado. </para
+></listitem
+> <listitem
+><para
+> Linha de Código de uma Função. Todas as instruções que o compilador (através de informações de depuração) mapeia para uma linha de código determinada especificada pelo nome do arquivo fonte e número da linha, e que são executadas no contexto de alguma função. O útlimo requisito é necessário porque uma linha fonte dentro de uma função em linha pode aparecer no contexto de múltiplas funções. Instruções sem nenhum mapeamento para uma linha de código atual são mapeados para o número de linha 0 no arquivo "???". </para
+></listitem
+> <listitem
+><para
+> Função. Todas as linhas de código de uma função fornecida que consistem na função propriamente dita. Uma função é especificada por seu nome e sua localização em algum objeto binário, se disponível. O último requisito é necessário porque cada objeto binário de um programa simples pode manter funções com o mesmo nome (elas podem ser acessadas por exemplo com o dlopen/dlsym; o linkador em tempo de execução resolve funções em uma ordem de busca fornecida de objetos binários usados). Se uma ferramenta de auditorianão puder detectar o nome símbolo de uma função, por exemplo devido às informações de depuração não estarem disponíveis, seja pelo endereço da primeira instrução executada tipicamente ser usado, ou "???". </para
+></listitem
+> <listitem
+><para
+>Objeto Binário. Todas as funções nas quais o código está dentro do intervalo de um objeto binário fornecido, seja o executável principal ou uma biblioteca compartilhada. </para
+></listitem
+> <listitem
+><para
+>Arquivo Fonte. Todas as funções nas quais a primeira instrução é mapeada para uma linha de um arquivo fonte fornecido. </para
+></listitem
+> <listitem
+><para
+> Classe. Nomes símbolos de funções tipicamente são ordenados hierarquicamente no espaço de nomes, por exemplo espaço de nomes C++, ou linguagens orientadas a classes de objeto. Assim, uma classe pode manter funções de classes ou embutir classes propriamente ditas. </para
+></listitem
+> <listitem
+><para
+> Parte de Auditoria. Alguma seção de tempo de uma auditoria executada, com um ID de cabeçalho fornecido, ID do processo e linha de comando executada. </para
+></listitem
+> </itemizedlist
+> Como visto na lista, um conjunto de entidades de custo frequentemente define outra entidade de custo. Assim, existe uma inclusão hierárquica de entidades de custo que deve ser óbvia a partir da descrição acima. </para>
+
+<para
+>Posições de referência: <itemizedlist
+> <listitem
+><para
+> Chamada de um endereço de instrução para função alvo. </para
+></listitem
+> <listitem
+><para
+> Chamada de uma linha de código para função alvo. </para
+></listitem
+> <listitem
+><para
+> Chamada de código de função para função alvo. </para
+></listitem
+> <listitem
+><para
+> Salto (in)condicional do código para instrução alvo. </para
+></listitem
+> <listitem
+><para
+> Salto (in)condicional do código para linha alvo. </para
+></listitem
+> </itemizedlist
+> Saltos entre funções não são permitidos, uma vez que isto não faz sentido em um gráfico de chamadas. Assim, construções como manipulação de exceções e saltos longos em C terão que ser traduzidas para aparecerem na pilha de chamadas se necessário. </para>
+
+</sect2>
+
+
+
+<sect2>
+<title
+>Tipos de Eventos</title>
+
+<para
+>Tipos de eventos arbitrários podem ser especificados nos dados de auditoria fornecendo-lhes um nome. Seu custo relacionado a uma entidade de custo é um inteiro de 64 bits. </para>
+<para
+>Tipos de eventos os quais os custos são especificados em um arquivo de dados de auditoria são chamados eventos reais. Além disso, tipos podem especificar fórmulas para tipos de eventos calculados a partir de eventos reais, sendo chamados de eventos herdados. </para>
+</sect2>
+
+</sect1>
+
+<sect1 id="concepts-state">
+<title
+>Visualização de Estado</title>
+
+<para
+>A visualização de estado de uma janela do KCachegring inclui: <itemizedlist
+> <listitem
+><para
+> o tipo de evento primário e secundário escolhido para exibição, </para
+></listitem
+> <listitem
+><para
+> o grupo de função (usado na lista de Auditoria de Função e coloração de entidade), </para
+></listitem
+> <listitem
+><para
+> a auditoria de partes cujos custos estão incluídos na visualização, </para
+></listitem
+> <listitem
+><para
+> uma entidade de custo ativa (por exemplo a função selecionada a partir da aba de auditoria de função), </para
+></listitem
+> <listitem
+><para
+> uma entidade de custo selecionada. </para
+></listitem
+> </itemizedlist
+> Isto influencia as visualizações. </para>
+<para
+>Visualizações sempre são mostradas por uma, a ativa, entidade de custo. Quando uma determinada visualização não é apropriada para uma entidade de custo, ela é desabilitada (por exemplo ao selecionar um objeto ELF na lista de grupo com um duplo-clique, a anotação de código para um objeto ELF não faz sentido). </para>
+<para
+>Por exemplo para uma função ativa, a lista de chamadas mostra todas as funções chamadas a partir da ativa. Aguém pode selecionar uma destas funções sem torná-la ativa. Se o gráfico de chamada é mostrado logo ao lado, ele automaticamente selecionará a mesma função. </para>
+
+</sect1>
+
+<sect1 id="concepts-guiparts">
+<title
+>Partes da GUI</title>
+
+<sect2>
+<title
+>Abas Laterais</title>
+<para
+>Abas laterais (Embutíveis) são janelas laterais que podem ser colocadas em qualquer lado de uma janela do KCachegring. Elas sempre contém uma lista de entidades de custo ordenadas de alguma maneira. <itemizedlist>
+<listitem
+><para
+>Auditoria de Função. A Auditoria de Função é uma lista de funções mostrando custo inclusivo e exclusivo, contagem de chamadas, nome e posição de funções. </para
+></listitem>
+<listitem
+><para
+>Visão Geral das Partes </para
+></listitem>
+<listitem
+><para
+>Pilha de Chamadas </para
+></listitem>
+</itemizedlist>
+</para>
+</sect2>
+
+<sect2>
+<title
+>Área de Visualização</title>
+<para
+>A área de visualização, normalmente a parte direita da janela principal do KCachegrind, é constituída de uma (padrão) ou mais Visões em Aba, alinhadas horizontalmente ou verticalmente. Cada visão em aba mantém visualizações diferentes de uma entidade de custo por vez. O nome desta entidade é fornecido na visão em aba superior. Se existirem múltiplas visões em aba, somente uma fica ativa. O nome da entidade na aba de visão ativa é mostrado em negrito e determina a entidade de custo ativa da janela do KCachegrind. </para>
+</sect2>
+
+<sect2>
+<title
+>Áreas de uma Visão em Aba</title>
+<para
+>Cada visão em aba pode conter quatro áreas de visão, nomeadas Superior, Direita, Esquerda e Inferior. Cada área pode conter múltiplas visualizações empilhadas. A parte visível de uma área é selecionada por uma barra de abas. Barras de abas da área superior e direita estão no topo, barras de abas da área inferior e esquerda estão na base. Você pode especificar que tipo de visualização deve ser colocado em qual área usando o menu de contexto das abas. </para>
+</sect2>
+
+<sect2>
+<title
+>Visualização Sincronizada através da Entidade Selecionada na Visão em Abas</title>
+<para
+>Além de uma entidade ativa, cada visão em aba tem uma entidade selecionada. Como a maioria dos tipos de visualização mostram múltiplas entidades com a ativa centrada, você muda o ítem selecionado navegando dentro de uma visualização (clicando com o mouse ou usando o teclado). Tipicamente, ítens selecionados são mostrado em um estado destacado. Mudando a entidade selecionada em uma visualização de uma visão em aba, todas as outras visualizações na visão em abas destacarão a nova entidade selecionada. </para>
+</sect2>
+
+<sect2>
+<title
+>Sincronização entre Visões em Abas</title>
+<para
+>Se existirem múltiplas visões em abas, uma mudança de seleção em uma visão em aba faz um mudança de ativação na visão em aba seguinte (à direita/abaixo). Este tipo de ligação por exemplo deve permitir uma rápida navegação nos gráficos de chamadas. </para>
+</sect2>
+
+<sect2>
+<title
+>Disposições</title>
+<para
+>A disposição para todas as visões em aba de uma janela pode ser salva (veja o ítem de menu Ver/Disposição). Após duplicar a disposição atual (Ctrl+Mais ou menu) e mudar alguns tamanhos ou mover uma visualização para outra área de uma visão em abas, você pode rapidamente alternar entre a disposição antiga e a nova através do Ctrl+Esquerda/Direita. O conjunto de disposições será armazenado entre sessões do KCachegring do mesmo comando de auditoria. Você pode tornar o conjunto atual de disposições o padrão para novas sessões do KCachegrind, ou restaurar para o conjunto de disposições padrão. </para>
+</sect2>
+</sect1>
+
+<sect1 id="concepts-sidedocks">
+<title
+>Abas Laterais</title>
+
+<sect2>
+<title
+>Auditoria Plana</title>
+<para
+>A auditoria plana contém uma lista de grupos e uma lista de funções. A lista de grupos contém todos os grupos onde o custo ocorre, dependendo do tipo de grupo escolhido. A lista de grupos é oculta quando o agrupamento é desligado. </para>
+<para
+>A lista de funções contém as funções do grupo selecionado (ou todas as funções se o agrupamente estiver desligado), ordenadas por alguma coluna, por exemplo os custos gastos por ele ou inclusivos. Existe um número máximo de funções mostradas na lista, que é configurável em Configurações/Configurar o KCachegrind. </para>
+</sect2>
+
+<sect2>
+<title
+>Visão Geral das Partes</title>
+<para
+>Na execução de uma auditoria, múltiplos arquivos de dados auditados podem ser produzidos, os quais podem ser carregados simultaneamente no KCachegrind. A aba lateral Visão Geral de Partes mostra estes arquivos, ordenados horizontalmente de acordo com a hora de criação; os tamanhos dos retângulos são proporcionais ao custo gasto nas partes. Você pode selecionar uma ou diversas partes para limitar os custos mostrados nas outras visões do KCachegrind às partes selecionadas. </para>
+<para
+>As partes são posteriormente subdivididas: existe um modo e particionamento e um de divisão de custo inclusivo: <itemizedlist>
+<listitem
+><para
+>Particionamento: Você vê o particionamento em grupos para uma parte dos dados de auditoria, de acordo com o tipo de grupo selecionado. Por exemplo se o grupo de objetos ELF estiver selecionado, você vê retângulos coloridos para cada objeto ELF usado (biblioteca compartilhada ou executável), dimensionado de acordo com o custo gasto nele. </para
+></listitem>
+<listitem
+><para
+>Divisão de Custo Inclusivo: Um retângulo mostrando o custo inclusivo da função ativa atual na parte é mostrado. Ele divide-se novamente para mostrar os custos inclusivos de suas chamadas. </para
+></listitem>
+</itemizedlist>
+</para>
+</sect2>
+
+<sect2>
+<title
+>Pilha de Chamadas</title>
+<para
+>Isto é uma pilha de chamadas 'mais provável' puramente fictícia. Ela é construída iniciando com a função ativa atual e adicionar as chamadas/chamados com custo mais alto de cima para baixo. </para>
+<para
+>As colunas 'Custo' e 'Chamadas' mostram o custo usado para todas as chamadas a partir da função na linha acima. </para>
+</sect2>
+</sect1>
+
+<sect1 id="concepts-visualizations">
+<title
+>Visualizações</title>
+
+<sect2>
+<title
+>Tipos de Eventos</title>
+<para
+>Esta lista mostra todos os tipos de custo disponíveis e o custo próprio correspondente e inclusivo da função ativa atual para o tipo de evento especificado. </para>
+<para
+>Escolhendo um tipo de evento na lista, você muda o tipo de custo mostrado por todo o KCachegrind para o selecionado. </para>
+</sect2>
+
+<sect2>
+<title
+>Lista de Chamadas</title>
+<para
+>Estas listas mostram chamadas para/da função ativa atual. Com 'todas' funções chamadoras/chamadas significando que podem ser alcançadas na direção chamadora/chamada, mesmo se outras funções estiverem interpostas. </para>
+<para
+>Visões de lista de chamada incluem: <itemizedlist>
+<listitem
+><para
+>Chamadores Diretos </para
+></listitem>
+<listitem
+><para
+>Chamados Diretos </para
+></listitem>
+<listitem
+><para
+>Todos os Chamadores </para
+></listitem>
+<listitem
+><para
+>Todas as Chamadas </para
+></listitem>
+</itemizedlist>
+</para>
+</sect2>
+
+<sect2>
+<title
+>Mapas</title>
+<para
+>Uma visualização de mapa em árvore do tipo de evento primário, acima e abaixo da hierarquia de chamadas. Cada retângulo colorido representa uma função; seu tamanho tenta ser proporcional ao custo gasto nela enquanto a função ativa estiver em execução (no entanto, existem restrições de desenho). </para>
+<para
+>Para o Mapa de Chamador, o gráfico mostra a hierarquia aninhada de todos os chamadores da função ativa atual; para o Mapa de Chamados, ele mostra a hierarquia aninhada de todas os chamados da função ativa atual. </para>
+<para
+>Opções de aparência podem ser encontradas no menu de contexto. Para obter proporções exatas de tamanho, escolha 'Ocultar bordas incorretas'. Como este modo pode consumir muito tempo, você pode querer limitar o nível de aninhamento de desenho máximo antes. 'O Melhor' determina a direção de divisão para filhos a partir da proporção do pai. 'Sempre O Melhor' decide sobre o espaço remanescente para cada irmão. 'Ignorar Proporções' toma o espaço para desenhar o nome da função antes de desenhar o filho. Observe que as proporções de tamanho podem ficar bastante incorretas. </para>
+<para
+>A navegação pelo teclado está disponível com as teclas de set esquerda/direita para navegar por irmãos, e teclas de seta acima/abaixo para ir um nível aninhado acima/abaixo. 'Return' ativa o ítem atual. </para>
+</sect2>
+
+<sect2>
+<title
+>Gráfico de Chamadas</title>
+<para
+>Esta visão mostra o gráfico de chamadas ao redor da função ativa. O custo mostrado é somente o custo que é gasto enquanto a função ativa estiver em execução; isto é o custo mostrado para main() - se ela estiver visível - deve ser o mesmo que o custo da função ativa, uma vez que é parte do custo inclusivo que main() gasta enquanto a função ativa estiver rodando. </para>
+<para
+>Para ciclos, setas de chamadas em azul indicam que esta é uma chamada artificial adicionada para corrigir o desenho e que na verdade nunca ocorre. </para>
+<para
+>Se o gráfico é maior que a área do widget, um painel de visão geral é mostrado em um dos lados. Existem opções de visualização similares as do Mapa em Árvore de Chamadas; a função selecionada é destacada. </para>
+</sect2>
+
+<sect2>
+<title
+>Anotações</title>
+<para
+>A lista de código/assembler anotado mostra as instruções da linha de código/desassembladas da função ativa atual junto com o custo (próprio) gasto ao executar o código de uma linha fonte/instrução. Se existir uma chamada, linhas com detalhes sobre a chamada serão inseridas na fonte: o custo (inclusivo) gasto dentro de uma chamada, o número de chamadas que ocorreram, e o destino da chamada. </para>
+<para
+>Selecione uma linha de informação de chamada para ativar o destino da chamada. </para>
+</sect2>
+</sect1>
+
+</chapter>
+
+
+<chapter id="commands">
+<title
+>Referência de Comandos</title>
+
+<sect1 id="kcachegrind-mainwindow">
+<title
+>A janela principal do &kcachegrind;</title>
+<para
+></para>
+
+<sect2>
+<title
+>O Menu <guimenu
+>Arquivo</guimenu
+></title>
+<para>
+<variablelist>
+
+<varlistentry>
+<term
+><menuchoice
+><shortcut
+> <keycombo
+>&Ctrl;<keycap
+>N</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Arquivo</guimenu
+> <guimenuitem
+>Novo</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+> Abre uma nova janela de nível superior de onde você pode carregar dados de auditoria. </action
+> Esta ação não é realmente necessária, uma vez que Arquivo/Abrir lhe fornecerá uma nova janela de nível superior quando a atual já estiver exibindo algum dado. </para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><menuchoice
+><shortcut
+> <keycombo
+>&Ctrl;<keycap
+>O</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Arquivo</guimenu
+> <guimenuitem
+>Abrir</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+> Exibe o Diálogo de Abertura de Arquivo para escolher um arquivo de dados de auditoria a ser carregado. </action
+> Se já existir algum dado sendo mostrado na janela de nível superior atual, ele abrirá uma nova janela. Se você deseja abrir dados de auditoria adicionais na janela atual, use Arquivo/Adicionar. </para>
+<para
+>Os nomes dos arquivos de dados de auditoria normalmente terminam em ..-, onde o último trecho é opcional e usado por arquivos de dados de auditoria múltiplos ao longo da execução de um aplicativo. Ao carregar um arquivo terminando somente com ., eventualmente existindo outros arquivos de dados para esta execução, mas com pontos adicionais, serão também carregados. </para>
+<para
+>Exemplo: Se existir arquivos de dados de auditoria cachegrind.out.123 e cachegrind.out.123.1, carregando o primeiro, o segundo será automaticamente carregado também. </para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><menuchoice
+><guimenu
+>Arquivo</guimenu
+> <guimenuitem
+>Adicionar</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+> Adiciona uma arquivo de dados de auditoria à janela atual. </action
+> Com isto, você pode forçar que arquivos de dados múltiplos sejam carregados em uma mesma janela de nível superior mesmo se eles não vierem da mesma execução fornecida por uma convenção de nomeação de arquivos de dados de auditoria. Por exemplo, use-o para comparações lado a lado. </para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><menuchoice
+><guimenu
+>Arquivo</guimenu
+> <guimenuitem
+>Recarregar</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+> Recarrega os dados de auditoria. </action
+> Isto é mais interessante após outro arquivo de dados de auditoria ter sido gerado pela execução de um aplicativo já carregado. </para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><menuchoice
+><shortcut
+> <keycombo
+>&Ctrl;<keycap
+>S</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Arquivo</guimenu
+> <guimenuitem
+>Sair</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+>Sai</action
+> do &kappname;</para
+></listitem>
+</varlistentry>
+</variablelist>
+</para>
+
+</sect2>
+
+<sect2>
+<title
+>O Menu <guimenu
+>Ver</guimenu
+></title>
+<para>
+<variablelist>
+
+<varlistentry>
+<term
+><menuchoice
+><guimenu
+>Ver</guimenu
+> <guimenuitem
+>Tipo de Evento Primário</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+>(A ser feito)</action
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><menuchoice
+><guimenu
+>Ver</guimenu
+> <guimenuitem
+>Tipo de Evento Sevundário</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+>(A ser feito)</action
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><menuchoice
+><guimenu
+>Ver</guimenu
+> <guimenuitem
+>Agrupamento</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+>(A ser feito)</action
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><menuchoice
+><guimenu
+>Ver</guimenu
+> <guimenuitem
+>Disposição</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+>(A ser feito)</action
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><menuchoice
+><guimenu
+>Ver</guimenu
+> <guimenuitem
+>Dividir</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+>(A ser feito)</action
+></para
+></listitem>
+</varlistentry>
+
+</variablelist>
+</para>
+
+</sect2>
+
+
+</sect1>
+</chapter>
+
+<chapter id="faq">
+<title
+>Perguntas e Respostas</title>
+&reporting.bugs; &updating.documentation; <qandaset id="faqlist">
+
+
+<qandaentry>
+<question>
+<para
+>Para que serve o &kcachegrind;? Eu não faço a mínima idéia. </para>
+</question>
+<answer>
+<para
+>O &kcachegrind; é útil no último estágio de desenvolvimento de software, chamado Auditoria. Se você não desenvolve aplicativos, você não precisa do &kcachegrind;. </para>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Qual a diferença entre 'Inclusivo' e 'Próprio'? </para>
+</question>
+<answer>
+<para
+>Estes são atributos de custo para funções relativos a algum tipo de evento. Como funções podem chamar outras, faz sentido distinguir o custo da função propriamente dita ('Custo Próprio') e o cuso incluindo todas as chamadas de funções ('Custo Inclusivo'). 'Próprio' é algumas vezes também referenciado como custo 'Exclusivo'. </para>
+<para
+>Assim, por exemplo para o main(), você sempre terá um custo inclusivo de cerca de 100%, visto que o custo próprio e negligenciado quando o trabalho real é feito em outra função. </para>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>A barra de menu/ferramentas do meu KCachegrind parece espartana. Isto é normal?</para>
+</question>
+<answer>
+<para
+>Obviamente o KCachegrind foi erradamente instalado em seu sistema. É recomendável compilá-lo com o prefixo de instalação do diretório base do sistema completo do KDE como <command
+>configure --prefix=/opt/kde3; make install</command
+>. Se você selecionar outro diretório como $HOME/kde, você deve configurar a variável de ambiente KDEDIR para o diretório correto do sistema antes de executar o KCachegrind. </para>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Se eu der um duplo-clique em uma função abaixo da Visão do Gráfico de Chamadas, ele mostra para a função principal o mesmo custo da função selecionada. Isto não é supostamente um 100% costante? </para>
+</question>
+<answer>
+<para
+>Você terá ativado uma função abaixo do main() com custo menor que o main(). Para qualquer função, somente esta parte do custo total da função é mostrado, que é gasta enquanto a função ativada está rodando. Isto é, o custo mostrado para qualquer função nunca pode ser maior que o custo da função ativada. </para>
+</answer>
+</qandaentry>
+
+
+</qandaset>
+</chapter>
+
+<chapter id="glossary">
+<title
+>Glossário</title>
+
+<para
+>A seguir está uma lista mesclada de termos. <itemizedlist>
+<listitem
+><para
+>Auditoria: O processo de coletar informações estatísticas sobre as características de tempo de execução de um programa. </para
+></listitem>
+<listitem
+><para
+>Rastreamento: O processo de supervisionar a execução de um programa e armazenar eventos ocorridos ordenados por uma estampa de tempo em um arquivo de saída, para Rastreio. </para
+></listitem>
+<listitem
+><para
+>Rastreio: Uma sequência de eventos com estampas de tempo que ocorreram durante o rastreamento da execução de um programa. Seu tamanho é tipicamente linear em função do tempo de execução de um programa. </para
+></listitem>
+<listitem
+><para
+>Arquivo de Dados de Auditoria: Um arquivo contendo dados medidos em um experimento de auditoria (ou parte de) ou produzidos por processamento posterior de um rastreio. Seu tamanho é tipicamente linear em função do tamanho do código do programa. </para
+></listitem>
+<listitem
+><para
+>Parte da Dados de Auditoria (incorretamente também usado: Parte de Rastreio): Dados de um arquivo de dados de auditoria. </para
+></listitem>
+<listitem
+><para
+>Experimento de Auditoria: Um programa executado sob supervisão de uma ferramenta de auditoria, produzindo possivelmente múltiplos arquivos de dados de auditoria a partir de partes e/ou linhas de execução. </para
+></listitem>
+<listitem
+><para
+>Projeto de Auditoria: Uma configuração para experimentos de auditoria usados para um programa que será auditado, talvez em versões múltiplas. Comparações de dados auditados tipicamente só fazem sentido entre dados auditados produzidos em experimentos de um projeto de auditoria. </para
+></listitem>
+<listitem
+><para
+>Entidade de Custo: Um ítem abstrato relacionado ao código fonte no qual a contagem de eventos pode ser atribuída. Dimensões para entidades de custo são localização de código (por exemplo, linha da fonte, função), localização de dados (por exemplo, tipo de dado acessado, objeto de dados), localização da execução (por exemplo, linha, processo), e referências das posições mencionadas (por exemplo chamadas, acesso a objetos a partir de sentenças, dados descartados da cache). </para
+></listitem>
+<listitem
+><para
+>Tipo de Evento: O tipo de evento do qual custos podem ser atribuídos para uma entidade de custo. Aqui existem tipos de eventos reais e tipos de eventos herdados. </para
+></listitem>
+<listitem
+><para
+>Tipo de Evento Real: Um tipo de evento que pode ser medido por uma ferramenta. Ele precisa da existência de um sensor para o tipo de evento fornecido. </para
+></listitem>
+<listitem
+><para
+>Tipo de Evento Herdado: Um tipo de evento virtual somente visível na visualização que é definido por uma fórmula a ser calculada a partir de tipos de eventos reais. </para
+></listitem>
+<listitem
+><para
+>Custos de Evento: Soma de eventos de algum tipo de evento ocorrido durante a execução é relacionada a alguma entidade de custo. O custo é atribuído à entidade. </para
+></listitem>
+</itemizedlist>
+</para>
+</chapter>
+
+<chapter id="credits">
+
+
+<title
+>Créditos e Licença</title>
+
+<para
+>&kappname; </para>
+<para
+>Agradecimentos à Julian Seward pelo excelente &valgrind;, e Nicholas Nethercote pela adição do &cachegrind;. Sem estes programas, o <application
+>KCachegrind</application
+> não existiria. Muitas idéias para esta &GUI; também vieram deles. </para>
+<para
+>E agradecimentos a todos os diferentes usuários que reportaram erros/sugestões. </para>
+&underFDL; </chapter>
+
+<appendix id="installation">
+<title
+>Instalação</title>
+
+<sect1 id="getting-kcachegrind">
+<title
+>Como obter o &kcachegrind;</title>
+
+<para
+>O &kcachegrind; é parte do pacote &package; do &kde;. Para versões menos suportadas, &callgrind; e documentação adicional, veja a página web em <ulink url="http://kcachegrind.sf.net"
+>http://kcachegrind.sf.net</ulink
+>. Lá você obterá instruções completas para instalação e compilação. </para>
+</sect1>
+
+<sect1 id="requirements">
+<title
+>Requisitos</title>
+
+<para
+>Para usar com sucesso o &kcachegrind;, você precisa do &kde; 3.x. Para gerar dados de auditoria, o &cachegrind; ou o &calltree;/&callgrind; é recomendável. </para>
+</sect1>
+
+<sect1 id="compilation">
+<title
+>Compilação e Instalação</title>
+&install.compile.documentation; </sect1>
+
+<sect1 id="configuration">
+<title
+>Configuração</title>
+
+<para
+>Todas as opções de configuração estão tanto no diálogo de configuração como nos menus de contexto das visualizações. </para>
+
+</sect1>
+
+</appendix>
+
+&documentation.index;
+</book>
+<!--
+Local Variables:
+mode: sgml
+sgml-minimize-attributes:nil
+sgml-general-insert-case:lower
+sgml-indent-step:0
+sgml-indent-data:nil
+End:
+-->
+
+
+
+
+
+
+
+
+
+
+
+
+

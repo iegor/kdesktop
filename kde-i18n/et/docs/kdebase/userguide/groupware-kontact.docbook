@@ -1,0 +1,1157 @@
+<chapter id="groupware-with-kontact">
+
+<chapterinfo>
+<authorgroup>
+<author
+><personname
+> <firstname
+>Marco</firstname
+> <surname
+>Menardi</surname
+> </personname
+> <email
+>gnu@kde.org</email
+> </author>
+</authorgroup>
+
+<othercredit role="translator"
+><firstname
+>Marek</firstname
+><surname
+>Laane</surname
+><affiliation
+><address
+><email
+>bald@starman.ee</email
+></address
+></affiliation
+><contrib
+>Tõlge eesti keelde</contrib
+></othercredit
+> 
+
+</chapterinfo>
+<title
+>Andmete jagamine &kontact;is <acronym
+>IMAP</acronym
+>-i abil</title>
+
+<sect1 id="kontact-imap-intro">
+<title
+>Sissejuhatus</title>
+
+<para
+>Ma otsisin tükk aega oma väikekontori jaoks <acronym
+>PIM</acronym
+>-lahendust, mis lubaks andmeid jagada, et ka minu sekretär saaks kasutada minu kontakte, kohtumisi ja muud sellist. Et ma olen &kde; kasutaja, kuulsin Kroupware projektist ja ootasin, kuni see valmib. Aga kui ma nägin, kui keeruline on <application
+>Kolab</application
+>i serveri (projekti serveripool) versiooni 1.0 arhitektuur ja seadistamine, loobusin selle kasutamise mõttest ja jäin ootama, et vahest on <application
+>Kolab</application
+> 2.0 veidigi lihtsam. Igatahes minu vajaduste jaoks oli <application
+>Kolab</application
+> selgelt liiast. Õnneks leidsin aga &kde; Wikis ühe <acronym
+>IRC</acronym
+> vestluse katke, kus räägiti andmete jagamise võimalusest ilma <application
+>Kolab</application
+>it kasutama. Hmm, see tundus huvitav!</para>
+
+<para
+>Väikese kontori ja väikeste vajaduste jaoks saab panna andmeid jagama &kontact;i, ilma et oleks vaja hakata paigaldama <application
+>Kolab</application
+>i serverit või mõnda muud grupitöö taustaporgrammi. See töötab lihtsalt <acronym
+>IMAP</acronym
+>-serveriga, mille seadistamine on üsna lihtne.</para>
+
+<para
+>Minu stsenaariumis on kasutusel Debiani ebastabiilne versioon ja &kde; 3.4. Ma pääsen &kontact;ile ja teistele toredatele GNU/Linuxi rakendustele Windowsist ligi Cygwin/X abil ja ootan samal ajal aega, mil Wine projekt pakub lõpuks ometi võimalust kasutada neid väheseid Windowsi programme, mida mul vaja läheb ja millele GNU/Linuxis ei ole asendust. Igatahes praegu on minu sihiks jagada oma kontakte, sündmusi, ülesandeid ja märkmeid enda sekretäriga.</para>
+  
+</sect1>
+
+<sect1 id="kontact-imap-whatis">
+<title
+>Mis on <acronym
+>IMAP</acronym
+>?</title>
+
+<para
+>Järgnev definitsioon on veidi muudetud kujul pärit <ulink url="http://www.vallaste.ee/"
+>e-teatmikust</ulink
+>: <blockquote
+><para
+>Internet Message Access Protocol ehk interneti sõnumipöördusprotokoll. Protokoll, mis võimaldab kasutajale juurdepääsu e-posti serveris hoitavatele e-kirjadele ja käsitleda neid nii, nagu asuksid nad kasutaja oma arvutis. IMAP võimaldab kirjade kirjutamist, kustutamist, ümbernimetamist, saabunud uute kirjade lugemist jne., kuid ei võimalda kirjade saatmist. Selleks on vajalik eraldi protokoll.</para
+></blockquote
+> </para>
+  
+<para
+>Nii võib seda pidada andmehoidlaks. Selle kasutamiseks on vajalik <acronym
+>IMAP</acronym
+>-server, näiteks <application
+>Cyrus</application
+>, <application
+>Courier</application
+> või <application
+>UW</application
+>.</para>
+  
+</sect1>
+
+<sect1 id="kontact-kolab-or-imap">
+<title
+><application
+>Kolab</application
+> või <acronym
+>IMAP</acronym
+>?</title>
+  
+<para
+><application
+>Kolab</application
+> võimaldab jagada andmeid erinevate klientide vahel. Nii saab näiteks sinu sekretär kasutada <application
+>Outlook</application
+>i, samal ajal, kui sa ise kasutad &kontact;i.</para>
+  
+<para
+>Sul tule selleks seadistada liides, mis kannab hoolt kasutajate haldamise, e-posti konto seadistuste, tsentraalsete <acronym
+>LDAP</acronym
+>-i konfiguratsiooniandmete ja aadressiraamatuserveri, rämpsposti ja viiruste filtreerimise, puhkuseskriptide, vaba/hõivatud nimekirjade haldamise, ressursside (ruumid, autod( haldamise, gruppide, postiloendite, kutsete automaatse edastamise &etc; eest.</para>
+  
+<para
+>Kuid esialgne seadistamine võib olla päris raske. Minusuguste algajate jaoks tähendab see väga pikka ja masendavat košmaari ning liiga keerukat pusimist, et kõik üldse kuidagi tööle hakkaks. Sestap on minusugustele palju parem lahendus <acronym
+> IMAP</acronym
+>.</para>
+
+</sect1>
+
+<sect1 id="kontact-imap-cyrus">
+<title
+><acronym
+>IMAP</acronym
+>-serveri <application
+>Cyrus</application
+> seadistamine</title>
+   
+<para
+>Minu valikuks on <application
+>Cyrus</application
+>, mis on ka <application
+>Kolab</application
+>i tarkvarakomplekti koosseisus, nii et kui ma kunagi peaksin <application
+>Kolab</application
+>ile üle minema, on mul vähemalt midagi käpas.</para
+> <para
+>Alustame siis paigaldamise ja seadistamisega!</para>
+  
+<para
+>Võta endale administraatori (<systemitem class="username"
+>root</systemitem
+>) õigused.</para>
+
+<screen
+># <userinput
+><command
+>apt-get</command
+> <command
+>install</command
+> cyrus21-imapd cyrus21-common cyrus21-admin cyrus21-client sasl-bin sasl2-bin</userinput
+> 
+<computeroutput
+>Installing cyrus21-imapd...</computeroutput
+><lineannotation
+>Paigaldusprogramm küsib midagi otsimisaadressi kohta, millest ma aru ei saa... Vajutan lihtsalt <keycap
+>Enter</keycap
+></lineannotation
+>.</screen>
+
+<para
+>Paigaldusprogramm lõi ka kasutaja <systemitem class="username"
+>cyrus</systemitem
+>, mis paikneb (automaatselt loodud) gruois <systemitem class="groupname"
+>sasl</systemitem
+>, mis on kõigi cyruse failide <quote
+>omanik</quote
+>. Lõpuks saab käsuga <command
+>ps <option
+>-A</option
+></command
+> näha mõningaid uusi protsesse: <command
+>cyrmaster</command
+> ja <command
+>notifyd</command
+>.</para>
+
+<para
+><application
+>Cyrus</application
+>e seadistamise suuremaks probleemiks on autentimine, sest see pole kaugeltki lihtne, mina aga olen alles algaja ega tea just väga hästi, mida ja kuidas teha.</para>
+
+<para
+><application
+>Cyrus</application
+> võib kasutada erinevaid <acronym
+>SASL</acronym
+> (Simple Authentication and Security Layer ehk lihtne Autentimis- ja turbekiht) mehhanisme. Vaikimisi on selleks sasldb (see salvestab kasutajanimed ja paroolid SASL salajasse faili <filename
+>sasldb</filename
+>), kuid toetatud on ka getpwent, kerberos4, kerberos5, PAM, rimap, shadow ja LDAP.</para>
+
+<para
+>Et ma ei soovi teistsuguseud kasutajaid/paroole kui need, millega pääseb ligi minu &Linux; masinasse, valin <quote
+>shadow</quote
+> mehhanismi, et <application
+>Cyrus</application
+> kasutaks autentimiseks &Linux; paroole.</para>
+
+<para
+>Selleks tuleb SASL-ile öelda, et paroolide autentimiseks on vaja kasutada meetodit <command
+>saslauthd</command
+>, ning seejärel panna <command
+>saslauthd</command
+> kasutama autentimiseks <quote
+>shadow</quote
+> (või <quote
+>getpwent</quote
+>) mehhanismi.</para>
+
+<para
+>Olgu, hakkame siis peale!</para>
+
+<para
+>Muuda administraatorina (<systemitem class="username"
+>root</systemitem
+>) kasutaja <systemitem class="username"
+>cyrus</systemitem
+> Linuxi parooli:</para>
+
+<screen
+># <userinput
+><command
+>passwd <option
+>cyrus</option
+></command
+></userinput
+></screen>
+
+<para
+>Anna parool, mis sulle meeldib (ja mida sa ka meelde suudad jätta). Antud juhul valime <application
+>cyrus</application
+>e administraatori parooliks <quote
+>cyrus</quote
+>.</para>
+
+<screen
+># <command
+>vi</command
+> <filename
+>/etc/imapd.conf</filename
+></screen>
+
+<programlisting
+>sasl_pwcheck_method: <userinput
+>saslauthd</userinput
+> <lineannotation
+>vaikeväärtuse <literal
+>auxprop</literal
+> asemel</lineannotation
+></programlisting>
+
+<para
+>eemalda märk <literal
+>#</literal
+> rea eest:</para>
+
+<programlisting
+>#admins: cyrus</programlisting>
+
+<para
+>nii saad hallata <application
+>cyrus</application
+>e sisselogimist kasutajana <systemitem class="username"
+>cyrus</systemitem
+></para>
+
+<screen
+># <userinput
+><command
+>vi</command
+> <filename
+>/etc/default/saslauthd</filename
+></userinput
+></screen>
+
+<para
+>Eemalda kommentaar rea eest:</para>
+
+<programlisting
+># START=yes</programlisting>
+
+<para
+>(muidu ei käivitu <application
+>saslauthd</application
+> arvuti käivitamise ajal isegi siis, kui seda määrab mõni <filename class="directory"
+>/etc/rcx.d</filename
+>!)</para>
+
+<para
+>ja <literal
+>MECHANISMS="pam"</literal
+> asemel kirjuta <userinput
+>MECHANISMS="shadow"</userinput
+>, et algkäivituse ajal käivitataks käsk <command
+>saslauthd</command
+> <option
+>-a <parameter
+>shadow</parameter
+></option
+>.</para>
+
+<para
+>Kui oled redaktorist väljunud, käivita <application
+>sasl</application
+> ja <application
+>cyrus</application
+> uuesti.</para>
+
+<para
+>Testime <acronym
+>IMAP</acronym
+>-it:</para>
+
+<screen
+><userinput
+><command
+>su</command
+> <option
+>cyrus</option
+></userinput>
+$ <userinput
+><command
+>imtest</command
+> <option
+>-m login -p imap localhost</option
+></userinput
+></screen>
+
+<para
+>Sinu käest oodatakse kasutaja <systemitem class="username"
+>cyrus</systemitem
+> parooli, nii et sisesta see nüüd.</para>
+
+<para
+>Kui kasutaja <systemitem class="username"
+>cyrus</systemitem
+> autenditakse, ilmuvad järgmised read:</para>
+
+<screen
+><computeroutput
+>S: L01 OK User logged in
+Authenticated.</computeroutput
+></screen>
+<para
+>Väljumiseks kirjuta <userinput
+>. logout</userinput
+> (&ie; punkt tühik <quote
+>logout</quote
+>).</para>
+
+<para
+>Nüüd lisa kasutaja <systemitem class="username"
+>groupware</systemitem
+> ja määra talle tavalisi süsteemi tööriistu kasutades parool. See kasutaja peab olema privileegideta grupis, näiteks <systemitem class="groupname"
+>nobody</systemitem
+> ning talle pole vaja shelli ega kodukataloogi.</para>
+
+<para
+>Nüüd tuleb luua kasutaja ja <acronym
+>IMAP</acronym
+> ka <application
+>cyrus</application
+>es:</para>
+
+<screen
+># <userinput
+><command
+>cyradm</command
+> <option
+>--user cyrus localhost</option
+></userinput>
+pärast administraatorist kasutaja <systemitem class="username"
+>cyrus</systemitem
+> parooli sisestamist näed viipa <prompt
+>localhost&gt;</prompt>
+<prompt
+>localhost&gt;</prompt
+> <userinput
+><command
+>cm</command
+> <option
+>user.groupware</option
+></userinput>
+<prompt
+>localhost&gt;</prompt
+> <userinput
+><command
+>lm</command
+></userinput
+> <lineannotation
+>näitab äsja loodud postkasti</lineannotation>
+<computeroutput
+>user.groupware (\HasNoChildren))</computeroutput>
+<prompt
+>localhost&gt;</prompt
+> <userinput
+><command
+>quit</command
+></userinput
+></screen>
+
+<para
+>Saadaolevaid käske näeb käsuga <userinput
+><command
+>help</command
+></userinput
+>.</para>
+
+<para
+>Seda, mis toimus, saad kontrollida nii:</para>
+
+<screen
+># <userinput
+><command
+>ls</command
+> <option
+>-l</option
+> <filename class="directory"
+>/var/spool/cyrus/mail/g/user/groupware</filename
+></userinput>
+<computeroutput
+>total 12
+-rw------- 1 cyrus mail          4 Oct 29 20:55 cyrus.cache
+-rw------- 1 cyrus mail 155 Oct 29 20:55 cyrus.header
+-rw------- 1 cyrus mail 76 Oct 29 20:55 cyrus.index</computeroutput
+></screen>
+
+<para
+>Nüüd saad luua ühenduse <acronym
+>IMAP</acronym
+>-kliendiga kasutajana <systemitem class="username"
+>groupware</systemitem
+> ning näed sisenevate kirjade kausta (<literal
+>INBOX</literal
+>).</para>
+<note
+><para
+><acronym
+>IMAP</acronym
+> protokollis on postkasti <literal
+>INBOX</literal
+> valimine omamoodi maagiline sõna, <quote
+>alias</quote
+> ülaltoodud kataloogistruktuurile. Kasutaja näeb kirjet <literal
+>INBOX</literal
+>, <acronym
+>IMAP</acronym
+> aga seondab selle kataloogi- ja failistruktuuris asukohaga <filename class="directory"
+>/var/spool/cyrus/mail/...</filename
+></para
+></note>
+
+</sect1>
+
+<sect1 id="kontact-imap-clients">
+<title
+>&kontact;i klientide seadistamine</title>
+  
+<para
+>Ma võtan oma PC-st GNU/Linuxi serveriga (omamoodi "must kast" ilma monitori ja klaviatuurita) ühendust kahest &Windows; 2000 PC-st <application
+>Cygwin/X</application
+> vahendusel, kasutades neid X Window serverina (lähitulevikus loodan asendada mõlemad mini-itx õhukeste klientidga, mis kasutavad LTSP-d). Selle seadistuse korral kasutab iga kasutaja &kontact;i samas masinas, kuhu on paigaldatud töötav <application
+>Cyrus</application
+> (localhost).</para>
+  
+<para
+>Et &kontact; töötaks <acronym
+>IMAP</acronym
+>-iga, tuleb ette võtta järgmised sammud:</para>
+
+<procedure>
+
+<step
+><para
+>Luua <acronym
+>IMAP</acronym
+>-konto <application
+>Cyrus</application
+>es libakasutajale <systemitem class="username"
+>groupware</systemitem
+> (juba tehtud!)</para
+></step>
+
+<step
+><para
+>Luua ja seadistada <acronym
+>IMAP</acronym
+>-konto &kmail;is sellele kasutajale sisselogimiseks</para
+></step
+> <step
+><para
+>Kasutada KDE ressursse, et &kontact;i komponendid saaksid kasutada andmeid, mida nad hangivad <acronym
+>IMAP</acronym
+>-i allikast</para
+></step>
+
+<step
+><para
+>Lülitada sisse grupitöö kasutamise võimalus ja luua vastavad <acronym
+>IMAP</acronym
+> <literal
+>INBOX</literal
+>'i alamkaustad (kui neid veel pole)</para
+></step>
+
+<step
+><para
+>Nautida &kontact;i ja andmete jagamist <application
+>Cyrus</application
+>e IMAP-iga</para
+></step>
+
+</procedure>
+  
+<para
+>Logi selleks &kde;sse sisse esimene <quote
+>reaalse kasutaja</quote
+> kontoga, kellele tahad anda grupitöö võimaluse.</para>
+
+<para
+>Loome nüüd &kmail;is IMAP-konto.</para>
+
+<para
+>Käivita &kontact; ja vali <guilabel
+>E-post</guilabel
+> (&kmail;i komponent). Vali menüüst <menuchoice
+><guimenu
+>Seadistused</guimenu
+><guimenuitem
+>KMaili seadistamine</guimenuitem
+><guilabel
+>Kontod</guilabel
+><guilabel
+>Vastuvõtmine</guilabel
+></menuchoice
+> ja klõpsa nupule <guibutton
+>Lisa...</guibutton
+> Sinu käest päritakse, millist tüüpi konto luua. Vali <guilabel
+>Lahutatud IMAP</guilabel
+> (mitte lihtsalt <guilabel
+>IMAP</guilabel
+>). Seejärel sisesta kaardil <guilabel
+>Üldine</guilabel
+> järgmised andmed:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Konto nimi</guilabel
+>: <userinput
+>office_gwdata</userinput
+></term>
+<listitem>
+<para
+>Nimi, mida kasutatakse kausta <quote
+>local</quote
+> jaoks, mis osutab antud <acronym
+>IMAP</acronym
+>-kontole.</para>
+</listitem
+> 
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Kasutajanimi</guilabel
+>: <userinput
+>groupware</userinput
+></term>
+<listitem>
+<para
+><application
+>Cyrus</application
+>e kasutaja, kelle oleme valinud kõigi oma andmete <quote
+>omanikuks</quote
+></para>
+</listitem>
+</varlistentry>
+<varlistentry
+><term
+><guilabel
+>Parool:</guilabel
+></term>
+<listitem>
+<para
+>Kasutaja <systemitem class="username"
+>groupware</systemitem
+> parool.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Server</guilabel
+>: <userinput
+>localhost</userinput
+></term>
+<listitem>
+<para
+>Pane tähele, et meie näites töötab &kontact;i klient samas masinas <acronym
+>IMAP</acronym
+>-serveriga</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Port</guilabel
+>: <userinput
+>143</userinput
+></term>
+<listitem>
+<para
+>Vaikeväärtus</para>
+</listitem>
+</varlistentry>
+</variablelist>
+  
+<para
+>Märgi ära kast <guilabel
+>IMAP parool salvestatakse</guilabel
+>, nii ei küsita sinu käest seda &kontact;i järgmise kasutamise ajal. Märgi ära ka kast <guilabel
+>Uute kirjade regulaarne kontrollimne</guilabel
+> ja määra aeg minutites.</para>
+  
+<para
+>Sellega lõime <guilabel
+>lahutatud IMAP</guilabel
+>-i konto. See tähendab, et grupitöö andmete koopia salvestatakse <quote
+>kohalikult</quote
+> kliendile (kodukataloogi) ja seda sünkroniseeritakse alati, kui klient ühenduse loob. See tundub esmapilgul vähetõhus, sest andmeid dubleeritakse sel moel lausa mitmekordselt (&ie; kui sul on 10 kasutajad, kes tarvitavad &kontact;i, on sul 10+1 korda andmeid), kuid see on ainus viis, kuidas asjad kiiresti käivad, sest igal ühendusel peab &kontact; tõmbama kõik andmed ning &korganizer; ja &aadressiraamat; neid tõlgendama. Kui kasutad <quote
+>lahutatud IMAP-it</quote
+>. salvestatakse andmed kohapeal ning saadetakse ainult <quote
+>delta</quote
+> (&ie; andmed, mida on muudetud).</para>
+  
+<para
+>Teiselt poolt aga, kui kasutajatel töötab &korganizer; samas masinas, kus töötab ka <acronym
+>IMAP</acronym
+>-server, tundub mõistlik tarvitada ruumi kokkuhoidmiseks <acronym
+>IMAP</acronym
+>-it (seda nimetatakse ka <quote
+>ühendatud IMAP-iks</quote
+>), sest sel juhul ei ole liikumiskiirus probleemiks. Paraku ei ole see antud juhul kasutatav, sest &kontact; ei uuenda automaatselt kausta <guilabel
+>Kalender</guilabel
+> <quote
+>ühendatud IMAP-is</quote
+>, nii et sa ei pruugi teada saada, kui keegi mõne sündmuse lisab (sul tuleb käsitsi lülituda &kmail;ile ja klõpsata kaustal <guilabel
+>Kalender</guilabel
+>). Lisaks näed alguses, kui kaustu <guilabel
+>Kalender</guilabel
+> loetakse, et andmete uuendamine käib ikka väga aeglaselt.</para>
+  
+<para
+>Nüüd tuleb panna &kontact; kasutama <acronym
+>IMAP</acronym
+>-it oma erinevate komponentide andmeallikana. Vali &kmenu;st <guimenuitem
+>Käivita käsk</guimenuitem
+> ja anna ilmuvas dialoogis käsk <userinput
+><command
+>kcmshell kresources</command
+></userinput
+>. Vali rippmenüüst <guilabel
+>Kontaktid</guilabel
+>, klõpsa nupule <guibutton
+>Lisa...</guibutton
+> ja vali <guilabel
+>Aadressiraamat IMAP-serveris (KMaili vahendusel)</guilabel
+>. Seejärel vali ilmunud uus rida ja klõpsa nupule <guibutton
+>Kasuta standardressursina</guibutton
+>. Tee sedasama kirjetega <guilabel
+>Kalender</guilabel
+> ja <guilabel
+>Märkmed</guilabel
+>.</para>
+  
+<para
+>Nüüd tuleb &kmail;is (ja seeläbi terves &kontact;is) sisse lülitada grupitöö kasutamise võimalus:</para>
+
+<procedure>
+<step>
+<para
+>Vali menüüst <menuchoice
+><guimenu
+>Seadistused</guimenu
+><guimenuitem
+>KMaili seadistamine</guimenuitem
+><guilabel
+>Muud</guilabel
+><guilabel
+>Grupitöö</guilabel
+></menuchoice
+></para>
+</step>
+<step>
+<para
+>Märgi kast <guilabel
+>IMAP ressursside kasutamise lubamine</guilabel
+></para>
+</step>
+<step>
+<para
+>Vali <guilabel
+>grupitöö kaustade keel</guilabel
+>eks <guilabel
+>inglise</guilabel
+> keel (seda juhul, kui sul on juba kaustu <acronym
+>IMAP</acronym
+>-serveris, mis on loodud mõne teise programmiga, mis kasutab mõnda muud keelt)</para>
+</step>
+<step>
+<para
+>Nüüd võta ette <guilabel
+>Ressurssikaustad paiknevad kaustas</guilabel
+> ja vali kausta <guilabel
+>office_gwdata</guilabel
+> alamkaust <guilabel
+>Inbox</guilabel
+></para>
+<para
+>Jäta kast <guilabel
+>Grupitöö kaustad peidetakse</guilabel
+> praegu märkimata, et näeksid, mis toimub. Hiljem saad dialoogi naasta ja selle märkida, kui oled aru saanud, mis toimus.</para>
+</step>
+<step>
+<para
+>Kui klõpsad OK, näed teadet: <computeroutput
+>&kmail; loob nüüd soovitud grupitöökaustad alamkaustadena kaustas Inbox</computeroutput
+> </para>
+<para
+>Kui sa seda ei soovi, klõpsa <guibutton
+>Loobu</guibutton
+> ning <acronym
+>IMAP</acronym
+> ressurss jääb mitteaktiivseks. Nii et klõpsa pigem <guibutton
+>Jätka</guibutton
+> (see juhtub ainult esimesel korral esimese <quote
+>reaalse kasutajaga</quote
+>). Näed kohe, et &kmail; kaustapuusse luuakse <menuchoice
+><guilabel
+>office_gwdata</guilabel
+><guilabel
+>Inbox</guilabel
+></menuchoice
+> alla järgmised kaustad:</para>
+<simplelist>
+<member
+>Kalender</member>
+<member
+>Kontaktid</member>
+<member
+>Märkmed</member>
+<member
+>Ülesanded</member>
+<member
+>Päevik</member>
+</simplelist>
+<para
+>Nüüd võid anda käsu:</para>
+<screen
+># <command
+>ls</command
+> <option
+>-l /var/spool/cyrus/mail/g/user/groupware/</option>
+<computeroutput
+>drwx------ 2 cyrus mail 144 Oct 31 16:36 Kalender
+drwx------ 2 cyrus mail 144 Oct 31 16:36 Kontaktid
+drwx------ 2 cyrus mail 144 Oct 31 16:36 Päevik
+drwx------ 2 cyrus mail 144 Oct 31 16:36 Märkmed
+drwx------ 2 cyrus mail 144 Oct 31 16:36 Ülesanded
+-rw------- 1 cyrus mail      4 Oct 31 15:28 cyrus.cache
+-rw------- 1 cyrus mail 155 Oct 29 20:55 cyrus.header
+-rw------- 1 cyrus mail 76 Oct 31 15:28 cyrus.index</computeroutput
+></screen>
+
+<para
+>Nagu näed, ei ole <guilabel
+>office_gwdata Inbox</guilabel
+> salvestatud mitte &kontact;i kasutaja kodukataloogi, vaid <acronym
+>IMAP</acronym
+>-i kasutaja <systemitem class="username"
+>groupware</systemitem
+> kataloogi.</para>
+</step>
+</procedure>
+
+<para
+>Nüüd on &kontact; grupitööks valmis. Kui &kmail;i <acronym
+>IMAP</acronym
+>-konto tüübiks oli <quote
+>lahutatud</quote
+>, näitab kalendrirakenduse <guilabel
+>ressursi</guilabel
+>aken kirjet <guilabel
+>IMAP ressurss</guilabel
+> kolme alamkirjega, mis osutavad kohalikele failidele. Rakendus <guilabel
+>Kontaktid</guilabel
+> aga ei näita kirje <guilabel
+>IMAP ressurss</guilabel
+> mingeid alamkirjeid.</para>
+
+<para
+>Nüüd võid logida &kde;sse sisse mõne teise kasutajanime alla ja seadistada tema &kontact;i kliendi samamoodi:</para>
+
+<procedure>
+<step>
+<para
+>Ava &kontact; ja lisa <guilabel
+>e-post</guilabel
+>i komponendis <acronym
+>IMAP</acronym
+>-konto, määrates <guilabel
+>server</guilabel
+>iks, arvuti, kus töötab <application
+>Cyrus</application
+>e server (minu näites on selleks <literal
+>192.168.1.3</literal
+>).</para>
+
+<para
+>Märgi kindlasti ära kast <guilabel
+>Uute kirjade regulaarne kontrollimine</guilabel
+> ja määra minutites intervall. Dialoogi sulgedes ei küsita sinu käest alamkaustade loomise kohta (sest need on juba <acronym
+>IMAP</acronym
+>-serveris) ning sa näed neid kohe kaustapuus.</para>
+</step>
+<step>
+<para
+>Lülita sisse grupitöö kasutamise võimalus, et saaksid salvestada andmeid <acronym
+>IMAP</acronym
+>-serverisse.</para>
+</step>
+</procedure>
+<para
+>Pea meeles, et <quote
+>lahutatud <acronym
+>IMAP</acronym
+>-i</quote
+> korral saadetakse andmed kliendilt <acronym
+>IMAP</acronym
+>-serverisse ainult siis, kui klient sellega uute kirjade kontrollimiseks ühenduse loob. Nii et kui sinu &kontact;i klientidel on <guilabel
+>kirjade regulaarse kontrollimise</guilabel
+> intervalliks määratud näiteks 5 minutit, siis kõige halvemal juhul saavad nad sündmustest teada 10-minutilise viivitusega.</para>
+</sect1>
+<sect1 id="kontact-imap-readonly">
+<title
+>Ainult lugemisõiguse andmine</title>
+
+<note
+><para
+>Arvesta, et mulle on väidetud, et märkmete <acronym
+>IMAP</acronym
+>-teostus &kontact;is on enne versiooni 1.01 katki, nii et alljärgnev sel juhul ei kehti. Kui sa neid siiski kasutada soovid, pead tarvitama eespool tutvustatud seadistust.</para
+></note>
+    
+<para
+>Eelnevas seadistuses oli meil üks <quote
+>libakasutaja</quote
+> <systemitem class="username"
+>groupware</systemitem
+>, mida kasutasid kõik <quote
+>reaalsed</quote
+> &kontact;i kasutajad (&ie; <systemitem class="username"
+>tony</systemitem
+>, <systemitem class="username"
+>rohn</systemitem
+>, <systemitem class="username"
+>amanda</systemitem
+> &etc;) antud kasutaja nime ja parooliga <acronym
+>IMAP</acronym
+>-kontos. Sel moel on aga igal reaalsel kasutajal teistega ühesugused lugemis- ja kirjutamisõigused, sest kõik võtavad just ühe ja sellesama kasutajana <systemitem class="username"
+>groupware</systemitem
+> ühendust <acronym
+> IMAP</acronym
+>-serveriga.</para>
+    
+<para
+>Mõningate kasutajate ligipääsu piiramiseks (reeglina neile ainult lugemisõiguse võimaldamiseks) võib kasutada <acronym
+>ACL</acronym
+>-e (Access Control List ehk ligipääsunimekiri).</para>
+    
+<para
+>Vali &kmail;is <guilabel
+>office_gwdata</guilabel
+> sisenevate kirjade kausta mõni alamkaust, näiteks <guilabel
+>Kalender</guilabel
+> ja tee selle nimel klõps hiire parema nupuga. Vali <guilabel
+>Omadused</guilabel
+><guilabel
+>Ligipääsukontroll</guilabel
+>. Siin saad määrata kasutajad, kes antud kaustale ligi pääsevad, ning sellegi, mida nad selles teha tohivad.</para>
+
+<para
+>Lihtsalt eksperimenteerimise huvides anname õiguse <quote
+>Kõik</quote
+> kasutajale <systemitem class="username"
+>mary</systemitem
+></para>
+
+<para
+><application
+>Cyrus</application
+>e tasandil (<acronym
+>PC</acronym
+>-s, kus töötab <acronym
+>IMAP</acronym
+>-server cyrus, mis kasutab oma <application
+>cyrus</application
+>e tööriistu) tuleb meil kõigepealt lisada kasutaja <systemitem class="username"
+>mary</systemitem
+>, et <acronym
+>IMAP</acronym
+> teda üldse tunnustaks, milleks loome talle <acronym
+>IMAP</acronym
+>-i kausta.</para>
+
+<para
+>Seejärel logime GNU/Linuxisse kasutajana <systemitem class="username"
+>mary</systemitem
+> ja avame &kontact;i. Samamoodi nagu eespool näidatud, loome <acronym
+>IMAP</acronym
+>-konto &kmail;is samade andmetega, kuid ühe konkreetse kasutaja jaoks (libakasutaja <systemitem class="username"
+>groupware</systemitem
+> ja tema parooli asemel kasutame nime <systemitem class="username"
+>mary</systemitem
+> ja tema parooli.</para>
+
+<para
+>Nüüd näeme &kmail;i kaustapuus sellist struktuuri: <menuchoice
+><guimenu
+>office_gwdata</guimenu
+><guisubmenu
+>kasutaja</guisubmenu
+> <guisubmenu
+>groupware</guisubmenu
+><guimenuitem
+>Kalender ja Ülesanded</guimenuitem
+></menuchoice
+>. Kontrolli kirju (<menuchoice
+><guimenu
+>Fail</guimenu
+><guimenuitem
+>Kontrolli posti</guimenuitem
+></menuchoice
+>) ning <quote
+>office_gwdata</quote
+> alla tekib ka kaust <quote
+>sisenevad</quote
+>.</para>
+
+<para
+>Nüüd lülita sisse grupitöö kasutamise võimalus ning anna kastis <guilabel
+>Ressurssikaustad paiknevad kaustas</guilabel
+> <guimenuitem
+>sisenevad</guimenuitem
+>, mis on <quote
+>office_gwdata</quote
+> alamkaust.</para>
+
+ 
+  
+<para
+>Nüüd on <quote
+>office_gwdata</quote
+> all kaks haru:</para>
+
+<orderedlist>
+<listitem>
+<para
+><quote
+>sisenevad</quote
+>, kus on alamkaustad Kalender, Kontaktid, Märkmed, Ülesanded ja Päevik, mis on salvestatud <systemitem class="username"
+>mary</systemitem
+> <acronym
+>IMAP</acronym
+>-kausta <acronym
+>IMAP</acronym
+>-serveris</para>
+</listitem>
+<listitem>
+<para
+><quote
+>kasutaja</quote
+> alamkaustaga <quote
+>groupware</quote
+> ja alamkaustadega, millele <systemitem class="username"
+>mary</systemitem
+> on saanud ligipääsuõiguse (antud juhul Kalendrid ja Ülesanded)</para>
+</listitem>
+</orderedlist>
+<para
+>Klõpsa &HPN;ga <quote
+>kasutaja</quote
+> kaustale <quote
+>Kalender</quote
+> ja kontrolli, kas selle tüüp (sisu) on ikka kalender (kui pole, siis määra see) ja kas <quote
+>kasutaja</quote
+> kausta <quote
+>Ülesanded</quote
+> tüübiks on ülesanded.</para>
+<para
+>Nüüd on kalendris kaks <acronym
+>IMAP</acronym
+>-ressurssi, kuhu kirjutada, nii et kui lood uue sündmuse, küsitakse sinu käest, millist neist kasutada (või kui jätad kasutamiseks ka kohaliku ressursi, on sul neid isegi kolm!).</para>
+<para
+>Pead liikuma kalendris all vasakul asuvasse väiksesse aknasse, mis näitab saadaolevaid ressursse ning eemaldama märke nende eest, mis sinu tahtmist mööda ei pea osutama asukohale <guilabel
+>.groupware.directory</guilabel
+> (vaata ressursside asukohanimetuse lõppu).</para>
+
+</sect1>
+
+<sect1 id="kontact-imap-credits">
+<title
+>Autorid</title>
+
+<para
+>Mina olen ainult algaja ning eelnevgi jutt nõudis minu käest ainult aega ja tahet. Teadmiste eest pean aga tänama mitmeid Freenode'i kanalitel tegutsevaid isikuid, kes ilmutasid suurt asjatundlikkust, kannatlikkust ja abivalmidust.</para>
+
+<itemizedlist>
+<title
+>Erilist tänu väärivad:</title>
+<listitem>
+<para
+><application
+>Cyrus</application
+>e <acronym
+>IMAP</acronym
+>-i puudutavate osade eest kanalil #cyrus:</para
+> 
+<itemizedlist>
+<listitem>
+<para
+>[protagonist] Andy Morgan <email
+>morgan@orst.edu</email
+></para>
+</listitem>
+<listitem>
+<para
+>[plixed] Okke Timm <email
+>okke.timm@web.de</email
+></para>
+</listitem>
+</itemizedlist>
+</listitem>
+<listitem>
+<para
+>&kontact;i puudutavate osade eest kanalil #kontact:</para>
+<itemizedlist>
+<listitem>
+<para
+>[till] Till Adam <email
+>adam@kde.org</email
+></para>
+</listitem>
+<listitem>
+<para
+>[dfaure] David Faure <email
+>faure@kde.org</email
+></para>
+</listitem>
+<listitem>
+<para
+>[mdouhan] Matt Douhan <email
+>matt@fruitsalad.org</email
+></para>
+</listitem>
+</itemizedlist>
+</listitem>
+</itemizedlist>
+
+<para
+>Suur tänu teile kõigile!</para>
+
+<para
+>Ah jaa, ja mina olen siis [markit] Marco Menardi <email
+>mmenaz@mail.com</email
+></para>
+
+</sect1>
+
+<sect1 id="kontact-imap-further-reading">
+<title
+>Lisalugemist</title>
+
+<itemizedlist>
+<title
+>Viited</title>
+<listitem
+><para
+>KDE: <ulink url="http://www.kde.org"
+>http://www.kde.org</ulink
+></para
+></listitem>
+<listitem
+><para
+>&kontact;i veebilehekülg: <ulink url="http://www.kontact.org"
+>http://www.kontact.org</ulink
+></para
+></listitem>
+<listitem
+><para
+>Kroupware projekt: <ulink url="http://www.kroupware.org"
+>http://www.kroupware.org</ulink
+></para
+></listitem>
+<listitem
+><para
+>&kde; kogukonna Wiki: <ulink url="http://wiki.kde.org"
+>http://wiki.kde.org</ulink
+></para
+></listitem>
+<listitem
+><para
+>Wine projekt: <ulink url="http://www.winehq.org"
+>http://www.winehq.org</ulink
+></para
+></listitem>
+<listitem
+><para
+>Cygwin/X projekt: <ulink url="http://x.cygwin.com"
+>http://x.cygwin.com</ulink
+></para
+></listitem>
+<listitem
+><para
+>LTSP projekt: <ulink url="http://www.ltsp.org"
+>http://www.ltsp.org</ulink
+></para
+></listitem>
+</itemizedlist>
+
+</sect1>
+
+</chapter>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: xml
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:0
+sgml-indent-data:true
+sgml-parent-document:("index.docbook" "book" "chapter")
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

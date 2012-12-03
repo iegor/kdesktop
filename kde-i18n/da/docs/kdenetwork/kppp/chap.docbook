@@ -1,0 +1,303 @@
+<chapter id="chap-and-pap">
+<title
+><acronym
+>PAP</acronym
+> og <acronym
+>CHAP</acronym
+></title>
+
+<para
+>Fra version 0.9.1, har &kppp; direkte understøttelse for de almindeligste typer af <acronym
+>PAP</acronym
+>-godkendelse. </para>
+
+<sect1 id="pap-with-kppp">
+<title
+><acronym
+>PAP</acronym
+> med &kppp;</title>
+
+<para
+>Der findes to forskellige måder at anvende <acronym
+>PAP</acronym
+>.</para>
+
+<sect2 id="client-side-authentication">
+<title
+>Godkendelse på klientsiden</title>
+
+<para
+>Denne måde anvendes af mange kommercielle internetleverandører. Det betyder egentlig at du (eller i virkeligheden din maskine) skal godkende dig på internetleverandørens <acronym
+>PPP</acronym
+>-server. <acronym
+>PPP</acronym
+>-serveren behøver ikke godkende sig selv på din maskine. Dette er ikke et sikkerhedsspørgsmål, eftersom du burde vide hvilken maskine som du præcis har forsøgt at ringe op.</para>
+
+<para
+>Hvis din Internetleverandør giver dig et brugernavn og kodeord, og angiver at du skal anvende <acronym
+>PAP</acronym
+>-godkendelse, er dette den måde du skal vælge.</para>
+
+</sect2>
+
+<sect2 id="two-way-authentication">
+<title
+>Tovejs-godkendelse</title>
+
+<para
+>Som ovenfor, men i dette tilfælde kræver din maskine at internetleverandørens <acronym
+>PPP</acronym
+>-server skal godkende sig. For at kunne oprette en forbindelse, skal du vælge godkendelsesmetoden <guilabel
+>Script-baseret</guilabel
+>, ikke <guilabel
+>PAP</guilabel
+>, og du skal redigere <filename
+>/etc/ppp/pap-secrets</filename
+> i hånden. Selv om &kppp; ikke har indbygget understøttelse for denne variant, er det alligevel let at oprette en forbindelse.</para>
+
+</sect2>
+
+<sect2 id="preparing-kppp-for-pap">
+<title
+>Forberedelse af &kppp; for <acronym
+>PAP</acronym
+></title>
+
+<procedure>
+<step>
+<para
+>Sørg for at filen <filename
+>/etc/ppp/options</filename
+> (og <filename
+>&tilde;/.ppprc</filename
+> hvis den findes) <emphasis
+>ikke</emphasis
+> indeholder et af følgende argumenter:</para>
+
+<itemizedlist>
+<listitem>
+<para
+><option
+>+pap</option
+></para>
+</listitem>
+<listitem>
+<para
+><option
+>-pap</option
+></para>
+</listitem>
+<listitem>
+<para
+><option
+>papcrypt</option
+></para>
+</listitem>
+<listitem>
+<para
+><option
+>+chap</option
+></para>
+</listitem>
+<listitem>
+<para
+><option
+>+chap</option
+></para>
+</listitem>
+<listitem>
+<para
+><option
+>+ua</option
+></para>
+</listitem>
+<listitem>
+<para
+><option
+>fjernnavn</option
+></para>
+</listitem>
+</itemizedlist>
+
+<para
+>Det er meget usandsynligt nogen af disse alternativer allerede findes, men kun for at være på den sikre siden, bør du kontrollere det.</para>
+</step>
+<step>
+<para
+>Start &kppp;</para>
+</step>
+<step>
+<para
+>Klik på <guibutton
+>Indstillinger</guibutton
+></para>
+</step>
+<step>
+<para
+>Vælg kontoen som du vil anvende <acronym
+>PAP</acronym
+> sammen med at klikke på <guibutton
+>Redigér</guibutton
+></para>
+</step>
+<step>
+<para
+>Vælg <guilabel
+>Opkald</guilabel
+>-fanebladet</para>
+</step>
+<step>
+<para
+>Vælg <acronym
+>PAP</acronym
+> i dropned-feltet <guilabel
+>Godkendelse</guilabel
+>.</para>
+</step>
+<step>
+<para
+>Hvis du ikke vil indtaste dit kodeord hver gang du ringer op, så vælg <guilabel
+>Gem kodeordet</guilabel
+>. Dette gemmer dit kodeord i en fil, så sørg for at ingen anden har adgang til din konto.</para>
+</step>
+<step>
+<para
+>Det er alt. Luk dialogerne, indskriv dit brugernavn og kodeord som din internetleverandør har givet dig, og klik på <guibutton
+>Forbind</guibutton
+>.</para>
+</step>
+</procedure>
+
+
+</sect2>
+
+</sect1>
+
+<sect1 id="pap-and-chap-alternate-method">
+<title
+>En alternativ måde at anvende <acronym
+>PAP</acronym
+> og <acronym
+>CHAP</acronym
+> med &kppp;</title>
+
+<para
+>Dette afsnit er baseret på en e-mail fra Keith Brown <email
+>kbrown@pdq.net</email
+> og forklarer hvordan man får &kppp; til at fungere med et generelt <acronym
+>PAP</acronym
+>- eller <acronym
+>CHAP</acronym
+>-abonnement. Hvis din internetleverandør kun gav dig et brugernavn og kodeord for en konto, kan du formodentlig hoppe over dette afsnit, eftersom instruktionerne i det foregående er alt du vil behøve.</para>
+
+<para
+><acronym
+>PAP</acronym
+> virker meget mere kompliceret ved første blik end det virkelig er. Serveren (maskinen som du tilsluttes) fortæller egentlig kun klienten (din maskine) at den skal godkendes med <acronym
+>PAP</acronym
+>. Klienten (<application
+>pppd</application
+>) kigger in en speciel fil efter en mail som indeholder et servernavn som passer og et klientnavn for denne tilslutning, og sender så kodeordet som den finder der. Det er egentlig det hele!</para>
+
+<para
+>Her følger hvordan man får dette til at ske. Jeg antager en <acronym
+>pppd</acronym
+> version 2.2.x eller senere og en standardinstallation med indstillingsfiler i <filename class="directory"
+>/etc/ppp</filename
+>.</para>
+
+<para
+>For dette eksempels formål, antag at du har en internetkonto med <systemitem
+>glob.net</systemitem
+> med brugernavn <systemitem
+>anvbaz</systemitem
+> og kodeord <literal
+>foobar</literal
+></para>
+
+<para
+>Først skal du tilføje alt dette til en fil som heder <filename
+>/etc/ppp/pap-secrets</filename
+>. Formatet for en linje som passer til vort formål er:</para>
+
+<screen
+><userinput
+>BRUGERNAVN    SERVERNAVN     LØSENORD</userinput
+></screen>
+
+<para
+>Så skal du tilføje følgende linje i filen <filename
+>/etc/ppp/pap-secrets</filename
+> og siden gemme den:</para>
+
+<screen
+><userinput
+>anvbaz     glob           foobar</userinput
+></screen>
+
+<note>
+<para
+>Du kan anvende et hvilketsomhelst  navn du vil for serveren, hvis du blot anvender samme navn i parameteren til <application
+>pppd</application
+>, som du snart vil se. Her er det forkortet til <userinput
+>glob</userinput
+>, men navnet anvendes kun for at finde det rigtige kodeord.</para>
+</note>
+
+<para
+>Derefter skal du indstille tilslutningen i &kppp;. Grundindstillingen er den samme som for alle andre tilslutninger, så vi går ikke ind på detaljerne her, bortset fra at omtale at du nok vil sørge for at <filename
+>/etc/ppp/options</filename
+> er tom, og at du ikke heller skal oprette et indlogningsscript.</para>
+
+<para
+>I &kppp;s indstillingsdialog, længst nede i fanebladet <guilabel
+>Opkald</guilabel
+>, findes knappen <guibutton
+>Ændr parametre til pppd...</guibutton
+>. Denne viser en redigeringsdialog. Her kan du enten indtaste værdier som sendes til <application
+>pppd</application
+> som kommandolinje-parametre, og i tilfælde af parametre som har flere værdier, skal du angive hver værdi som en særskilt post i listefeltet, i den rigtige rækkefølge.</para>
+
+<para
+>Du kan indtaste alle øvrige parametre som du vil have først. Tilføj senere  parametrene som <application
+>pppd</application
+> anvender for at håndtere <acronym
+>PAP</acronym
+>-godkendelse. Med dette eksempel, skal vi tilføje <userinput
+>user</userinput
+>, <userinput
+>anvbaz</userinput
+>, <userinput
+>remotename</userinput
+> og <userinput
+>glob</userinput
+> i denne rækkefølge.</para>
+
+<para
+>Parameteren <option
+>user</option
+> fortæller <application
+>pppd</application
+> hvilket brugernavn den skal lede efter i filen <filename
+>pap-secrets</filename
+> og siden sende til serveren. Parameteren remotename anvendes af <application
+>pppd</application
+> til at passe sammen med indgangen i filen <filename
+>pap-secrets</filename
+>, så igen, den kan være hvad som helst du vil, så længe den er det samme som indgangen i filen <filename
+>pap-secrets</filename
+>.</para>
+
+<para
+>Dette er alt som kræves, og du skulle nu kunne indstille din egen tilslutning til serveren med <acronym
+>PAP</acronym
+>-godkendelse. <acronym
+>CHAP</acronym
+> er ikke særligt anderledes. Du kan kigge i &Linux; guide for netværksadministratører efter filformatet for <filename
+>chap-secrets</filename
+>, og parametrene som anvendes for <application
+>pppd</application
+>, og resten bør være enkelt.</para>
+
+</sect1>
+</chapter>

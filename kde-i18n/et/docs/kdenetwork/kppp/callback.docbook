@@ -1,0 +1,326 @@
+<chapter id="callback">
+<title
+>&kppp; seadistamine tagasihelistamiseks</title>
+
+<para
+>Selle peatüki allikaks on Martin H&auml;fneri <email
+>mh@ap-dec717c.physik.uni-karlsruhe.de</email
+> materjal</para>
+
+<sect1 id="unix-callback-server">
+<title
+>&UNIX; või &Linux; tagasihelistamisserver</title>
+
+<para
+>See osa tutvustab sissejuhatavalt &UNIX; (&Linux;) tagasihelistamist ning seda, kuidas seadistada &kppp; ühenduma &UNIX; tagasihelistamisserveriga, eriti aga skriptil baseeruva &Linux; <link linkend="callback-resources"
+>tagasihelistamisserveriga</link
+></para>
+
+<sect2>
+<title
+>Sissejuhatus tagasihelistamisse</title>
+
+<para
+>Tagasihelistamise kasutamiseks on mitu põhjust. Mõned neist on järgmised:</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Kohaliku võrgu turvalisuse suurendamine</para>
+</listitem>
+<listitem>
+<para
+>Väliste kaastöötajate kulude kahandamine</para>
+</listitem>
+<listitem>
+<para
+>Telefoniarvete kontrollimine, kui kõnesid hinnatakse ärikuludena</para>
+</listitem>
+</itemizedlist>
+
+<para
+>Mõtle: keegi helistab sinu numbrile serveril ja murrab sinu parooli lahti. Jah, milleks üldse oma internetiühendusel tulemüüri hoida, kui ligipääs võrgule nii lihtne on?</para>
+
+<para
+>Tagasihelistamistarkvara päris tavaliselt sinu nime ja katkestab siis ühenduse. Seejärel helistatakse sulle tagasi, tavaliselt numbril, mis on salvestatud <emphasis
+>serveri</emphasis
+> andmebaasi. Klient võtab kõne vastu ja jätkab rahulikult sissehelistamisteenuse kasutamist. Server pärib nüüd kasutajanime ja parooli, teades, et tegemist on sellega, kes sa ütlesid end esimese kõne ajal olevat - või vähemalt, et see keegi asub selles kohas, kus ta ütles end esimese kõne ajal asuvat. Rajatakse normaalne ühendus ja käivitatakse <application
+>pppd</application
+>.</para>
+
+<para
+>Tekib suur küsimus: kuidas panna klient telefoni vastu võtma, kui server tagasi helistab? Kas selleks on vaja erilist rakendust, näiteks <application
+>mgetty</application
+>? Vastus: <emphasis
+>ei</emphasis
+>, mingit erilist klientrakendust ei ole vaja. Üldiselt võib tagasihelistamisühenduseks kasutada enam-vähem iga klienti, isegi täiesti tavalist terminali, näiteks <application
+>minicom</application
+>.</para>
+
+<para
+>Piisab vaid sellest, et anda modemile käsk <command
+>AutoAnswer</command
+>, mis vastab kõnele, kui modem saab signaali <computeroutput
+>RING</computeroutput
+>. Seda saab teha järgmise modemikäsuga:</para>
+
+<screen
+><userinput
+><command
+>AT&amp;SO=1</command
+></userinput
+>
+</screen>
+
+<para
+>See annab modemile korralduse kõne vastu võtta pärast ühekordset signaali <computeroutput
+>RING</computeroutput
+>.</para>
+
+<para
+>Sarnaselt paljudele klientrakendustele kontrollib &kppp;, kas server on ühenduse sulgenud, ning peatab aktiivse seansi, kui tuvastab signaali <computeroutput
+>NO CARRIER</computeroutput
+>. Siin peitubki tagasihelistamise ainus tõeline probleem. Signaal <computeroutput
+>NO CARRIER</computeroutput
+> tuvastatakse mõistagi hetkel, mil tagasihelistamisserver kõne katkestab. Seepärast kasutavad mõned serverid spetsiaalset sisselogimisrakendust. Kuidas probleem lahendada? Modemile tuleb anda korraldus tunnustada kogu aeg signaali <computeroutput
+>CARRIER UP</computeroutput
+> (mis ei tekita mingeid probleeme, kui annad kliendile korralduse kõne katkestada). Seda saab teha järgmise käsuga:</para>
+
+<screen
+><userinput
+><command
+>AT&amp;C0</command
+></userinput
+>
+</screen>
+
+<para
+>Kui soovid seda testida, kasuta esmalt tavalist terminali, näiteks <application
+>minicom</application
+>, ja võta kõne oma tagasihelistamisserverile, et näha, mis juhtub.</para>
+
+</sect2>
+
+<sect2>
+<title
+>&kppp; seadistamine</title>
+
+<para
+>Teooria on nüüd läbi, aga kuidas panna &kppp; sellist ühendust tunnistama ja käsitlema? </para>
+
+<para
+>See on õigupoolest üsna lihtne.</para>
+
+<procedure>
+<step>
+<para
+>Kõigepealt anna modemile korraldus ühendusi vastu võtta ning mitte peatada läbirääkimisi, kui tagasihelistamisserver kõne esimesel korral katkestab. Mõlemat võimalust saab määrata &kppp; seadistustedialoogi kaardil <guilabel
+>Modem</guilabel
+>, kui lisada võimalusele <guilabel
+>Numbrivalimise käsustring</guilabel
+> string <command
+>AT&amp;C0S0=1DT</command
+></para>
+<para
+>Midagi muud &kppp; seadistustes muuta ei tule. Kui modemi initsialiseerimisel ja lähtestamisel esineb probleeme, uuri lähemalt osa <link linkend="callback-troubleshooting"
+>Probleemid</link
+>.</para>
+</step>
+<step>
+<para
+>Mõtle nüüd korraks serveri peale. Arvesta, et &UNIX;, &Windows; ja Macintoshi operatsioonisüsteemid lõpetavad erinevalt rida tekstifailis ning seetõttu ka sisselogimisprotseduuris. Kui võtab ühendust &Windows; serveriga, kasuta <userinput
+>CR/LF</userinput
+>, &UNIX; serveri korral <userinput
+>CR</userinput
+> ja Macintoshi serveri puhul <userinput
+>LF</userinput
+> </para>
+</step>
+<step>
+<para
+>Käesolevate juhiste juures eeldame, et kasutad helistamiseks &Linux; tagasihelistamispaketti tavalise sisselogimisega (mitte <acronym
+>PAP</acronym
+> või midagi sellist).</para>
+<para
+>Määra konto seadistustedialoogis kaardil <guilabel
+>Helistamine</guilabel
+> <guilabel
+>autentimise</guilabel
+> võimaluseks <guilabel
+>Skriptil baseeruv</guilabel
+></para>
+</step>
+<step>
+<para
+>Nüüd tuleb luua sisselogimisskript. Sisselogimisskriptide loomine ja redigeerimine on üks &kppp; vaimustavaid võimalusi. Selle leiab dialoogi <guilabel
+>Konto redigeerimine</guilabel
+> kaardil <guilabel
+>Sisselogimisskript</guilabel
+>.</para>
+
+<para
+>Antud näites tuleb kasutajal <systemitem
+>kasutajaxyz</systemitem
+> helistamisel pruukida järgnevat skripti. Tagasihelistamisserveril on juba olemas nimed ja vastavad telefoninumbrid, nii et turvalisuse huvides vali telefoninumber aliasega.</para>
+
+<para
+>Iga rea puhul vali dialoogis vasakul paiknevast hüpikkastist vajalik kriteerium ning kirjuta tegevus sellest paremal asuvasse tekstikasti. Klõpsuga nupul <guibutton
+>Lisa</guibutton
+> saad iga rea skripti lisada. Keskel asuva nupuga <guibutton
+>Lisa</guibutton
+> saab rea lisada suvalisse kohta skriptis (vaikimisi lisatakse see lõppu) ning nupuga <guibutton
+>Eemalda</guibutton
+> rea kustutada, kui juhtusid vea tegema.</para>
+
+<para
+>Kogu skript peaks välja nägema umbes nii (küll ilma kommentaarideta, mis siin algavad märgiga #)</para>
+
+<screen
+>Expect       ogin:           <lineannotation
+># pea meeles, et me kasutame tavalist terminalis sisselogimist</lineannotation>
+ID           ""              <lineannotation
+># kppp saadab peadialoogis määratud
+kasutajanime</lineannotation>
+Expect       for kasutajaxyz:    <lineannotation
+># näidatakse saadaolevate numbrite nimekirja,
+kust kasutaja peaks ühe valima</lineannotation
+> 
+Send         kasutajaxyz-home    <lineannotation
+># kasutaja soovib tagasihelistamist
+oma kodusel numbril</lineannotation>
+Expect       ogin:           <lineannotation
+># Tagasihelistamisprotsess on käimas,
+uus ühendus ja sestap ka uus sisselogimine.</lineannotation>
+ID
+Expect       assword:        <lineannotation
+># Nüüd saada oma parool</lineannotation>
+Expect       &gt;            <lineannotation
+># Oota käsuviipa (selle
+viiba vorm võib erineda)</lineannotation>
+Send         start_ppp       <lineannotation
+># see käsk käivitab pppd</lineannotation
+>
+</screen>
+
+<para
+>Pärast sisselogimissoovi ootamist saadab kasutaja oma kasutajanime ja ootab sellele kasutajale kättesaadavate telefoninumbrite nimekirja. Seejärel ütleb ta serverile, millisel pakutavatest numbritest tuleks tagasi helistada. &kppp; võib selleks dialoogi avada, kui sinu asukoht sageli muutub, &eg; kui oled müügiagent ja elad peamiselt hotellides. Seejärel ootab server autentimiseks kasutajanime ja parooli, kuid enne seda lõpetab kõne ja helistab tagasi. Nüüd saadetakse autentimisinfo, &kppp; ootab käsurea viipa ning käivitab siis väikese skripti (antud näites nimega <filename
+>start_ppp</filename
+>), mis käivitab serveril <application
+>pppd</application
+>.</para>
+					      
+<para
+><filename
+>start_ppp</filename
+> skript näeb välja umbes selline:</para>
+					      
+<programlisting
+>#!/bin/sh
+stty -echo
+exec /usr/sbin/pppd -detach silent modem
+</programlisting>
+					      
+<para
+>Mõistagi ei ole selles käsiraamatus ruumi ega võimalust kirjeldada <acronym
+>PPP</acronym
+> serveri seadistamist. Täpsemat infot leiab soovi korral <application
+>pppd</application
+> manuaalilehekülgedelt. Tagasihelistamisserveri suurepärane kirjeldus aga leidub veebiaadressil <ulink url="http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback"
+>http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback</ulink
+></para>
+</step>
+</procedure>
+
+<para
+>Kõik muud asjad, näiteks <application
+>pppd</application
+> või <acronym
+>IP</acronym
+> seadistused, töötavad nagu tavaliselt ning kõne jaoks ei ole vaja mingit erilist tarkvara.</para>
+
+<note>
+<para
+>&kppp; tagasihelistamisrakendus ja muud rakendused, näiteks <application
+>mgetty</application
+> või mingi muu faxgetty võivad töötada ühel ja samal jadapordil. Sissehelistamisel probleeme ei teki, sest &kppp; loob lukustusfaili, mis ütleb getty-rakendusele, et liini kasutab parajasti mingi muu rakendus (antud juhul siis mõistagi &kppp;).</para>
+</note>
+
+</sect2>
+
+<sect2 id="callback-troubleshooting">
+<title
+>Probleemid</title>
+
+<para
+>&kppp; tagasihelistamisrežiimil on siiski ka mõningaid teadaolevaid probleeme:</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Modemit automaatseks vastamiseks initsialiseerides tuleb modem lähtestada pärast ühenduse sulgemist. Vastasel juhul jätkab modem liini hõivamist, mis ei ole sugugi hea mõte, kui see liin on sinu ainus ja/või peamine telefoniliin.</para>
+</listitem>
+<listitem>
+<para
+>&kppp;-l võib olla mõningaid pisiprobleeme liini jagamisel teiste rakendustega, näiteks <application
+>mgetty</application
+>. Kui <application
+>mgetty</application
+> töötab samal modemiliinil, ei suuda &kppp; modemit korrektselt initsialiseerida. </para>
+</listitem>
+<listitem>
+<para
+>&kppp; ei suuda pakkuda viipa teatud kasutaja sisendile skriptil baseeruva sisselogimise ajal. Kui kasutad ülaltoodud näidisskripti, küsib &kppp; õnnetuseks kasutajanime ka teist korda, kui tagasihelistamisserver seda nõuab. Sellest hädast võib lahti saada oma kasutajanime otse sisselogimisskripti kirjutades (see ei ole küll eriti kena, aga vähemalt toimib...)</para>
+</listitem>
+</itemizedlist>
+
+</sect2>
+
+<sect2 id="callback-resources">
+<title
+>Serveritarkvara internetis</title>
+
+<para
+>&Linux; tagasihelistamisserveri tarkvara leidub paljudes kohtades.</para>
+
+<para
+>Kuulus <application
+>mgetty</application
+> on väga võimas rakendus, mis suudab toime tulla ka tagasihelistamisühendustega. Kirjelduse, kuidas <application
+>mgetty</application
+> selliseks ülesandeks seadistada, on kirja pannud Colin McKinnon <email
+>colin@wew.co.uk</email
+> ja see asub aadressil <ulink url="http://www.dyer.demon.co.uk/slug/tipscrip.htm"
+>http://www.dyer.demon.co.uk/slug/tipscrip.htm</ulink
+>.</para>
+
+<para
+>&Linux; jaoks on ka juba kasutamisvalmis pakett aadressil <ulink url="http://www.icce.rug.nl/docs/programs/callback/callback.html"
+>http://www.icce.rug.nl/docs/programs/callback/callback.html</ulink
+>. Seda paketti hooldab Frank B. Brokken <email
+>frank@icce.rug.nl</email
+>. Selle seadistamine on küll loogiline, aga mitte just väga lihtne, mistõttu ma kirjutasin selle kohta lühikese sissejuhatuse, mis asub aadressil <ulink url="http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback"
+>http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback/</ulink
+>, kus on ka veidi üldisemalt räägitud sissehelistamisest üldse.</para>
+
+</sect2>
+</sect1>
+
+<sect1 id="nt-callback">
+<title
+>&Windows; NT <acronym
+>RAS</acronym
+> tagasihelistamine</title>
+
+<para
+>&Windows; NT kasutab täiesti teistsugust lähenemist kui äsjakirjeldatu. NT nõuab lausa <acronym
+>PPP</acronym
+> protokolli laienduse kasutamist, mis kanab nime <acronym
+>CBCP</acronym
+> (Call Back Control Protocol). <application
+>pppd</application
+> toetab seda protokolli, kuid selleks tuleb <application
+>pppd</application
+> uuesti kompileerida. Kui kellelgi on õnnestunud edukalt võtta ühendust NT tagasihelistamisserveriga, võiks sellest ka mulle teada anda.</para>
+
+</sect1>
+</chapter>

@@ -1,0 +1,4 @@
+KDE_LANG = da
+SUBDIRS = $(AUTODIRS)
+KDE_DOCS = kfind
+KDE_MANS = AUTO

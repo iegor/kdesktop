@@ -1,0 +1,434 @@
+<!-- <?xml version="1.0" ?>
+<!DOCTYPE chapter PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" "dtd/kdex.dtd">
+To validate or process this file as a standalone document, uncomment
+this prolog. Be sure to comment it out again when you are done -->
+
+<chapter id="arts-apis">
+<title
+>API интерфейс &arts;</title>
+
+<sect1 id="api-overview">
+<title
+>Обзор</title>
+<para
+>aRts - это не просто какая-то программа, в нём поддерживается API для выполнения самых разных задач. В этом разделе будет рассказано о возможностях взаимодействия aRts с другими программами с помощью API. </para>
+
+<para
+>Надо сразу отметить, что большинство возможностей API <emphasis
+>не зависят</emphasis
+>, от языка реализации и места вызова, поскольку они описаны на <emphasis
+>mcopidl</emphasis
+>. Вы можете использовать сервисы, которые они предлагают, на любом языке программирования, и не волноваться, работаете ли вы с локальным или с удалённым объектом. Вот список основных объектов: </para>
+
+
+<variablelist>
+<varlistentry>
+<term
+>core.idl</term>
+  <listitem
+><para
+>Основные определения из MCOP, например протокол, определения объектов, трейдер, менеджер потоков и т.д. </para
+></listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+>artsflow.idl</term>
+
+  <listitem
+><para
+>Содержит менеджер, управляющий соединениями аудио потоков, определение <emphasis
+>Arts::SynthModule</emphasis
+>, базы любого интерфейса с потоками, а также несколько полезных аудио объектов. </para
+></listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+>kmedia2.idl</term>
+
+
+  <listitem
+><para
+>Здесь определен объект, который может проигрывать звук, <emphasis
+>Arts::PlayObject</emphasis
+>. Медиаплееры, наподобие noatun, смогут воспроизводить любой формат, для которого определён PlayObject. На этой базе уже реализованы форматы mp3, mpg video, midi, wav... </para
+></listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+>soundserver.idl</term>
+
+  <listitem
+><para
+>Интерфейс с звуковым сервером artsd. Он называется <emphasis
+>Arts::SoundServer</emphasis
+>. Он позволяет получать потоки из сети, воспроизводить звук, создавать новые объекты aRts и т.д. Поддержка сети осуществляется прозрачным образом благодаря использованию MCOP (как и для всего прочего здесь). </para
+></listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+>artsbuilder.idl</term>
+  <listitem
+><para
+>Этот модуль определяет основные функции управления синтезом звука, совмещая простые и более сложные объекты, за счёт составления из них структур. Это определяет основной интерфейс <emphasis
+>Arts::StructureDesc</emphasis
+>, <emphasis
+>Arts::ModuleDesc</emphasis
+> и <emphasis
+>Arts::PortDesc</emphasis
+>, которые содержат описания структур, модулей  и портов. Также есть возможность получить "живую сеть объектов" из этих описаний соединений и значений, используя factory. </para
+></listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+>artsmidi.idl</term>
+
+  <listitem
+><para
+>Этот модуль определяет основные функции midi, например объекты, которые создают события midi, описание события midi и <emphasis
+>Arts::MidiManager</emphasis
+> для связи "производителей" и "потребителей" событий midi и т. д. Также поддерживается прозрачная работа в сети. </para
+></listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+>artsmodules.idl</term>
+  <listitem
+><para
+>Дополнительные фильтры, эффекты, задержки и т.д. Все они требуются для построения сложных инструментов и объектов обработки звука, которые выстраиваются из более простых объектов как из кирпичиков. </para
+></listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+>artsgui.idl</term>
+
+  <listitem
+><para
+>Базовые типы для визуальных объектов. Из базового типа <emphasis
+> Arts::Widget</emphasis
+> происходят все модули графического интерфейса. Это позволяет создавать визуальные редакторы, независимые от конкретного набора библиотек. Также визуальные объекты могут служить для установки параметров напрямую через конкретный сигнал. (например значение ползунка соединено с фильтром обрезания частот). Также поддерживается прозрачная работа в сети. </para
+></listitem>
+
+</varlistentry>
+
+</variablelist>
+<para
+>aRts написан на IDL везде, где это только возможно. С другой стороны есть некоторые <emphasis
+>языкозависимые</emphasis
+> API на C++ или C. Желательно использовать только интерфейсы IDL, а другие API только при необходимости. Вот список языкозависимых API: </para>
+
+<variablelist>
+
+<varlistentry>
+<term
+>KNotify, KAudioPlayer (включено в libkdecore)</term>
+
+  <listitem
+><para
+>Это API из KDE для случая, когда просто нужно проиграть звуковой буфер. Эта функция на C++ оптимизирована под Qt/KDE и очень простая. </para
+></listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+>libartsc</term>
+  <listitem
+><para
+>Интерфейс C для звукового сервера. Используется для портирования программ. </para
+></listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+>libmcop</term>
+
+  <listitem
+><para
+>Вот где проявляется магия MCOP. Библиотека содержит основные вещи для написания приложения MCOP, диспетчер, таймеры, а также внутренние классы для обеспечения протокола MCOP. </para
+></listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+>libartsflow</term>
+  <listitem
+><para
+>Вместе с определением artsflow.idl, есть некоторые утилиты, например конвертация частоты дискретизации. </para
+></listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+>libqiomanager</term>
+
+  <listitem
+><para
+>Интеграция MCOP в цикл событий Qt, нужно при написании приложений Qt с использованием MCOP. </para
+></listitem>
+
+</varlistentry>
+
+</variablelist>
+
+
+
+</sect1>
+<sect1 id="knotify">
+<title
+>knotify</title>
+<para
+>В процессе написания </para>
+</sect1>
+
+<sect1 id="kaudioplayer">
+<title
+>kaudioplayer</title>
+<para
+>В процессе написания </para>
+</sect1>
+
+<sect1 id="libkmid">
+<title
+>libkmid</title>
+<para
+>В процессе написания </para>
+</sect1>
+
+<sect1 id="kmedia2">
+<title
+>kmedia2</title>
+<para
+>В процессе написания </para>
+</sect1>
+
+<sect1 id="soundserver">
+<title
+>sound server</title>
+<para
+>В процессе написания </para>
+</sect1>
+
+<sect1 id="artsflow">
+<title
+>artsflow</title>
+<para
+>В процессе написания </para>
+</sect1>
+
+<sect1 id="capi">
+<title
+><acronym
+>API</acronym
+> для языка С</title>
+
+<sect2 id="capiintro">
+<title
+>Введение</title>
+
+<para
+>C <acronym
+>API</acronym
+> &arts; создано для упрощения написания и портирования приложений C в интерфейс звукового сервера &arts;. Это содержит функции потоков (отправка потоков в <application
+>artsd</application
+>), как блокирующих (синхронных), так и асинхронных.Для многих приложений вы должны просто заменить несколько системных вызовов, совместимых с вашим звуковым устройством, на соответствующие вызовы &arts;.</para>
+
+<para
+>Для пробы я портировал две программы - <application
+>mpg123</application
+> и <application
+>quake</application
+>. Патчи для них можно взять <ulink url="http://space.twc.de/~stefan/kde/download/artsc-patches.tar.gz"
+>здесь</ulink
+>. Вы можете также отправлять ваши собственные патчи создателям &arts; или мультимедиа программ, чтобы они могли бы встроить поддержку &arts; в код их программ.</para>
+
+</sect2>
+
+<sect2 id="capiwalkthru">
+<title
+>Краткое обозрение</title>
+
+<para
+>Отправка звука серверу через <acronym
+>API</acronym
+> делается очень просто:</para>
+<procedure>
+<step
+><para
+>подключите заголовочный файл: <userinput
+>#include &lt;artsc.h&gt;</userinput
+></para
+></step>
+<step
+><para
+>инициализируйте <acronym
+>API</acronym
+> функцией <function
+>arts_init()</function
+></para
+></step>
+<step
+><para
+>создайте поток <function
+>arts_play_stream()</function
+></para
+></step>
+<step
+><para
+>укажите требуемые параметры с помощью <function
+>arts_stream_set()</function
+></para
+></step>
+<step
+><para
+>отправьте аудио данные в поток функцией <function
+>arts_write()</function
+></para
+></step>
+<step
+><para
+>закройте поток: <function
+>arts_close_stream()</function
+></para
+></step>
+<step
+><para
+>освободите память, выделенную для <acronym
+>API</acronym
+>: <function
+>arts_free()</function
+></para
+></step>
+</procedure>
+
+<para
+>Вот иллюстрация:</para>
+
+<programlisting
+>#include &lt;stdio.h&gt;
+#include &lt;artsc.h&gt;
+int main()
+{
+    arts_stream_t stream;
+    char buffer[8192];
+    int bytes;
+    int errorcode;
+
+    errorcode = arts_init();
+    if (errorcode &lt; 0)
+    {
+        fprintf(stderr, "arts_init error: %s\n", arts_error_text(errorcode));
+        return 1;
+    }
+
+    stream = arts_play_stream(44100, 16, 2, "artsctest");
+
+    while((bytes = fread(buffer, 1, 8192, stdin)) &gt; 0)
+    {
+        errorcode = arts_write(stream, buffer, bytes);
+        if(errorcode &lt; 0)
+        {
+            fprintf(stderr, "arts_write error: %s\n", arts_error_text(errorcode));
+            return 1;
+        }
+    }
+
+    arts_close_stream(stream);
+    arts_free();
+
+    return 0;
+}
+</programlisting>
+</sect2>
+
+<sect2 id="capiartscconfig">
+<title
+>Компиляция и сборка: <application
+>artsc-config</application
+></title>
+
+<para
+>Для упрощения сборки программ, использующих C <acronym
+>API</acronym
+> &arts;, используется утилита <application
+>artsc-config</application
+>, которая самостоятельно определяет, функции каких библиотек вам нужно импортировать, где находятся заголовочные файлы. Она вызывается так:</para>
+
+<screen
+><userinput
+><command
+>artsc-config</command
+> <option
+>--libs</option
+></userinput
+>
+</screen>
+
+<para
+>для нахождения библиотек и так: </para>
+
+<screen
+><userinput
+><command
+>artsc-config</command
+> <option
+>--cflags</option
+></userinput
+>
+</screen>
+
+<para
+>для нахождения дополнительных флагов компилятора C. Так, пример, описанный выше, можно скомпилировать из командной строки:</para>
+
+<screen
+><userinput
+><command
+>cc</command
+> <option
+>-o artsctest artsctest.c `artsc-config --cflags` `artsc-config --libs`</option
+></userinput>
+
+<userinput
+><command
+>cc</command
+> <option
+>-o artsctest</option
+> <option
+>artsctest.c</option
+> <option
+>`artsc-config --cflags`</option
+> <option
+>`artsc-config --libs`</option
+></userinput
+>
+</screen>
+
+</sect2>
+
+<sect2 id="c-api-reference">
+<title
+>Библиотеки</title>
+
+<para
+>Ещё не готово (см. информацию в artsc.h) </para>
+
+</sect2>
+
+</sect1>
+</chapter>

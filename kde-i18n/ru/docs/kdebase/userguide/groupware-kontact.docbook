@@ -1,0 +1,1158 @@
+<chapter id="groupware-with-kontact">
+
+<chapterinfo>
+<authorgroup>
+<author
+><personname
+> <firstname
+>Marco</firstname
+> <surname
+>Menardi</surname
+> </personname
+> <email
+>gnu@kde.org</email
+> </author>
+</authorgroup>
+
+<othercredit role="translator"
+><firstname
+>Алексей</firstname
+><surname
+>Опарин</surname
+><affiliation
+><address
+><email
+>opaleksej@yandex.ru</email
+></address
+></affiliation
+><contrib
+>Перевод на русский</contrib
+></othercredit
+> 
+
+</chapterinfo>
+<title
+>Общий доступ к данным с помощью &kontact; через <acronym
+>IMAP</acronym
+></title>
+
+<sect1 id="kontact-imap-intro">
+<title
+>Введение</title>
+
+<para
+>Я долго не мог найти приемлемое для моего маленького офиса <acronym
+>PIM</acronym
+>-решение, которое позволяло бы нам с моим секретарём иметь общий доступ к данным о наших контактах, намеченных встречах и т.п. Будучи пользователем &kde;, я знал о проекте Kroupware и ожидал его завершения. Но, увидев, насколько сложна архитектура и настройка <application
+>Kolab</application
+> сервера 1.0 (серверной части проекта), решил воздержаться и дождаться выхода <application
+>Kolab</application
+> 2.0 с более простым развёртыванием. И всё-таки, возможности <application
+>Kolab</application
+> для моих скромных потребностей были явно избыточны. Но вот однажды на форуме &kde; я встретил обсуждение, в котором упоминалось о возможности общего доступа к данным без использования <application
+>Kolab</application
+>... ого, это интересно!</para>
+
+<para
+>Оказывается, в  маленьких офисах можно обойтись без установки <application
+>Kolab</application
+> сервера или других groupware-решений, воспользовавшись одним &kontact;. Он может работать с обычным, простым в настройке <acronym
+>IMAP</acronym
+>-сервером.</para>
+
+<para
+>Описываемые действия я проводил на платформе Debian unstable и &kde; 3.4. К &kontact; и другим легендарным GNU/Linux приложениям я обращался из Window$ с помощью Cygwin/X, в ожидании того момента, когда проект Wine сделает возможным запуск всех необходимых мне Windows-программ (не имеющих подходящих аналогов под GNU/Linux таких не было). Итак, мне нужно было обеспечить общий с моим секретарём доступ к данным о контактах, событиях, намеченных мероприятиях.</para>
+  
+</sect1>
+
+<sect1 id="kontact-imap-whatis">
+<title
+>Что такое <acronym
+>IMAP</acronym
+></title>
+
+<para
+>Вот определение из словаря <ulink url="http://computeruser.com"
+>ComputerUser.com High-Tech Dictionary:</ulink
+> <blockquote
+><para
+>Internet Message Access Protocol. Протокол, позволяющий пользователю производить некоторые почтовые операции на удалённом сервере. С помощью IMAP пользователь может создавать, удалять и переименовывать почтовые ящики; получать и удалять сообщения; выполнять поиск по почте. Для отправки почты требуется отдельный протокол. Другой вариант расшифровки -- Internet Mail Access Protocol.</para
+></blockquote
+> </para>
+  
+<para
+>Значит, этот протокол можно рассматривать как интерфейс к накопителю со специфическими функциями доступа. Чтобы использовать его, нужен сервер <acronym
+>IMAP</acronym
+>, такой как <application
+>Cyrus</application
+>, <application
+>Courier </application
+> или <application
+>UW</application
+>.</para>
+  
+</sect1>
+
+<sect1 id="kontact-kolab-or-imap">
+<title
+><application
+>Kolab</application
+> или <acronym
+>IMAP</acronym
+>?</title>
+  
+<para
+><application
+>Kolab</application
+> даёт возможность общего доступа к данным для разных клиентов. Например, ваш секретарь может пользоваться <application
+>Outlook</application
+>, а вы -- &kontact;.</para>
+  
+<para
+>Вы получаете интерфейс настройки, позволяющий управлять учётными записями пользователей, настраивать почтовые учётные записи, общий сервер конфигурации <acronym
+>LDAP</acronym
+> и адресной книги, фильтры спама и вирусов, управление графиком отпусков, режимом труда и отдыха, ресурсами (номера в гостиницах, автомобили), список адресатов и групп, автоматическое напоминание и т.д.</para>
+  
+<para
+>Однако, всё это очень сложно в установке и настройке. Для новичка вроде меня это означает нескончаемые ночные бдения и массу проблем, прежде чем все заработает. Нет уж, спасибо, лучше я попробую  <acronym
+>IMAP</acronym
+>, он попроще.</para>
+
+</sect1>
+
+<sect1 id="kontact-imap-cyrus">
+<title
+>Как настроить <acronym
+>IMAP</acronym
+>-сервер <application
+>Cyrus</application
+></title>
+   
+<para
+>Я выбрал <application
+>Cyrus</application
+>, это часть пакета программ <application
+>Kolab</application
+>, поэтому, если будет суждено перейти на <application
+>Kolab</application
+> в будущем, по крайней мере я буду с ним знаком.</para
+> <para
+>Итак, приступим к установке и настройке!</para>
+  
+<para
+>Становимся <systemitem class="username"
+>root</systemitem
+>.</para>
+
+<screen
+># <userinput
+><command
+>apt-get</command
+> <command
+>install</command
+> cyrus21-imapd cyrus21-common cyrus21-admin cyrus21-client sasl-bin sasl2-bin</userinput
+> 
+<computeroutput
+>Installing cyrus21-imapd...</computeroutput
+><lineannotation
+>Программа установки спрашивала что-то о search address... Я просто нажал <keycap
+>Enter</keycap
+> и всё заработало</lineannotation
+>.</screen>
+
+<para
+>Программа установки создаёт пользователя <systemitem class="username"
+>cyrus</systemitem
+>, принадлежащего к автоматически созданной группе <systemitem class="groupname"
+>sasl</systemitem
+>, которая является <quote
+>владельцем</quote
+> всех файлов cyrus. После завершения установки с помощью <command
+>ps <option
+>-A</option
+></command
+> можно увидеть новые процессы: <command
+>cyrmaster</command
+> и <command
+>notifyd</command
+>.</para>
+
+<para
+>Трудности встретились в настройке идентификации <application
+>Cyrus</application
+>, просто потому что я новичок с ограниченным знанием предмета.</para>
+
+<para
+><application
+>Cyrus</application
+> может использовать различные механизмы <acronym
+>SASL</acronym
+> (Simple Authentication and Security Layer). По умолчанию установлен sasldb (он сохраняет имена пользователей и пароли в файле <filename
+>sasldb</filename
+>), но поддерживаются также getpwent, kerberos4, kerberos5, PAM, rimap, shadow и LDAP.</para>
+
+<para
+>Не желая менять уже имеющиеся имена и пароли, я выбрал механизм <quote
+>shadow</quote
+>, позволяющий использовать для идентификации в <application
+>Cyrus</application
+> пароли &Linux;.</para>
+
+<para
+>Чтобы сделать это, необходимо сообщить sasl об использовании <command
+>saslauthd</command
+> в качестве метода авторизации, затем настроить <command
+>saslauthd</command
+> на использование <quote
+>shadow</quote
+> (или <quote
+>getpwent</quote
+>) как механизма идентификации.</para>
+
+<para
+>OK, начнём!</para>
+
+<para
+>Как <systemitem class="username"
+>root</systemitem
+>, измените системный пароль пользователя <systemitem class="username"
+>cyrus</systemitem
+>:</para>
+
+<screen
+># <userinput
+><command
+>passwd <option
+>cyrus</option
+></command
+></userinput
+></screen>
+
+<para
+>Введите пароль, который вам понравится (и который сможете запомнить), в моём примере использован <quote
+>cyrus</quote
+> как пароль администратора приложения <application
+>cyrus</application
+>.</para>
+
+<screen
+># <command
+>vi</command
+> <filename
+>/etc/imapd.conf</filename
+></screen>
+
+<programlisting
+>sasl_pwcheck_method: <userinput
+>saslauthd</userinput
+> <lineannotation
+> вместо стоящего по умолчанию <literal
+>auxprop</literal
+></lineannotation
+></programlisting>
+
+<para
+>удалите знак <literal
+>#</literal
+> в начале строки:</para>
+
+<programlisting
+>#admins: cyrus</programlisting>
+
+<para
+>таким образом пользователь <systemitem class="username"
+>cyrus</systemitem
+> может распоряжаться учётной записью <application
+>cyrus</application
+>.</para>
+
+<screen
+># <userinput
+><command
+>vi</command
+> <filename
+>/etc/default/saslauthd</filename
+></userinput
+></screen>
+
+<para
+>Раскомментируйте строку:</para>
+
+<programlisting
+># START=yes</programlisting>
+
+<para
+>(иначе <application
+>saslauthd</application
+> не будет запускаться при загрузке, даже будучи указанным где-нибудь в <filename class="directory"
+>/etc/rcx.d</filename
+>!)</para>
+
+<para
+>и вместо <literal
+>MECHANISMS="pam" </literal
+> введите <userinput
+>MECHANISMS="shadow"</userinput
+>, таким образом при загрузке будет выполняться команда <command
+>saslauthd</command
+><option
+>-a<parameter
+>shadow </parameter
+></option
+>.</para>
+
+<para
+>Выйдя из редактора, перезапустите <application
+>sasl</application
+> и <application
+>cyrus</application
+>.</para>
+
+<para
+>Для проверки <acronym
+>IMAP</acronym
+>:</para>
+
+<screen
+><userinput
+><command
+>su</command
+> <option
+>cyrus</option
+></userinput>
+$ <userinput
+><command
+>imtest</command
+> <option
+>-m login -p imap localhost</option
+></userinput
+></screen>
+
+<para
+>Предлагается ввести пароль для <systemitem class="username"
+>cyrus</systemitem
+>, так введём его.</para>
+
+<para
+>Если пользователь <systemitem class="username"
+>cyrus</systemitem
+> правильно идентифицирован, появятся  следующие строки:</para>
+
+<screen
+><computeroutput
+>S: L01 OK User logged in
+Authenticated.</computeroutput
+></screen>
+<para
+>Для выхода наберите <userinput
+>. logout</userinput
+> (точка, пробел, <quote
+>logout</quote
+>)</para>
+
+<para
+>Теперь с помощью обычных системных средств создадим пользователя <systemitem class="username"
+>groupware</systemitem
+> и установим для него пароль. Он должен принадлежать к какой-нибудь непривилегированной группе, например <systemitem class="groupname"
+> nobody</systemitem
+>, ему не нужны системная оболочка и домашняя папка.</para>
+
+<para
+>Создадим пользователя и <acronym
+>IMAP</acronym
+> также и в <application
+>cyrus</application
+>:</para>
+
+<screen
+># <userinput
+><command
+>cyradm</command
+> <option
+>--user cyrus localhost</option
+></userinput>
+после ввода пароля администратора <systemitem class="username"
+>cyrus</systemitem
+>, получим приглашение <prompt
+>localhost&gt;</prompt>
+<prompt
+>localhost&gt;</prompt
+> <userinput
+><command
+>cm</command
+> <option
+>user.groupware</option
+></userinput>
+<prompt
+>localhost&gt;</prompt
+> <userinput
+><command
+>lm</command
+></userinput
+> <lineannotation
+>выводит только что созданный почтовый ящик</lineannotation>
+<computeroutput
+>user.groupware (\HasNoChildren))</computeroutput>
+<prompt
+>localhost&gt;</prompt
+> <userinput
+><command
+>quit</command
+></userinput
+></screen>
+
+<para
+>Для вывода списка доступных команд можно набрать <userinput
+><command
+>help</command
+></userinput
+>.</para>
+
+<para
+>Посмотрим, что у нас получилось:</para>
+
+<screen
+># <userinput
+><command
+>ls</command
+> <option
+>-l</option
+> <filename class="directory"
+>/var/spool/cyrus/mail/g/user/groupware</filename
+></userinput>
+<computeroutput
+>total 12
+-rw------- 1 cyrus mail          4 Oct 29 20:55 cyrus.cache
+-rw------- 1 cyrus mail 155 Oct 29 20:55 cyrus.header
+-rw------- 1 cyrus mail 76 Oct 29 20:55 cyrus.index</computeroutput
+></screen>
+
+<para
+>Теперь можно попробовать подключиться <acronym
+>IMAP</acronym
+>-клиентом как пользователь <systemitem class="username"
+>groupware</systemitem
+> и заглянуть в папку <literal
+>INBOX</literal
+>.</para>
+<note
+><para
+>В протоколе <acronym
+>IMAP</acronym
+> название почтового ящика <literal
+>INBOX</literal
+> служит ключевым словом, это в некотором роде <quote
+>псевдоним</quote
+> структуры каталога выше. Клиент заходит во <literal
+>INBOX</literal
+>, а сервер <acronym
+>IMAP</acronym
+> перенаправляет его в папку <filename class="directory"
+>/var/spool/cyrus/mail/...</filename
+> с её файлами-сообщениями.</para
+></note>
+
+</sect1>
+
+<sect1 id="kontact-imap-clients">
+<title
+>Настройка клиентов &kontact;</title>
+  
+<para
+>Я подключаюсь к моему офисному серверу с GNU/Linux (это "black box", без клавиатуры и монитора) с двух компьютеров с &Windows; 2000 с помощью <application
+>Cygwin/X</application
+>, используя их как X-Window сервер (в ближайшем будущем надеюсь заменить их на два тонких клиента mini-itx под управлением). В этой конфигурации каждый пользователь запускает &kontact; на той машине, на которой установлен и запущен <application
+>Cyrus</application
+> (localhost).</para>
+  
+<para
+>Чтобы &kontact; работал с <acronym
+>IMAP</acronym
+>, предпримем следующее:</para>
+
+<procedure>
+
+<step
+><para
+>Создадим учётную запись <acronym
+>IMAP</acronym
+> в <application
+>Cyrus</application
+> для мнимого пользователя <systemitem class="username"
+>groupware</systemitem
+> (это мы уже сделали)</para
+></step>
+
+<step
+><para
+>Создадим и настроим учётную запись <acronym
+>IMAP</acronym
+> в &kmail; для входа этого пользователя</para
+></step
+> <step
+><para
+>Используйте kresources для того чтобы заставить компоненты &kontact; работать с данными, взятыми из источника <acronym
+>IMAP</acronym
+></para
+></step>
+
+<step
+><para
+>Включим функции groupware и создадим соответствующие подпапки в <literal
+>INBOX</literal
+> (если их там ещё нет)</para
+></step>
+
+<step
+><para
+>Приятной работы с новыми друзьями &kontact;, <application
+>Cyrus</application
+> и IMAP!</para
+></step>
+
+</procedure>
+  
+<para
+>Итак, войдём в &kde; с учётной записью первого <quote
+>реального пользователя</quote
+>, которому мы хотим предоставить функциональность groupware.</para>
+
+<para
+>Создаём учётную запись IMAP в &kmail;.</para>
+
+<para
+>Запустим &kontact; и найдём <guilabel
+>Почта</guilabel
+> (компонент &kmail;). В меню выбираем: <menuchoice
+><guimenu
+>Настройка</guimenu
+><guimenuitem
+>Настроить KMail </guimenuitem
+><guilabel
+>Учётные записи</guilabel
+></menuchoice
+>, переходим на вкладку <guilabel
+>Получение</guilabel
+>. Нажмём кнопку <guibutton
+>Добавить...</guibutton
+>. Будет задан вопрос о типе почтовой учётной записи, выберите <guilabel
+>Отсоединённый IMAP</guilabel
+> (а не просто <guilabel
+>IMAP</guilabel
+>). Затем на вкладке <guilabel
+>Общие</guilabel
+> введём следующие данные:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Учётное имя:</guilabel
+> <userinput
+>office_gwdata</userinput
+></term>
+<listitem>
+<para
+>Так будет названа <quote
+>локальная</quote
+> папка, указывающая на эту учётную запись <acronym
+>IMAP</acronym
+>.</para>
+</listitem
+> 
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Имя:</guilabel
+> <userinput
+>groupware</userinput
+></term>
+<listitem>
+<para
+>Пользователь <application
+>Cyrus</application
+>, избранный <quote
+>владельцем</quote
+> всех офисных данных</para>
+</listitem>
+</varlistentry>
+<varlistentry
+><term
+><guilabel
+>Пароль:</guilabel
+></term>
+<listitem>
+<para
+>Пароль пользователя <systemitem class="username"
+>groupware</systemitem
+>.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Сервер:</guilabel
+> <userinput
+>localhost</userinput
+></term>
+<listitem>
+<para
+>Помним, в нашем примере клиент &kontact; действует на том же компьютере, что и <acronym
+>IMAP</acronym
+> сервер</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Порт:</guilabel
+> <userinput
+>143</userinput
+></term>
+<listitem>
+<para
+>По умолчанию</para>
+</listitem>
+</varlistentry>
+</variablelist>
+  
+<para
+>Отметьте галочкой <guilabel
+>Хранить пароль IMAP в файле настроек</guilabel
+>, чтобы не вводить его снова и снова. Отметьте также <guilabel
+>Периодическая проверка почты</guilabel
+> и задайте значение в минутах.</para>
+  
+<para
+>Заметьте, что выбран тип учётной записи <guilabel
+>Отсоединённый IMAP</guilabel
+>. В этом случае копии данных groupware хранятся <quote
+>локально</quote
+> по отношению к клиенту (в его домашней папке) и  синхронизируются при каждом его подключении. На первый взгляд, это очень неэффективно, так как данные многократно дублируются (например, на 10 пользователей &kontact; будет 10+1 копий данных). Но это единственная возможность добиться высокой скорости, ведь &kontact; при каждом подключении доставляет все данные и заставляет &korganizer; и &kaddressbook; обрабатывать их. Если же при <quote
+>Отсоединённом IMAP</quote
+> данные хранятся в одном месте, пересылаются только <quote
+>delta</quote
+> (изменённые) данные.</para>
+  
+<para
+>С другой стороны, если пользователи работают с &korganizer; на той же машине, что <acronym
+>IMAP</acronym
+> сервер, может показаться более разумным выбрать режим <acronym
+>IMAP</acronym
+> (так называемый <quote
+>онлайн IMAP</quote
+>) для экономии места, если скорость передачи не очень важна. К несчастью, этот способ не действует, потому что &kontact; в режиме <quote
+>IMAP</quote
+> не может автоматически обновлять папку <guilabel
+>Календарь</guilabel
+>. Поэтому, когда кто-нибудь добавляет в эту папку данные, общего обновления не происходит (необходимо вручную включать приложение &kmail; и щёлкать на папке <guilabel
+>Календарь</guilabel
+>). Кроме того, когда при пуске начинается чтение папок <guilabel
+>Календарь</guilabel
+>, происходит ужасное мигание и замедление обновления данных.</para>
+  
+<para
+>Теперь можно сообщить &kontact; об использовании <acronym
+>IMAP</acronym
+> как источника данных для своих компонентов. Из &kmenu;, выберите <guimenuitem
+>Выполнить программу</guimenuitem
+>, введите <userinput
+><command
+>kcmshell kresources</command
+></userinput
+>. В выпадающем списке выберите <guilabel
+>Контакты</guilabel
+>, затем нажмите кнопку <guibutton
+>Добавить...</guibutton
+> и выберите <guilabel
+>Адресная книга на сервере IMAP через KMail</guilabel
+>. Затем выберите эту новую запись и нажмите кнопку <guibutton
+>Использовать как стандартный</guibutton
+>. Сделайте то же самое для типов <guilabel
+>Календарь</guilabel
+> и <guilabel
+>Заметки</guilabel
+>.</para>
+  
+<para
+>Теперь включите функциональность groupware в &kmail; (а следовательно, в всём &kontact;):</para>
+
+<procedure>
+<step>
+<para
+>Выберите в меню <menuchoice
+><guimenu
+>Настройка</guimenu
+><guimenuitem
+>Настроить KMail</guimenuitem
+><guilabel
+>Разное</guilabel
+><guilabel
+>Совместная работа</guilabel
+></menuchoice
+></para>
+</step>
+<step>
+<para
+>Отметьте <guilabel
+>Включить функциональность IMAP</guilabel
+></para>
+</step>
+<step>
+<para
+>Выберите <guilabel
+>Английский</guilabel
+> как <guilabel
+>Язык папок совместной работы</guilabel
+> (на тот случай, если на сервере <acronym
+>IMAP</acronym
+> уже есть папки, созданные другой программой на другом языке).</para>
+</step>
+<step>
+<para
+>Теперь перейдём к <guilabel
+>Корневая папка ресурсов</guilabel
+> и выберем подпапку <guilabel
+>Inbox</guilabel
+> в папке <guilabel
+>office_gwdata</guilabel
+>.</para>
+<para
+>Пункт <guilabel
+>Скрыть папки совместной работы</guilabel
+> оставим пока неотмеченным и посмотрим, что из этого получится. В дальнейшем, когда окончательно во всём разберёмся, можно будет вернуться и отметить его.</para>
+</step>
+<step>
+<para
+>Нажав OK, получаем предложение: <computeroutput
+>&kmail; создаст требуемые папки для ресурса IMAP как подпапки Inbox</computeroutput
+> </para>
+<para
+>Если нам этого не нужно, нажмём <guibutton
+>Нет</guibutton
+>, и ресурсы <acronym
+>IMAP</acronym
+> будут удалены. Нажмём <guibutton
+>Да</guibutton
+> (эта возможность появляется только раз, для первого <quote
+>реального пользователя</quote
+>). Тут же можно заметить, как в дереве папок &kmail; в папках <menuchoice
+><guilabel
+>office_gwdata</guilabel
+><guilabel
+>Inbox</guilabel
+></menuchoice
+> создаются эти подпапки.</para>
+<simplelist>
+<member
+>Календарь</member>
+<member
+>Контакты</member>
+<member
+>Заметки</member>
+<member
+>Задачи</member>
+<member
+>Журнал</member>
+</simplelist>
+<para
+>если вы сейчас сделаете:</para>
+<screen
+># <command
+>ls</command
+> <option
+>-l /var/spool/cyrus/mail/g/user/groupware/</option>
+<computeroutput
+>drwx------ 2 cyrus mail 144 Oct 31 16:36 Calendar
+drwx------ 2 cyrus mail 144 Oct 31 16:36 Contacts
+drwx------ 2 cyrus mail 144 Oct 31 16:36 Journal
+drwx------ 2 cyrus mail 144 Oct 31 16:36 Notes
+drwx------ 2 cyrus mail 144 Oct 31 16:36 Tasks
+-rw------- 1 cyrus mail      4 Oct 31 15:28 cyrus.cache
+-rw------- 1 cyrus mail 155 Oct 29 20:55 cyrus.header
+-rw------- 1 cyrus mail 76 Oct 31 15:28 cyrus.index</computeroutput
+></screen>
+
+<para
+>Как можно заметить, <guilabel
+>office_gwdata Inbox</guilabel
+> находится не в домашней директории пользователя &kontact;, а в папках пользователей <acronym
+>IMAP</acronym
+> <systemitem class="username"
+>groupware</systemitem
+>.</para>
+</step>
+</procedure>
+
+<para
+>Теперь &kontact; готов к работе и хранению данных в этих папках. В календаре, если учётная запись &kmail; <acronym
+>IMAP</acronym
+> имела тип <quote
+>Отсоединённый</quote
+>, в окне  <guilabel
+>Ресурс</guilabel
+> должен быть виден пункт <guilabel
+>Imap-ресурс</guilabel
+> с тремя подпунктами, которые являются путями к локальным домашним файлам. А вот в пункте <guilabel
+>Контакты</guilabel
+> подпунктов в <guilabel
+>Imap-ресурс</guilabel
+> нет.</para>
+
+<para
+>Теперь можно войти в &kde; под именем другого пользователя, и подобным же образом настроить его/её клиент &kontact;.</para>
+
+<procedure>
+<step>
+<para
+>Откройте &kontact;, и в компоненте <guilabel
+>Письмо</guilabel
+> добавьте учётную запись <acronym
+>IMAP</acronym
+>, указав в качестве <guilabel
+>Сервер</guilabel
+> компьютер, на котором установлен <application
+>Cyrus</application
+> сервер (в моём случае: <literal
+>192.168.1.3</literal
+>).</para>
+
+<para
+>Не забудьте поставить флажок <guilabel
+>Периодическая проверка почты</guilabel
+> и установить значение в минутах. Когда вы подтвердите свои действия, вопрос о создании подпапок задан не будет (ведь они уже созданы на сервере <acronym
+>IMAP</acronym
+>), их можно увидеть в дереве папок.</para>
+</step>
+<step>
+<para
+>Активируйте функциональность groupware для получения возможности сохранять данные на сервере <acronym
+>IMAP</acronym
+>.</para>
+</step>
+</procedure>
+<para
+>Помните, что в режиме <quote
+>Отсоединённый <acronym
+>IMAP</acronym
+></quote
+> данные передаются от клиента на сервер <acronym
+>IMAP</acronym
+> только тогда, когда клиент подключается для проверки почты.  Поэтому, если у ваших клиентов &kontact; <guilabel
+>Интервал между проверками</guilabel
+> установлен, например, 5 минут, то в худшем случае задержка между записью события и его появлением перед другими пользователями составит 10 минут.</para>
+</sect1>
+<sect1 id="kontact-imap-readonly">
+<title
+>Как установить доступ только для чтения</title>
+
+<note
+><para
+>Хочу предупредить, что реализация Заметок <acronym
+>IMAP</acronym
+> в &kontact; вплоть до версии 1.01 была неустойчивой, поэтому описанные настройки с прежними версиями могут не работать. Если вы хотите пользоваться этими версиями, понадобятся настройки, существовавшие ранее.</para
+></note>
+    
+<para
+>В этих прежних настройках существует тот же <quote
+>мнимый</quote
+> пользователь под именем <systemitem class="username"
+>groupware</systemitem
+>, имя и пароль которого применяют все <quote
+>реальные</quote
+> пользователи &kontact; (т.е. <systemitem class="username"
+>tony</systemitem
+>, <systemitem class="username"
+>rohn</systemitem
+>, <systemitem class="username"
+>amanda</systemitem
+> и т.д.) через учётную запись <acronym
+>IMAP</acronym
+>. Но таким образом все реальные пользователи имеют одинаковые права чтения/записи, так как каждый подключается к <acronym
+>IMAP</acronym
+> серверу как пользователь <systemitem class="username"
+>groupware</systemitem
+>.</para>
+    
+<para
+>Для ограничения доступа некоторым пользователям (обычно, предоставляется доступ только для чтения), можно воспользоваться <acronym
+>ACL</acronym
+> (Access Control Lists).</para>
+    
+<para
+>В &kmail; выберите подпапку <guilabel
+>office_gwdata</guilabel
+>, например, <guilabel
+>Календарь</guilabel
+>, и, щёлкнув на ней правой кнопкой мыши, выберите пункт  <guilabel
+>Параметры</guilabel
+>, вкладку <guilabel
+>Контроль доступа</guilabel
+>. Здесь можно указать, каким пользователям и какие права доступа к этой папке вы хотите предоставить.</para>
+
+<para
+>Ради эксперимента, дадим права <quote
+>All</quote
+> пользователю <systemitem class="username"
+>mary</systemitem
+></para>
+
+<para
+>Сначала на уровне приложения <application
+>cyrus</application
+> (на той машине, на которой размещён <acronym
+>IMAP</acronym
+> сервер cyrus, средствами приложения <application
+>cyrus</application
+>)  добавим пользователя <systemitem class="username"
+>mary</systemitem
+>, чтобы этого пользователя мог опознать <acronym
+>IMAP</acronym
+>, и создадим для неё <acronym
+>IMAP</acronym
+> папку.</para>
+
+<para
+>Затем входим в GNU/Linux как <systemitem class="username"
+>mary</systemitem
+> и переходим в &kontact;. Как мы видели прежде, учётную запись <acronym
+>IMAP</acronym
+> в &kmail; вы можете настроить как один из пользователей (вместо мнимого пользователя <systemitem class="username"
+>groupware</systemitem
+> и его пароля, мы можем использовать имя <systemitem class="username"
+>mary</systemitem
+> и её пароль).</para>
+
+<para
+>На этот раз в дереве папок &kmail; вы увидите следующую структуру: <menuchoice
+><guimenu
+>office_gwdata</guimenu
+><guisubmenu
+>user</guisubmenu
+> <guisubmenu
+>groupware</guisubmenu
+><guimenuitem
+>Календарь и Задачи</guimenuitem
+></menuchoice
+>. Проверьте почту (<menuchoice
+><guimenu
+>Файл</guimenu
+><guimenuitem
+>Проверить почту</guimenuitem
+></menuchoice
+>), и вы также увидите папку <quote
+>входящие</quote
+> под папкой <quote
+>office_gwdata</quote
+>.</para>
+
+<para
+>Теперь включим функциональность groupware &kmail;, и в <guilabel
+>Папки IMAP есть подпапки:</guilabel
+> укажем <guimenuitem
+>Входящие</guimenuitem
+>, которая является подпапкой <quote
+>office_gwdata</quote
+>.</para>
+
+<para
+>Теперь включим возможности groupware &kmail;, и в <guilabel
+>Папки IMAP есть подпапки:</guilabel
+> укажем <guimenuitem
+>Входящие</guimenuitem
+>, которая является подпапкой <guisubmenu
+>office_gwdata</guisubmenu
+>.</para>
+  
+<para
+>У нас появились две ветви папок в <quote
+>office_gwdata</quote
+>:</para>
+
+<orderedlist>
+<listitem>
+<para
+><quote
+>Входящие</quote
+> с папками Календарь, Контакты, Заметки, Задачи и Журнал, которые хранятся в папках <systemitem class="username"
+>mary</systemitem
+> <acronym
+>IMAP</acronym
+> на <acronym
+>IMAP</acronym
+> сервере</para>
+</listitem>
+<listitem>
+<para
+><quote
+>user</quote
+>, с подпапкой <quote
+>groupware</quote
+> и подпапками, к которым имеет доступ <systemitem class="username"
+>mary</systemitem
+> (в нашем примере, Календарь и Задачи)</para>
+</listitem>
+</orderedlist>
+<para
+>Правой кнопкой мыши щёлкнем <quote
+>user</quote
+> <quote
+>Календарь</quote
+> и проверим, имеет ли он тип Календарь (если нет, то установим его как надо). Так же поступим с папкой <quote
+>user</quote
+> <quote
+>Задачи</quote
+>.</para>
+<para
+>Теперь в Календаре у вас есть два возможных <acronym
+>IMAP</acronym
+>-ресурса для записи, поэтому, когда вы создадите новое событие, вам будет задан вопрос, какой из них использовать (а если оставлены доступными локальные ресурсы, придётся выбирать из трёх!).</para>
+<para
+>Нужно переместить курсор в нижнее левое маленькое окошко Календаря, которое показывает доступные ресурсы, и снять отметку с тех, что не указывают на <guilabel
+>.groupware.directory</guilabel
+> (см. хвостовую часть пути к ресурсу).</para>
+
+</sect1>
+
+<sect1 id="kontact-imap-credits">
+<title
+>Благодарности</title>
+
+<para
+>Я новичок, и смог вложить в это руководство только свои время и желание. Реальными же знаниями я обязан некоторым наставникам из мира свободного ПО, которых хочу поблагодарить за компетенцию, терпение и готовность прийти на помощь.</para>
+
+<itemizedlist>
+<title
+>Особая благодарность:</title>
+<listitem>
+<para
+>За часть <application
+>Cyrus</application
+> <acronym
+>IMAP</acronym
+> в #cyrus channel:</para
+> 
+<itemizedlist>
+<listitem>
+<para
+>[protagonist] Энди Моргану (Andy Morgan) <email
+>morgan@orst.edu</email
+></para>
+</listitem>
+<listitem>
+<para
+>[plixed] Окке Тимму (Okke Timm) <email
+>okke.timm@web.de</email
+></para>
+</listitem>
+</itemizedlist>
+</listitem>
+<listitem>
+<para
+>За часть &kontact; в #kontact channel:</para>
+<itemizedlist>
+<listitem>
+<para
+>[till] Тиллю Адаму (Till Adam) <email
+>adam@kde.org</email
+></para>
+</listitem>
+<listitem>
+<para
+>[dfaure] Дэвиду Фору (David Faure) <email
+>faure@kde.org</email
+></para>
+</listitem>
+<listitem>
+<para
+>[mdouhan] Мэтту Духану (Matt Douhan <email
+>matt@fruitsalad.org</email
+></para>
+</listitem>
+</itemizedlist>
+</listitem>
+</itemizedlist>
+
+<para
+>Благодарю всех своих наставников!</para>
+
+<para
+>Ах, да, вот ещё я, [markit] Марко Менарди (Marco Menardi)<email
+>mmenaz@mail.com</email
+></para>
+
+</sect1>
+
+<sect1 id="kontact-imap-further-reading">
+<title
+>Дополнительные сведения</title>
+
+<itemizedlist>
+<title
+>Ссылки</title>
+<listitem
+><para
+>KDE: <ulink url="http://www.kde.org"
+>http://www.kde.org</ulink
+></para
+></listitem>
+<listitem
+><para
+>Веб-сайт &kontact;: <ulink url="http://www.kontact.org"
+>http://www.kontact.org</ulink
+></para
+></listitem>
+<listitem
+><para
+>Проект Kroupware: <ulink url="http://www.kroupware.org"
+>http://www.kroupware.org</ulink
+></para
+></listitem>
+<listitem
+><para
+>Форум Сообщества &kde;: <ulink url="http://wiki.kde.org"
+>http://wiki.kde.org</ulink
+></para
+></listitem>
+<listitem
+><para
+>Проект Wine: <ulink url="http://www.winehq.org"
+>http://www.winehq.org</ulink
+></para
+></listitem>
+<listitem
+><para
+>Проект Cygwin/X: <ulink url="http://x.cygwin.com"
+>http://x.cygwin.com</ulink
+></para
+></listitem>
+<listitem
+><para
+>Проект LTSP: <ulink url="http://www.ltsp.org"
+>http://www.ltsp.org</ulink
+></para
+></listitem>
+</itemizedlist>
+
+</sect1>
+
+</chapter>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: xml
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:0
+sgml-indent-data:true
+sgml-parent-document:("index.docbook" "book" "chapter")
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

@@ -1,0 +1,1297 @@
+<chapter id="project-management">
+
+<chapterinfo>
+  <authorgroup>
+    <author
+><firstname
+>Bernd</firstname
+><surname
+>Pol</surname
+></author>
+    <author
+><firstname
+>Ian</firstname
+><surname
+>Wadham</surname
+></author>
+    <!-- ROLES_OF_TRANSLATORS -->
+  </authorgroup>
+</chapterinfo>
+
+<title
+>Bygge og projekthåndtering</title>
+
+<para
+>Dette kapitel behandler kun kompilerede projekter, såsom projekter med C++, &Java; eller Fortran. Projekter for scriptsprog såsom Python og PHP, virker meget anderledes. </para>
+
+<para
+>Her finder du information om følgende emner:</para>
+<itemizedlist>
+  <listitem
+><para
+><link linkend="automake-manager-summary"
+>Sammendrag af Håndtering af automake</link
+> indeholder en oversigt over Håndtering af automake, </para
+></listitem>
+  <listitem
+><para
+><link linkend="automake-manager-operation"
+>Anvendelse af Håndtering af automake</link
+> beskriver det basale i hvordan man arbejder med Håndtering af automake. </para
+></listitem>
+</itemizedlist>
+
+<sect1 id="automake-manager-summary">
+<title
+>Sammendrag af Håndtering af automake</title>
+
+<para
+>I kapitlet <link linkend="unixdev-buildsystems"
+>Byggesystemer</link
+> har vi givet en grov oversigt over de byggesystem som almindeligvis bruges på &UNIX;-systemer. I følgende afsnit kigger vi på dette i mere detalje. </para>
+<para
+>Der er en vis forvirring angående hvordan sådanne ting skal navngives. &GNU; kalder dem <quote
+>byggesystemer</quote
+> når Automake, Autoconf og Libtool beskrives. Qmake kaldes <quote
+>et værktøj til at skrive Makefiles for forskellige oversættere og platforme</quote
+>. I &kde; bruges ofte udtrykket <quote
+>projekthåndteringssystem</quote
+>. Vi bruger dette udtryk i en bredere forstand til at beskrive de indbyggede miljøer i &kdevelop; som bruges til at organisere og bygge projekter. I dette afsnits sammenhæng, taler vi dog hovedsageligt om <quote
+>automatiserede byggesystemer</quote
+>. </para>
+
+<sect2 id="automake-manager-summary-buildsys">
+<title
+>Behovet for et automatiseret byggesystem</title>
+
+<para
+>Hvis du har et simpelt program som udskriver <quote
+>Hej allesammen</quote
+>, skrevet i C, kan du kompilere og linke det med &gcc; <parameter
+>-o hej hej.c</parameter
+> og køre det med <command
+>./hej</command
+>, så du behøver du ikke engang en <filename
+>Makefile</filename
+>. </para>
+<para
+>Hvis du har et C-program med flere moduler og deklarationsfiler og du kun skal køre det på din maskine (&ie; det er et lokalt program), behøver du kun en enkelt <filename
+>Makefile</filename
+>, som er ganske nem at skrive i hånden (brug <userinput
+>info make</userinput
+> for at lære dig mere). </para>
+<para
+>Komplikationerne begynder når: </para>
+<itemizedlist>
+  <listitem
+><para
+>Din kildekode, dokumentation, grafik, lyd, oversættelser, datafiler &etc; findes i mere end en mappe, </para
+></listitem>
+  <listitem
+><para
+>Du har et hierarki af mapper og undermapper, </para
+></listitem>
+  <listitem
+><para
+>Du bruger biblioteker som ikke er en del af det traditionelle sæt på &UNIX;, såsom &Qt;-objektbiblioteket eller &kde;-desktopbiblioteker, </para
+></listitem>
+  <listitem
+><para
+>Du bruger en præprocessor til at oprette en del af din kildekode, som Qt's MOC præoversætter, </para
+></listitem>
+  <listitem
+><para
+>Du sigter mod at distribuere programmet i hele verden, til personer som ikke har samme &UNIX;- eller &Linux;-system, programmel og hardware som dig, </para
+></listitem>
+  <listitem
+><para
+>Du kræver en automatisk funktion for installation og afinstallation, </para
+></listitem>
+  <listitem
+><para
+>Du sigter mod at gøre dit program til en del af &kde;'s sæt af desktopprogrammer. </para
+></listitem>
+</itemizedlist>
+
+<para
+>Hvis du befinder dig i en eller alle ovenstående situationer, behøver du formodentlig et <emphasis
+>byggesystem</emphasis
+>. I eksemplet ovenfor brugte vi kommandoen &gcc; til at kompilere og bygge programmet <quote
+>Hej</quote
+>, men alle C-oversættere hedder ikke <quote
+>&gcc;</quote
+>. Så hvis du distribuerer programmet til nogen som bruger en anden C-oversætter, skal din Makefile på en eller anden måde bruge navnet på denne persons oversætter, ellers mislykkes kompileringen af programmet&mdash;og dette er kun et af mange eksempler på hvad som kan gå galt. </para>
+<para
+>Et byggesystem udjævner forskellene for dig. </para>
+<itemizedlist>
+  <listitem
+><para
+>Det kontrollerer at bibliotekerne som behøves er på hver maskine som tager imod programmet, </para
+></listitem>
+  <listitem
+><para
+>afsøger automatisk alle programmapper efter filer at forbehandle, kompilere eller installere og </para
+></listitem>
+  <listitem
+><para
+>installerer komponenterne som programmet består af i de rigtige mapper, og sikrer at </para
+></listitem>
+  <listitem
+><para
+>mapperne på maskinen som tager imod programmet laves efter behov. </para
+></listitem>
+</itemizedlist>
+
+<para
+>I korthed tilbyder et byggesystem sikre metoder til at kompilere og installere programmet på alle maskiner som tager imod programmet. Som vi har vist tidligere i oversigten <link linkend="makesystems"
+>Projekthåndteringssystemer</link
+>, tilbyder &kdevelop; tre automatiserede byggesystemer og mulighed at oprette din egen Makefile. I korthed (klik på projektnavnene for mere information): </para>
+<itemizedlist>
+  <listitem
+><para
+><link linkend="automake-project"
+>Automake-projekt</link
+> som bruger de almindelige udviklingsværktøjer for &GNU;. </para
+></listitem>
+  <listitem
+><para
+><link linkend="qmake-project"
+>Qmake-projekt</link
+> som bruger  Trolltechs Qmake-projekthåndtering. </para
+></listitem>
+  <listitem
+><para
+><link linkend="ant-project"
+>ANT-projekt</link
+> som bruger Apaches ANT-projekthåndtering for &Java;-udvikling. </para
+></listitem>
+  <listitem
+><para
+><link linkend="custom-project"
+>Eget projekt</link
+> som kræver at du vedligeholder din egen <filename
+>Makefile</filename
+>. </para
+></listitem>
+</itemizedlist>
+
+<important>
+<para
+>En af de fire valgmuligheder skal vælges når du laver et projekt, og <emphasis
+>valget er svært at ændre senere</emphasis
+>, så du bør tænke dig om inden du begynder. </para>
+</important>
+
+</sect2
+> <!--  automake-manager-summary-buildsys -->
+
+<sect2 id="automake-references">
+<title
+>Vejledninger om Autoconf, Automake og Libtool</title>
+<para
+>Der er flere vejledninger tilgængelige om &GNU;'s byggesystem (<command
+>Autoconf</command
+>, <command
+>Automake</command
+> og <command
+>Libtool</command
+>) som Håndtering af automake bruger. </para>
+<itemizedlist>
+  <listitem
+><para
+>En kort <ulink url="http://www.kdevelop.org/index.html?filename=tutorial_autoconf.html"
+>vejledning om autoconf</ulink
+>, skrevet af Christopher W. Curtis er tilgængelig på KDevelops hjemmeside. Den koncentrerer sig om nogle grundlæggende skridt til at ændre en <filename
+>Makefile</filename
+>. </para
+></listitem>
+  <listitem
+><para
+>En mere detaljeret vejledning findes i et større sæt af øvelser på <ulink url="http://www.amath.washington.edu/~lf/tutorials/autoconf/toolsmanual_toc.html"
+> <quote
+>Udvikling af programmer med GNU</quote
+></ulink
+>. </para
+></listitem>
+  <listitem
+><para
+>Den berømte <quote
+>gedebog</quote
+>, som hedder <quote
+>Autoconf, Automake, and Libtool</quote
+>, findes også på <ulink url="http://sources.redhat.com/autobook"
+></ulink
+>. Den er en letlæst, men alligevel kortfattet, introduktion til alle vigtige aspekter af &GNU;'s autoværktøjer. </para
+></listitem>
+</itemizedlist>
+
+</sect2
+> <!--  automake-references -->
+
+<sect2 id="automake-manager-basics">
+<title
+>Hvad gør Håndtering af automake?</title>
+
+<para
+><link linkend="applicationwizard"
+>Programguiden</link
+> har oprettet nogle oprindelige <filename
+>Makefile.am</filename
+> filer da du oprettede et <guilabel
+>nyt projekt</guilabel
+> af en type som bruger &GNU;'s byggesystem, såsom <menuchoice
+><guimenuitem
+>C++</guimenuitem
+> <guimenuitem
+>KDE</guimenuitem
+> <guimenuitem
+>Application framework</guimenuitem
+></menuchoice
+>. Under udviklingen laver Håndtering af automake alle yderligere <filename
+>Makefile.am</filename
+> filer for projekter som bruger &GNU;'s byggesystem, og vedligeholder alle, både de som blev lavet med programguiden og Håndtering af automake. </para>
+<para
+>Der er en <filename
+>Makefile.am</filename
+> i hver projektmappe som indeholder filer som skal kompileres eller installeres. Den indeholder dine specifikationer for at kompilere, bygge og installere filer og en reference til alle undermapper som også har en <filename
+>Makefile.am</filename
+> og muligvis nogle filer at kompilere, bygge og installere. </para>
+
+<note
+><para
+>Projektets mapper og kildekodefiler kan struktureres til hvilken som helst dybde, eller du foretrækker måske en flad projektstruktur med alle undermapper på topniveau. </para
+></note>
+
+<para
+>Formålet med &GNU;'s byggesystem er at oprette filstrukturer for kildekode som kan kompileres, bygges og installeres på et hvilket som helst &UNIX;- eller &Linux;-system med de simple kommandoer: </para>
+
+<screen
+>./configure
+make
+make install    # Sædvanligvis som systemadministrator.
+</screen>
+
+<para
+>og kan afinstalleres med kommandoen <command
+>make uninstall</command
+> (oftest som systemadministrator). </para>
+
+<para
+>Hvordan virker det? Ja, <command
+>configure</command
+> er et script som: <itemizedlist>
+  <listitem
+><para
+>udarbejder detaljeret information om systemet som det køres på, såsom hvilken oversætter og hvilke biblioteker som skal bruges, hvor de kan findes, og derefter </para
+></listitem>
+  <listitem
+><para
+>rekursivt laver filerne <filename
+>Makefile</filename
+> ved at udfylde det som skal erstattes i de tilsvarende <filename
+>Makefile.in</filename
+>. </para
+></listitem>
+</itemizedlist>
+</para>
+<para
+>Filen <filename
+>Makefile.am</filename
+> er <quote
+>inddata</quote
+>&mdash;en skabelon som giver grundlæggende information for den <filename
+>Makefile</filename
+> som skal laves, ved at udfylde en vis systemafhængig information. Den laves af værktøjet <command
+>Automake</command
+> ud fra filen <filename
+>Makefile.am</filename
+>. </para>
+<para
+>Processen at komme fra en <filename
+>Makefile.am</filename
+> (hvor <filename
+>.am</filename
+> angiver skabelonfiler for <quote
+>Automake</quote
+>) til <filename
+>Makefile</filename
+> håndteres automatisk af Kdevelops Håndtering af automake med værktøjet <command
+>Autoconf</command
+>, <command
+>M4</command
+>-makroer og andre mysterier vi ikke behøver at gå ind på her. </para>
+<para
+>Så når <command
+>make</command
+> kører, henter det automatisk den rigtige information fra det nuværende miljø, såsom oversætter og biblioteker. På samme måde, placerer <command
+>make install</command
+> delene af programmet, som kørbare filer, dokumentation og datafiler på det rigtige stedet i dette miljø. </para>
+
+<para
+>Hvis du distribuerer programmet som et <quote
+>tar-arkiv</quote
+> (en enkelt komprimeret fil som KDevelop kan oprette for dig), indeholder den filerne <filename
+>Makefile.in</filename
+> og scriptfilen <filename
+>configure</filename
+>, så modtageren kan kompilere, bygge og installere programmet uden at have <command
+>Automake</command
+>, <command
+>Autoconf</command
+> eller KDevelop på sin maskine. Filerne <filename
+>Makefile.am</filename
+> indgår også, ifald modtageren skal lave nogen ændringer i kildekoden. </para>
+<note
+><para
+>Reglerne er væsentligt anderledes hvis du distribuerer via et netbaseret kildekodearkiv såsom KDE's CVS. </para
+></note>
+
+</sect2
+> <!--  automake-manager-basics -->
+
+<sect2 id="automake-manager-basics-summary">
+<title
+>Sammendrag af hvad Håndtering af automake gør</title>
+
+<itemizedlist>
+  <listitem
+><para
+>Opretter filerne <filename
+>Makefile.am</filename
+> i undermapperne som det kender til som <quote
+>delprojekter</quote
+>. </para
+></listitem>
+  <listitem
+><para
+>Opdaterer filerne <filename
+>Makefile.am</filename
+> når projektstrukturen ændres. </para
+></listitem>
+  <listitem
+><para
+>Opdaterer filerne <filename
+>Makefile.am</filename
+> når filer tilføjes eller fjernes fra projektet. </para
+></listitem>
+  <listitem
+><para
+>Accepterer definitioner om hvordan de forskellige filer skal bygges eller installeres, og ændrer <filename
+>Makefile.am</filename
+> ifølge dem. </para
+></listitem>
+  <listitem
+><para
+>Accepterer parametre som bruges ved bygning eller installation (&eg; biblioteksnavne), og sikrer at de bruges i de nødvendige kompilerings- og byggeskridt. </para
+></listitem>
+</itemizedlist>
+
+</sect2
+> <!--  automake-manager-basics-summary -->
+
+<sect2 id="automake-file-contents">
+<title
+>Indhold i automake-filer</title>
+
+<para
+>Filen <filename
+>Makefile.am</filename
+> har linjer som indeholder variabelnavne fulgt af et lighedstegn og en liste med filer eller parameterværdier. <quote
+>Variabler</quote
+> har todelte navne, såsom <varname
+>bin_PROGRAMS</varname
+>, <varname
+>mitpgm_SOURCES</varname
+> eller <varname
+>kdelnk_DATA</varname
+>. Den anden del kaldes <emphasis
+>den primære</emphasis
+> og repræsenterer noget som skal bygges eller installeres. Den første del kaldes <emphasis
+>præfiks</emphasis
+> og repræsenterer: </para>
+<itemizedlist>
+  <listitem
+><para
+>En <emphasis
+>mappe</emphasis
+> hvor installationen skal gøres (&eg; <filename
+>bin</filename
+>), </para
+></listitem>
+  <listitem
+><para
+>En <emphasis
+>kvalifikation</emphasis
+> for den primære del (&eg; <emphasis
+>mitpgm</emphasis
+> for <varname
+>SOURCES</varname
+>, som angiver at kildekodefiler som er på listen efter <varname
+>mitpgm_SOURCES</varname
+> indgår i at bygge <varname
+>mitpgm</varname
+>. </para
+></listitem>
+  <listitem
+><para
+>Et særligt <emphasis
+>præfiks</emphasis
+> <varname
+>noinst</varname
+> (kort for <quote
+>ingen installation</quote
+>), som oftest bruges til en liste over programmets deklarationsfiler (<filename
+>.h</filename
+>), </para
+></listitem>
+  <listitem
+><para
+>Eller det specielle præfiks <varname
+>EXTRA</varname
+>, for <emphasis
+>indstillingsafhængige</emphasis
+> ting. </para
+></listitem>
+</itemizedlist>
+
+<para
+>For mere information om <command
+>Automake</command
+> og filerne <filename
+>Makefile.am</filename
+>, slå det op i <userinput
+>info Automake</userinput
+>. </para>
+<para
+>I hovedsagen laver og opdaterer Håndtering af automake variabelnavne og fillister eller parametre. Se følgende eksempel på en <filename
+>Makefile.am</filename
+> for et typisk program, som kaldes <filename
+>mitpgm</filename
+>. </para>
+
+<screen
+>## Makefile.am for mitpgm
+
+# dette er programmet som installeres. Dets navn bruges for alle
+# andre Makefile.am variabler
+bin_PROGRAMS = mitpgm
+
+# indstil søgestien for deklarationsfiler til X, Qt og KDE
+INCLUDES = $(all_includes)
+
+# bibliotekssøgestien.
+mitpgm_LDFLAGS = $(KDE_RPATH) $(all_libraries)
+
+# bibliotekerne at linke med.
+mitpgm_LDADD   = $(LIB_KFILE) $(LIB_KDEPRINT)
+
+# hvilke kildekodefiler skal kompileres for mitpgm
+mitpgm_SOURCES = main.cpp mitpgm.cpp mitpgmvy.cpp
+
+# dette er deklarationsfilerne for projektet
+noinst_HEADERS = mitpgm.h mitpgmvy.h
+
+# lad automoc håndtere alle metakildefiler (moc)
+METASOURCES = AUTO
+
+KDE_ICON = mitpgm
+
+# det er her kdelnk-filen havner 
+kdelnkdir = $(kde_appsdir)/Utilities
+kdelnk_DATA = mitpgm.desktop
+
+# det er her XML-GUI ressourcefilen havner
+rcdir = $(kde_datadir)/mitpgm
+rc_DATA = mitpgm_ui.rc
+
+AM_CXXFLAGS = -DMY_C++_PREPROCESSOR_ALTERNATIV
+</screen>
+
+<para
+>Som du kan se er mange af objekterne på højresiden symboler på formen <varname
+>$(xxxx)</varname
+>. De er <emphasis
+>miljøvariabler</emphasis
+> som defineres i selve &kde;-miljøet og erstattes med rigtige værdier når <command
+>./configure</command
+> laver de endelige  <filename
+>Makefile</filename
+>-filer på maskinen som tager imod programmet. </para>
+
+<para
+>Det er også en god ide at køre kommandoen <command
+>./configure --help</command
+> en gang efter du er begyndt med KDevelop, hvilket viser dig de forskellige ting du kan ændre på bygge- og installationstidspunktet, såsom et testmiljø. I særdeleshed kommandoen: <screen>
+./configure --prefix=/hvor/du/vil
+</screen
+> som flytter hele installationen til en mappestruktur som du vælger, ved at ændre den interne variabel <varname
+>$(prefix)</varname
+> til værdien <filename class="directory"
+>/hvor/du/vil</filename
+>. </para>
+
+</sect2
+> <!-- automake-file-contents -->
+
+</sect1
+> <!--  automake-manager-summary -->
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+<sect1 id="automake-manager-operation">
+<title
+>Brug af Håndtering af automake</title>
+
+<para
+>I dette kapitel finder du en grundlæggende beskrivelse af elementerne i Håndtering af automake, og hvordan de bruges. Dette dækker: <itemizedlist>
+  <listitem
+><para
+><link linkend="automake-manager-operation-window"
+>Vinduet Håndtering af automake</link
+> beskriver den grundlæggende struktur i hovedvinduet i Håndtering af automake. </para
+></listitem>
+  <listitem
+><para
+><link linkend="automake-manager-operation-survey-window"
+>Oversigtsvinduet</link
+> beskriver elementerne i det øverst delvindue. </para
+></listitem>
+  <listitem
+><para
+><link linkend="automake-manager-operation-detail-window"
+>Detaljevinduet</link
+> beskriver elementerne i det nederste delvindue. </para
+></listitem>
+  <listitem
+><para
+><link linkend="automake-manager-operation-navigate"
+>Navigering i Håndtering af automake</link
+> giver en liste af nogle grundlæggende handlinger du kan udføre i Håndtering af automake. </para
+></listitem>
+  <listitem
+><para
+><link linkend="automake-manager-operation-popups"
+>Sammenhængsafhængige menuer i Håndtering af automake</link
+> beskriver menuerne som dukker op når du vælger en handling i Håndtering af automake. </para
+></listitem>
+</itemizedlist>
+</para>
+
+<sect2 id="automake-manager-operation-window">
+<title
+>Vinduet Håndtering af automake</title>
+
+<informaltable frame="none">
+<tgroup cols="2"
+><tbody
+><row>
+  <entry
+><inlinemediaobject>
+    <imageobject>
+      <imagedata fileref="automakemanager.png" format="PNG"/>
+    </imageobject>
+  </inlinemediaobject
+></entry>
+  <entry valign="top"
+><itemizedlist>
+    <listitem
+><para
+>Håndtering af automake bruger et delt vindue. Den øverste del kaldes <emphasis
+>Oversigtsvinduet</emphasis
+> og den nederste del kaldes <emphasis
+>Detaljevinduet</emphasis
+>. Mellem dem er en smal linje som kan trækkes med musen for at justere vinduestørrelserne. I IDEA-vinduestilstand kan du også trække sidekanten på det delte vinduet for at ændre bredden. </para
+></listitem>
+    <listitem
+><para
+>Ovenfor hvert vindue er der en <emphasis
+>værktøjslinje</emphasis
+>, hvor knapperne bliver aktive når et element i vinduet markeres. Dette tilbyder en måde at få adgang til handlingerne som der sørges for for dette element. Det andet sæt er sammenhængsafhængige menuer, som dukker op ved klik med højre museknap som beskrevet nedenfor. </para
+></listitem>
+    <listitem
+><para
+>I IDEA-vinduetilstand er der yderligere to små knapper til venstre i navnelisten på vinduet Håndtering af automake&mdash;en trekantformet højrepil, og en knap med en prik. Pileknappen bruges til at <emphasis
+>lukke for vinduet</emphasis
+>. Prikknappen på den anden side, holder <emphasis
+>vinduet åbent</emphasis
+> også selvom om et andet vindue vælges i &kdevelop;. (Ellers lukkes vinduet Håndtering af automake automatisk så snart et andet vindue får indtastningsfokus.) </para
+></listitem>
+  </itemizedlist
+></entry>
+</row
+></tbody
+></tgroup>
+</informaltable>
+
+</sect2
+> <!-- automake-manager-operation-window -->
+
+<sect2 id="automake-manager-operation-survey-window">
+<title
+>Oversigtsvinduet</title>
+
+<para
+>Oversigtsvinduet indeholder en træliste med alle mapper i projektet som indeholder programfiler, dokumentation eller data. Hver sådan mappe indeholder en fil <filename
+>Makefile.am</filename
+> og er kendt som et <emphasis
+>delprojekt</emphasis
+> i Håndtering af automake. Der er tre typiske delprojekter i et &kde;-baseret projekt, som vises på billedet ovenfor: </para>
+
+<itemizedlist>
+  <listitem
+><para
+><filename
+>src</filename
+>: kildekodefiler for programmet, </para
+></listitem>
+  <listitem
+><para
+><filename
+>doc</filename
+>: brugermanualen eller håndbogen, </para
+></listitem>
+  <listitem
+><para
+><filename
+>po</filename
+>&mdash;uddrag af strenge i dine kildekodefiler som kræver oversættelse til andre menneskelige sprog (f.eks. vinduestitler, menunavne, navne på knapper, tekst i dialoger og meddelelser af forskellige slags). </para
+></listitem>
+</itemizedlist>
+
+<para
+>Bemærk at delprojektet <filename
+>doc</filename
+> altid har et delprojekt som hedder <filename
+>en</filename
+>, som du kan se hvis du klikker på symbolet <symbol
+>+</symbol
+> før ordet <filename
+>doc</filename
+>. Dette skyldes at grundsproget for al dokumentation i KDE er amerikansk engelsk (en). Hvis programmet bliver en del af KDE, kan KDE's oversættelsesgrupper oversætte din dokumentation fra engelsk til andre sprog, og oversættelserne havner så i andre delprojekter, såsom <filename
+>da</filename
+> (dansk), <filename
+>de</filename
+> (tysk) eller <filename
+>fr</filename
+> (fransk). Strengene i delprojektet <filename
+>po</filename
+> kan også oversættes og opbevares i andre filer under <filename
+>po</filename
+>, for på den måde at lade programmet bruges af personer som ikke kan engelsk. </para>
+
+<note
+><para
+>Delprojekterne <filename
+>doc</filename
+> og <filename
+>po</filename
+> tjener forskellige formål. <filename
+>doc</filename
+> indeholder <emphasis
+>dokumentation</emphasis
+>, såsom en brugerhåndbog, mens <filename
+>po</filename
+> indeholder tekststrenge som kan oversættes fra <emphasis
+>brugergrænsefladen</emphasis
+> som indgår i programmets kildekode. </para
+></note>
+
+<para
+>Oversigtsvinduet virker&mdash;blandt andet&mdash;som et navigeringsværktøj. Hvis du vælger et delprojekt i oversigtsvinduet, vises tilsvarende detaljeret information i detaljevinduet. </para>
+
+</sect2
+> <!-- automake-manager-operation-survey-window -->
+
+<sect2 id="automake-manager-operation-detail-window">
+<title
+>Detaljevinduet</title>
+
+<para
+>Detaljevinduet indeholder en liste med alle filer i delprojektet som for øjeblikket er markeret i oversigtsvinduet, samt kompilerings-, bygge- og installationsreglerne for delprojektet. På den måde kan vinduerne tilsammen give dig mulighed for at komme til alle komponenter i programmet, og al information om hvordan det skal kompileres, bygges og installeres. </para>
+
+<sect3>
+<title
+>Mål</title>
+
+<para
+>Trælisten i detaljevinduet har to niveauer. Det øverste niveau består af såkaldte <emphasis
+>mål</emphasis
+> i Håndtering af automake, og næste niveau indeholder lister med filer som bruges for at oprette hvert mål. </para>
+
+<para
+>Dette begreb med et mål i Håndtering af automake, adskiller sig noget fra hvad et mål i en <filename
+>Makefile</filename
+> som oftest er. I korthed:</para>
+<itemizedlist>
+  <listitem
+><para
+>Definitionen af hvordan et antal filer skal kompileres, bygges eller installeres er kendt som et <emphasis
+>mål</emphasis
+> i Håndtering af automake, men som en <emphasis
+>variabel</emphasis
+> i selve <command
+>Automake</command
+>. </para
+></listitem>
+  <listitem
+><para
+>Et <emphasis
+>mål</emphasis
+> i <command
+>make</command
+> er ofte noget helt andet, eftersom det kan være en parameter til kommandoen <command
+>make</command
+> (&eg; <userinput
+>make install</userinput
+>, <userinput
+>make clean</userinput
+>). </para>
+  <para
+>Visse af variablerne i <filename
+>Makefile.am</filename
+> repræsenterer dog et underliggende <emphasis
+>delmål</emphasis
+> for <command
+>make</command
+>. </para
+></listitem>
+</itemizedlist>
+
+</sect3>
+</sect2
+> <!-- automake-manager-operation-detail-window -->
+
+<sect2 id="automake-manager-operation-navigate">
+<title
+>Navigering i Håndtering af automake</title>
+
+<para
+>Både i oversigtsvinduet og detaljevinduet kan du venstreklikke på <symbol
+>+</symbol
+> eller <symbol
+>-</symbol
+> foran et delprojekt eller målnavn for at udvide eller trække trævisningen sammen. Hvis du gør dette med et <emphasis
+>delprojekt</emphasis
+> i oversigtsvinduet, vises eller skjules delprojektets næste underliggende niveau (hvis der er et sådant). Hvis du gør dette med et <emphasis
+>mål</emphasis
+> i detaljevinduet, vises eller skjules listen med filer som indgår i målet. </para>
+
+<variablelist>
+<varlistentry>
+<term
+>Åbn en fil til redigering</term>
+<listitem>
+<para
+>Hvis du <emphasis
+>venstreklikker</emphasis
+> på et filnavn i detaljevinduet, åbnes den tilsvarende fil i KDevelops redigeringsvindue.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Aktivér værktøjslinjeknapperne i Håndtering af automake</term>
+<listitem>
+<para
+>Hvis du <emphasis
+>venstreklikker</emphasis
+> på et delprojektnavn i oversigtsvinduet eller et mål i detaljevinduet, markeres navnet og visse knapper i værktøjslinjen bliver aktive længst oppe i vinduet.</para>
+
+<note>
+  <para
+>Du anbefales at bruge <emphasis
+>højre museknap og sammenhængsafhængige menuer</emphasis
+>, i stedet for knapperne i værktøjslinjen, eftersom det så er meget nemmere at se og forstå hvad du gør. </para>
+  <para
+>Handlinger for delprojekter og mål har langtvirkende effekter for struktur, kompilering, bygning og installation af programmet. </para>
+</note>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Vælg handlinger og sammenhængsafhængige menuer</term>
+<listitem>
+<para
+>Hvis du <emphasis
+>højreklikker</emphasis
+> på et delprojektnavn, mål eller fil, dukker en menu op og du kan derefter vælge handlinger at udføre for delprojektet, målet eller filen, såsom at tilføje et mål til delprojektet, tilføje en fil til målet eller logisk fjerne den markerede filen fra sit mål. </para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</sect2
+> <!-- automake-manager-operation-navigate -->
+
+<sect2 id="automake-manager-operation-popups">
+<title
+>Sammenhængsafhængige menuer i Håndtering af automake</title>
+
+<para
+>Følgende afsnit forklarer kortfattet hvilke handlinger som menuerne gør tilgængelige, som dukker op ved klik med højre museknap i vinduet Håndtering af automake. Afsnittene er kun beregnet som en oversigt. Du finder detaljerede beskrivelser af de fleste handlinger i et senere kapitel. </para>
+<!-- ### add a link to this chapter when ready -->
+
+<sect3 id="automake-manager-operation-popups-file">
+<title
+>Sammenhængsafhængig menu for en fil</title>
+
+<para
+>Når du højreklikker på et <emphasis
+>filnavn</emphasis
+> i detaljevinduet, dukker følgende menu op som lader dig vælge en af flere handlinger at udføre med filen. I billedet nedenfor, markeredes ikonfilen <filename
+>hi-16app-myapp.png</filename
+> i målet <guilabel
+>Ikondata i kde_icon</guilabel
+> fra delprojektet <guilabel
+>myapp/src</guilabel
+>. </para>
+
+<informaltable frame="none">
+<tgroup cols="2"
+><tbody
+><row>
+  <entry
+><inlinemediaobject>
+    <imageobject>
+      <imagedata fileref="automake-file-popup.png" format="PNG"/>
+    </imageobject>
+  </inlinemediaobject
+></entry>
+  <entry valign="bottom"
+><itemizedlist>
+    <listitem
+><para
+>Hovedpunktet i den sammenhængsafhængige menu er at <guimenuitem
+>Fjerne</guimenuitem
+> filen fra målet (&ie; den kommer ikke længere at blive brugt til at kompilere, bygge eller installere dette mål). </para
+></listitem>
+    <listitem
+><para
+>Punktet <guimenuitem
+>CVS</guimenuitem
+> tilbyder en hel del forskellige CVS-handlinger for filen. </para
+></listitem>
+    <listitem
+><para
+>Punktet <guimenuitem
+>Åbn med</guimenuitem
+> lader dig åbne filen med et antal editorer eller med et hvilket som helst program (&eg; kan du åbne ikonfilen i vort eksempel med <application
+>Kiconedit</application
+>). </para
+></listitem>
+    <listitem
+><para
+>Punktet <guimenuitem
+>Perforce</guimenuitem
+> bruges til lignende handlinger som i CVS, men med det kommercielle versionshåndteringssystem <quote
+><application
+>Perforce</application
+></quote
+>. </para
+></listitem>
+  </itemizedlist
+></entry>
+</row
+></tbody
+></tgroup>
+</informaltable>
+
+</sect3
+> <!-- automake-manager-operation-popups-file -->
+
+<sect3 id="automake-manager-operation-popups-target">
+<title
+>Sammenhængsafhængig menu for et mål</title>
+
+<para
+>Når du højreklikker på et <emphasis
+>mål</emphasis
+> i detaljevinduet, dukker følgende menu op som lader dig vælge en af flere handlinger at udføre med det. I billedetnedenfor, markeredes målet <guilabel
+>myapp (Program i bin)</guilabel
+> i delprojektet <guilabel
+>myapp/src</guilabel
+>. </para>
+
+<informaltable frame="none">
+<tgroup cols="2"
+><tbody
+><row>
+  <entry
+><inlinemediaobject>
+    <imageobject>
+      <imagedata fileref="automake-target-popup.png" format="PNG"/>
+    </imageobject>
+  </inlinemediaobject
+></entry>
+  <entry valign="bottom"
+><itemizedlist>
+    <listitem
+><para
+>Punktet  <guimenuitem
+>Indstillinger</guimenuitem
+> for et mål gælder kun kildekodefiler. I den tilsvarende dialog kan du angive linkerflag og søgestier hvor biblioteker kan findes, og du kan angive en liste med egentlige biblioteker som skal linkes med i programmet. </para
+></listitem>
+    <listitem
+><para
+>Punktet <guimenuitem
+>Opret ny fil</guimenuitem
+> viser en dialog hvor du kan angive filnavnet og filtypen som skal laves (i et dropned-felt). </para
+></listitem>
+    <listitem
+><para
+>Punktet <guimenuitem
+>Tilføj eksisterende filer</guimenuitem
+> viser en dialog hvor du kan tilføje en eksisterende fil til målet. </para
+></listitem>
+    <listitem
+><para
+>Punktet <guimenuitem
+>Fjern</guimenuitem
+> for et mål lader dig logisk fjerne målet og alle dets filer fra projektstrukturen. </para
+></listitem>
+    <listitem
+><para
+>Punktet <guimenuitem
+>Gør mål aktivt</guimenuitem
+> gælder kun for mål som indeholder kildekodefiler. Nye filer tilføjes altid til et sådant aktivt mål. </para
+></listitem>
+    <listitem
+><para
+>Punktet <guimenuitem
+>Byg mål</guimenuitem
+> kalder alle nødvendige kompilerings- og byggehandlinger for at bygge koden kun for dette mål. </para
+></listitem>
+  </itemizedlist
+></entry>
+</row
+></tbody
+></tgroup>
+</informaltable>
+
+</sect3
+> <!-- automake-manager-operation-popups-target -->
+
+<sect3 id="automake-manager-operation-popups-subproject">
+<title
+>Sammenhængsafhængig menu for et delprojekt</title>
+
+<para
+>Når du højreklikker på et <emphasis
+>delprojekt</emphasis
+> i oversigtsvinduet, dukker følgende menu op som lader dig gøre udføre ændringer i projektets struktur og måden det kompileres, bygges og installeres. Du kan bruge den til at udvide eller ændre den grundlæggende projektstruktur som programguiden har oprettet. </para>
+
+
+<informaltable frame="none">
+<tgroup cols="2"
+><tbody
+><row>
+  <entry
+><inlinemediaobject>
+    <imageobject>
+      <imagedata fileref="automake-subproject-popup.png" format="PNG"/>
+    </imageobject>
+  </inlinemediaobject
+></entry>
+  <entry valign="bottom"
+><itemizedlist>
+    <listitem
+><para
+>Punktet <guimenuitem
+>Indstillinger</guimenuitem
+> for et delprojekt styrer måden som delprojektet kompileres, bygges og installeres. Dialogen som dukker op har faneblade for Oversætter, Deklarationsfiler, Præfiks og Byggerækkefølge. </para
+></listitem>
+    <listitem
+><para
+>Punktet <guimenuitem
+>Tilføj delprojekt</guimenuitem
+> laver en ny mappe og Makefile.am skeletfil. </para
+></listitem>
+    <listitem
+><para
+>Punktet <guimenuitem
+>Tilføj mål</guimenuitem
+> viser en dialog, hvor du kan indstille regler for kompilering, bygning eller installation for en filgruppe inde i delprojektet. </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Tilføj tjeneste</guimenuitem
+> (... endnu ikke skrevet ...) </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Tilføj program</guimenuitem
+> (... endnu ikke skrevet ...) </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Tilføj eksisterende delprojekt</guimenuitem
+> (... endnu ikke skrevet ...) </para
+></listitem>
+    <listitem
+><para
+>Punktet <guimenuitem
+>Fjern delprojekt</guimenuitem
+> i den sammenhængsafhængige menu for et delprojekt er den rigtige måde at fjerne et delprojekt. Det justerer filerne <filename
+>Makefile.am</filename
+> på tilsvarende måde. Du tilbydes også mulighed at fjerne alle filer (eller link) i de tilsvarende undermappe. Det er klart at funktionen skal  bruges med forsigtighed. </para
+></listitem>
+    <listitem
+><para
+>Punktet <guimenuitem
+>Byg</guimenuitem
+> kalder alle nødvendige kompilerings- og byggehandlinger for at bygge koden kun for dette delprojekt. </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Påtving omredigering</guimenuitem
+> (... endnu ikke skrevet ...) </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Ryd</guimenuitem
+> (... endnu ikke skrevet ...) </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Installér</guimenuitem
+> (... endnu ikke skrevet ...) </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Installér (som systemadministrator)</guimenuitem
+> (... endnu ikke skrevet ...) </para
+></listitem>
+  </itemizedlist
+></entry>
+</row
+></tbody
+></tgroup>
+</informaltable>
+
+</sect3
+> <!-- automake-manager-operation-popups-subproject -->
+
+</sect2
+> <!-- automake-manager-operation-popups -->
+
+</sect1
+> <!-- automake-manager-operation -->
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+<sect1 id="autoproject">
+<title
+>Automake-projekt</title>
+<indexterm zone="autoproject"
+><primary
+><command
+>autoprojekt</command
+></primary
+></indexterm>
+<indexterm zone="autoproject"
+><primary
+>&automake;</primary
+></indexterm>
+<indexterm zone="autoproject"
+><primary
+>&autoconf;</primary
+></indexterm>
+<indexterm zone="autoproject"
+><primary
+>&libtool;</primary
+></indexterm>
+
+<para
+>(... endnu ikke skrevet ...) </para>
+
+
+<sect2 id="autoconf">
+<title
+>Autoconf</title>
+<indexterm zone="autoconf"
+><primary
+><filename
+>configure</filename
+>-scriptet</primary
+></indexterm>
+<indexterm zone="autoconf"
+><primary
+><filename
+>config.status</filename
+>-scriptet</primary
+></indexterm>
+<indexterm zone="autoconf"
+><primary
+><filename
+>Makefile.in</filename
+></primary
+></indexterm>
+<indexterm zone="autoconf"
+><primary
+><filename
+>config.h.in</filename
+></primary
+></indexterm>
+
+<para
+><filename
+>Makefile.in</filename
+> til <filename
+>Makefile</filename
+> </para>
+
+<programlisting
+>prefix = @prefix@
+INSTALL = @INSTALL@
+build_triplet = @build@
+CXX = @CXX@
+</programlisting>
+
+<programlisting
+>prefix = /home/bernd/kde3
+INSTALL = /usr/bin/ginstall -c -p
+build_triplet = i686-pc-linux-gnu
+CXX = g++
+</programlisting>
+
+<para
+><filename
+>config.h.in</filename
+> til <filename
+>config.h</filename
+> </para>
+
+<programlisting
+>/* Define if you have libz */
+#undef HAVE_LIBZ
+/* The size of a `int', as computed by sizeof. */
+#undef SIZEOF_INT
+</programlisting>
+
+<programlisting
+>/* Define if you have libz */
+#define HAVE_LIBZ 1
+/* The size of a `int', as computed by sizeof. */
+#define SIZEOF_INT 4
+</programlisting>
+
+</sect2
+> <!-- autoconf -->
+
+
+<sect2 id="automake">
+<title
+>Automake</title>
+
+<para
+>(... endnu ikke skrevet ...) </para>
+
+</sect2
+> <!--automake  -->
+
+
+<sect2 id="automake-manager">
+<title
+>KDevelops Håndtering af automake</title>
+
+<figure id="screenshot-automake-manager" float="1">
+<title
+>Et skærmaftryk af Håndtering af automake</title>
+<mediaobject>
+<imageobject
+><imagedata fileref="automake-manager.png"/></imageobject>
+</mediaobject>
+</figure>
+
+</sect2
+> <!-- automake-manager -->
+
+
+<sect2 id="automakelibrary">
+<title
+>Bygning og installering af biblioteker</title>
+
+<para>
+<itemizedlist>
+<listitem
+><para
+>-rpath </para
+></listitem>
+<listitem
+><para
+>PIC </para
+></listitem>
+<listitem
+><para
+>static </para
+></listitem>
+<listitem
+><para
+>plugins: no-undefined </para
+></listitem>
+</itemizedlist>
+</para>
+
+</sect2
+> <!-- automakelibrary -->
+
+</sect1
+> <!-- autoproject -->
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+<sect1 id="customproject">
+<title
+>Egne byggefiler og byggescripter</title>
+<indexterm zone="customproject"
+><primary
+><filename
+>Makefile</filename
+></primary
+></indexterm>
+<indexterm zone="customproject"
+><primary
+><filename
+>build.xml</filename
+></primary
+></indexterm>
+
+<para
+>(... endnu ikke skrevet ...) </para>
+
+</sect1
+> <!-- customproject -->
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+<sect1 id="compileroptions">
+<title
+>Oversætterindstillinger</title>
+
+<para
+>(... endnu ikke skrevet ...) </para>
+
+</sect1
+> <!-- compileroptions -->
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+<sect1 id="makeoptions">
+<title
+>Byggetilvalg</title>
+
+<para
+>(... endnu ikke skrevet ...) </para>
+
+</sect1
+> <!-- makeoptions -->
+
+</chapter
+> <!-- project-management -->

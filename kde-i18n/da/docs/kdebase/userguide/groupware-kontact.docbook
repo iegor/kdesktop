@@ -1,0 +1,1145 @@
+<chapter id="groupware-with-kontact">
+
+<chapterinfo>
+<authorgroup>
+<author
+><personname
+> <firstname
+>Marco</firstname
+> <surname
+>Menardi</surname
+> </personname
+> <email
+>gnu@kde.org</email
+> </author>
+</authorgroup>
+
+&erik.kjaer.pedersen.role; 
+
+</chapterinfo>
+<title
+>Del data med &kontact; via <acronym
+> IMAP</acronym
+></title>
+
+<sect1 id="kontact-imap-intro">
+<title
+>Indledning</title>
+
+<para
+>Jeg ledte i lang tid efter en løsning på problemet med håndtering af personlig information for mit lille kontor, som skulle lade mig dele data, så min sekretær og jeg ville kunne dele kontakter, møder og så videre. Eftersom jeg er en &kde;-brugere, havde jeg hørt tale om Kroupware-projektet, og ventede på at det skulle blive færdigt. Men da jeg så hvor kompliceret arkitekturen og indstillingen af <application
+>Kolab</application
+> serveren 1.0 (projektets serverside) var, gav jeg op for at vente på den nemmere <application
+>Kolab</application
+> 2.0. Under alle omstændigheder var <application
+>Kolab</application
+> klart for meget for mine behov. Heldigt nok fandt jeg en kort <acronym
+>IRC</acronym
+>-konversation på &kde;'s netjournal som handlede om at dele data uden infrastrukturen i <application
+>Kolab</application
+>... Min sandten, interessant!</para>
+
+<para
+>For små kontorer og behov, kan du lade &kontact; bruge delte data uden at behøve at installere <application
+>Kolab</application
+>-serveren eller en anden groupware-programserver. Det kan virke kun med en <acronym
+>IMAP</acronym
+>-server, som er nem at sætte op.</para>
+
+<para
+>Mit scenario er en server med Debians ustabile version og &kde; 3.4. Jeg har adgang til &kontact; og andre vidunderlige GNU/Linux-programmer fra Windows med Cygwin/X, mens jeg venter på Wine-projektet for at kunne køre de sidste Windows-programmer jeg behøver (som ikke er tilgængelige under GNU/Linux). Jeg vil dele kontakter, begivenheder, aktiviteter og notitser med min sekretær.</para>
+  
+</sect1>
+
+<sect1 id="kontact-imap-whatis">
+<title
+>Hvad er <acronym
+> IMAP</acronym
+></title>
+
+<para
+>Denne definition kommer fra <ulink url="http://computeruser.com"
+>ComputerUser.com High-Tech Dictionary:</ulink
+><blockquote
+><para
+>Internet Message Access Protocol. En protokol som gør det muligt for en bruger at udføre visse funktioner for elektronisk post på en fjernserver i stedet for på en lokal maskine. Via IMAP kan brugeren oprette, fjerne eller skifte navn på brevmapper, hente nye breve, fjerne breve og udføre søgefunktioner for breve. En separat protokol kræves for at sende breve. Kaldes også for Internet Mail Access Protocol.</para
+></blockquote
+> </para>
+  
+<para
+>Det kan altså opfattes som en form af dataopbevaring. For at bruge det behøver du en <acronym
+>IMAP</acronym
+>-server, såsom <application
+>Cyrus</application
+>, <application
+>Courier</application
+> eller <application
+>UW</application
+>.</para>
+  
+</sect1>
+
+<sect1 id="kontact-kolab-or-imap">
+<title
+><application
+>Kolab</application
+> eller <acronym
+>IMAP</acronym
+>?</title>
+  
+<para
+><application
+>Kolab</application
+> giver mulighed for at dele data mellem forskellige klienter. Det gør det for eksempel muligt for din sekretær at bruge <application
+>Outlook</application
+> mens du bruger &kontact;.</para>
+  
+<para
+>Du får en indstillingsgrænseflade som håndterer brugere, indstilling af e-mail-konto, en central <acronym
+>LDAP</acronym
+>-server for indstillingsdata og adressebog, filtrering af spam og virus, ferie-scripter, håndtering af lister med ledig-optaget, ressourcehåndtering (rum, biler), grupper, distributionslister, automatisk indbydelseshåndtering, etc.</para>
+  
+<para
+>Men det kan forårsage indledende indstillingsproblemer. For en nybegynder som jeg, betyder det et langt frustrerende mareridt, og for meget kompleksitet at håndtere når det omsider virker. Så, nej tak, jeg går til det enkle <acronym
+>IMAP</acronym
+>.</para>
+
+</sect1>
+
+<sect1 id="kontact-imap-cyrus">
+<title
+>Hvordan indstiller man <acronym
+>IMAP</acronym
+>-serveren <application
+>Cyrus</application
+></title>
+   
+<para
+>Mit valg er <application
+>Cyrus</application
+>, som er en del af et sæt programmer i <application
+>Kolab</application
+>, så hvis jeg går videre til <application
+>Kolab</application
+> i fremtiden, så er jeg i det mindste bekendt med det.</para
+> <para
+>Lad os begynde installationen og indstillingen!</para>
+  
+<para
+>Log på som <systemitem class="username"
+>root</systemitem
+>.</para>
+
+<screen
+># <userinput
+><command
+>apt-get</command
+> <command
+>install</command
+> cyrus21-imapd cyrus21-common cyrus21-admin cyrus21-client sasl-bin sasl2-bin</userinput
+> 
+<computeroutput
+>Installing cyrus21-imapd...</computeroutput
+> <lineannotation
+>Installationen spørger om noget jeg ikke forstår om en søgeadresse...
+Jeg trykkede blot på Enter.</lineannotation
+>.</screen>
+
+<para
+>Installationen laver også brugeren <systemitem class="username"
+>cyrus</systemitem
+> som er i gruppen <systemitem class="groupname"
+>sasl</systemitem
+> (som laves automatisk), som er <quote
+>ejeren</quote
+> af alle Cyrus filer. Tilsidst kan du finde de nye processer <command
+>cyrmaster</command
+> og <command
+>notifyd</command
+> med <command
+>ps <option
+>-A</option
+></command
+>.</para>
+
+<para
+>Det egentlige problem med at indstille <application
+>Cyrus</application
+> er godkendelseskontrollen, kun fordi det ikke er trivielt og at jeg er en nybegynder, med begrænset kundskab om hvad jeg gør.</para>
+
+<para
+><application
+>Cyrus</application
+> kan bruge forskellige <acronym
+>SASL</acronym
+>-mekanismer (Simple Authentication and Security Layer), hvor  standarden er sasldb (den opbevarer brugernavne og kodeord i den hemmelige SASL-fil <filename
+>sasldb</filename
+>), men også getpwent, kerberos4, kerberos5, PAM, rimap, shadow og LDAP understøttes.</para>
+
+<para
+>Eftersom jeg ikke vil definere brugere og kodeord som adskiller sig fra dem som jeg bruger til adgang til min &Linux;-maskine, vælger jeg mekanismen <quote
+>shadow</quote
+>, så <application
+>Cyrus</application
+> bruger &Linux; kodeord til godkendelseskontrol.</para>
+
+<para
+>For at gøre det skal man bede SASL om at bruge <command
+>saslauthd</command
+> som metode for godkendelseskontrol af kodeord, og derefter indstille <command
+>saslauthd</command
+> til at bruge <quote
+>shadow</quote
+> (eller <quote
+>getpwent</quote
+>) som godkendelseskontrolmekanisme.</para>
+
+<para
+>O.k., lad os begynde!</para>
+
+<para
+>Som <systemitem class="username"
+>root</systemitem
+>, ændr Linux kodeord for brugeren <systemitem class="username"
+>cyrus</systemitem
+>:</para>
+
+<screen
+># <userinput
+><command
+>passwd <option
+>cyrus</option
+></command
+></userinput
+></screen>
+
+<para
+>Indtast kodeordet du vil have (og kan huske). I dette eksempel bruger  vi <quote
+>cyrus</quote
+> som administratorkodeord for <application
+>cyrus</application
+>.</para>
+
+<screen
+># <command
+>vi</command
+> <filename
+>/etc/imapd.conf</filename
+></screen>
+
+<programlisting
+>sasl_pwcheck_method: <userinput
+>saslauthd</userinput
+> <lineannotation
+>i stedet standarden <literal
+>auxprop</literal
+></lineannotation
+></programlisting>
+
+<para
+>fjern tegnet <literal
+>#</literal
+> fra linjen:</para>
+
+<programlisting
+>#admins: cyrus</programlisting>
+
+<para
+>på denne måde kan du administrere <application
+>cyrus</application
+>, ved at logge på som brugeren <systemitem class="username"
+>cyrus</systemitem
+>. (Sikke en fantasi jeg har!)</para>
+
+<screen
+># <userinput
+><command
+>vi</command
+> <filename
+>/etc/default/saslauthd</filename
+></userinput
+></screen>
+
+<para
+>Fjern kommentaren fra linjen:</para>
+
+<programlisting
+># START=yes</programlisting>
+
+<para
+>(ellers starter <application
+>saslauthd</application
+> ikke når maskinen startes, også selv om den refereres til i en <filename class="directory"
+>/etc/rcx.d</filename
+>!)</para>
+
+<para
+>og skriv i stedet for <literal
+>MECHANISMS="pam"</literal
+> i <userinput
+>MECHANISMS="shadow"</userinput
+>. På denne måde køres kommandoen <command
+>saslauthd</command
+> <option
+>-a <parameter
+>shadow</parameter
+></option
+> når maskinen startes.</para>
+
+<para
+>Når du har afsluttet editoren, genstart <application
+>sasl</application
+> og <application
+>cyrus</application
+>.</para>
+
+<para
+>For at teste <acronym
+>IMAP</acronym
+>:</para>
+
+<screen
+><userinput
+><command
+>su</command
+> <option
+>cyrus</option
+></userinput>
+$ <userinput
+><command
+>imtest</command
+> <option
+>-m login -p imap localhost</option
+></userinput
+></screen>
+
+<para
+>Du bliver bedt om (brugerens) kodeord for <systemitem class="username"
+>cyrus</systemitem
+>, så skriv det.</para>
+
+<para
+>Hvis godkendelseskontrollen for brugeren <systemitem class="username"
+>cyrus</systemitem
+> lykkes, vises følgende linjer:</para>
+
+<screen
+><computeroutput
+>S: L01 OK User logged in
+Authenticated.</computeroutput
+></screen>
+<para
+>For at afslutte, skriv <userinput
+>. logout</userinput
+> (dvs. punktum mellemrum <quote
+>logout</quote
+>)</para>
+
+<para
+>Tilføj nu en bruger som hedder <systemitem class="username"
+>groupware</systemitem
+> og angive et kodeord for den, med de almindelige systemværktøjer. Den skal være i en gruppe uden privilegier, såsom <systemitem class="groupname"
+>nobody</systemitem
+> og kræver ikke en indlogningskal eller en hjemmemappe.</para>
+
+<para
+>Nu skal jeg også oprette brugeren og <acronym
+>IMAP</acronym
+> i <application
+>cyrus</application
+>:</para>
+
+<screen
+># <userinput
+><command
+>cyradm</command
+> <option
+>--user cyrus localhost</option
+></userinput>
+efter at have skrevet kodeord for administratorsbrugeren <systemitem class="username"
+>cyrus</systemitem
+>, får du promptern <prompt
+>localhost&gt;</prompt>
+<prompt
+>localhost&gt;</prompt
+> <userinput
+><command
+>cm</command
+> <option
+>user.groupware</option
+></userinput>
+<prompt
+>localhost&gt;</prompt
+> <userinput
+><command
+>lm</command
+></userinput
+> <lineannotation
+> lister brevmapperne du netop oprettede </lineannotation>
+<computeroutput
+>user.groupware(\HasNoChildren))</computeroutput>
+<prompt
+>localhost&gt;</prompt
+> <userinput
+><command
+>quit</command
+></userinput
+></screen>
+
+<para
+>Du kan skrive <userinput
+><command
+>help</command
+></userinput
+> for at se en liste med tilgængelige kommandoer.</para>
+
+<para
+>Du kan kontrollere hvad der er sket med:</para>
+
+<screen
+># <userinput
+><command
+>ls</command
+> <option
+>-l</option
+> <filename class="directory"
+>/var/spool/cyrus/mail/g/user/groupware</filename
+></userinput>
+<computeroutput
+>total 12
+-rw------- 1 cyrus mail          4 Oct 29 20:55 cyrus.cache
+-rw------- 1 cyrus mail 155 Oct 29 20:55 cyrus.header
+-rw------- 1 cyrus mail 76 Oct 29 20:55 cyrus.index</computeroutput
+></screen>
+
+<para
+>Nu skulle du kunne forbinde med en <acronym
+>IMAP</acronym
+>-klient som brugeren <systemitem class="username"
+>groupware</systemitem
+> og se <literal
+>INBOX</literal
+>.</para>
+<note
+><para
+>At vælge brevmappen <literal
+>INBOX</literal
+> er et magisk ord i <acronym
+>IMAP</acronym
+>-protokollen, en slags <quote
+>alias</quote
+> for mappestrukturen ovenfor. Klienten ser <literal
+>INBOX</literal
+>, og <acronym
+>IMAP</acronym
+>-serveren afbilder den på mappe- og filstrukturen i <filename class="directory"
+>/var/spool/cyrus/mail/...</filename
+>.</para
+></note>
+
+</sect1>
+
+<sect1 id="kontact-imap-clients">
+<title
+>Hvordan indstiller man &kontact;-klienter</title>
+  
+<para
+>Jeg forbinder til min GNU/Linux kontorsserver (en slags "sort kasse" uden skærm og tastatur) fra to &Windows; 2000 maskiner med <application
+>Cygwin/X</application
+>, og bruger dem som X-Window servere (i en nær fremtid håber jeg at kunne erstatte begge med to Mini-itx tynde klienter som bruger LTSP). Med denne indstilling, kører alle brugere &kontact; på samme maskine som <application
+>Cyrus</application
+> er installeret og kører (localhost).</para>
+  
+<para
+>For at få &kontact; til at virke med <acronym
+>IMAP</acronym
+>, skal følgende skridt udføres:</para>
+
+<procedure>
+
+<step
+><para
+>Opret en <acronym
+>IMAP</acronym
+>-konto på <application
+>Cyrus</application
+> for pseudobrugeren <systemitem class="username"
+>groupware</systemitem
+> (allerede tidligere gjort)</para
+></step>
+
+<step
+><para
+>Opret og indstil en <acronym
+>IMAP</acronym
+>-konto i &kmail; for at logge på som brugeren</para
+></step
+> <step
+><para
+>Brug kresources til at få &kontact;-komponenter til at virke med data som tages fra en <acronym
+>IMAP</acronym
+>-kilde</para
+></step>
+
+<step
+><para
+>Aktivér groupwarefunktioner og opret tilsvarende undermapper for denne <acronym
+>IMAP</acronym
+> <literal
+>INBOX</literal
+> (hvis det ikke allerede er gjort)</para
+></step>
+
+<step
+><para
+>Nyd af &kontact; og del data via <application
+>Cyrus</application
+> IMAP</para
+></step>
+
+</procedure>
+  
+<para
+>Log altså på &kde; med den første <quote
+>rigtige</quote
+> brugerkonto som du vil give groupwarefunktioner.</para>
+
+<para
+>Lad os oprette IMAP-kontoen i &kmail;.</para>
+
+<para
+>Kør &kontact; og vælg <guilabel
+>Brev</guilabel
+> (&kmail;-komponenten). Vælg <menuchoice
+><guimenu
+>Indstillinger</guimenu
+> <guimenuitem
+>Indstil Kmail</guimenuitem
+> <guilabel
+>Konti</guilabel
+> <guilabel
+>Modtag</guilabel
+></menuchoice
+> i menuen. Klik på knappen <guibutton
+>Tilføj...</guibutton
+>. Du bliver bedt om typen af e-mail-konto, vælg <guilabel
+>Ikke forbundet IMAP</guilabel
+> (ikke kun <guilabel
+>IMAP</guilabel
+>). Skriv derefter følgende data ind i fanebladet <guilabel
+>Generelt</guilabel
+>:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Kontonavn:</guilabel
+> <userinput
+>kontor</userinput
+></term>
+<listitem>
+<para
+>Et navn som bruges til den <quote
+>lokale</quote
+> mappe som peger på <acronym
+>IMAP</acronym
+>-kontoen.</para>
+</listitem
+> 
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Brugernavn:</guilabel
+> <userinput
+>groupware</userinput
+></term>
+<listitem>
+<para
+>Brugeren i <application
+>Cyrus</application
+> som vi har valgt som <quote
+>ejer</quote
+> af alle kontordata</para>
+</listitem>
+</varlistentry>
+<varlistentry
+><term
+><guilabel
+>Kodeord:</guilabel
+></term>
+<listitem>
+<para
+>Kodeordet for brugeren <systemitem class="username"
+>groupware</systemitem
+>.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Vært:</guilabel
+> <userinput
+>localhost</userinput
+></term>
+<listitem>
+<para
+>Husk at i vort eksempel kører &kontact;-klienten på samme maskine som <acronym
+>IMAP</acronym
+>-serveren</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Port:</guilabel
+> <userinput
+>143</userinput
+></term>
+<listitem>
+<para
+>Standarden</para>
+</listitem>
+</varlistentry>
+</variablelist>
+  
+<para
+>Afkryds <guilabel
+>opbevar IMAP-kodeord</guilabel
+> så du ikke bliver bedt om det næste gang du kører &kontact;. Markér <guilabel
+>Aktivér kontrol af nye breve med jævne mellemrum</guilabel
+> og indstil en værdi i minutter.</para>
+  
+<para
+>Bemærk at vi har markeret kontotypen <guilabel
+>Ikke forbundet IMAP</guilabel
+>. Dette har den virkning at groupwareprogramdata opbevares <quote
+>lokalt</quote
+> på klienten (under hjemnemappen), og at det synkroniseres hver gang klienten forbinder. Dette virker meget ineffektivt, eftersom data fordobles mange gange (dvs. hvis du har 10 brugere som udnytter &kontact;, har du 10+1 mængder data), men det er den eneste måde at få alt til at gå hurtigt, eftersom ved hver forbindelse skal &kontact; hente alle data og lade &korganizer; og &kaddressbook; tolke dem. Hvis du bruger <quote
+>ikke forbundet IMAP</quote
+> opbevares data lokalt, og kun <quote
+>delta</quote
+> (dvs data som er ændret) sendes.</para>
+  
+<para
+>På den anden side, hvis brugerne kører &korganizer; på samme maskine som  <acronym
+>IMAP</acronym
+>-serveren kører på, virker det rimeligt at bruge <acronym
+>IMAP</acronym
+> (som kaldes <quote
+>forbundet IMAP</quote
+>) for at spare plads, eftersom overføringshastigheden ikke bør være et problem. Men desværre virker det ikke, eftersom &kontact; ikke automatisk opdaterer mappen <guilabel
+>Kalender</guilabel
+> med <quote
+>forbundet IMAP</quote
+>, så du ser ingen opdateringer når nogen tilføjer begivenheder (du skal manuelt skifte til programmet &kmail; og klikke på mappen <guilabel
+>Kalender</guilabel
+>). Desuden, når mappen <guilabel
+>Kalender</guilabel
+> læses ved start, vil du måske se et enormt flimmer og langsom opdatering af data.</para>
+  
+<para
+>Nu skal vi bede &kontact; om at bruge <acronym
+>IMAP</acronym
+> som datakilde for de forskellige komponenter. Vælg <guimenuitem
+>Kør kommando</guimenuitem
+> i K-menuen, og kør <userinput
+><command
+>kcmshell kresources</command
+></userinput
+>. Vælg <guilabel
+>contact</guilabel
+> i dropned-feltet, klikke derefter på knappen <guibutton
+>Tilføj...</guibutton
+> og vælg <guilabel
+>Adressebog på IMAP-server via Kmail</guilabel
+>. Markér derefter den nye linje og klik på knappen <guibutton
+>Brug som standard</guibutton
+>. Gør det samme for <guilabel
+>calendar</guilabel
+> og <guilabel
+>notes</guilabel
+>.</para>
+  
+<para
+>Nu skal vi aktivere &kmail;s groupwarefunktion (og som en konsekvens hele &kontact;):</para>
+
+<procedure>
+<step>
+<para
+>Vælg <menuchoice
+><guimenu
+>Opsætning</guimenu
+> <guimenuitem
+>Indstil Kmail</guimenuitem
+><guilabel
+>Diverse</guilabel
+> <guilabel
+>Groupware</guilabel
+></menuchoice
+> i menuen</para>
+</step>
+<step>
+<para
+>Markér <guilabel
+>Aktivér IMAP-ressourcefunktion</guilabel
+></para>
+</step>
+<step>
+<para
+>Vælg <guilabel
+>Engelsk</guilabel
+> som <guilabel
+>Sprog for groupware-mapper</guilabel
+> (dette gøres i tilfælde af du allerede har mapper på <acronym
+>IMAP</acronym
+>-serveren som er oprettede af et andet program med et andet sprog).</para>
+</step>
+<step>
+<para
+>Gå nu til <guilabel
+>Ressourcemapper er i konto</guilabel
+> og vælg undermappen <guilabel
+>Indbakke</guilabel
+> i mappen <guilabel
+>kontor</guilabel
+>.</para>
+<para
+>Lad <guilabel
+>Skjul groupware-mapper</guilabel
+> umarkeret indtil videre, så vi kan se hvad der sker. Du kan komme tilbage hertil og markere det så snart alt er klart.</para>
+</step>
+<step>
+<para
+>Når du klikker på O.k. vises: <computeroutput
+>&kmail; laver nu nødvendige mapper for IMAP-ressourcen som undermapper til Indbakke</computeroutput
+> </para>
+<para
+>Hvis du ikke vil gøre dette, så klik på <guibutton
+>Nej</guibutton
+>, så deaktiveres <acronym
+>IMAP</acronym
+>-ressourcen. Klik på <guibutton
+>Ja</guibutton
+> (dette sker kun første gang med den første <quote
+>rigtige</quote
+> bruger). Du ser med det samme at i &kmail;s mappetræ, under <menuchoice
+><guilabel
+>kontor</guilabel
+><guilabel
+>Indbakke</guilabel
+></menuchoice
+> er følgende undermapper lavet:</para>
+<simplelist>
+<member
+>Kalender</member>
+<member
+>Kontakter</member>
+<member
+>Noter</member>
+<member
+>Opgaver</member>
+<member
+>Journal</member>
+</simplelist>
+<para
+>hvis du nu skriver:</para>
+<screen
+># <command
+>ls</command
+> <option
+>-l /var/spool/cyrus/mail/g/user/groupware/</option>
+<computeroutput
+>drwx------ 2 cyrus mail 144 Oct 31 16:36 Calendar
+drwx------ 2 cyrus mail 144 Oct 31 16:36 Contacts
+drwx------ 2 cyrus mail 144 Oct 31 16:36 Journal
+drwx------ 2 cyrus mail 144 Oct 31 16:36 Notes
+drwx------ 2 cyrus mail 144 Oct 31 16:36 Tasks
+-rw------- 1 cyrus mail      4 Oct 31 15:28 cyrus.cache
+-rw------- 1 cyrus mail 155 Oct 29 20:55 cyrus.header
+-rw------- 1 cyrus mail 76 Oct 31 15:28 cyrus.index</computeroutput
+></screen>
+
+<para
+>Som du ser er <guilabel
+>kontor/Inkorg</guilabel
+> ikke gemt lokalt i &kontact;s nuværende brugers hjemmemappe, men i mapperne hos <acronym
+>IMAP</acronym
+> brugeren <systemitem class="username"
+>groupware</systemitem
+>.</para>
+</step>
+</procedure>
+
+<para
+>Nu er &kontact; klar til at arbejde og opbevare data der. I kalenderprogrammet, hvis &kmail; <acronym
+>IMAP</acronym
+>-kontoen har typen <quote
+>ikke forbundet</quote
+>, skal vinduet <guilabel
+>Kalender</guilabel
+> vise objektet <guilabel
+>IMAP-ressource</guilabel
+> med tre underobjekter, som er søgestier til filer i den lokale hjemmemappen. I stedet viser  <guilabel
+>Kontakter</guilabel
+>-programmet  underobjekter nedenfor <guilabel
+>IMAP-ressource</guilabel
+>.</para>
+
+<para
+>Du kan nu logge på &kde; med et andet brugernavn og indstelle in hans eller hendes &kontact;-klient på lignende måde:</para>
+
+<procedure>
+<step>
+<para
+>Åbn &kontact; og tilføj en <acronym
+>IMAP</acronym
+>-konto i komponenten <guilabel
+>Brev</guilabel
+>, som angiver maskinen hvor <application
+>Cyrus</application
+>-serveren kører som <guilabel
+>vært</guilabel
+> (i mit tilfælde: <literal
+>192.168.1.3</literal
+>).</para>
+
+<para
+>Husk at markere <guilabel
+>Aktivér kontrol af nye breve med jævne mellemrum</guilabel
+> og indstelle en værdi i minutter. Når du bekræfter, bliver du ikke bedt om at oprette undermapper (eftersom de findes på <acronym
+>IMAP</acronym
+>-serveren), og du ser dem i mappetræet.</para>
+</step>
+<step>
+<para
+>Aktivér groupware-funktioner for at kunne gemme data på <acronym
+>IMAP</acronym
+>-serveren.</para>
+</step>
+</procedure>
+<para
+>Vær klar over at med  <quote
+>ikke forbunder <acronym
+>IMAP</acronym
+></quote
+> overføres data kun fra en klient til <acronym
+>IMAP</acronym
+>-serveren når klienterne forbinder for at kontrollere post. Så hvis du har &kontact;-klienter med <guilabel
+>kontrol af nye brev med jævne mellemrum</guilabel
+> på for eksempel 5 minutter, har du i værste tilfælde en 10 minutters forsinkelse mellem tiden når begivenheden laves og når den vises for andre brugere.</para>
+</sect1>
+<sect1 id="kontact-imap-readonly">
+<title
+>Hvordan man indstiller læseadgang</title>
+
+<note
+><para
+>Vær klar over at det er bekræftet at <acronym
+>IMAP</acronym
+>-implementeringen af Notitser i &kontact; før end version 1.01 er fejlagtig, så  denne indstilling virker ikke for dem. Hvis du ønsker at bruge dem, skal du bruge den foregående indstilling.</para
+></note>
+    
+<para
+>I foregående indstilling har vi samme <quote
+>pseudobruger</quote
+> som hedder <systemitem class="username"
+>groupware</systemitem
+>, som bruges af alle <quote
+>rigtige</quote
+> &kontact;-brugere (dvs. <systemitem class="username"
+>tony</systemitem
+>, <systemitem class="username"
+>rohn</systemitem
+>, <systemitem class="username"
+>amanda</systemitem
+>, etc.) via <acronym
+>IMAP</acronym
+>-kontoen med dens indlogning og kodeord. Men på denne måde har alle rigtige brugere samme læse- og skriverettigheder som andre, eftersom alle forbinder som brugeren <systemitem class="username"
+>groupware</systemitem
+> til <acronym
+>IMAP</acronym
+>-serveren.</para>
+    
+<para
+>For at begrænse adgang for visse brugere (typisk for kun at give læsadgang), kan vi bruge <acronym
+>ACL</acronym
+> (Access Control Lists).</para>
+    
+<para
+>Vælg en undermappe til <guilabel
+>kontor</guilabel
+> i &kmail;, for eksempel <guilabel
+>Kalender</guilabel
+>, og højreklik med musen. Vælg fanebladet <guilabel
+>Egenskaber</guilabel
+> <guilabel
+>Adgangkontroll</guilabel
+>. Her kan du indtaste brugere som du vil give adgang til mappen og hvad de kan gøre.</para>
+
+<para
+>Bare for at lave et eksperiment med at skifte begivenheder, giver vi <quote
+>Alle</quote
+> rettigheder til brugeren <systemitem class="username"
+>anna</systemitem
+>.</para>
+
+<para
+>På niveauet <application
+>cyrus</application
+> (på maskinen som kører <acronym
+>IMAP</acronym
+>-serveren cyrus, med værktøjet <application
+>Cyrus</application
+>), skal vi først tilføje brugeren <systemitem class="username"
+>anna</systemitem
+>, så det bliver en bruger som genkendes af <acronym
+>IMAP</acronym
+>, og oprette en <acronym
+>IMAP</acronym
+>-mappe til  hende.</para>
+
+<para
+>Derefter logger vi på GNU/Linux som <systemitem class="username"
+>anna</systemitem
+> og starter &kontact;. Som tidligere vist, indstiller vi en <acronym
+>IMAP</acronym
+>-konto i &kmail; med samme data men for brugeren (i stedet for pseudobrugeren <systemitem class="username"
+>groupware</systemitem
+> og dets kodeord, bruger vi <systemitem class="username"
+>anna</systemitem
+> og hendes kodeord).</para>
+
+<para
+>I &kmail;s mappetræ ser du følgende struktur denne gang: <menuchoice
+><guimenu
+>kontor</guimenu
+> <guisubmenu
+>brugere</guisubmenu
+> <guisubmenu
+>groupware</guisubmenu
+><guimenuitem
+>Kalender og Aktiviteter</guimenuitem
+></menuchoice
+>. Kontrollér indgangen (<menuchoice
+><guimenu
+>Fil</guimenu
+> <guimenuitem
+>Kontrollér post</guimenuitem
+></menuchoice
+>) så har du også en <quote
+>Indbakke</quote
+> under <quote
+>kontor</quote
+>.</para>
+
+<para
+>Aktivér nu &kmail;s groupware-funktionalitet, og skriv <guimenuitem
+>Indbakke</guimenuitem
+> som er en undermappe til <quote
+>kontor</quote
+> for <guilabel
+>Ressourcemapper er undermapper af</guilabel
+>.</para>
+
+<para
+>Aktivér nu &kmail;s groupware-funktionalitet, og skriv <guimenuitem
+>Indbakke</guimenuitem
+> som er en undermappe til <guisubmenu
+>kontor </guisubmenu
+> for <guilabel
+>Ressoursmapper er undermapper af</guilabel
+>.</para>
+  
+<para
+>Nu har du to mappegrene under <quote
+>kontor</quote
+>:</para>
+
+<orderedlist>
+<listitem>
+<para
+><quote
+>Indbakke</quote
+> med Kalender, Kontakter, Notitser, Opgaver og Journaler, som gemmes under <systemitem class="username"
+>anna</systemitem
+> i <acronym
+>IMAP</acronym
+>-mappen på <acronym
+>IMAP</acronym
+>-serveren.</para>
+</listitem>
+<listitem>
+<para
+><quote
+>bruger</quote
+> med undermappen <quote
+>groupware</quote
+> og undermapperne som <systemitem class="username"
+>anna</systemitem
+> har adgang til (i dette eksempel, Kalender og Opgaver)</para>
+</listitem>
+</orderedlist>
+<para
+>Højreklik på <quote
+>bruger</quote
+> <quote
+>Kalender</quote
+> og kontrollér om den har typen Kalender (hvis ikke, ændres den til det), og desuden om <quote
+>bruger</quote
+> <quote
+>Opgaver</quote
+> har typen Opgaver.</para>
+<para
+>I Kalender har du nu to tilgængelige <acronym
+>IMAP</acronym
+>-ressourcer at skrive til, så hvis du laver en ny begivenhed, bliver du spurgt hvilken der skal bruges (og hvis du lod den lokale ressource være tilgængelig, har du tre).</para>
+<para
+>Du skal gå til det lille vindue nede til venstre i Kalenderen, det som viser tilgængelige ressourcer, og afmarkere dem som ikke peger på søgestien <guilabel
+>.groupware.directory</guilabel
+> (kig i slutningen af hver ressourcesøgesti).</para>
+
+</sect1>
+
+<sect1 id="kontact-imap-credits">
+<title
+>Medvirkende</title>
+
+<para
+>Jeg er en nybegynder, og har kun bidraget til denne guide med min tid og vilje. For kundskaberne skal jeg takke nogle personer i Freenode-kanaler for deres kompetence, tålmodighed og hjælpsomhed.</para>
+
+<itemizedlist>
+<title
+>Særlig tak til:</title>
+<listitem>
+<para
+>For <application
+>Cyrus</application
+><acronym
+> IMAP</acronym
+> delen i kanalen #cyrus:</para
+> 
+<itemizedlist>
+<listitem>
+<para
+>[protagonist] Andy Morgan <email
+>morgan@orst.edu</email
+></para>
+</listitem>
+<listitem>
+<para
+>[plixed] Okke Timm <email
+>okke.timm@web.de</email
+></para>
+</listitem>
+</itemizedlist>
+</listitem>
+<listitem>
+<para
+>For &kontact; delen i kanalen #kontact:</para>
+<itemizedlist>
+<listitem>
+<para
+>[till] Till Adam <email
+>adam@kde.org</email
+></para>
+</listitem>
+<listitem>
+<para
+>[dfaure] David Faure <email
+>faure@kde.org</email
+></para>
+</listitem>
+<listitem>
+<para
+>[mdouhan] Matt Douhan <email
+>matt@fruitsalad.org</email
+></para>
+</listitem>
+</itemizedlist>
+</listitem>
+</itemizedlist>
+
+<para
+>Mange tak allesammen!</para>
+
+<para
+>Ja, og så migselv: [markit] Marco Menardi <email
+>mmenaz@mail.com</email
+></para>
+
+</sect1>
+
+<sect1 id="kontact-imap-further-reading">
+<title
+>Yderligere litteratur</title>
+
+<itemizedlist>
+<title
+>Reference</title>
+<listitem
+><para
+>KDE: <ulink url="http://www.kde.org"
+>http://www.kde.org</ulink
+></para
+></listitem>
+<listitem
+><para
+>&kontact;s hjemmeside: <ulink url="http://www.kontact.org"
+>http://www.kontact.org</ulink
+></para
+></listitem>
+<listitem
+><para
+>Kroupware-projektet <ulink url="http://www.kroupware.org"
+>http://www.kroupware.org</ulink
+></para
+></listitem>
+<listitem
+><para
+>&kde;-fællesskabets net-journal: <ulink url="http://wiki.kde.org"
+>http://wiki.kde.org</ulink
+></para
+></listitem>
+<listitem
+><para
+>Wine-projektet <ulink url="http://www.winehq.org"
+>http://www.winehq.org</ulink
+></para
+></listitem>
+<listitem
+><para
+>Cygwin/X-projektet <ulink url="http://x.cygwin.com"
+>http://x.cygwin.com</ulink
+></para
+></listitem>
+<listitem
+><para
+>LTSP-projektet <ulink url="http://www.ltsp.org"
+>http://www.ltsp.org</ulink
+></para
+></listitem>
+</itemizedlist>
+
+</sect1>
+
+</chapter>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: xml
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:0
+sgml-indent-data:true
+sgml-parent-document:("index.docbook" "book" "chapter")
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

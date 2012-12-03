@@ -1,0 +1,824 @@
+<chapter id="faq">
+<title
+>Pytania i odpowiedzi</title>
+&reporting.bugs; <qandaset id="faqlist">
+
+<qandadiv id="faq-dialing">
+<title
+>Pytania dotyczące dzwonienia</title>
+<qandaentry>
+<question
+><para
+>Nie mogę korzystać z programu &kppp;. Otrzymuję komunikaty iż <application
+>pppd</application
+> zakończył się lub przekroczono czas oczekiwania. Co jest tego przyczyną?</para
+></question>
+
+<answer
+><para
+>Czy uważnie Przeczytałeś tą instrukcję? Oto najczęściej występujące problemy:</para>
+
+<itemizedlist>
+
+<listitem
+><para
+>Kliknij na przycisk <guibutton
+>Szczegóły</guibutton
+>, aby program &kppp; wyświetlił ostatnie komunikaty z dziennika <acronym
+>PPP</acronym
+> (przycisk może nie działać na systemach innych niż &Linux; lub też w niektórych jego dystrybucjach). Komunikaty z dziennika pomogą odkryć przyczyny problemów.</para
+></listitem>
+
+<listitem
+><para
+>Upewnij się, iż zainstalowany demon <application
+>pppd</application
+> jest w binarnej formie aplikacji <application
+>pppd</application
+>, a nie tylko skryptem.</para
+></listitem>
+
+<listitem
+><para
+>Upewnij się, czy program <application
+>pppd</application
+> ma ustawioną flagę setuid <systemitem
+>root</systemitem
+>. Można ustawić ten tryb pracy, za pomocą polecenia <userinput
+><command
+>chmod</command
+> <option
+>u+s pppd</option
+></userinput
+> wydanego jako Administrator (użytkownik <systemitem
+>root</systemitem
+>). </para
+></listitem>
+
+<listitem
+><para
+>Sprawdź istnienie pliku <filename
+>/etc/ppp/options</filename
+>, oraz czy nie zawiera jakichkolwiek sprzecznych ustawień. Najlepiej jeżeli jest on pusty. </para
+></listitem>
+
+<listitem
+><para
+>Upewnij się, że <emphasis
+>nie</emphasis
+> używasz opcji <option
+>lock</option
+> jako parametru demona <application
+>pppd</application
+> (program &kppp; sam zajmie się zablokowaniem dostępu do urządzenia).</para
+></listitem>
+
+<listitem
+><para
+>Usuń parametr <option
+>lock</option
+> z <emphasis
+>obudwu</emphasis
+> plików: <filename
+>/etc/ppp/options</filename
+> <emphasis
+>oraz</emphasis
+> <filename
+>&tilde;/.ppprc</filename
+>!</para
+></listitem>
+<listitem
+><para
+>Wykorzystanie dowiązanie symbolicznego: <filename class="symlink"
+>/dev/modem</filename
+> może powodować konflikty. Problemy mogą zostać wyeliminowane przez użycie rzeczywistego urządzenia np.: <filename
+>/dev/cuaX</filename
+> lub <filename
+>/dev/ttySX</filename
+>. </para>
+<note
+><para
+>Port <hardware
+>COM1</hardware
+> określany jest przez <filename
+>ttyS0</filename
+>, <hardware
+>COM2</hardware
+> to <filename
+>ttyS1</filename
+> i tak dalej. </para
+></note
+></listitem>
+
+<listitem
+><para
+>Należy upewnić się co do poprawności konfiguracji praw dostępu. Jeżeli po zalogowaniu jako Administrator, wszystko działa poprawnie, należy sprawdzić konfigurację uprawnień z jakimi działa &kppp;. Jeżeli uruchamianie &kppp; z ustawionym bitem setuid <systemitem
+>root</systemitem
+> nie wchodzi w grę, to prawdopodobnie pomoże utworzenie grupy <systemitem
+>modem</systemitem
+>.</para
+></listitem>
+
+<listitem
+><para
+>Przyczyną problemu może być zbyt wczesne uruchomienie demona <application
+>pppd</application
+>, tzn. zanim zdalny serwer będzie gotowy do negocjacji połączenia<acronym
+>PPP</acronym
+>. W przypadku wykorzystania skryptu logowania, niezbędne jest sprawdzenie procedury logowania z wykorzystaniem wbudowanego terminala. Część dostawców Internetu, wymaga wysłania w skrypcie prostego polecenia: <command
+>Send</command
+> lub <command
+>Send ppp</command
+> aby uruchomić <acronym
+>PPP</acronym
+>. W niektórych przypadkach pomaga  dodanie w skrypcie poleceń <command
+>Pause 1</command
+> lub <command
+>Pause 2</command
+> co rozwiązuje problemy z czasem wykonywania poleceń.</para
+></listitem>
+
+</itemizedlist>
+
+<para
+>Jeżeli działania powyższe nie pomagają, przydatne mogą być informacje z dzienników systemowych, które można wyświetlić poleceniem:</para>
+
+<screen
+><prompt
+>#</prompt
+> <userinput
+><command
+>tail</command
+> <filename
+>/var/log/messages</filename
+></userinput
+></screen>
+
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>pppd died - The remote system is required to authenticate itself ...</para
+></question>
+
+<answer>
+<para
+>Typowy komunikat błędu w dziennikach systemowych:</para>
+<screen
+>pppd[699]: The remote system is required to authenticate itself
+pppd[699]: but I couldn't find any suitable secret (password) for it to use to do so.
+pppd[699]: (None of the available passwords would let it use an IP address.)
+</screen>
+<para
+>Przyczyny powyższego problemu mogą być dwie </para>
+<itemizedlist>
+<listitem
+><para
+>Plik <filename
+>/etc/ppp/options</filename
+> zawiera opcję<option
+>auth</option
+>. Należy ją poprzedzić znakiem komentarza <prompt
+>#</prompt
+> i spróbować ponownie. </para
+></listitem
+> <listitem
+><para
+>System posiada już zdefiniowaną bramę domyślne. Prawdopodobnie skonfigurowany jest on do pracy w sieci lokalnej.  W takim wypadku, ostatnie wersje demona pppd zachowują się, tak jakby miały aktywną opcję <option
+>auth</option
+>. Aby unieważnić to ustawienie, należy dodać argument <option
+>noauth</option
+> w konfiguracji pppd. Można również wyłączyć sieć lokalną przed rozpoczęciem dzwonienia. Jeżeli ktoś zna prosty sposób na ustawienie działania jednocześnie dwóch sieci, to autorzy programu &kppp; chętnie umieszczą instrukcję w tej dokumentacji. </para
+></listitem>
+</itemizedlist>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Usługa pppd nieoczekiwanie kończy działanie w jądrze systemu Linux w wersjach 2.4.x</para
+></question>
+<answer>
+<para
+>Typowy komunikat błędu w dziennikach systemowych:</para>
+
+<screen
+>pppd[1182]: pppd 2.3.11 started by user, uid 500 
+pppd[1182]: ioctl(PPPIOCGFLAGS): Invalid argument 
+pppd[1182]: tcsetattr: Invalid argument 
+pppd[1182]: Exit. 
+</screen>
+<para
+>Należy zainstalować program demona pppd w wersji 2.4.0b1 lub wyższej. Plik <filename
+>Documentation/Changes</filename
+> w źródłach jądra zawiera więcej informacji.</para
+> 
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Dlaczego program &kppp; wyświetla błąd: <errorname
+>Nie można otworzyć modemu</errorname
+>?</para
+></question>
+
+<answer
+><para
+>Błąd ten oznacza, iż program &kppp; nie ma wystarczających uprawnień do otwarcia urządzenia modemu. lub wybrane w karcie <guilabel
+>Modem</guilabel
+> urządzenie nie istnieje. Najpierw należy sprawdzić czy wybrano właściwe urządzenie, a następnie należy nadać programowi &kppp; odpowiednie uprawnienia dostępu do urządzenia i do modyfikacji pliku <filename
+>/etc/resolv.conf</filename
+> jeżeli &kppp; powinno konfigurować automatycznie ustawienia <acronym
+>DNS</acronym
+>. Jeżeli istnieje możliwość uruchomienia &kppp; z ustawionym bitem setuid <systemitem
+>root</systemitem
+>, to na pewno rozwiąże wszelkie problemy z dostępem, jeżeli nie, to należy samodzielnie ustalić prawidłowe uprawnienia. Ustawienie bitu setuid <systemitem
+>root</systemitem
+> odbywa się w następujący sposób:</para>
+
+<screen
+><prompt
+>%</prompt
+> <userinput
+><command
+>su</command
+> <option
+>root</option
+></userinput>
+<prompt
+>#</prompt
+> <userinput
+><command
+>chown</command
+> <option
+>root:root &dollar;KDEDIR/bin/kppp</option
+></userinput>
+<prompt
+>#</prompt
+> <userinput
+><command
+>chmod</command
+> <option
+>+s &dollar;KDEDIR/bin/kppp</option
+></userinput>
+<prompt
+>#</prompt
+> <userinput
+><command
+>exit</command
+></userinput
+>
+</screen>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Dlaczego program &kppp; twierdzi iż nie może stworzyć pliku blokującego dla modemu?</para
+></question>
+
+<answer
+><para
+>W większości przypadków, problem pojawia się gdy program &kppp; nie ma włączonego bitu SETUID, a użytkownik nie posiada praw zapisu do folderu z plikiem blokującym (domyślnie jest to: <filename class="directory"
+>/var/lock</filename
+>). Dzieje się tak na przykład w dystrybucjach &RedHat;. Należy sprawdzić w oknie dialogowym ustawień modemu wybraną ścieżkę. Rozwiązaniem jest albo nadanie bitu SETUID dla programu &kppp; a jeżeli jest to niemożliwe to nadanie praw zapisu dla użytkownika w katalogu <filename class="directory"
+>/var/lock</filename
+> lub stworzenie grupy użytkowników modem, która będzie miała prawa zapisu w katalogu <filename class="directory"
+>/var/lock</filename
+>.</para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Dlaczego program &kppp; ma ustawiony znacznik SETUID?</para
+></question>
+
+<answer
+><para
+>Ustawianie bitu SETUID nie jest niezbędnie konieczne. 'Administratorzy systemów &UNIX; mogą po prostu stworzyć grupę <systemitem
+>modem</systemitem
+>, i zapisać do niej wszystkich użytkowników, którzy powinni mieć dostęp do modemu. Kolejnym krokiem, jest nadanie grupie modem uprawnień zapisu do urządzenia. Jeżeli &kppp; ma automatycznie konfigurować ustawienia <acronym
+>DNS</acronym
+>, to konieczne jest nadanie uprawnień do zapisu w pliku <filename
+>/etc/resolv.conf</filename
+>, Dostęp do zapisu w plikach <filename
+>/etc/ppp/pap-secrets</filename
+> oraz <filename
+> /etc/ppp/chap-secrets</filename
+> jest wymagany, jeżeli użytkownik wykorzystuje konfigurację protokołów <acronym
+>PAP</acronym
+> lub <acronym
+>CHAP</acronym
+>.</para>
+
+<para
+>Zespół autorów programu &kppp; dołożył wielu starań, aby podnieść bezpieczeństwo korzystania z niego przy ustawionym bicie SETUID. Wybór stosowanego rozwiązania należy jednak do użytkownika.</para>
+
+<para
+>Więcej informacji na ten temat znajduje się w rozdziale <link linkend="security"
+>Bezpieczeństwo</link
+> .</para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Co robić, gdy program &kppp; nic nie robi, i wyświetla komunikat <computeroutput
+>Oczekiwanie na OK</computeroutput
+></para
+></question>
+
+<answer
+><para
+>Trzeba spróbować zmiany ustawień CR/LF, np.: CR, LF lub CR/LF.</para>
+
+<para
+>Możliwe jest również, że posiadany modem potrzebuje więcej czasu na  odpowiedź na polecenia inicjalizujące. Ustawienie tego czasu jest możliwe w oknie dialogowym <guilabel
+>Polecenia modemu</guilabel
+>, w karcie <guilabel
+>Modem</guilabel
+>. Odpowiednie pola to<guilabel
+>Czas oczekiwania przez inicjalizacją</guilabel
+> oraz <guilabel
+>Czas oczekiwania po inicjalizacji</guilabel
+>. Jeżeli zwiększenie ich wartości poprawia funkcjonowanie połączenia, to należy je odpowiednio dostosować do swoich potrzeb.</para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Połączenie działa, nie mogę jednak uruchomić żadnych programów!</para
+></question>
+
+<answer
+><para
+>Przyczyną tego problemu może być ustawienie opcji <link linkend="auto-configure-hostname"
+>Automatycznie konfiguruj nazwę hosta</link
+> co powoduje iż serwer X, nie może podłączyć się do hosta po zmianie nazwy. Jeżeli opcja ta jest naprawdę potrzebna (ale bardzo możliwe że tak nie jest) to należy sobie radzić poprzez konfigurację uprawnień dostępu do X serwera za pomocą polecenia <userinput
+><command
+>xhost</command
+> <option
+>+</option
+></userinput
+>. Należy jednak pamiętać o kwestiach związanych z bezpieczeństwem, dlatego  że to polecenie daje praktycznie każdemu dostęp do serwera X.</para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Program &kppp; wykazuje poprawne połączenie, ale &konqueror; pokazuje komunikat <errorname
+>Nieznany serwer <replaceable
+>hostname</replaceable
+></errorname
+>, zaś &Netscape; pokazuje: <errorname
+>Nieznana nazwa serwera</errorname
+>.</para
+></question>
+
+<answer
+><para
+>Należy spróbowaćpolecenia ping na numer <acronym
+>IP</acronym
+>  jakiegoś serwera, np.: <userinput
+><command
+>ping</command
+> <option
+>195.0.254.76</option
+></userinput
+>. Jeżeli polecenie działa to następnie należy podjąć kolejne działania:</para>
+
+<itemizedlist>
+<listitem
+><para
+>Należy sprawdzić, czy ustawiono co najmniej jeden adres serwera <acronym
+>DNS</acronym
+>.</para
+></listitem>
+
+<listitem
+><para
+>Sprawdzić zawartość pliku <filename
+>/etc/host.conf</filename
+>. Powinna tam znajdować się następująca linia: <literal
+>order hosts, bind</literal
+>. Opcja <option
+>bind</option
+> powoduje iż program tłumaczący nazwy, będzie wysyłał pytania do serwera nazw, jeżeli tej linii nie ma to należy ją dodać.</para
+></listitem>
+</itemizedlist
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Jak w programie &kppp; wysłać znak <keysym
+>\n</keysym
+> lub <keysym
+>\r</keysym
+></para
+></question>
+
+<answer
+><para
+>Wystarczy wysłać pusty ciąg znaków, tak jak w poniższym skrypcie:</para>
+
+<informalexample>
+<screen
+>Send                            # wyślij pusty tekst
+Expect           ID:            
+Send             itsme
+Expect           word:
+Send             forgot
+Expect           granted
+Send             ppp
+</screen>
+</informalexample>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Jak wyłączyć komunikat &kppp;: <errorname
+>Nie mogę utworzyć pliku blokującego</errorname
+>?</para
+></question>
+<answer
+><para
+>Powyższy komunikat pojawia się, gdy brak jest odpowiednich uprawnień do stworzenia bliku blokującego. Jeżeli w ustawieniach jest wybrana opcja tworzenia pliku blokującego, to użytkownik musi mieć prawa zapisu do katalogu (zwykle jest to katalog: <filename class="directory"
+>/var/lock</filename
+>). Nie stanowi to problemu w sytuacji gdy program &kppp; działa z uprawnieniami Administratora poprzez włączenie bitu SETUID. Więcej informacji na ten temat w sekcji <link linkend="lock-files"
+>Pliki blokujące</link
+></para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Dlaczego z modemu wydobywa się taki hałas przy dzwonieniu?</para
+></question>
+
+<answer
+><para
+>Naciśnij przycisk <guibutton
+>Ustawienia</guibutton
+>, a następnie <guilabel
+>Modem</guilabel
+>. Możliwe jest ustawienie trzech poziomów głośności: Wyłączony, Średni lub Wysoki. Większość modemów nie różnicuje głośności pomiędzy poziomem średnim i wysokim. Jeżeli zmiana tych ustawień nie pomaga, należy upewnić się czy zdefiniowane są właściwe dla posiadanego modemu polecenia w oknie: <guibutton
+>Ustawienia</guibutton
+>, <guilabel
+>Modem</guilabel
+>, <guibutton
+>Polecenia modemu</guibutton
+>.</para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Ustawiłem poziom głośności modemu na <quote
+>Wyłączony</quote
+> lecz dalej słyszę okropny hałas w trakcie dzwonienia. Dlaczego?</para
+></question>
+
+<answer
+><para
+>Polecenia modemu konfigurujące poziom głośności, mogą zostać zagubione, jeżeli modem nie radzi sobie z interpretacją szybko przesyłanych danych. Należy spróbować zwiększyć poziom parametru <guilabel
+>Przerwa po inicjalizacji</guilabel
+> w <guibutton
+>Ustawienia</guibutton
+>, <guilabel
+>Modem</guilabel
+>, <guibutton
+>Polecenia modemu</guibutton
+>.</para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Program &kppp; informuje o niezwykłych prędkościach modemu, takich jak: <quote
+>115200</quote
+> lub <quote
+>57600</quote
+></para
+></question>
+
+<answer
+><para
+>Większość modemów informuje o szybkości połączenia szeregowego, a nie o rzeczywistej szybkości przesyłu po linii telefonicznej. Należy taki modem odpowiednio skonfigurować poprzez dodanie uzupełniających poleceń w ciągu inicjującym. Dla wielu modemów jest to polecenie <command
+>ATW2</command
+>. Można go dodać do polecenia dzwonienia (zwykle wyglądającego tak: <command
+>ATD</command
+>), nowe polecenie dzwonienia powinno wtedy wyglądać tak: <command
+>ATW2D</command
+>.</para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Dlaczego program &kppp; pokazuje komunikat <quote
+>Prędkość nieznana</quote
+></para
+></question>
+
+<answer
+><para
+>Nowe modemu mają często bardzo skomplikowany format komunikatu informującego o szybkości połączenia, np.: <computeroutput
+>CONNECT LAP.M/V42.bis/115000:RX/31200:TX</computeroutput
+>, co powoduje iż &kppp; nie może poprawnie rozpoznać informacji o prędkości połączenia. Aby zobaczyć komunikaty modemu, należy włączyć opcję <guibutton
+>Pokaż dziennik</guibutton
+>.</para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Prędkość połączenia jest zbyt niska</para
+></question>
+
+<answer
+><para
+>Jeżeli prędkość modemu nie jest satysfakcjonująca, to należy się upewnić czy ustawiono szybkość połączenia (<guibutton
+>Ustawienia</guibutton
+>, <guilabel
+>Modem</guilabel
+>, <guibutton
+>Szybkość połączenia</guibutton
+>) na wartość 57600 lub większą. Następnie należy sprawdzić, czy posiadany port szeregowy obsługuje większe prędkości. Wiele komputerów opartych na procesorze i486 nie działa prawidłowo, jeżeli prędkość zostanie ustawiona na 115200. Jeżeli układ portu szeregowego jest stary (jak np.<hardware
+>8250 UART</hardware
+>) to nie będzie działać. Jeżeli jednak posiadany układ to <hardware
+>16550</hardware
+> lub <hardware
+>16550A</hardware
+> to nie powinno być najmniejszych problemów.</para>
+
+<para
+>Dodatkowo, należy poszukać w instrukcji modemu informacji o poleceniach konfigurujących szybkość transmisji.</para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Moje połączenie jest <emphasis
+>naprawdę bardzo</emphasis
+> wolne!</para
+></question>
+
+<answer
+><para
+>Jeżeli dane sączą się z prędkością kilku bajtów na sekundę, to przyczyną tego może być konfiguracja sprzętu. Jeżeli przesuwanie kursora myszki przyśpiesza transmisję, to oznacza z całą pewnością problem sprzętowy!</para>
+
+<para
+>Wiele informacji o posiadanym porcie szeregowym można uzyskać za pomocą polecenia <userinput
+><command
+>setserial</command
+> <option
+>-a <replaceable
+>/dev/ttySx</replaceable
+></option
+></userinput
+>. Należy szukać informacji o konflikcie przerwań z innymi składowymi komputera. Moduł <guilabel
+>Informacje</guilabel
+> programu &kcontrol; również może zawierać pomocne informacje.</para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Moja linia telefoniczna wymaga wybierania impulsowego, a nie tonowego (lub vice-versa). Jak to można zmienić?</para
+></question>
+<answer
+><para
+>Należy zmodyfikować ciąg dzwonienia. Niemal wszystkie modemy reagują na następujące polecenia AT:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><command
+>ATDT</command
+></term>
+<listitem
+><para
+><action
+>Wybieranie tonowe</action
+></para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><command
+>ATDP</command
+></term>
+<listitem
+><para
+><action
+>Wybieranie impulsowe</action
+></para
+></listitem>
+</varlistentry>
+</variablelist>
+</answer>
+
+</qandaentry>
+
+</qandadiv>
+
+<qandadiv id="faq-telephone-cost-rules">
+<title
+>Pytania o reguły liczenia kosztów połączeń.</title>
+<qandaentry>
+<question
+><para
+>Jak stworzyć plik zasad liczenia kosztów połączeń telefonicznych?</para
+></question>
+<answer
+><para
+>Wystarczy postępować zgodnie z opisem w pliku <filename
+>TEMPLATE</filename
+> dostarczonym z programem &kppp;. Powinien się on znajdować w katalogu <filename class="directory"
+>$KDEDIR/doc/HTML/<replaceable
+>kod języka</replaceable
+>/kppp/</filename
+>. Uruchamiając &kppp; w linii poleceń z opcją <option
+>-r</option
+> można sprawdzić składnię stworzonego pliku zasad liczenia kosztów połączeń.</para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Stworzyłem plik zasad liczenia kosztów telefonicznych dla swojego kraju, gdzie mogę go wysłać aby inni również mogli z niego skorzystać?</para
+></question>
+<answer
+><!-- LW: Find out -->
+<!-- lukas: the answer is: send it to the kppp maintainer, Harri Porten --></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Czy stworzony przeze mnie plik zasad liczenia kosztów, może zawierać wielkości ułamkowe postaci np.: "(0.17, 45.5)"?</para
+></question>
+<answer
+><para
+>Jest to możliwe, jednak należy unikać stosowania ułamków mniejszych od 1/10 sekundy, gdyż może to powodować wyższe obciążenie procesora <acronym
+>CPU</acronym
+>, chociaż na nowszym sprzęcie będzie to i tak niezauważalne.</para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>W moim kraju występuję inne (poza Świętami Wielkiej Nocy) święta z przesuwającą się datą.</para
+></question>
+<answer
+><para
+>W takim wypadku, niezbędne jest napisanie programu obliczającego terminy tego święta. Najlepiej to zrobić wzorując się na kodzie obliczających terminy Świąt Wielkanocnych znajdującym się w pliku <filename
+>ruleset.cpp</filename
+>. Następnie należy wysłać swój kod do Zespołu &kppp;!</para
+></answer>
+</qandaentry>
+</qandadiv>
+
+<qandadiv id="faq-system-logs">
+<title
+>Pytania dotyczące dzienników systemowych</title>
+<qandaentry>
+<question
+><para
+>Pojawia się komunikat <errorname
+>Łącze szeregowe zapętla się</errorname
+>. Co to znaczy?</para
+></question>
+
+<answer
+><para
+>Krótka odpowiedź: Nie został uruchomiony program <acronym
+>PPP</acronym
+> na zdalnym systemie.</para>
+
+<!-- this doc doesn't exist.. help -->
+<!-- http://www.dejanews.com/getdoc.xp?AN="184945314" -->
+
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Dziennik połączeń zawiera błąd: <errorname
+>Signal 15</errorname
+></para
+></question>
+<answer
+><para
+>Jeżeli widoczne są powyższe komunikaty, oznacza to iż nastąpiło przekroczenie czasu oczekiwania. Program &kppp; czekał na poprawne zestawienie połączenia <acronym
+>PPP</acronym
+> i zrezygnował po pewnym czasie, wysyłając polecenie zamknięcia do programu <application
+>pppd</application
+>. Powoduje to właśnie komunikaty w rodzaju: <application
+>pppd</application
+> was signalled to shut down, with signal number 15, &ie; <errorcode
+>SIGTERM</errorcode
+>.</para>
+
+<informalexample>
+<screen
+><computeroutput>
+pppd[26921]: pppd 2.3.5 started by me, uid 500
+pppd[26921]: Using interface ppp0
+pppd[26921]: Connect: ppp0 &lt;--&gt; /dev/ttyS0
+pppd[26921]: Terminating on signal 15.
+pppd[26921]: Connection terminated.
+pppd[26921]: Exit.
+</computeroutput
+></screen>
+</informalexample>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Co oznacza komunikat: <errorname
+>Szeregowe połączenie przychodzące filtruje 8-my bit danych</errorname
+></para
+></question>
+<answer
+><para
+>Usługa <acronym
+>PPP</acronym
+> wykryła iż wszystkie dane, które otrzymuje od strony serwera, mają 8-my bit ustawiony na zero. W większości przypadków oznacza to, iż zdalny serwer <acronym
+>PPP</acronym
+> nie został jeszcze uruchomiony. Pojawia się tam dalej pytanie o nazwę użytkownika, które jak echo zwraca wszystkie dane wysyłane przez program<application
+>pppd</application
+>.</para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>oraz <errorname
+>can't locate module ppp-compress</errorname
+>? O co chodzi?</para
+></question>
+<answer
+><para
+>Jeżeli widoczne są następujące komunikaty:</para>
+
+<informalexample>
+<screen
+><computeroutput>
+modprobe: can't locate module ppp-compress-21 
+modprobe: can't locate module ppp-compress-26 
+modprobe: can't locate module ppp-compress-24
+</computeroutput
+></screen>
+</informalexample>
+
+<para
+>Wystarczy dodać linie:</para>
+
+<screen
+><userinput>
+alias ppp-compress-21 bsd_comp 
+alias ppp-compress-24 ppp_deflate 
+alias ppp-compress-26 ppp_deflate </userinput
+></screen>
+
+<para
+>w pliku <filename
+>/etc/conf.modules</filename
+>.</para>
+</answer>
+</qandaentry>
+
+</qandadiv>
+
+</qandaset>
+
+</chapter>

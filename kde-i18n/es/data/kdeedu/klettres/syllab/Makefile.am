@@ -1,0 +1,4 @@
+ogg_DATA = ba.ogg di.ogg gue.ogg ji.ogg lle.ogg na.ogg pi.ogg si.ogg vu.ogg ye.ogg be.ogg do.ogg gui.ogg jo.ogg lli.ogg ne.ogg po.ogg so.ogg wa.ogg yi.ogg bi.ogg du.ogg gu.ogg ju.ogg ll.ogg ni.ogg pu.ogg su.ogg we.ogg yo.ogg bo.ogg fa.ogg guue.ogg ka.ogg llo.ogg nna.ogg que.ogg ta.ogg wi.ogg yu.ogg bu.ogg fe.ogg guui.ogg ke.ogg llu.ogg nne.ogg qui.ogg te.ogg wo.ogg za.ogg ca.ogg fi.ogg ha.ogg ki.ogg lo.ogg nni.ogg ra.ogg ti.ogg wu.ogg ze.ogg ce.ogg fo.ogg he.ogg ko.ogg lu.ogg nno.ogg re.ogg to.ogg xa.ogg zi.ogg ci.ogg fu.ogg hi.ogg ku.ogg ma.ogg nnu.ogg ri.ogg tu.ogg xe.ogg zo.ogg co.ogg ga.ogg ho.ogg la.ogg me.ogg no.ogg ro.ogg va.ogg xi.ogg zu.ogg cu.ogg ge.ogg hu.ogg le.ogg mi.ogg nu.ogg ru.ogg ve.ogg xo.ogg da.ogg gi.ogg ja.ogg li.ogg mo.ogg pa.ogg sa.ogg vi.ogg xu.ogg de.ogg go.ogg je.ogg lla.ogg mu.ogg pe.ogg se.ogg vo.ogg ya.ogg
+
+oggdir = $(kde_datadir)/klettres/es/syllab
+EXTRA_DIST = $(ogg_DATA)

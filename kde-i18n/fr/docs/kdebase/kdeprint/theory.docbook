@@ -1,0 +1,692 @@
+<chapter id="theory">
+<title
+>Quelques bases théoriques : &CUPS;, <acronym
+>IPP</acronym
+>, &PostScript; et <application
+>Ghostscript</application
+></title>
+
+<para
+>Ce chapitre vise à donner un peu de fond théorique sur l'impression en général, et sur &CUPS; en particulier. Si vous n'avez pas besoin de ça, vous pouvez aller directement au <link linkend="getting-started"
+>chapitre suivant</link
+>. Il y a des chances pour que vous reveniez à ce chapitre quand même, car quelquefois, on a besoin de théorie supplémentaire pour régler un problème pratique.</para>
+
+<sect1 id="basics-of-printing">
+<title
+>Bases sur l'impression</title>
+
+<para
+>L'impression est un des chapitres les plus compliqués dans la technologie <acronym
+>IT</acronym
+>.</para>
+
+
+<para
+>Tôt dans l'histoire, chaque développeur d'un programme qui était capable de produire une sortie imprimable devait écrire son propre pilote d'imprimante. C'était très compliqué, car différents programmes avaient différents formats de fichiers. Même les programmes avec le même but, par exemple des traitements de texte, ne comprennent souvent pas les formats des autres. Pour cette raison, il n'y avait pas d'interface commune pour toutes les imprimantes, d'où le fait que les programmeurs ne géraient qu'un nombre limité de modèles.</para>
+
+<para
+>Un nouveau matériel apparaissant sur le marché nécessitait que les auteurs du programme écrivent un nouveau pilote s'ils voulaient que leur programme le gère. Pour les fabricants, il était impossible d'être sûr que leur matériel était compatible avec n'importe quel programme connu (bien qu'il y en ait eu bien moins que maintenant).</para>
+
+<para
+>Ayant à gérer 10 programmes et une douzaine d'imprimantes, il fallait 120 pilotes. ainsi, le développement d'interfaces unifiées entre les programmes et les imprimantes devenait urgent.</para>
+
+<para
+>L'apparition de <quote
+>Langages de description de pages</quote
+> décrivant la représentation graphique de l'encre et du toner sur les feuilles de papier (ou autre périphérique de sortie, comme les moniteurs, les photocompositeurs, &etc;) d'une manière générale fut un mouvement qui combla un grand fossé. </para>
+
+<para
+>Un tel développement fut &PostScript;, d'Adobe. Il signifiait qu'un programmeur d'application pouvait se concentrer sur le fait que son programme générait une description de sa page imprimable en langage &PostScript;, et que les développeurs des pilotes d'imprimantes pouvaient se concentrer sur l'impression des fichiers &PostScript;.</para>
+
+<para
+>Bien sûr, avec le temps, sont venus d'autres langages de description. Les plus importants concurrents de &PostScript; étaient <acronym
+>PCL</acronym
+> (<quote
+><foreignphrase
+>Print Control Language</foreignphrase
+></quote
+>, de &Hewlett-Packard;), <quote
+>ESC/P</quote
+> (d'Epson) et <acronym
+>GDI</acronym
+> (<quote
+>Graphical Device Interface</quote
+> de &Microsoft;).</para>
+
+<para
+>L'apparition de ces langages de description de page rendit la vie plus facile, et facilita les développements ultérieurs pour tout le monde. Comme il restait des langages différents, incompatibles et concurrents de description de pages, la vie des utilisateurs, des administrateurs et des développeurs resta suffisamment compliquée.</para>
+
+<sect2>
+<title
+>&PostScript; dans la mémoire - des images sur le papier</title>
+
+<para
+>&PostScript; est très utilisé dans les environnements d'impression professionnels, comme PrePress et les industries de services d'impression. Dans les domaines &UNIX; et &Linux;, &PostScript; est le standard dominant comme <acronym
+>PDL</acronym
+>. Ici, presque chaque programme génère une représentation &PostScript; de ses pages une fois actionné le bouton <quote
+>Imprimer</quote
+>. Voyons un exemple simple de code (fait main) &PostScript;. Le listing suivant décrit deux simples dessins :</para>
+
+<example id="coded-postscript">
+<title
+>Code &PostScript;</title>
+<screen
+>%!PS
+100 100 moveto
+0 50 rlineto
+50 0 rlineto
+0 -50 rlineto
+closepath
+.7 setgray fill
+% first box over; next
+160 100 moveto
+0 60 rlineto
+45 10 rlineto
+0 -40 rlineto
+closepath
+.2 setgray fill</screen>
+</example>
+
+<para
+>Ceci dit au <quote
+>crayon imaginaire</quote
+> &PostScript; de dessiner un chemin d'une certaine forme, et l'emplit de différentes nuances de gris. La première partie se traduit en un français plus compréhensible par <quote
+>Aller à l'emplacement (100,100), dessiner une ligne de longueur 50 vers le haut, puis de là vers la droite, puis vers le bas, et enfin clore cette partie. Maintenant, emplissons la forme dessinée d'un gris sombre à 70 %</quote
+></para>
+
+<example id="rendered-postscript">
+<title
+>Rendu &PostScript;</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="ps-boxes.png" format="PNG"/>
+</imageobject>
+<textobject>
+<phrase
+><xref linkend="coded-postscript"/> exemple de rendu comme une image</phrase>
+</textobject>
+</mediaobject>
+</example>
+
+<para
+>Bien sûr, &PostScript; peut être bien plus compliqué que cet exemple simpliste. C'est un langage de programmation complet, avec différents opérateurs et fonctions. Vous pouvez même écrire des programmes &PostScript; pour calculer la valeur de Pi, formater un disque dur ou écrire dans un fichier. La valeur principale et la force de &PostScript; repose cependant dans le champ pour décrire la mise en page d'objets graphiques : il peut aussi changer l'échelle, inverser en miroir, déplacer, transformer, tourner et distordre tout ce que vous pouvez imaginer sur un morceau de papier comme des lettres dans différentes représentation de polices, des figures, des formes, des nuances, des couleurs, des lignes, des points, du quadrillage...</para>
+
+<para
+>Un fichier &PostScript; est une représentation d'une ou plusieurs pages à afficher, d'une manière relativement abstraire. Idéalement, il est supposé décrire les pages d'une manière indépendante du matériel. &PostScript; n'est pas directement <quote
+>visible</quote
+> ; il ne vit que sur les disques durs et dans la <acronym
+>RAM</acronym
+> comme une représentation codée des futures impressions.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Images en quadrillage sur des feuilles de papier</title>
+
+<para
+>Ce que vous voyez sur un morceau de papier est presque toujours une <quote
+>image en quadrillage</quote
+>. Même si votre esprit suggère que vos yeux voient une ligne : prenez une puissante loupe et vous découvrirez de petits points... (un exemple contraire est une ligne dessinée par un <quote
+>traceur</quote
+>). Et c'est la seule chose que les <quote
+>moteurs de marquage</quote
+> des imprimantes d'aujourd'hui peuvent écrire sur le papier : de simples points de différentes couleurs, taille et résolution pour dessiner une <quote
+>image de page</quote
+> complète, composée de différents motifs de cartes de points.</para>
+
+<para
+>Les différentes imprimantes ont besoin d'images en quadrillage préparées de différentes manières. En pensant à un matériel à jet d'encre : en fonction de sa résolution, du nombre d'encres utilisées (les très bonnes en ont jusqu'à 7, alors que les meilleurs marchés en utilisent 3), du nombre de jets disponibles (certaines têtes d'impression en ont jusqu'à 100 !) qui projettent l'encre simultanément, de l'<quote
+>algorithme d'adoucissement</quote
+> utilisé, et de beaucoup d'autes choses, le format de quadrillage final et l'ordre de transfert au moteur de marquage sont très dépendants du modèle exact utilisé.</para>
+
+<para
+>À l'époque des débuts du <quote
+>Line Printer Daemon</quote
+>, les imprimantes étaient des machines qui frappaient des lignes de texte <acronym
+>ASCII</acronym
+> mécaniquement sur du papier plié en <acronym
+>accordéon</acronym
+> placé sous la table&etc; Quelle différence avec aujourd'hui !</para>
+
+</sect2>
+
+
+<sect2>
+<title
+><acronym
+>RIP</acronym
+> : de &PostScript; vers le quadrillage</title>
+
+<para
+>Avant que le quadrillage final ne soit couché sur des feuilles de papier coupées, il a besoin de le calculer à partir de la représentation abstraite &PostScript;. C'est un travail de calcul très intensif. Il est appelé le <quote
+>Raster Imaging Process</quote
+>, (Processus d'image par quadrillage) plus communément <quote
+><acronym
+>RIP</acronym
+></quote
+>).</para>
+
+<para
+>Avec les imprimantes &PostScript;, la gestion du <acronym
+>RIP</acronym
+>-ping est prise en charge par l'imprimante elle-même. Vous lui envoyez juste le fichier &PostScript;. Le <quote
+>Raster Imaging Processor</quote
+> (aussi nommé <acronym
+>RIP</acronym
+>) situé dans l'imprimante est responsable (et spécialisé) de remplir très bien cette tâche d'interpréter la description de page &PostScript; et de mettre l'image quadrillée sur le papier.</para>
+
+<para
+>Les plus petites imprimantes &PostScript; ont un <acronym
+>RIP</acronym
+> intégré, gravé dans le Silicium, sur une puce spéciale. Les grosses imprimantes professionnelles ont souvent leur <acronym
+>RIP</acronym
+> implémenté en tant que logiciel<acronym
+>RIP</acronym
+> intégré dans un ordinateur &UNIX; rapide, souvent une machine Sun SPARC Solaris ou &SGI; &IRIX;.</para>
+
+</sect2>
+
+<sect2>
+<title
+><application
+>Ghostscript</application
+> comme logiciel <acronym
+>RIP</acronym
+></title>
+
+<para
+>Mais qu'arrive-t-il si vous n'avez pas assez de chance pour avoir une imprimante &PostScript; ?</para>
+
+<para
+>Vous avez besoin de <acronym
+>RIP</acronym
+>er avant d'envoyer les données au moteur de marquage. Vous avez besoin de traiter le &PostScript; fabriqué par votre application sur la machine-hôte (le client d'impression). Vous avez besoin de savoir comment le format de quadrillage de l'imprimante-cible doit être composé.</para>
+
+<para
+>En d'autres mots, comme vous ne pouvez pas vous reposer sur l'imprimante pour comprendre le &PostScript;, le problème se complique. Vous avez besoin d'un logiciel qui essaye de résoudre pour vous les problèmes soulevés.</para>
+
+<para
+>C'est exactement ce que l'omniprésent &ghostscript; fait pour beaucoup de boîtes &Linux;, *BSD et autres &UNIX; qui ont besoin d'imprimer sur des imprimantes non-&PostScript; : &ghostscript; est un interpréteur &PostScript;, un logiciel <acronym
+>RIP</acronym
+> capable de fonctionner sur différents matériels.</para>
+
+</sect2>
+
+<sect2>
+<title
+><quote
+>Pilotes (drivers)</quote
+> et <quote
+>filtres</quote
+> en général</title>
+
+<para
+>Pour produire des quadrillages de points à partir d'une entrée &PostScript;, le concept de <quote
+>filtre</quote
+> est utilisé par &ghostscript;. Il y a beaucoup de filtres différents dans &ghostscript;, quelques uns d'entre eux spécialisés pour un certain modèle d'imprimante. Les filtres &ghostscript; spécialisés dans les périphériques ont souvent été développés sans le consentement ou l'aide du fabricant concerné. Sans accès aux spécifications et à la documentation, c'était un processus difficile de deviner le fonctionnement des protocoles et des formats de données.</para>
+
+<para
+>Tous les filtres &ghostscript; ne fonctionnent pas aussi bien pour leurs imprimantes. Cependant, certains des derniers, comme le filtre <application
+>stp</application
+> du projet d'impression de <application
+>Gimp</application
+> produisent d'excellents résultats, menant à la qualité photographique comparable voire supérieure aux équivalents de &Microsoft; &Windows;.</para>
+
+<para
+>&PostScript; est ce que la plupart des programmes d'application produisent pour l'impression &UNIX; et &Linux;. Les filtres sont de vrais chevaux de trait pour n'importe quel système d'impression. Ils produisent essentiellement les bonnes cartes de points pour n'importe quelle entrée &PostScript; pour les cibles non-&PostScript;.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Pilotes et filtres et interfaces matérielles pour CUPS</title>
+
+<para
+>&CUPS; utilise ses propres filtres, à travers lesquels le système de filtrage est basé sur Ghostscript. Nommément, les filtres pstoraster et imagetoraster sont directement dérivés du code de Ghostscript. &CUPS; a réorganisé et perfectionné la totalité des mécanismes de ce code hérité et l'a organisé en quelques modules clairs et distincts.</para>
+
+<para
+>Ce dessin suivant (fait avec l'aide de &kivio;) donne un aperçu des filtres et interfaces matérielles (backends) dans &CUPS;, et comment ils s'adaptent entre eux. Le <quote
+>flux</quote
+> se fait du haut vers le bas. Les interfaces matérielles sont des filtres spéciaux : ils ne convertissent pas les données vers un format différent, mais ils envoient les fichiers prêts pour l'imprimante. Il y a différentes interfaces matérielles pour les différents protocoles de transfert.</para>
+
+<screenshot id="architecture-diagram">
+<screeninfo
+>Boîte de dialogue &kprinter; démarrée (dessin avec &kivio;) </screeninfo>
+<mediaobject>
+<imageobject>
+<imagedata fileref="cups-filterarchitecture-kivio-70Percent-scaled.png"
+format="PNG"/></imageobject>
+<textobject>
+<phrase
+>Boîte de dialogue &kprinter; démarrée (dessin avec &kivio;)</phrase
+></textobject>
+</mediaobject>
+</screenshot>
+
+</sect2>
+<sect2>
+<title
+>Démons d'impression et files d'attente (SPOOL)</title>
+
+<para
+>À côté de la partie lourde de filtrage pour générer une image prête à imprimer, tout logiciel d'impression a besoin d'utiliser un mécanisme de SPOOL : c'est pour mettre en file différentes tâches d'impression de différents utilisateurs pour différentes imprimantes et différents filtres et les envoyer selon leur destination. Le démon d'impression prend soin de ceci.</para>
+
+<para
+>Ce démon conserve la maison en ordre : il est aussi réactif pour le contrôle des tâches ; les utilisateurs devraient être autorisés à annuler, arrêter, redémarrer, &etc; leurs travaux (mais pas ceux des autres) et ainsi de suite.</para>
+
+</sect2>
+
+</sect1>
+
+
+
+<sect1 id="cups-and-ppd">
+<title
+>Excursion : comment <quote
+>CUPS</quote
+> utilise la puissance des PPD</title>
+
+<para
+>Maintenant que vous savez comment un fichier de langage &PostScript; (qui décrit la mise en page d'une manière largement indépendante du matériel) est transformé en un image quadrillée, vous pouvez demander : <quote
+>Eh bien, il y a différentes sortes de périphériques de sortie de quadrillage : d'abord, ils diffèrent dans leur résolution, puis il y a différentes tailles de papier, s'ajoutent plusieurs sortes de finitions (impressions duplex, livrets, sorties brochées et agrafées avec différentes feuilles de papier coloré dessinés de différents plateaux, &etc;). Comment ceci s'adapte-t-il dans notre modèle de &PostScript; ne dépendant pas de la machine ?</quote
+></para>
+
+<para
+>La réponse vient avec ce qu'on appelle &PostScript; Printer Description (fichiers &PPD;). Un fichier &PPD; décrit toutes les fonctionnalités indépendantes du matériel qui peuvent être utilisées par un certain modèle d'imprimante. Il contient aussi les commandes codées qui doivent être utilisées pour appeler certaines fonctionnalités du matériel. Mais les &PPD; ne sont par un livre fermé, ils sont de simples fichiers de texte <acronym
+>ASCII</acronym
+>.</para>
+
+<para
+>Les &PPD; ont été <quote
+>inventés</quote
+> par Adobe pour rendre facile pour les fabricants d'implémenter leurs propres fonctionnalités dans les imprimantes &PostScript;, et en même temps, de retenir une manière standard de le faire. Les &PPD; sont bien documentés et décrits par Adobe. Leurs spécifications sont de facto un standard ouvert.</para>
+
+<sect2 id="ppd-files">
+<title
+>Options d'impression indépendantes du matériel</title>
+
+<para
+>Souvenez-vous, l'impression &PostScript; avancée était à l'origine seulement développée pour une utilisation avec les systèmes &Microsoft; &Windows; et Apple &Mac;. Pendant longtemps, toutes les fonctionnalités riches de l'impression sur du matériel moderne étain tout simplement indisponible sous &Linux; et &UNIX;. &CUPS; change ceci d'une manière décisive. &CUPS; est très proche des &PPD; et, de ce fait, les &PPD; existants peuvent être utilisés entièrement par tous les systèmes utilisant &CUPS;.</para>
+
+<para
+>En utilisant les &PPD;, les fabricants d'ordinateurs furent capables d'insérer des fonctionnalités spécifiques au matériel dans leurs produits, des fonctions comme le duplex, le brochage, la reliure, la finition, &etc; Les pilotes d'imprimante chargent ce &PPD; juste comme un fichier de configuration supplémentaire. Ainsi, le pilote d'imprimante en apprend sur les options du matériel disponible, et comment les appeler ; le pilote les présente aussi dans un &GUI; à l'utilisateur. Par ce mécanisme, vous pouvez toujours imprimer des fichiers de description de  pages &PostScript;<quote
+>indépendantes du matériel</quote
+> et spécifier des options de finition dépendant du matériel par-dessus, qui seront ajoutées au &PostScript; généré par l'application.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Où obtenir les &PPD; pour les imprimantes &PostScript;</title>
+
+<para
+>Les &PPD; à l'origine n'étaient pas utilisés en routine dans les systèmes &UNIX; et &Linux;. Les fabricants fournissant ces &PPD; ne les ont jamais prévus pour autre chose que les &SE; supportés : &Microsoft; &Windows; et &MacOS;. Par son brillant mouvement pour gérer et utiliser complètement les spécifications &PPD; existantes, &CUPS; donne maintenant la puissance d'utiliser toutes les fonctionnalités des imprimantes modernes aux utilisateurs de systèmes &Linux; et proches d'&UNIX;. &kdeprint; rend son usage bien plus confortable que les développeurs de &CUPS; ne l'ont jamais rêvé.</para>
+
+<para
+>&CUPS; peut utiliser les &PPD; originaux de &Windows;, distribués par les fabricants dans le cas des imprimantes &PostScript;. Ceux-ci normalement ne coûtent rien et ils peuvent être récupérés sur n'importe quel ordinateur &Windows; avec un pilote &PostScript; pour le modèle concerné, ou sur le disque fourni avec l'imprimante. Il y a aussi plusieurs endroits sur le web pour les télécharger.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Comment les &PPD; spéciaux sont maintenant utiles même pour les imprimantes non &PostScript;.</title>
+
+<para
+>Maintenant, vous savez comment les imprimantes &PostScript; peuvent utiliser les &PPD;. Mais les imprimantes non-&PostScript; ? &CUPS; a fait une très bonne astuce en utilisant le même format de données et de structure que le &PostScript; Printer Descriptions (&PPD;) dans le monde &PostScript;, il peut décrire les options de tâche d'impression disponibles pour les imprimantes non-&PostScript; de la même manière. Pour ses buts spéciaux, &CUPS; a juste ajouté quelques options spéciales (la ligne qui définit le filtre à utiliser pour un traitement ultérieur du fichier &PostScript;).</para>
+
+<para
+>Ainsi, les développeurs pouvaient utiliser le même moteur logiciel pour analyser le fichier de description d'imprimante pour les options disponibles pour toutes les sortes d'imprimantes. Bien sûr, les développeurs de &CUPS; ne pouvaient pas se reposer sur le fait que les fabricants de matériel &PostScript; développent soudain des &PPD;. Ils devaient faire le début difficile et les écrire eux-mêmes à partir de rien. Plus de 1 000 sont disponibles dans la version commerciale de &CUPS; nommée <application
+>ESP PrintPro</application
+>.</para>
+
+<para
+>Cependant, il y a beaucoup de &PPD; spécifiques à &CUPS; disponibles. Même maintenant, ils ne sont pas dans la plupart des cas originaires des fabricants d'imprimantes mais des développeurs de logiciels libres. Les gens de &CUPS; l'ont prouvé, et les autres ont suivi : là où l'impression sous &Linux; et &UNIX; ; il y a un an ou deux était un bricolage, il est maintenant capable de gérer une grande gamme d'imprimantes, y compris les modèles à cartouches 7 couleurs capables de sortir de la qualité photo.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Différentes manières d'obtenir des &PPD; pour les imprimantes non-&PostScript;</title>
+
+<para
+>Vous pouvez obtenir des &PPD; à utiliser avec &CUPS; et les imprimantes non-&PostScript; dans différents endroits du Web :</para>
+
+<itemizedlist>
+<listitem>
+<para
+>d'abord, il y a le dépôt à <ulink url="http://www.linuxprinting.org"
+>www.linuxprinting.org</ulink
+>, qui vous permet de générer un &PPD;<quote
+>CUPS-O-Matic</quote
+> en ligne pour n'importe quelle imprimante qui a déjà été gérée par le système &ghostscript;. Ceci vous aide à basculer vers &CUPS; avec peu d'efforts si vous le souhaitez. Si votre imprimante fonctionnait bien avec la manière traditionnelle d'impression &ghostscript;, prenez CUPS-O-Matic pour connecter votre pilote dans le système &CUPS; et vous aurez le meilleur des deux mondes.</para>
+</listitem>
+
+<listitem>
+<para
+>ensuite, il y a &CUPS;-&PPD; pour les plus de 120 modèles d'imprimantes qui sont gérés par le nouveau pilote universel <application
+>stp</application
+>. <application
+>stp</application
+> (pour Stylus Photo) est maintenant développé par le projet gimp-print ; il a été commencé par Mike Sweet, le développeur en chef de &CUPS; et est maintenant disponible par <ulink url="http://gimp-print.sourceforge.net"
+>gimp-print.sourceforge.net</ulink
+>. Ce pilote imprime une vraie qualité photo sur beaucoup d'imprimantes à jet d'encre modernes et peut être configuré pour faire 120 &CUPS;-&PPD; à côté de sa propre compilation. Les modèles &HP; Laser et DeskJet, <trademark class="registered"
+>Epson</trademark
+> Stylus et PhotoColor et certains modèles <trademark class="registered"
+>Canon</trademark
+> et <trademark class="registered"
+>Lexmark</trademark
+> sont couverts.</para>
+</listitem>
+
+<listitem>
+<para
+>en troisième, il y a l'extension commerciale de &CUPS;, des développeurs &CUPS; eux-mêmes : il est nommé <application
+>ESP PrintPro</application
+> et est fourni avec 2 300 pilotes d'imprimantes. Il y a même des filtres améliorés imagetoraster et pstoraster inclus.</para>
+</listitem>
+</itemizedlist>
+
+<para
+>&CUPS; rend vraiment facile pour les fabricants de commencer à supporter l'impression sous &Linux; et &UNIX; pour leurs modèles à un coût raisonnablement bas. Le cadre modulaire de &CUPS; facilite le branchement de n'importe quel filtre (=pilote) avec un effort minimal et l'accession et l'utilisation du cadre complet d'impression que &CUPS; crée.</para>
+
+<para
+>Lisez-en plus sur les fonctionnalités excitantes de &CUPS; dans la documentation de &CUPS; à <ulink url="http://www.cups.org/documentation.html"
+>http://www.cups.org/documentation.html</ulink
+> et <ulink url="http://wwww.danka.de/printpro/faq.html"
+>http://www.danka.de/printpro/faq.html</ulink
+>. De plus, à <ulink url="http://www.linuxprinting.org"
+>http://www.linuxprinting.org/</ulink
+> se trouve un référentiel universel pour tous les problèmes relatifs à l'impression sous &Linux; et &UNIX;.</para>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="cups-ipp-support">
+<title
+>Comment le support &IPP; fait de &CUPS; le meilleur choix</title>
+
+<sect2>
+<title
+><quote
+><acronym
+>LPD</acronym
+> doit mourir !</quote
+></title>
+
+<para
+>Pendant un long temps, beaucoup de développeurs étaient profondément insatisfaits du bon vieux <acronym
+>LPD</acronym
+>. Assez peu de nouveaux projets étaient démarrés pour améliorer l'impression : <application
+>LPRng</application
+> en est le meilleur exemple. Les autres sont <acronym
+>PDQ</acronym
+>, <acronym
+>PPR</acronym
+>, <acronym
+>PLP</acronym
+>, <acronym
+>GNUlpr</acronym
+> et <acronym
+>RLPR</acronym
+>. Mais aucun des nouveaux programmes n'était vu comme un <quote
+>pas décisif</quote
+> ; la plupart d'entre eux implémentaient simplement la même ancienne spécification <acronym
+>LPD</acronym
+> avec quelques (ou beaucoup) extensions, qui à nouveau les rendaient incompatibles ensemble.</para>
+
+<para
+>Ayant vu le développement de non seulement un, mais de différentes alternatives viables au vénérable <acronym
+>BSD</acronym
+>-style <acronym
+>LPD</acronym
+>, Grant Taylor, auteur du <citetitle
+>Linux Printing HOWTO</citetitle
+>, rallia finalement <citetitle
+><foreignphrase
+>LPD Must Die!</foreignphrase
+></citetitle
+> dans sa <quote
+>Campagne pour abolir le démon LPD</quote
+>.</para>
+
+<!-- FIXME: look up URLs for the above -->
+
+</sect2>
+
+<sect2>
+<title
+>Comment l'&IPP; vint à être</title>
+
+<para
+>À côté de ce qui précède, du côté de l'industrie, il y a eu des efforts pour surmonter la faiblesse bien connue de <acronym
+>LPD</acronym
+>. Cela a commencé avec des extensions propriétaires au simple vieux <acronym
+>LPD</acronym
+>, et est allé jusqu'à la tentative de &Hewlett-Packard; pour établir &HP; JetDirect en tant que nouveau standard pour un protocole d'impression réseau. Le résultat fut encore plus d'incompatibilités.</para>
+
+<para
+>À la fin, une initiative pour définir un nouveau standard commun de l'industrie et un standard <acronym
+>IETF</acronym
+> prit forme. Le <quote
+>Printer Working Group</quote
+> ou <acronym
+>PWG</acronym
+>, un conglomérat informel de fabricants de matériel, de logiciel et de systèmes d'exploitation, ébaucha le nouvel <quote
+>Internet Printing Protocol</quote
+>, &IPP;. &IPP; v1.1 a été maintenant complètement approuvé par l'<acronym
+>IETF</acronym
+> (Internet Engineering Task Force) comme un standard proposé, et maintenant jouit d'un support unanime de l'industrie en Europe, aux USA et au Japon. La plupart des modèles actuels d'imprimante réseau ont maintenant une gestion &IPP; intégrée par-dessus les traditionnels <acronym
+>LPR</acronym
+>/<acronym
+>LPD</acronym
+> ou JetDirect Printing.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Pourquoi &IPP; résout beaucoup de problèmes</title>
+
+<para
+>&IPP; promet de résoudre beaucoup de problèmes que les administrateurs réseau rencontrent. Ce travail se heurte à des environnements de réseaux hétérogènes et prend la moitié des heures de travail passées à régler des problèmes d'impression.</para>
+
+<para
+>En créant un jeu unifié de fonctions de requêtes pour les imprimantes et serveurs prévus pour &IPP;, pour transférer des fichiers et établir des attributs de contrôle des tâches, &etc;, &IPP; est destiné à travailler sur toutes les plates-formes de &SE;. Le changement, cependant, ne se fera pas en une nuit, car beaucoup de matériel de conception ancienne restera en utilisation pendant de nombreuses années. Pour cela, dans &IPP;, il y a un précaution prise pour la compatibilité rétrograde de toutes les implémentations d'&IPP;. &CUPS; prouve la viabilité d'&IPP; dans tous les environnements.</para>
+
+<para
+>L'avantage le plus frappant sera son intégration dans le jeu existant d'autres protocoles <acronym
+>IP</acronym
+> robustes. Étant une extension du protocole éprouvé et robuste <acronym
+>HTTP</acronym
+> 1.1 pour la tâche spéciale de gérer la file d'impression et les données en rapport, il est aussi très facile à connecter dans d'autres standards au fur et à mesure qu'ils sont développés et déployés :</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Bases, résumé et certificat d'authentification pour les utilisateurs cherchant à accéder aux services d'impression.</para>
+</listitem>
+<listitem>
+<para
+>Chiffrement SSL3 et <acronym
+>TLS</acronym
+> pour le transfert des données.</para>
+</listitem>
+<listitem>
+<para
+>Communication bidirectionnelle des clients avec le matériel d'impression, en utilisant le mécanisme <acronym
+>HTTP</acronym
+> / &IPP; <command
+>GET</command
+> et <command
+>POST</command
+> </para>
+</listitem>
+<listitem>
+<para
+>Intégration au service de répertoires LDAP pour conserver une base de données cohérente d'imprimantes disponibles, leurs capacités et le coût par page, aussi bien que les mots de passe utilisateurs, les <acronym
+>ACL</acronym
+>, &etc;</para>
+</listitem>
+<listitem>
+<para
+>L'impression par <quote
+>Tirer</quote
+> (à l'opposé du modèle habituel <quote
+>Pousser</quote
+>), où un serveur ou une imprimante a juste besoin qu'on lui dise l'&URL; d'un document, où on le retrouve sur la ressource sur l'Internet et on l'imprime.</para>
+</listitem>
+</itemizedlist>
+
+</sect2>
+
+<!--
+<sect2>
+<title
+>&CUPS;, &IPP; and &kde;</title>
+
+<para
+>&CUPS; is the most advanced implementation of &IPP; on all &OS;
+platforms.  That makes &CUPS; a crucial ally to help "conquer the
+desktop" for projects like &kde;. &kdeprint; is the best utility to
+make &CUPS; core functionality available to &kde; Desktop
+users.</para>
+
+</sect2
+> -->
+
+<sect2>
+<title
+>Le <quote
+>Plug'n'Play</quote
+> de l'imprimante pour les clients</title>
+
+<para
+>Avez-vous déjà vu une démonstration des capacités de &CUPS; sur le réseau ? Vous devez avoir été très impressionné si vous ne saviez pas par avance quoi en attendre.</para>
+
+<para
+>Imaginez que vous êtes administrateur d'un <quote
+>LAN</quote
+>. Pour des raisons de test, vous avez totalement installé une boîte &kde; / &CUPS; sur votre réseau, avec une douzaine d'imprimantes configurées et fonctionnelles : &PostScript;, LaserJets, InkJets and BubbleJets, et autres. Vos utilisateurs de &kde; sur cette machine sont heureux comme jamais, ils peuvent imprimer comme jamais auparavant, <quote
+>faisant sonner tous les cloches et sifflets</quote
+> de chaque imprimante. Cela vous a pris 2 heures pour que tout fonctionne à la perfection... et maintenant, tous les autres 100 utilisateurs sur le réseau en veulent autant. Deux heures de plus pour chaque machine ? Pas moyen de le faire avant l'année prochaine, pensez-vous ?</para>
+
+<para
+>Faux. Changez juste un réglage dans la boîte &CUPS; du départ pour en faire un <quote
+>serveur</quote
+>. Installez &CUPS; sur cinq autres machines comme <quote
+>clients</quote
+>. Le temps que vous retourniez à votre premier client, vous trouvez les utilisateurs jouant gaiement avec les réglages de la douzaine d'imprimantes que vous avez définies plus tôt sur le <quote
+>serveur</quote
+>. Comme par magie, les imprimantes sont apparues sur toutes les boîtes de dialogue <quote
+>Imprimer</quote
+> des cinq nouvelles machines clientes de &CUPS;.</para>
+
+<para
+>Vos utilisateurs impriment, mais par un seul pilote n'a été installé sur les clients, ni une file d'attente d'impression définie.</para>
+
+<para
+>Ainsi, comment cette magie fonctionne-t-elle ?</para>
+
+</sect2>
+
+<sect2>
+<title
+><quote
+>Voir</quote
+> les imprimantes non installées localement ?</title>
+
+<para
+>La réponse n'est pas compliquée du tout.</para>
+
+<para
+>Si un serveur &CUPS; est sur le <acronym
+>LAN</acronym
+>, il balaye par broadcast les noms de toutes les imprimantes disponibles sur le <acronym
+>LAN</acronym
+>, en utilisant le protocole <acronym
+>UDP</acronym
+> et le port 631. Le port 631 est réservé comme <quote
+>port bien connu</quote
+> par l'<acronym
+>IANA</acronym
+> (l'<quote
+>Internet Assigning Numbers Authority</quote
+>) pour les besoins d'&IPP;. Tous les clients &CUPS; écoutent les les informations envoyées par les serveurs &CUPS; à leur port 631. C'est la manière dont ils connaissent les imprimantes disponibles et comment ils apprennent le <quote
+>chemin</quote
+> vers ces imprimantes.</para>
+
+<para
+>En utilisant &IPP;, qui est vraiment une extension intelligente à <acronym
+>HTTP</acronym
+> v 1.1, &CUPS; est capable d'adresser tous les objets en relation à un système d'impression via des <quote
+>Universal Resource Locators</quote
+> ou <acronym
+>URL</acronym
+>. Les tâches d'impression à supprimer ou à redémarrer, les imprimantes à interroger ou à modifier, les tâches d'administration à réaliser sur le serveur avec &IPP; et &CUPS;, tout est adressable par un certain <acronym
+>URL</acronym
+>. Beaucoup de choses importantes peuvent être faites par l'interface Web à &CUPS;, accessible par exemple avec &konqueror;.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Impression sans installation de pilote</title>
+
+<para
+>De plus, les clients peuvent basiquement <quote
+>administrer</quote
+> et <quote
+>utiliser</quote
+> n'importe quelle imprimante qu'ils voient, juste comme si elle était installée localement. Bien sûr, vous pouvez mettre des restrictions dessus avec les listes de contrôle d'accès, &etc;, de telle manière que <emphasis
+>n'importe qui</emphasis
+> ne puisse pas utiliser <emphasis
+>n'importe quelle</emphasis
+> imprimante comme il le souhaite.</para>
+
+<para
+>Les clients sont même capables d'imprimer sans le filtre approprié (ou pilote) installé localement.</para>
+
+<para
+>Comment cela fonctionne-t-il ? Si un client veut en savoir sur une imprimante et sélectionner des options spécifiques à l'imprimante, il envoie une requête (nommée <command
+>CUPS-get-ppd</command
+>) au serveur. Le serveur dit tout au client sur les options spécifiques à l'imprimante, comme il le lit sur le &PPD; du côté serveur. L'utilisateur du côté client peut voir les options et sélectionner celles qui sont nécessaires. Il envoie le fichier à imprimer, habituellement des fichiers &PostScript; <quote
+>bruts</quote
+>, agrémentés des options d'impression au serveur d'impression, en utilisant &IPP; comme protocole de transport. Tout le processus ultérieur, spécialement le filtrage pour générer le format final pour l'imprimante-cible se fait par le serveur. Le serveur a les programmes nécessaires (<quote
+>pilotes</quote
+> ou <quote
+>filtres</quote
+>) pour faire cela.</para>
+
+<para
+>De cette manière, un client imprime sans avoir besoin d'installer un pilote localement.</para>
+
+<para
+>Tout changement sur le serveur, comme un ajout ou une modification d'imprimante est <quote
+>connu</quote
+> instantanément par les clients sans autre configuration.</para>
+
+</sect2>
+
+<sect2>
+<title
+><quote
+>Zero Administration</quote
+>, Load Balancing (équilibrage de charge), et <quote
+>Failover Switching</quote
+> (basculement en cas de défaillance)</title>
+
+<para
+>Certaines autres fonctionnalités avancées incorporées dans &CUPS; sont la capacité de faire le <quote
+>load balancing</quote
+> (équilibrage de charge).</para>
+
+<para
+>Si vous définissez la même file d'attente d'impression sur deux ou plus serveurs différents, les clients enverront leurs tâches au premier qui répond ou est disponible. Cela implique un équilibrage de charge automatique parmi les serveurs. Si vous devez retirer un serveur du réseau pour de la maintenance d'administration, les autres prendront juste ses tâches sans que les utilisateurs ne s'en rendent compte.</para>
+
+</sect2>
+
+</sect1>
+
+</chapter>

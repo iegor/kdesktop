@@ -1,0 +1,570 @@
+<?xml version="1.0" ?>
+<!DOCTYPE book PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" "dtd/kdex.dtd" [
+ <!ENTITY kappname "kompmgr">
+ <!ENTITY package "kwin">
+ <!ENTITY % Italian "INCLUDE">
+ <!ENTITY % addindex "IGNORE">
+]>
+
+<book lang="&language;">
+<bookinfo>
+<title
+>Informazioni su &kappname;</title>
+
+<authorgroup>
+<author
+><personname
+><firstname
+>Thomas</firstname
+><surname
+>Luebking</surname
+></personname
+> <email
+>thomas.luebking@web.de</email
+> </author>
+
+<othercredit role="translator"
+><firstname
+>Luciano</firstname
+><surname
+>Montanaro</surname
+><affiliation
+><address
+><email
+>mikelima@cirulla.net</email
+></address
+></affiliation
+><contrib
+>Traduzione del documento</contrib
+></othercredit
+> 
+</authorgroup>
+
+<copyright>
+<year
+>2005</year>
+<holder
+>Thomas Luebking</holder>
+</copyright>
+
+<legalnotice
+>&FDLNotice;</legalnotice>
+
+<date
+>2005-01-15</date>
+<releaseinfo
+>2.0.1</releaseinfo>
+
+<abstract>
+<para
+>&kappname; è un motore di resa grafica che usa composite per &kwin;.</para>
+<para
+>Questo documento è una spiegazione generale di ciò che fa, come funziona e quali siano le restrizioni, piuttosto che una documentazione su come usarlo (visto che funziona automaticamente sullo sfondo).</para
+> 
+</abstract>
+
+<keywordset>
+<keyword
+>KDE</keyword>
+<keyword
+>kwin</keyword>
+<keyword
+>motore di rendering</keyword>
+</keywordset>
+</bookinfo>
+
+<chapter id="introduction">
+<title
+>Introduzione</title>
+
+<para
+>&kappname; è basato su <application
+>xcompmgr</application
+>, l'applicazione di riferimento di Keith Packards che usa la nuova estensione composite di X.</para>
+
+<para
+>Un gestore di composizione intercetta l'output delle finestre di X e le compone in una singola immagine da mostrare sullo schermo. Il vantaggio di fare ciò è che è possibile fare quasi ogni cosa con il contenuto delle finestre, incluso miscelarne il contenuto (semitrasparenza) o attaccarvi un'ombra. Puoi anche aggiungere dar loro una tinta, aggiungere brutta pubblicità a qualsiasi finestra, strizzarle, spezzarle, aggiungere un effetto di linee di scansione o qualsiasi cosa tu riesca ad immaginare, con i soli limiti dell'hardware.</para>
+
+</chapter>
+
+<chapter id="xorg">
+<title
+>Xorg</title>
+
+<para
+>Perché &kappname; funzioni, devi usare <emphasis
+>X.org 6.8 o successivo</emphasis
+>. X.org 6.7 o XFree86 non funzionano.</para>
+
+<sect1 id="xsetup">
+<title
+>Configurazione</title>
+<para
+>È necessario abilitare esplicitamente l'estensione Composite. Aggiungi una nuova sezione al file di configurazione di X.org:</para>
+
+<programlisting
+>Section "Extensions"
+    Option "Composite" "Enable"
+EndSection
+</programlisting>
+
+<para
+>Se è possibile per la <acronym
+>GPU</acronym
+> della tua scheda grafica (il complesso chip che fa funzionare la scheda), attiva l'accelerazione per l'estensione Render. L'estensione è gestita al meglio dalle schede <trademark
+>NVIDIA</trademark
+>, e in modo meno completo dalle schede ATI.</para>
+
+<programlisting
+>Section "Device"
+....
+....
+    Option     "RenderAccel" "true"
+....
+....
+EndSection</programlisting>
+
+<para
+>&kappname; dovrebbe essere disponibile ora. Per maggiori informazioni vedi le <link linkend="problems"
+>FAQ</link
+>.</para>
+
+</sect1>
+
+</chapter>
+
+<chapter id="settings">
+<title
+>Impostazioni</title>
+
+<para
+>Questo capitolo descrive quali parametri sono modificabili, quali risultati visibili otterrai e quale sono gli impatti sulle prestazioni.</para>
+
+<sect1 id="translucency">
+<title
+>Semitrasparenza</title>
+
+<para
+>Un oggetto semitrasparente è uno che permette alla luce di passarvi attraverso. Nei termini delle finestre sul desktop, ciò significa de i contenuti di una finestra sono visibili attraverso un'altra che vi sta sopra.</para>
+
+<para
+>La semitrasparenza permette di enfatizzare delle finestre speciali, di avere una vista tridimensionale sul desktop, di tener traccia delle finestre coperte, e semplicemente, è bella. Il prezzo è che la miscelazione dei componenti costa un po' delle capacità del sistema.</para>
+
+<para
+>Puoi configurare la semitrasparenza indipendentemente per i seguenti elementi:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Finestre attive</guilabel
+></term>
+<listitem
+><para
+>Si suggerisce di disattivare la semitrasparenza per le finestre attive. Il motivo principale sono le prestazioni, e secondariamente perché per per leggere il contenuto della finestra semitrasparente il tuo cervello dovrà scartare le informazioni che traspaiono, che è stancante.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Finestre inattive</guilabel
+></term>
+<listitem
+><para
+>Se richiedi la semitrasparenza per le finestre inattive, le finestra attive saranno enfatizzate e attrarranno maggiormente l'attenzione. Però se scegli un valore troppo basso potresti avere difficoltà a trovare una finestra inattiva. Se scegli un valore molto basso (&lt; 20&percnt;) potresti essere incapace di distinguere l'ordine di sovrapposizione delle finestre — quindi potresti accidentalmente fare clic sul pulsante <guibutton
+>OK</guibutton
+> di una finestra quando volevi solo attivarne un'altra. I valori ottimali sono fra il 60&percnt; e l'80&percnt;.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Finestre in movimento</guilabel
+></term>
+<listitem
+><para
+>Anche se avere le finestre in movimento quasi trasparenti (opacità &lt; 20&percnt;) è un bell'effetto, c'è un grosso prezzo da pagare in prestazioni, in particolare se non disattivi le ombre (vedi sotto). Prova l'impostazione e decidi se il sistema è troppo lento da dover mantenere le finestre opache. Questo valore si applica anche alle finestre in stato di ridimensionamento.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Finestre agganciate</guilabel
+></term>
+<listitem
+><para
+>Poiché le finestre agganciate, come Kicker non sono spostate mai o quasi, ed hanno dimensioni limitate, questo è un effetto puramente visivo, e non avrà effetti negativi sulle prestazioni.</para
+>  
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Tratta le finestre da "tenere sopra" come quelle attive</guilabel
+></term>
+<listitem
+><para
+>Se hai configurato una finestra per rimanere sopra le altre, di solito vorrai anche mantenerla a fuoco, quindi ha senso darle la stessa enfasi.</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Disabilita le finestre ARGB</guilabel
+></term>
+<listitem
+><para
+>XRender gestisce le finestre con maschera alfa, cioè sezioni semitrasparenti. Attualmente non ci sono quasi applicazioni che usano questa funzionalità, perché non serve senza un gestore della composizione. Ciò può cambiare in futuro.</para>
+<para
+>D'altra parte, quasi tutte le applicazioni gtk 1.x (ad esempio <application
+>xmms</application
+>) impostano questa maschera alfa, e ciò risulta in finestre quasi inutilizzabili (a meno che le finestre sottostanti non siano nere) quindi puoi disabilitare la gestione delle finestre con visuale ARGB da qui per poter usare le applicazioni gtk. In un prossimo futuro è sperabile che ci sarà un patch per gtk per correggere questo problema.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</sect1>
+
+<sect1 id="shadows">
+<title
+>Ombre</title>
+<para
+>Perché qualcuno dovrebbe volere che le finestre gettino ombra? Be' forse solo perché hanno un bell'aspetto, o perché permette una separazione maggiore fra le finestre, o... perché sono troppo carine!</para
+> 
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Utilizza ombre</guilabel
+></term>
+<listitem
+><para
+>Poiché le ombre costano in potenza di CPU e GPU, possono essere disattivate, pur mantenendo la capacità di usare il canale alfa generale.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Dimensione finestra attiva</guilabel
+></term>
+<term
+><guilabel
+>Dimensione finestra inattiva</guilabel
+></term>
+<term
+><guilabel
+>Dimensione finestra agganciata</guilabel
+></term>
+<listitem
+><para
+>Puoi selezionare diverse dimensioni per le ombre per i diversi tipi o stati delle finestre. I valori non sono assoluti, ma si applicano a tutte le risoluzioni dei tuoi schermi.</para>
+<para
+>In linea di principio, puoi cambiare le regole come vuoi (se modifichi il file di configurazione con un editor di testo, anche oltre il massimo offerto di <quote
+>32</quote
+>) ma ombre più grandi costano più risorse di CPU e GPU.</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Spostamento verticale</guilabel
+></term>
+<term
+><guilabel
+>Spostamento orizzontale</guilabel
+></term>
+<listitem
+><para
+>Normalmente le finestre gettano un'ombra uguale in tutte le direzioni, come se ci fosse una fonte luminosa centrale. Chi ha familiarità con &MacOS; può preferire uno scostamento verticale, chi usa &Windows; può preferire uno scostamento verso sudest. Fai degli esperimenti finché non sei soddisfatto.</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Colore ombra</guilabel
+></term>
+<listitem
+><para
+>Di solito le ombre, in quanto assenza di luce, appaiono come sfumature di grigio (quindi l'ombra più scura è nera, cioè assenza completa di luce). Ma, forza, è un mondo virtuale, e se preferisci delle ombre rosa, perché no?</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Togli l'ombra durante il movimento</guilabel
+></term>
+<listitem
+><para
+>Marca questa casella se hai bisogno di prestazioni maggiori (particolarmente durante il movimento delle finestre semitrasparenti).</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Togli l'ombra durante il ridimensionamento</guilabel
+></term>
+<listitem
+><para
+>È una buona idea marcare questa voce sia che usi o no il ridimensionamento (o lo spostamento) semitrasparente. La pixmap dell'ombra delle finestre deve essere ricreata continuamente durante il ridimensionamento, e ciò ha un grosso impatto sulle prestazioni del sitema.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</sect1>
+
+<sect1 id="effects">
+<title
+>Effetti</title>
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Apparizione graduale delle finestre</guilabel
+></term>
+<term
+><guilabel
+>Sfuma nei cambiamenti di opacità</guilabel
+></term>
+<listitem
+><para
+>Invece di far comparire improvvisamente una nuova finestra, potresti preferire che compaia lentamente. Sebbene questo effetto faccia colpo, c'è un grosso prezzo da pagare in termine di velocità, ed è difficile interagire in modo corretto con le finestre che sono in uno stato di transizione. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><guilabel
+>Velocità di comparsa</guilabel
+></term>
+<term
+><guilabel
+>Velocità di scomparsa</guilabel
+></term>
+<listitem
+><para
+>Per i motivi di utilizzabilità menzionati sotto <guilabel
+>Apparizione graduale delle finestre</guilabel
+>, è più pratico usare alte velocità di comparsa e (come zuccherini per gli occhi) velocità basse di scomparsa. Ciò fornisce dei begli effetti mantenendo bassa la latenza perché appaiano le informazioni.</para
+> 
+</listitem>
+</varlistentry>
+</variablelist>
+</sect1>
+
+</chapter>
+
+<chapter id="problems">
+<title
+>Problemi</title>
+
+<para
+>L'estensione Composite è piuttosto nuova. Può causare parecchi problemi ed anche far schiantare X, quindi è <emphasis
+>fortemente raccomandato di non abilitare nemmeno l'estensione Composite in Xorg.conf sui sistemi mission critical</emphasis
+>. Se però puoi permetterti il rischio di un sistema un pò più instabile, è bello poter avere qualche effetto grafico gradevole.</para>
+
+<para
+>In questo caso potresti notare qualche difetto. Ecco alcuni problemi comuni e dei metodi per aggirarli: </para>
+
+<qandaset>
+<qandaentry>
+<question>
+<para
+>Ho X.org 6.8.x, ma &kappname; non parte</para>
+</question>
+<answer>
+<para
+>Devi abilitare esplicitamente l'estensione Composite, aggiungi una nuova sezione a /etc/X11/XorgConfig:</para>
+<programlisting
+>Section "Extensions"
+   Option "Composite" "Enable"
+EndSection</programlisting>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Ok, &kappname; funziona, ma è lento come una lumaca</para>
+</question>
+<answer>
+<para
+>Se è gestita dalla tua <acronym
+>GPU</acronym
+> (principalmente <trademark
+>NVIDIA</trademark
+>, e qualche scheda ATI), assicurati di aver attivato l'accelerazione per Render.</para>
+<programlisting
+>Section "Device"
+....
+....
+Option     "RenderAccel" "true"
+....
+....
+EndSection
+</programlisting>
+
+<para
+>Se è ancora lento, puoi provare a modificare l'uso della memoria. Puoi abbassare la profondità di colore dello schermo (&eg; da 24 a 14) o puoi abbassare la risoluzione (&eg; da 1280x1024 a 1024x768).</para
+> 
+
+<para
+>Nota che attualmente il fattore limitante per l'estensione Composite sembra essere la dimensione della cache della CPU.</para>
+
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>dopo aver abilitato l'estensione Composite, non riesco ad eseguire nessuna applicazione <acronym
+>GLX</acronym
+>. Ho una scheda <trademark
+>NVIDIA</trademark
+>.</para>
+</question>
+<answer>
+<para
+>Per prevenire alcuni problemi, <trademark
+>NVIDIA</trademark
+> ha disattivato il supporto GLX quando l'estensione Composite è attiva. È possibile riattivare GLX, ma possono presentarsi problemi con alcune combinazioni di kernel/driver/GPU.</para
+> 
+<programlisting
+>Section "Device"
+....
+....
+Option  "AllowGLXWithComposite" "true"
+....
+....
+EndSection
+</programlisting>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Volevo giocare a un gioco che usa <acronym
+>SDL</acronym
+> (ma non <acronym
+>GL</acronym
+>), diciamo <application
+>scummvm</application
+>, ma quando compmgr è attivo, vedo dolo ombre!</para>
+</question>
+<answer>
+<para
+>Questo è un problema con il PictType riportato da SDL.</para>
+
+<para
+>Metodo per aggirare il problema:</para>
+<screen
+>Invece di chiamare direttamente <command
+>scummvm</command
+>, usa <command
+>SDL_VIDEO_X11_VISUALID=0x24 scummvm</command
+>. Ciò indica a SDL di usare un formato noto, e potrai giocare come sempre. </screen>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>L'applicazione XXX si rifiuta di partire dopo aver abilitato l'estensione Composite.</para>
+<para
+>L'applicazione YYY non funziona più dopo aver abilitato l'estensione Composite.</para>
+<para
+>L'applicazione ZZZ ha un aspetto bizzarro dopo aver abilitato l'estensione Composite.</para>
+</question>
+<answer>
+<para
+>L'estensione Composite è ancora sperimentale.</para>
+<para
+>Metodo per aggirare il problema:</para>
+<para
+>Invece di chiamare direttamente <command
+>appName</command
+>, esegui <command
+>XLIB_SKIP_ARGB_VISUALS=1 appName</command
+></para>
+<para
+>Applicazioni note per causare problemi:</para>
+<itemizedlist>
+<listitem
+><para
+>Tutte le applicazioni gtk1 (&eg; <application
+>gmplayer</application
+>, <application
+>xmms</application
+>, <application
+>gaim</application
+>) — avvio non riuscito o non sono utilizzabili o fanno schiantare X</para
+></listitem>
+<listitem
+><para
+>&kuickshow; — mostra solo un riquadro nero</para
+></listitem>
+<listitem
+><para
+>&Qt; <application
+>Designer</application
+> — fa schiantare X</para
+></listitem>
+<listitem
+><para
+>&kopete; — fa schiantare X</para
+></listitem>
+<listitem
+><para
+>&kolf; — fa schiantare X</para
+></listitem>
+</itemizedlist>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Cerco di guardare un video, ma riesco a vedere solo artefatti nella finestra del video.</para>
+</question>
+<answer>
+<para
+>Stai usando <quote
+>xv</quote
+> come backend per il video. Questo usa una modalità di sovrimpressione, in cui il contenuto del video è scritto direttamente nella memoria della scheda video, saltando il passaggio per X. Quindi la finestra sembra statica (uno sfondo colorato) e non è aggiornata dall'estensione Damage.</para>
+<para
+>Si spera che ci sarà presto una correzione per questo problema. Attualmente i risultati migliori si ottengono con <application
+>Xine</application
+>, ma i video semitrasparenti non sono molto veloci comunque.</para>
+</answer>
+</qandaentry>
+
+</qandaset>
+</chapter>
+
+<chapter id="credits-and-licenses">
+<title
+>Riconoscimenti e licenza</title>
+
+<sect1 id="authors">
+<title
+>Autori</title>
+<para
+>Thomas Luebking <email
+>baghira-style@gmx.net</email
+> - Editor</para>
+&underFDL; &underGPL; </sect1>
+
+
+</chapter>
+
+</book>
+<!--
+Local Variables:
+mode: sgml
+sgml-omittag: nil
+sgml-shorttag: t
+End:
+-->
+

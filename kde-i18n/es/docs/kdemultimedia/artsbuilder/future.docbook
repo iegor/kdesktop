@@ -1,0 +1,399 @@
+<!-- <?xml version="1.0" ?>
+<!DOCTYPE chapter PUBLIC "-//KDE//DTD DocBook XML V4.1.2-Based Variant
+V1.1//EN" "dtd/kdex.dtd">
+To validate or process this file as a standalone document, uncomment
+this prolog. Be sure to comment it out again when you are done -->
+
+<chapter id="future-work">
+<title
+>Trabajo futuro</title>
+
+<para
+>Esta sección describe algunos de los trabajos que están en progreso dentro de &arts;. El desarrollo avanza rápidamente, así que esta información podría estar obsoleta. Debería comprobar la lista del archivo TODO y los archivos de <link linkend="mailing-lists"
+>la lista de correo</link
+> para ver qué nueva funcionalidad se está planeando. Considérese libre para involucrarse en el nuevo diseño e implementación. </para>
+
+<para
+>Este documento es un borrador que intenta dar una idea sobre cómo se integrarán las nuevas tecnologías en &arts;. En concreto, se ocupa de lo siguiente: </para>
+
+<itemizedlist>
+<listitem
+><para
+>Cómo funcionan los interfaces.</para
+></listitem>
+<listitem
+><para
+>Los códecs: La decodificación de transmisiones mp3 o wav de forma que puedan ser utilizados como datos.</para
+></listitem>
+<listitem
+><para
+>Vídeo.</para
+></listitem>
+<listitem
+><para
+>Hilos.</para
+></listitem>
+<listitem
+><para
+>Sincronización.</para
+></listitem>
+<listitem
+><para
+>Expansión/enmascaramiento dinámico.</para
+></listitem>
+<listitem
+><para
+>Composición dinámica.</para
+></listitem>
+<listitem
+><para
+>&GUI;</para
+></listitem>
+<listitem
+><para
+>&MIDI;</para
+></listitem>
+</itemizedlist>
+
+<para
+>Este trabajo está en progreso. Sin embargo, debería ser la base si lo que usted desea es encontrar nuevas tecnologías en &arts;. Además debería de dar una idea de cómo se van a afrontar esas cuestiones. Pero, por supuesto, corrija cualquier cosa que considere que se puede mejorar. </para>
+
+<para
+>Elementos que utilizarán la tecnología de &arts; (así que, por favor, coordine sus esfuerzos): </para>
+
+<itemizedlist>
+<listitem>
+<para
+><application
+>KPhone</application
+> (voz sobre <acronym
+>IP</acronym
+>). </para>
+</listitem>
+
+<listitem>
+<para
+>&noatun; (reproductor de vídeo y audio). </para>
+</listitem>
+
+<listitem>
+<para
+>&artscontrol; (programa de control del servidor de sonido). </para>
+</listitem>
+
+<listitem>
+<para
+><application
+>Brahms</application
+> (secuenciador musical). </para>
+</listitem>
+
+<listitem>
+<para
+><application
+>Kaiman</application
+> (reproductor de medios de &kde;2, compatible con kmedia2). </para>
+</listitem>
+
+<listitem>
+<para
+><application
+>mpglib</application
+>/<application
+>kmpg</application
+> (tecnología de reproducción de audio y vídeo <acronym
+>mpg</acronym
+>). </para>
+</listitem>
+
+<listitem>
+<para
+><application
+>SDL</application
+> (capa de medios directa para los juegos, aún no se ha comenzado a trabajar en ella pero será interesante). </para>
+</listitem>
+
+<listitem>
+<para
+><application
+>electric ears</application
+> (el autor se puso en contacto conmigo. Estado desconocido). </para>
+</listitem>
+</itemizedlist>
+
+<sect1 id="interfaces-how">
+<title
+>Cómo funcionan los interfaces</title>
+
+<!-- I think this is now obsolete and documented elsewhere ? -->
+
+<para
+>Los interfaces &MCOP; están basados en el concepto de &arts;. Son transparentes a la red de forma equivalente a las clases de C++. Siempre que sea posible, debería orientar sus diseño hacia los interfaces. Éstos constan de cuatro partes: </para>
+
+<itemizedlist>
+<listitem
+><para
+>Flujos síncronos.</para
+></listitem>
+<listitem
+><para
+>Flujos asíncronos.</para
+></listitem>
+<listitem
+><para
+>Métodos.</para
+></listitem>
+<listitem
+><para
+>Atributos.</para
+></listitem>
+</itemizedlist>
+
+<para
+>Estos pueden mezclarse como usted prefiera. Las nuevas tecnologías deberían definirse en términos de interfaces. Lea las secciones sobre las transmisiones síncronas y asícronas, así como los interfaces KMedia2, ya que son buenos ejemplos sobre cómo funcionan las cosas. </para>
+
+<para
+>Los interfaces se especifican en código <literal role="extension"
+>.idl</literal
+> y se ejecutan a través del compilador <command
+>mcopidl</command
+>. Se deriva la clase <classname
+><replaceable
+>Nombreinterfaz</replaceable
+>_impl</classname
+> para implementarlos, y se utiliza <function
+>REGISTER_IMPLEMENTATION(Nombreinterfaz_impl)</function
+> para insertar las implementaciones de los objetos en el sistema de objetos de &MCOP;. </para>
+
+</sect1>
+
+<sect1 id="codecs">
+<title
+>Códecs - decodificación de datos</title>
+
+<para
+>Los interfaces de kmedia2 permiten ignorar que los archivos wav, mp3 y otros se construyen a base de transmisiones de datos. En vez de eso, se implementan métodos para reproducirlos. </para>
+
+<para
+>Por lo tanto, usted puede escribir una rutina de carga de ondas de forma que se puedan reproducir los archivos de ondas (como PlayObject), pero nadie más puede utilizar su código. </para>
+
+<para
+>Las transmisiones asíncronas pueden ser una alternativa. Se define un interfaz que permite introducir y sacar bloques de datos. Se parece a la de &MCOP;: </para>
+
+<programlisting
+>interface Codec {
+  entrada async byte stream indata;
+  salida async byte stream outdata;
+};
+</programlisting>
+
+
+<para
+>Por supuesto los códecs también proporcionan atributos para emitir datos adicionales, como información sobre el formato. </para>
+
+<programlisting
+>interface CodificadorAudioByte {
+  entrada async byte stream indata;
+  salida async byte stream outdata;
+  readonly attribute ratioMuestra, bits, canales;
+};
+</programlisting>
+
+<para
+>Este <interfacename
+>CodificadorAudioByte</interfacename
+>, por ejemplo, puede conectarse a un objeto <interfacename
+>ByteStreamToAudio</interfacename
+>, para hacer audio real en coma flotante. </para>
+
+<para
+>Por supuesto, otros tipos de códecs podrían incorporar la emisión directa de información de vídeo, como </para>
+
+<programlisting
+>interface VideoCodec {
+  entrada async byte stream indata;
+  salida video stream outdata;      /* nota: las transmisiones de vídeo aún no existen */
+};
+</programlisting>
+
+<para
+>En la mayoría de los casos, se debería emplear el concepto de un códec más que el método «tu sabes hacerlo funcionar y yo no» que ahora utiliza, por ejemplo, <interfacename
+>WavPlayObject</interfacename
+>. Sin embargo, alguien debería ponerse a experimentar un poco antes de que se pueda dar por finalizada la <acronym
+>API</acronym
+>. </para>
+
+</sect1>
+
+<sect1 id="video">
+<title
+>Vídeo</title>
+
+<para
+>Mi idea es proporcionar el vídeo como transmisiones asíncronas de algún tipo de datos nativo de &MCOP; que contenga imágenes. Este tipo de datos aún no está creado. Al hacerlo así, los conectores que tratan con las imágenes de vídeo pueden establecer enlaces de la misma manera que lo hacen los conectores de audio. </para>
+
+<para
+>Estas son algunas de las cosas que no se deben olvidar: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Hay espacios de color <acronym
+>RGB</acronym
+> y <acronym
+>YUV</acronym
+>. </para>
+</listitem>
+<listitem>
+<para
+>El formato debería estar de algún modo unido al flujo. </para>
+</listitem>
+<listitem>
+<para
+>La sincronización es importante. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Mi idea es permitir la posibilidad de volver a implementar la clase <classname
+>VideoFrame</classname
+> (imagen de vídeo) de forma que pueda almacenar información en un segmento de memoria compartida. De esa manera, serían posibles incluso las transmisiones de vídeo entre distintos procesos sin mucha dificultad. </para>
+
+<para
+>Sin embargo, la situación normal del vídeo es que las cosas estén en el mismo proceso, desde la decodificación hasta el dibujado. </para>
+
+<para
+>He hecho un prototipo de una implementación de transmisiones de vídeo, que se puede descargar <ulink url="http://space.twc.de/~stefan/kde/download/video-quickdraw.tar.gz"
+>aquí</ulink
+>. Esto se deberá integrar en &MCOP; después de algunos experimentos. </para>
+
+<para
+>Se debería proporcionar un componente del procesado que soporte XMITSHM (con <acronym
+>RGB</acronym
+> y <acronym
+>YUV</acronym
+>), Martin Vogt me ha dicho que está trabajando en algo de ese tipo. </para>
+
+</sect1>
+
+<sect1 id="threading">
+<title
+>Hilos</title>
+
+<para
+>En la actualidad, &MCOP; funciona en un solo hilo. Seguramente ésto no se podrá seguir manteniendo para el vídeo. De acuerdo. Estas son algunas de las cosas que hay que abordar con cuidado: </para>
+
+
+<itemizedlist>
+<listitem
+><para
+>SmartWrappers. No son seguros para multihilo debido al contador de referencias no seguro y otras cosas similares. </para>
+</listitem>
+<listitem>
+<para
+>Dispatcher / E/S. Tampoco es seguro. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Sin embargo, lo que imagino es que habrá que hacer algunos módulos seguros en multihilo, tanto en transmisiones síncronas como asíncronas. De esa manera, con un sistema de flujo multihilo, se puede planificar la transmisión de señal sobre dos o más procesadores. Esto también ayudaría mucho al audio en los entornos multiprocesador. </para>
+
+<para
+>Cómo funcionaría: </para>
+
+
+<itemizedlist>
+<listitem>
+<para
+>El sistema de transmisión decide qué módulos deberían calcular qué, así: </para>
+    <itemizedlist>
+	<listitem
+><para
+>Fotogramas de vídeo (con el método process_indata).</para
+></listitem>
+	<listitem
+><para
+>Transmisiones de audio síncronas (calculateBlock).</para
+></listitem>
+	<listitem
+><para
+>Otros transmisiones asíncronas, sobre todo transmisiones de bytes.</para
+></listitem>
+	</itemizedlist>
+</listitem>
+<listitem>
+<para
+>Los módulos pueden calcular estas cosas en sus propios hilos. Para el audio, tiene sentido reutilizar los hilos (&eg;, crear cuatro hilos para cuatro procesadores, independientemente de si están funcionando 100 módulos). Para el vídeo y la descompresión de bytes, puede ser más cómodo tener una implementación con bloqueos en un hilo propia, lo que se sincroniza con el resto de &MCOP; a través del sistema de transmisión. </para>
+</listitem>
+
+<listitem>
+<para
+>Los módulos pueden no utilizar funcionalidad de &MCOP; (como las llamadas remotas) durante las operaciones multihilo. </para>
+</listitem>
+</itemizedlist>
+
+</sect1>
+
+<sect1 id="synchronization">
+<title
+>Sincronización</title>
+
+<para
+>El vídeo y el &MIDI; (y el audio) requieren sincronización. Básicamente ésto viene determinado por unos códigos de tiempo. La idea que tengo es conectar los códigos de tiempo con transmisión asíncrona, añadiendo un código de tiempo en cada paquete. Si envía dos fotogramas de vídeo, hágalo en dos paquetes (serán grandes de todas formas), para que pueda tener dos códigos de tiempo diferentes. </para>
+
+<para
+>El audio tienen códigos de tiempo implícitos, ya que es síncrono. </para>
+
+</sect1>
+
+<sect1 id="dynamic-composition">
+<title
+>Composición dinámica</title>
+
+<para
+>Debería ser posible decir: un efecto especial se componen de estos módulos más sencillos. Los efectos especiales deberían tener el aspecto de un módulo &MCOP; normal (véase el enmascaramiento), pero de hecho constar de otros módulos. </para>
+
+<para
+>Esto es lo que hace falta en &arts-builder;. </para>
+
+</sect1>
+
+<sect1 id="gui">
+<title
+>&GUI;</title>
+
+<para
+>Todos los componentes del &GUI; serán módulos &MCOP;. Deberían de tener atributos como size (tamaño), label (etiqueta), color, etc. Un constructor <acronym
+>RAD</acronym
+> (&arts-builder;) debería ser capaz de componerlos visualmente. </para>
+
+<para
+>El &GUI; debería ser almacenable, mediante el almacenamiento de los atributos. </para>
+
+</sect1>
+
+<sect1 id="midi-stuff">
+<title
+>&MIDI;</title>
+
+<para
+>El &MIDI; se implementará como transmisiones asíncronos. Hay dos opciones, una es utilizar las estructuras normales de &MCOP; para definir los tipos y la otra es introducir otros tipos propios. </para>
+
+<para
+>Creo que las estructuras normales deberían bastar, algo como: </para>
+
+<programlisting
+>struct EventoMidi {
+  byte b1,b2,b3;
+  sequence&lt;byte&gt; existe;
+}
+</programlisting>
+
+<para
+>Las transmisiones asíncronas deberían soportar tipos de transmisión propios. </para>
+
+</sect1>
+
+</chapter>
+
+

@@ -1,0 +1,1135 @@
+<appendix id="regular-expressions">
+
+<title
+>Regulárne výrazy</title>
+
+<synopsis
+> Tento dodatok obsahuje krátky, ale snáď dostatočný
+úvod do sveta <emphasis
+>regulárnych výrazov</emphasis
+>.
+Popisuje regulárne výrazy tak, ako ich používa &kate;.
+Tie sa líšia od regulárnych výrazov jazyka Perl aj od
+regulárnych výrazov príkazu <command
+>grep</command
+>.</synopsis>
+
+<sect1>
+
+<title
+>Úvod</title>
+
+<para
+><emphasis
+>Regulárne výrazy</emphasis
+> umožňujú popísať nejaký text tak, aby ho bolo možné nájsť v texte aj v prípade, že to nie je vždy rovnaký text.</para>
+
+<para
+>Napríklad: Povedzme, že chceme nájsť text v odstavcoch, ktoré začínajú menami <quote
+>Henrik</quote
+> alebo <quote
+>Pernille</quote
+> a za nimi bude nejaký tvar anglického slovesa <quote
+>say</quote
+>.</para>
+
+<para
+>Normálne by ste hľadali najprv prvé meno <quote
+>Henrik</quote
+>, možno ešte s kúskom <quote
+>sa</quote
+>, asi takto: <userinput
+>Henrik sa</userinput
+> a každý nájdený výskyt by ste skontrolovali, či je na začiatku odstavca a či za písmenami <quote
+>sa</quote
+> slovo pokračuje <quote
+>says</quote
+>, <quote
+>said</quote
+> a tak podobne. No a potom by vás to isté čakalo v druhým menom...</para>
+
+<para
+>Pomocou regulárnych výrazov sa to dá urobiť jediným hľadaním a oveľa presnejšie.</para>
+
+<para
+>Aby sme to dosiahli, regulárne výrazy definujú pravidlá pre vyjadrenie detailov ale aj zobecnení textu. Náš príklad môžeme vyjadriť takto: <quote
+>Riadok začína buď <quote
+>Henrik</quote
+> alebo <quote
+>Pernille</quote
+> (za nimi môžu byť až 4 medzery alebo tabulátory), za ktorými je prázdne miesto a potom <quote
+>sa</quote
+>. Hneď za tým je <quote
+>ys</quote
+> alebo <quote
+>id</quote
+></quote
+>. Zapíšeme ho týmto regulárnym výrazom:</para
+> <para
+><userinput
+>^[ \t]{0,4}(Henrik|Pernille) sa(ys|id)</userinput
+></para>
+
+<para
+>Tento príklad ukazuje štyri hlavné koncepty moderných regulárnych výrazov:</para>
+
+<itemizedlist
+> <listitem
+><para
+>Vzorky</para
+></listitem
+> <listitem
+><para
+>Podmienky</para
+></listitem
+> <listitem
+><para
+>Kvantifikátory</para
+></listitem
+> <listitem
+><para
+>Spätné referencie</para
+></listitem
+> </itemizedlist>
+
+<para
+>Znak <literal
+>^</literal
+> (caret) na začiatku výrazu predstavuje podmienku, ktorá platí iba v prípade, že text, ktorý odpovedá zvyšku výrazu, je na začiatku riadku.</para>
+
+<para
+>Reťazce <literal
+>[ \t]</literal
+> a <literal
+>(Henrik|Pernille) sa(ys|id)</literal
+> sú vzorky. Prvý je <emphasis
+>trieda znakov</emphasis
+>, ktorá odpovedá medzere alebo horizontálnemu tabulátoru, druhá obsahuje najprv podvýraz pre <literal
+>Henrik</literal
+> <emphasis
+>alebo</emphasis
+> <literal
+>Pernille</literal
+>, potom kúsok zodpovedajúci práve textu <literal
+> sa</literal
+> a nakoniec podvýraz buď pre <literal
+>ys</literal
+> <emphasis
+>alebo</emphasis
+> <literal
+>id</literal
+>.</para>
+
+<para
+>Reťazec <literal
+>{0,4}</literal
+> je kvalifikátor, ktorý hovorí <quote
+>niečo medzi 0 až 4 opakovaniami toho, čo bolo predtým</quote
+>.</para>
+
+<para
+>Pretože reguálne výrazy podporujú koncept <emphasis
+>spätných referencií</emphasis
+>, môžete si zatvorením podvýrazu do zátvoriek uložiť nájdený text, je možné sa pri hľadaní na takto uložený text odvolávať.</para>
+
+<para
+>Dohromady výraz nájde práve to, čo sme chceli.</para>
+
+<para
+>Nasledujúce kapitoly detailne popisujú, ako vytvárať a používať vzorky, triedy znakov, podmienky, kvalifikátory a spätné referencie. Záverečná časť obsahuje niekoľko užitočných príkladov.</para>
+
+</sect1>
+
+<sect1 id="regex-patterns">
+
+<title
+>Vzorky</title>
+
+<para
+>Vzorky obsahujú reťazce a triedy znakov. Vzorky môžu obsahovať podvzorky, čo sú vzorky v zátvorkách.</para>
+
+<sect2>
+<title
+>Zápis špeciálnych znakov (escaping)</title>
+
+<para
+>Vo vzorkách a aj v triedach znakov majú niektoré znaky špeciálny význam. Aby ste ich mohli použiť priamo pre hľadanie, musia byť označené. Po anglicky sa tomu hovorí <emphasis
+>escaped</emphasis
+>. Softvér ich potom bude považovať za normálne znaky.</para>
+
+<para
+>To sa urobí tak, že na začiatok pridáte znak <literal
+>\</literal
+> (spätné lomítko).</para>
+
+
+<para
+>Softvér pre spracovanie regulárnych výrazov potichu ignoruje takto zadané znaky tak, že im nedáva žiadny špeciálny význam v danom kontexte. Preto je možné takto zapísať napríklad aj <quote
+>j</quote
+> (<userinput
+>\j</userinput
+>). Ak neviete, či náhodou znak nemá špeciálny význam, môžete ho kľudne takho zapísať.</para>
+
+<para
+></para>
+
+</sect2>
+
+<sect2>
+<title
+>Triedy znakov a skratky</title>
+
+<para
+><emphasis
+>Trieda znakov</emphasis
+> je výraz, ktorý odpovedá jednému zo skupiny znakov. V regulárnych výrazoch sa definujú znaky, ktoré sú v triede, pomocou hranatých zátvoriek <literal
+>[]</literal
+> alebo pomocou niektorej zo skratiek uvedených nižšie.</para>
+
+<para
+>Jednoduché triedy znakov obsahujú iba jeden alebo viac znakov, napríklad <userinput
+>[abc]</userinput
+> (nájde buď písmeno <quote
+>a</quote
+>, <quote
+>b</quote
+> alebo <quote
+>c</quote
+>) alebo <userinput
+>[0123456789]</userinput
+> (odpovedá nejakej číslici).</para>
+
+<para
+>Pretože písmená a číslice sú usporiadané, môžete si ich zadanie skrátiť pomocou rozsahov: <userinput
+>[a-c]</userinput
+> je to isté ako <userinput
+>[abc]</userinput
+> a <userinput
+>[0-9]</userinput
+> znamená <userinput
+>[0123456789]</userinput
+>. Kombinácie, napríklad <userinput
+>[a-fynot1-38]</userinput
+> sú tiež povolené (tento príklad by samozrejme našiel <quote
+>a</quote
+>,<quote
+>b</quote
+>,<quote
+>c</quote
+>,<quote
+>d</quote
+>, <quote
+>e</quote
+>,<quote
+>f</quote
+>,<quote
+>y</quote
+>,<quote
+>n</quote
+>,<quote
+>o</quote
+>,<quote
+>t</quote
+>, <quote
+>1</quote
+>,<quote
+>2</quote
+>,<quote
+>3</quote
+> alebo <quote
+>8</quote
+>).</para>
+
+<para
+>Veľké písmená sú niečo iné ako malé písmená. Aby ste vytvorili tiedu, v ktorej sa veľkosť písmen nerozlišuje, musíte napríklad pre <quote
+>a</quote
+> a <quote
+>b</quote
+> použiť <userinput
+>[aAbB]</userinput
+>.</para>
+
+<para
+>Je samozrejme možné vytvoriť aj <quote
+>obrátenú</quote
+> triedu, ktorá bude odpovedať všetkému, čo v triede <quote
+>nie je</quote
+>. Jednoducho pridajte na začiatok triedy <literal
+>^</literal
+>: </para>
+
+<para
+><userinput
+>[^abc]</userinput
+> nájde všetky znaky <emphasis
+>okrem</emphasis
+> <quote
+>a</quote
+>, <quote
+>b</quote
+> or <quote
+>c</quote
+>.</para>
+
+<para
+>Okrem normálnych znakov sú šte definované skratky, aby sa vám zjednodušil život: <variablelist
+> <varlistentry
+> <term
+><userinput
+>\a</userinput
+></term
+> <listitem
+><para
+> Toto odpovedá znaku zvonček z <acronym
+>ASCII</acronym
+> (BEL, 0x07).</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>\f</userinput
+></term
+> <listitem
+><para
+> Toto odpovedá znaku konca stránky <acronym
+>ASCII</acronym
+> (FF, 0x0C).</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>\n</userinput
+></term
+> <listitem
+><para
+> Toto odpovedá znaku koniec riadku z <acronym
+>ASCII</acronym
+> (LF, 0x0A, koniec riadku v systémoch Unix).</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>\r</userinput
+></term
+> <listitem
+><para
+> Toto odpovedá znaku presun na začiatok z <acronym
+>ASCII</acronym
+> (CR, 0x0D).</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>\t</userinput
+></term
+> <listitem
+><para
+> Toto odpovedá znaku horizontálny tabulátor z <acronym
+>ASCII</acronym
+> (HT, 0x09).</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>\v</userinput
+></term
+> <listitem
+><para
+> Toto odpovedá znaku vertikálny tabulátor z <acronym
+>ASCII</acronym
+> (VT, 0x0B).</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>\xhhhh</userinput
+></term
+> <listitem
+><para
+> Toto zodpovedá znaku Unicode, ktorého hexadecimálny kód je hhh (medzi 0x0000 až 0xFFFF).  \0ooo (čiže \zero ooo) odpovedá znaku <acronym
+>ASCII</acronym
+>/Latin-1 s kódom v osmičkovej sústave ooo (medzi 0 a 0377).</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>.</userinput
+> (bodka)</term
+> <listitem
+><para
+> Toto zodpovedá ľubovoľnému znaku (aj konca riadku).</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>\d</userinput
+></term
+> <listitem
+><para
+> Toto zodpovedá číslici. Rovnaké ako <literal
+>[0-9]</literal
+></para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>\D</userinput
+></term
+> <listitem
+><para
+> Toto zodpovedá niečomu inému než číslici. Rovnaké ako <literal
+>[^0-9]</literal
+> alebo <literal
+>[^\d]</literal
+>.</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>\s</userinput
+></term
+> <listitem
+><para
+> Toto zodpovedá znaku prázdneho miesta. Prakticky to isté ako <literal
+>[ \t\n\r]</literal
+></para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>\S</userinput
+></term
+> <listitem
+><para
+> Toto zodpovedá normálnemu znaku. Prakticky to isté ako <literal
+>[^ \t\n\r]</literal
+> a rovnaké ako <literal
+>[^\s]</literal
+>.</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>\w</userinput
+></term
+> <listitem
+><para
+>Zodpovedá ľubovoľnému <quote
+>znaku slova</quote
+> - v tomto prípade písmenu alebo číslici. Uvedomte si, že podtržítko(<literal
+>_</literal
+>) mu nezodpovedá (ako je to v jazyku Perl). Rovnaké ako <literal
+>[a-zA-Z0-9]</literal
+></para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>\W</userinput
+></term
+> <listitem
+><para
+>Zodpovedá znaku, ktorý nie je v slovách - všetko okrem písmen a číslic. rovnaké ako <literal
+>[^a-zA-Z0-9]</literal
+> alebo <literal
+>[^\w]</literal
+></para
+></listitem
+> </varlistentry
+> </variablelist
+> </para>
+
+<para
+>Skrátené triedy je možné vložiť do vlastných tried, napríklad pre nájdenie slova, medzery alebo bodky môžete použiť <userinput
+>[\w \.]</userinput
+></para
+> 
+
+<note
+> <para
+>Zápis POSIX tried, čiže <userinput
+>[:&lt;meno triedy&gt;:]</userinput
+> momentálne nie je podporovaý.</para
+> </note>
+
+<sect3>
+<title
+>Znaky so špeciálnym významom v triedach znakov</title>
+
+<para
+>Tieto znaky majú v rámci <quote
+>[]</quote
+> špeciálny výraz a ich je nutné doplniť o spätné lomítko v prípade, že ich chcete priamo zahrnúť do triedy:</para>
+
+<variablelist
+> <varlistentry
+> <term
+><userinput
+>]</userinput
+></term
+> <listitem
+><para
+>Ukončí aktuálnu triedu. Neusí byť so spätným lomítkom v prípade, že je to prvý znak triedy (prípadne hneď za <literal
+>^</literal
+>.</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>^</userinput
+></term
+> <listitem
+><para
+>Označuje zápornú triedu, ak je to prvý znak. Ak ho chcete priamo hľadať a uviesť ako prvý znak, musíte ho použiť so spätným lomítkom.</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>-</userinput
+> (pomlčka)</term
+> <listitem
+><para
+>Obsahuje logický rozsah.</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>\</userinput
+> (spätné lomítko)</term
+> <listitem
+><para
+>Znak pre escape znakov.</para
+></listitem
+> </varlistentry
+> </variablelist>
+
+</sect3>
+
+</sect2>
+
+<sect2>
+
+<title
+>Alternatívy: nájdenie <quote
+>jedno z</quote
+></title>
+
+<para
+>Ak chcete nájsť jednu z niekoľkých možností, môžete ich oddeliť pomocou <literal
+>|</literal
+> (znak vertikálnej čiary).</para>
+
+<para
+>Napríklad pre nájdenie <quote
+>John</quote
+> alebo <quote
+>Harry</quote
+> môžete použiť výraz <userinput
+>John|Harry</userinput
+>.</para>
+
+</sect2>
+
+<sect2>
+
+<title
+>Pod-vzorky</title>
+
+<para
+><emphasis
+>Podvzorky</emphasis
+> sú vzorky v zátvorkách a používajú sa na niekoľko vecí.</para>
+
+<sect3>
+
+<title
+>Zadanie alternatív</title>
+
+<para
+>Môžete ich použiť pre zadanie skupiny alternatívnych možností. Jednotlivé možnosti sa oddeľujú znakom <quote
+>|</quote
+>.</para>
+
+<para
+>Napríklad pre nájdenie niektorého zo slov <quote
+>int</quote
+>, <quote
+>float</quote
+> alebo <quote
+>double</quote
+> môžete použiť vzorku <userinput
+>int|float|double</userinput
+>. Ak chcete nájsť iba jednu z týchto slov a za ním má byť medzera a nejaké písmená, uzavrite alternatívy do podvzorky: <userinput
+>(int|float|double)\s+\w+</userinput
+>.</para>
+
+</sect3>
+
+<sect3>
+
+<title
+>Zachytenie nájdeného textu (spätné referencie)</title>
+
+<para
+>Ak chcete používať spätné referencie, použite podvzorky na označenie časti, ktorú chcete zapamätať.</para>
+
+<para
+>Napríklad, ak chcete nájsť dva výskyty jednoho slova oddelené čiarkou a prípadne nejakými medzerami, môžete napísať <userinput
+>(\w+),\s*\1</userinput
+>. Podvzorka <literal
+>\w+</literal
+> nájde zhluk písmen a celý výraz bude odpovedať ak za nimi bola čiarka, 0 alebo viac medzier a potom rovnaký zhluk znakov. (Reťazec <literal
+>\1</literal
+> označuje <emphasis
+>prvú podvzorku v zátvorkách</emphasis
+>)</para>
+
+<para
+>Prečítajte si aj kapitolu <link linkend="backreferences"
+>Spätné referencie</link
+>.</para>
+
+</sect3>
+
+<sect3 id="lookahead-assertions">
+<title
+>Dopredné podmienky</title>
+
+<para
+>Dopredné podmienky sú podvzorky začínajúce <literal
+>?=</literal
+> alebo <literal
+>?!</literal
+>.</para>
+
+<para
+>Napríklad, ak chcete nájsť <quote
+>Bill</quote
+> ale iba ak za ním nie je <quote
+> Gates</quote
+>, môžete použiť tento výraz: <userinput
+>Bill(?! Gates)</userinput
+>. (Toto nájde <quote
+>Bill Clinton</quote
+> a aj <quote
+>Billy the kid</quote
+>, ale ostatné výskyty to bude ignorovať.)</para>
+
+<para
+>Podvzorky používané pre podmienky sa nepamätajú.</para>
+
+<para
+>Prečítajte si aj kapitolu <link linkend="assertions"
+>Podmienky</link
+>.</para>
+
+</sect3>
+
+</sect2>
+
+<sect2 id="special-characters-in-patterns">
+<title
+>Znaky, ktoré majú špeciálny význam vo vzorkách</title>
+
+<para
+>Vo vzorkách majú tieto znaky špeciálny význam, takže pre ich priame hľadanie ich musíte doplniť spätným lomítkom. <variablelist
+> <varlistentry
+> <term
+><userinput
+>\</userinput
+> (spätné lomítko)</term
+> <listitem
+><para
+>Znak pre escape.</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>^</userinput
+></term
+> <listitem
+><para
+>Podmienka pre začiatok reťazca.</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>$</userinput
+></term
+> <listitem
+><para
+>Podmienka pre koniec reťazca.</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>()</userinput
+> (ľavá a pravá zátvorka)</term
+> <listitem
+><para
+>Označuje podvzorky.</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>{}</userinput
+> (ľavá a pravá zložená zátvorka)</term
+> <listitem
+><para
+>Označuje číslené kvalifikátory.</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>[]</userinput
+> (ľavá a pravá hranatá zátvorka)</term
+> <listitem
+><para
+>Označuje triedy znakov.</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>|</userinput
+></term
+> <listitem
+><para
+>Logické OR. Oddeľuje alternatívy.</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>+</userinput
+> (plus)</term
+> <listitem
+><para
+>Kvalifikátor, 1 alebo viac.</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>*</userinput
+> (hviezdička)</term
+> <listitem
+><para
+>Kvalifikátor, 0 alebo viac.</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>?</userinput
+> (otáznik)</term
+> <listitem
+><para
+>Nepovinný znak. Dá sa chápať ako kvalifikátor 0 alebo 1.</para
+></listitem
+> </varlistentry
+> </variablelist
+> </para>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="quantifiers">
+<title
+>Kvantifikátory</title>
+
+<para
+><emphasis
+>Kvantifikátory</emphasis
+> umožňujú, aby regulárny výraz zodpovedal danému počtu alebo bol v danom rozsahu opakovaní znaku, triedy alebo podvzorky.</para>
+
+<para
+>Kvantifikátory sú uzavreté v zložených zátvorkách (<literal
+>{</literal
+> a <literal
+>}</literal
+>) a majú tvar <literal
+>{[minimálne-výskytov][,[maximálne-výsktytov]]}</literal
+> </para>
+
+<para
+>Použitie sa najlepšie vysvetlí na príklade: <variablelist
+> <varlistentry
+> <term
+><userinput
+>{1}</userinput
+></term
+> <listitem
+><para
+>Presne jeden výskyt</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>{0,1}</userinput
+></term
+> <listitem
+><para
+>Jeden alebo žiadny výskyt</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>{,1}</userinput
+></term
+> <listitem
+><para
+>To isté ale menej písania :-)</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>{5,10}</userinput
+></term
+> <listitem
+><para
+>Aspoň 5 ale maximálne 10 výskytov.</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>{5,}</userinput
+></term
+> <listitem
+><para
+>Aspoň 5 výskytov, žiadne obmedzenie zhora.</para
+></listitem
+> </varlistentry
+> </variablelist
+> </para>
+
+<para
+>Okrem toho existujú aj skratky: <variablelist
+> <varlistentry
+> <term
+><userinput
+>*</userinput
+> (hviezdička)</term
+> <listitem
+><para
+>podobné ako  <literal
+>{0,}</literal
+>, nájde ľubovoľný počet opakovaní.</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>+</userinput
+> (plus)</term
+> <listitem
+><para
+>podobné ako <literal
+>{1,}</literal
+>, aspoň jeden výskyt.</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>?</userinput
+> (otáznik)</term
+> <listitem
+><para
+>podobné ako <literal
+>{0,1}</literal
+>, 0 alebo 1 výskyt.</para
+></listitem
+> </varlistentry
+> </variablelist
+> </para>
+
+<sect2>
+
+<title
+>Greed</title>
+
+<para
+>Ak používate kvantifikátory bez maximálnej hodnoty, regulárne výrazy sa štandardne snažia nájsť čo najviac zodpovedajúceho textu. Tomu sa často hovorí <emphasis
+>greedy</emphasis
+> chovanie.</para>
+
+<para
+>Moderné regulárne výrazy poskytujú spôsob, ako toto chovanie <quote
+>vypnúť</quote
+>. Napríklad v dialógu pre hľadanie je voľba <quote
+>Minimálne hľadanie</quote
+>, ktoré označuje, či sa má hľadať takto maximalisticky.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Príklady zo života</title>
+
+<para
+>Tu je pár príkladov využitia kvantifikátorov</para>
+
+<variablelist
+> <varlistentry
+> <term
+><userinput
+>^\d{4,5}\s</userinput
+></term
+> <listitem
+><para
+>Zodpovedá čísliciam v <quote
+>1234 go</quote
+> a <quote
+>12345 now</quote
+>, ale nie v <quote
+>567 eleven</quote
+> ani v <quote
+>223459 somewhere</quote
+></para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>\s+</userinput
+></term
+> <listitem
+><para
+>Odpovedá jednému alebo viacerým prázdnym znakom</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>(bla){1,}</userinput
+></term
+> <listitem
+><para
+>Zodpovedá všetkým <quote
+>blablabla</quote
+> a <quote
+>bla</quote
+> v <quote
+>blackbird</quote
+> alebo <quote
+>tabla</quote
+>.</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>/?&gt;</userinput
+></term
+> <listitem
+><para
+>Zodpovedá <quote
+>/&gt;</quote
+> v <quote
+>&lt;closeditem/&gt;</quote
+> ako aj <quote
+>&gt;</quote
+> v <quote
+>&lt;openitem&gt;</quote
+>.</para
+></listitem
+> </varlistentry
+> </variablelist>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="assertions">
+<title
+>Podmienky</title>
+
+<para
+><emphasis
+>Podmienky</emphasis
+> umožňujú, aby regulárne výrazy zodpovedali iba za zadaných podmienok.</para>
+
+<para
+>Podmienka nemusí zodpovedať znaku. Skôr overuje okolie, či v nom niečo platí. Napríklad <emphasis
+>hranica slov</emphasis
+> sa nesnaží nájsť písmeno nepatriace slovu na svojej druhej strane. Namiesto toho overí, že tam nie je znak slova. To znamená, že podmienka bude platiť aj tam, kde žiadny znak nieje, napríklad na konci prehľadávaneho reťazca.</para>
+
+<para
+>Niektoré podmienky obsahujú vzorky, ktorým majú zodpovedať, ale nájdený text sa nestane súčasťou výsledku celého výrazu.</para>
+
+<para
+>Regulárne výrazy, ktoré tu popisujeme, podporujú tieto podmienky: <variablelist
+> <varlistentry
+> <term
+><userinput
+>^</userinput
+> (začiatok reťazca)</term
+> <listitem
+><para
+>Zodpovedá začiatku prehľadávaného reťazca.</para
+> <para
+>Výraz <userinput
+>^Peter</userinput
+> bude zodpovedať <quote
+>Peter</quote
+> v reťazci <quote
+>Peter, hey!</quote
+>, ale nie v <quote
+>Hey, Peter!</quote
+> </para
+> </listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>$</userinput
+> (koniec reťazca)</term
+> <listitem
+><para
+>Zodpovedá koncu prehľadávaného reťazca.</para
+> <para
+>Výraz <userinput
+>you\?$</userinput
+> nájde posledné you v reťazci <quote
+>You didn't do that, did you?</quote
+> ale žiadne v <quote
+>You didn't do that, right?</quote
+></para
+> </listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>\b</userinput
+> (okraj slova)</term
+> <listitem
+><para
+>Platí, ak je na jednej strane znak slova, ale na druhej nie.</para
+> <para
+>To sa hodí pre nájdenie koncov slov, napríklad na oboch koncoch slova musí platiť. Výraz <userinput
+>\bin\b</userinput
+> nájde samostatné <quote
+>in</quote
+> v reťazci <quote
+>He came in through the window</quote
+>, ale nie <quote
+>in</quote
+> v slove <quote
+>window</quote
+>.</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>\B</userinput
+> (nie okraj slova)</term
+> <listitem
+><para
+>Platí, ak neplatí <quote
+>\b</quote
+>.</para
+> <para
+>To znamená, že bude napríklad zodpovedať v slovách: Výraz <userinput
+>\Bin\B</userinput
+> bude nájdený v <quote
+>window</quote
+> ale nie v <quote
+>integer</quote
+> alebo <quote
+>I'm in love</quote
+>.</para
+> </listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>(?=VZORKA)</userinput
+> (Pozitívny výhľad)</term
+> <listitem
+><para
+>Podmienka výhľadu sa pozrie na reťazec, ktorý nasleduje za možným výskytom. Pozitívny výhľad zabráni, aby sa našiel text, ktorý by nezodpovedal <emphasis
+>VZORKA</emphasis
+>, ale text, ktorý vzorke zodpovedá, sa vo výsledku neobjaví.</para
+> <para
+>Výraz <userinput
+>auto(?=\w)</userinput
+> zodpovedá <quote
+>auto</quote
+> v <quote
+>autobus</quote
+> ale nie v <quote
+>To auto je pokazené.</quote
+></para
+> </listitem
+> </varlistentry
+> <varlistentry
+> <term
+><userinput
+>(?!VZORKA)</userinput
+> (Negatívny výhľad)</term
+> <listitem
+><para
+>Negatívny výhľad zabráni nájdeniu textu v prípade, že nasledujúci text nezodpovedá <emphasis
+>VZORKA</emphasis
+></para
+> <para
+>Výraz <userinput
+>const \w+\b(?!\s*&amp;)</userinput
+> bude zodpovedať na <quote
+>const char</quote
+> v reťazci <quote
+>const char* foo</quote
+> ale nie <quote
+>const QString</quote
+> v <quote
+>const QString&amp; bar</quote
+>, pretože <quote
+>&amp;</quote
+> zodpovedá vzorke negatívneho výhľadu.</para
+> </listitem
+> </varlistentry
+> </variablelist
+> </para>
+
+</sect1>
+
+<sect1 id="backreferences">
+
+<title
+>Spätné referencie</title>
+
+<para
+></para>
+
+</sect1>
+
+</appendix>
+

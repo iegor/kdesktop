@@ -1,0 +1,399 @@
+<!-- <?xml version="1.0" ?>
+<!DOCTYPE chapter PUBLIC "-//KDE//DTD DocBook XML V4.1.2-Based Variant
+V1.1//EN" "dtd/kdex.dtd">
+To validate or process this file as a standalone document, uncomment
+this prolog. Be sure to comment it out again when you are done -->
+
+<chapter id="future-work">
+<title
+>Framtida arbete</title>
+
+<para
+>Det här avsnittet beskriver en del av det pågående arbetet med  &arts;. Utvecklingen går snabbt framåt, så den här informationen kan vara föråldrad. Du bör kontrollera listfilen TODO och arkiven för <link linkend="mailing-lists"
+>e-postlistorna</link
+> för att ta reda på vilka nya funktioner som planeras. Delta gärna i ny konstruktion och implementering. </para>
+
+<para
+>Det här är ett utkast som försöker ge dig en översikt av hur nya teknologier kommer att integreras i &arts;. Det täcker följande: </para>
+
+<itemizedlist>
+<listitem
+><para
+>Hur gränssnitt fungerar.</para
+></listitem>
+<listitem
+><para
+>Avkodare - avkodning av mp3 eller wav-flöden till en form som gör att de kan användas som data.</para
+></listitem>
+<listitem
+><para
+>Video.</para
+></listitem>
+<listitem
+><para
+>Trådning.</para
+></listitem>
+<listitem
+><para
+>Synkronisering.</para
+></listitem>
+<listitem
+><para
+>Dynamisk utökning/maskering.</para
+></listitem>
+<listitem
+><para
+>Dynamisk sammansättning.</para
+></listitem>
+<listitem
+><para
+>&GUI;</para
+></listitem>
+<listitem
+><para
+>&MIDI;</para
+></listitem>
+</itemizedlist>
+
+<para
+>Det här är pågående arbete. Det bör dock kunna ge grunden om du vill titta på ny teknologi i &arts;. Det bör ge dig en allmän idé om hur de här problemen kommer att attackeras. Korrigera gärna allt du ser här. </para>
+
+<para
+>Saker som kommer att använda &arts;-teknologi (så var snäll och koordinera ansträngningarna): </para>
+
+<itemizedlist>
+<listitem>
+<para
+><application
+>K-telefon</application
+> (röst via <acronym
+>IP</acronym
+>) </para>
+</listitem>
+
+<listitem>
+<para
+>&noatun; (videospelare / ljudspelare) </para>
+</listitem>
+
+<listitem>
+<para
+>&artscontrol; (styrprogram för ljudservern, och för mätare) </para>
+</listitem>
+
+<listitem>
+<para
+><application
+>Brahms</application
+> (musiksequencer) </para>
+</listitem>
+
+<listitem>
+<para
+><application
+>Kaiman</application
+> (&kde;2 mediaspelare - kmedia2-anpassad) </para>
+</listitem>
+
+<listitem>
+<para
+><application
+>mpglib</application
+>/<application
+>kmpg</application
+> (<acronym
+>mpg</acronym
+> ljud- och videouppspelningsteknologi) </para>
+</listitem>
+
+<listitem>
+<para
+><application
+>SDL</application
+> (direktmedialager för spel, som ännu inte påbörjats men som kan vara trevligt) </para>
+</listitem>
+
+<listitem>
+<para
+><application
+>Elektriska öron</application
+> (upphovsmannen kontaktade mig - status okänd) </para>
+</listitem>
+</itemizedlist>
+
+<sect1 id="interfaces-how">
+<title
+>Hur gränssnitt fungerar</title>
+
+<!-- I think this is now obsolete and documented elsewhere ? -->
+
+<para
+>&MCOP;-gränssnitt är grunden för &arts;-konceptet. De är den nätverkstransparenta motsvarigheten till C++ klasser. Så snart det är möjligt bör du rikta in din konstruktion mot gränssnitt. Ett gränssnitt består av fyra delar: </para>
+
+<itemizedlist>
+<listitem
+><para
+>Synkrona strömmar</para
+></listitem>
+<listitem
+><para
+>Asynkrona strömmar</para
+></listitem>
+<listitem
+><para
+>Metoder</para
+></listitem>
+<listitem
+><para
+>Egenskaper</para
+></listitem>
+</itemizedlist>
+
+<para
+>De här kan blandas på vilket sätt du vill. Nya teknologier bör definieras med hjälp av gränssnitt. Läs avsnitten om asynkrona strömmar och synkrona strömmar, samt KMedia2-gränssnittet, som är bra exempel på hur sådana saker fungerar. </para>
+
+<para
+>Gränssnitt specificeras i <literal role="extension"
+>.idl</literal
+>-kod och körs genom <command
+>mcopidl</command
+>-kompilatorn. Man härleder <classname
+><replaceable
+>Gränssnittsnamn</replaceable
+>_impl</classname
+> klassen för att implementera dem, och använder <function
+>REGISTER_IMPLEMENTATION (Gränssnittsnamn_impl)</function
+> för att infoga en objektimplementering i &MCOP;:s  objektsystem. </para>
+
+</sect1>
+
+<sect1 id="codecs">
+<title
+>Codec, dataavkodning</title>
+
+<para
+>Kmedia2-gränssnittet låter dig bortse från att wav-filer, mp3-filer eller vad som helst består av dataflöden. Istället implementerar du bara metoder för att spela dem. </para>
+
+<para
+>På så sätt kan du skriva en vågformsladdningsrutin på ett sätt så att du kan spela vågformsfiler (som PlayObject), men ingen annan kan använda din kod. </para>
+
+<para
+>Asynkrona strömmar skulle vara alternativet. Man definierar ett gränssnitt som tillåter att datablock skickas in, och hämtas ut. Detta ser ut så här i &MCOP;: </para>
+
+<programlisting
+>interface Codec {
+  in async byte stream indata;
+  out async byte stream outdata;
+};
+</programlisting>
+
+
+<para
+>Avkodare kan förstås också ange egenskaper för att skicka ut ytterligare data, som formatinformation. </para>
+
+<programlisting
+>interface ByteAudioCodec {
+  in async byte stream indata;
+  out async byte stream outdata;
+  readonly attribute samplingRate, bits, channels;
+};
+</programlisting>
+
+<para
+>Den här <interfacename
+>ByteAudioCodec</interfacename
+> kan till exempel anslutas till ett <interfacename
+>ByteStreamToAudio</interfacename
+>-objekt, för att skapa riktigt flytande ljud. </para>
+
+<para
+>Andra typer av avkodare kan förstås innefatta att direkt skicka ut videodata, som </para>
+
+<programlisting
+>interface VideoCodec {
+  in async byte stream indata;
+  out video stream outdata;      /* observera: videoströmmar finns inte ännu */
+};
+</programlisting>
+
+<para
+>Troligtvis bör ett avkodningskoncept användas istället för sättet <quote
+>du vet hur det spelas upp med det gör inte jag</quote
+> som till exempel <interfacename
+>WavPlayObject</interfacename
+> använder för närvarande. Någon måste dock sätta sig ner och experimentera lite innan ett programmeringsgränssnitt kan definieras. </para>
+
+</sect1>
+
+<sect1 id="video">
+<title
+>Video</title>
+
+<para
+>Min idé är att tillhandahålla video som asynkrona strömmar för någon inbyggd &MCOP;-datatyp som innehåller bilder. Den här datatypen har inte skapats än. Genom att göra detta, kan insticksprogram som hanterar video kopplas ihop på samma sätt som ljudinsticksprogram. </para>
+
+<para
+>Det finns några saker som är viktiga att inte utelämna:  </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Det finns <acronym
+>RGB</acronym
+> och <acronym
+>YUV</acronym
+> färgrymder. </para>
+</listitem>
+<listitem>
+<para
+>Formatet bör markeras i strömmen på något sätt. </para>
+</listitem>
+<listitem>
+<para
+>Synkronisering är viktig. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Min idé är att lämna möjligheten att ändra implementeringen av <classname
+>VideoFrame</classname
+>-klassen öppen, så att den kan lagra grejor i ett delat minnessegment. Genom att göra detta kan till och med videoströmmar mellan olika processer bli möjligt utan alltför mycket problem. </para>
+
+<para
+>För video är dock den vanliga situationen att alla saker är i samma process, från avkodningen till renderingen. </para>
+
+<para
+>Jag har gjort en prototypimplementering av videoströmmar, som kan laddas ner <ulink url="http://space.twc.de/~stefan/kde/download/video-quickdraw.tar.gz"
+>härifrån</ulink
+>. Det här behöver integreras med &MCOP; efter några experiment. </para>
+
+<para
+>En rederingskomponent som stöder XMITSHM (med <acronym
+>RGB</acronym
+> och <acronym
+>YUV</acronym
+>) bör tillhandahållas. Martin Vogt talade om för mig att han arbetar på en sådan. </para>
+
+</sect1>
+
+<sect1 id="threading">
+<title
+>Trådning</title>
+
+<para
+>För närvarande är &MCOP; helt och hållet en enda tråd. För video kanske vi inte längre kan komma undan trådar. Ok. Det finns några saker som ska hanteras med försiktighet: </para>
+
+
+<itemizedlist>
+<listitem
+><para
+>SmartWrappers  - de är inte trådsäkra på grund av osäker referensräkning och liknande. </para>
+</listitem>
+<listitem>
+<para
+>Avsändaren / I/O - inte heller trådsäkra. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Vad jag i alla fall kan tänka mig är att göra utvalda moduler trådsäkra, för både synkrona och asynkrona strömmar. På det här sättet kan man schemalägga signalflödet på två eller flera processorer, med ett flödessystem som känner till trådar. Det här borde också hjälpa en hel del med ljud med multiprocessorer. </para>
+
+<para
+>Hur det skulle fungera: </para>
+
+
+<itemizedlist>
+<listitem>
+<para
+>Flödessystemet bestämmer vilka moduler som ska beräkna vad, dvs: </para>
+    <itemizedlist>
+	<listitem
+><para
+>videobilder (med metoden process_indata)</para
+></listitem>
+	<listitem
+><para
+>synkrona ljudflöden (calculateBlock)</para
+></listitem>
+	<listitem
+><para
+>andra asynkrona flöden, i huvudsak dataströmmar</para
+></listitem>
+	</itemizedlist>
+</listitem>
+<listitem>
+<para
+>Modulerna kan beräkna de här sakerna i egna trådar. För ljud är det vettigt att återanvända trådar (t.ex. hantera det med fyra trådar om det finns fyra processorer, även om 100 moduler kör). För video- och datauppackning, kan det vara bekvämare att ha en blockerande implementering i en egen tråd, som synkroniseras med resten av &MCOP; med flödessystemet. </para>
+</listitem>
+
+<listitem>
+<para
+>Moduler får inte använda &MCOP;-funktioner (som fjärranrop) medan trådade operationer pågår. </para>
+</listitem>
+</itemizedlist>
+
+</sect1>
+
+<sect1 id="synchronization">
+<title
+>Synkronisering</title>
+
+<para
+>Video och &MIDI; (och ljud) kan kräva synkronisering. I grund och botten är det här tidsstämplar. Idén jag har är att bifoga tidsstämplar till de asynkrona strömmarna, genom att lägga till en tidsstämpel till varje paket. Om man skickar två videobilder, görs det helt enkelt som två paket (de är stora ändå), så att man kan ha två olika tidsstämplar. </para>
+
+<para
+>Ljud ska ha underförstådda tidsstämplar, eftersom det är synkront. </para>
+
+</sect1>
+
+<sect1 id="dynamic-composition">
+<title
+>Dynamisk sammansättning</title>
+
+<para
+>Det bör vara möjligt att säga: En effekt FX består av de här enklare modulerna. FX bör se ut som en normal &MCOP;-modul (se maskering), men i själva verket bestå av andra moduler. </para>
+
+<para
+>Det här krävs för aRts-byggaren. </para>
+
+</sect1>
+
+<sect1 id="gui">
+<title
+>&GUI;</title>
+
+<para
+>Alla komponenter i det grafiska gränssnittet kommer att vara &MCOP;-moduler. De bör ha egenskaper som storlek, etikett, färg, ... En <acronym
+>RAD</acronym
+>-byggare (aRts-byggaren) bör kunna sätta samman dem visuellt. </para>
+
+<para
+>Det grafiska gränssnittet bör vara möjligt att spara genom att spara egenskaperna. </para>
+
+</sect1>
+
+<sect1 id="midi-stuff">
+<title
+>&MIDI;</title>
+
+<para
+>&MIDI;-grejorna kommer att implementeras som asynkrona strömmar. Det finns två alternativ, ett är att använda normala &MCOP;-strukturer för att definiera typerna och det andra är att introducera ytterligare egna typer. </para>
+
+<para
+>Jag tror att normala strukturer kan räcka till, dvs något som: </para>
+
+<programlisting
+>struct MidiEvent {
+  byte b1,b2,b3;
+  sequence&lt;byte&gt; sysex;
+}
+</programlisting>
+
+<para
+>Asynkrona strömmar bör stöda egna flödestyper. </para>
+
+</sect1>
+
+</chapter>
+
+

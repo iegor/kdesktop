@@ -1,0 +1,670 @@
+<chapter id="theory">
+<title
+>Teoretisk bakgrund: &CUPS;, <acronym
+>IPP</acronym
+>, &PostScript; och <application
+>Ghostscript</application
+></title>
+
+<para
+>Det här kapitlets målsättning är att ge en del teoretisk bakgrund till utskrift i allmänhet, och till &CUPS; i synnerhet. Om du inte är i behov av detta, kanske du vill gå vidare till <link linkend="getting-started"
+>nästa kapitel</link
+>. Troligen kommer du tillbaka till det här kapitlet vid något tillfälle i alla fall, eftersom man ibland behöver mer teori för att lösa ett praktiskt problem.</para>
+
+<sect1 id="basics-of-printing">
+<title
+>Grundläggande information om utskrift</title>
+
+<para
+>Utskrift är ett av de mer komplicerade delarna av <acronym
+>IT</acronym
+>-teknologi.</para>
+
+
+<para
+>Tidigare i historien, var varje utvecklare av ett program som hade möjlighet att producera utskrivningsbar utmatning också tvungen att skriva egna utskriftsdrivrutiner. Det var ganska komplicerat, eftersom olika program har olika filformat. Till och med program med samma syfte, till exempel ordbehandlare, förstår ofta inte varandras format. Så det fanns därför inget gemensamt gränssnitt för alla skrivare, och alltså stödde programmerarna bara några få utvalda modeller.</para>
+
+<para
+>En ny enhet som kom ut på marknaden krävde att programupphovsmännen skrev en ny drivrutin om de ville att deras program skulle stödja den. Det var också omöjligt för tillverkare att försäkra sig om att deras enhet stöddes av något välkänt program (även om det fanns mycket färre än idag).</para>
+
+<para
+>Att behöva stödja tio program och ett dussin skrivare, betydde att en systemadministratör var tvungen att hantera 120 drivrutiner. Så utveckling av ett enhetligt gränssnitt mellan program och skrivare blev en brådskade nödvändighet.</para>
+
+<para
+>Framkomsten av <quote
+>sidbeskrivningsspråk</quote
+>, som beskriver den grafiska representationen av bläck och toner på pappersark (eller andra utmatningsenheter, som bildskärmar, fototypsättare, etc.) på ett enhetligt sätt var en utveckling som täckte in ett stort glapp. </para>
+
+<para
+>En sådan utveckling var &PostScript; av Adobe. Det betydde att en programutvecklare kunde koncentrera sig på att låta programmet skapa en beskrivning i &PostScript;-språket av sidan som skulle skrivas ut, medan utvecklare av utskriftsenheter kunde fokusera på att få sina enheter att förstå &PostScript;.</para>
+
+<para
+>Med tiden kom förstås en utveckling av andra beskrivningsmetoder. De viktigaste konkurrenterna till &PostScript; var <acronym
+>PCL</acronym
+> (<quote
+>Print Control Language</quote
+>, från &Hewlett-Packard;), <quote
+>ESC/P</quote
+> (från Epson) och <acronym
+>GDI</acronym
+> (<quote
+>Graphical Device Interface</quote
+> från &Microsoft;).</para>
+
+<para
+>Framkomsten av de här sidbeskrivningsspråken gjorde livet lättare, och möjliggjorde ytterligare utveckling för alla. Trots det gör det faktum att det fortfarande finns olika, konkurrerande sidbeskrivningsspråk som inte fungerar tillsammans, livet svårt nog för användare, administratörer, utvecklare och tillverkare.</para>
+
+<sect2>
+<title
+>&PostScript; i minnet - Bitmappar på papper</title>
+
+<para
+>&PostScript; är används mest i professionella utskriftsmiljöer som PrePress och utskriftsserviceföretag. I &UNIX;- och &Linux;-domänerna är &PostScript; den dominerande standarden som <acronym
+>PDL</acronym
+>. Här skapar nästan varje program en &PostScript;-beskrivning av sina sidor när du trycker på knappen <quote
+>Skriv ut</quote
+>. Låt oss ta en titt på ett enkelt exempel med (handgjord) &PostScript;-kod. Följande listning beskriver två enkla bilder:</para>
+
+<example id="coded-postscript">
+<title
+>&PostScript;-kod</title>
+<screen
+>%!PS
+100 100 moveto
+0 50 rlineto
+50 0 rlineto
+0 -50 rlineto
+closepath
+.7 setgray fill
+% första rutan klar; nästa
+160 100 moveto
+0 60 rlineto
+45 10 rlineto
+0 -40 rlineto
+closepath
+.2 setgray fill</screen>
+</example>
+
+<para
+>Det här talar om för den tänkta &PostScript;-<quote
+>pennan</quote
+> att rita en figur med en viss form, och sedan fylla den med olika gråa nyanser. Den första delen översätts till begriplig svenska som <quote
+>Gå till koordinaten (100,100), rita en linje med längd 50 uppåt, sedan en därifrån åt höger, sedan neråt igen och till slut förbind den här delen. Fyll nu den uppritade figuren med grå färg som har 70% svärta.</quote
+></para>
+
+<example id="rendered-postscript">
+<title
+>Uppritad &PostScript;</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="ps-boxes.png" format="PNG"/>
+</imageobject>
+<textobject>
+<phrase
+><xref linkend="coded-postscript"/> exemplet uppritat som en bild.</phrase>
+</textobject>
+</mediaobject>
+</example>
+
+<para
+>&PostScript; kan förstås vara mycket mer komplicerad än det här förenklade exemplet. Det är ett fullständigt programmeringsspråk med många olika operatorer och funktioner. Du kan till och med skriva &PostScript;-program för att beräkna värdet av pi, formatera en hårddisk eller skriva till en fil. Det huvudsakliga värdet och styrkan hos &PostScript;, finns ändå i möjligheten att beskriva grafisk formgivning av objekt på en sida: det kan också skala, spegla, förflytta, omvandla, rotera och förvränga allt du kan tänka dig på ett pappersark, som bokstäver i olika teckensnittsrepresentationer, figurer, former, skuggor, färger, linjer, punkter, raster...</para>
+
+<para
+>En &PostScript;-fil är en representation av en eller flera sidor som ska skrivas ut, på ett relativt abstrakt sätt. I teorin är det meningen att det ska beskriva sidorna på ett enhetsoberoende sätt. &PostScript; är inte direkt <quote
+>synligt</quote
+>. Det finns bara på hårddiskar och i minnet som en kodad representation av framtida utskrifter.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Rasterbilder på pappersark</title>
+
+<para
+>Vad du ser på ett pappersark är nästan alltid en <quote
+>rasterbild</quote
+>. Även om din hjärna säger åt dig att dina ögon ser en linje: ta ett bra förstoringsglas så upptäcker du en mängd små punkter... (Ett exempel på motsatsen är linjer som har ritats upp av en <quote
+>pennplotter</quote
+>). Och detta är det enda som <quote
+>skrivenheter</quote
+> i dagens skrivare kan fästa på papper: enkla punkter av olika färger, storlek och upplösning för att skapa en fullständig <quote
+>bild</quote
+> av sidan som består av olika mönster av punkter.</para>
+
+<para
+>Olika skrivare kräver att rasterbilden skapas på olika sätt. Tänk dig en bläckstråleskrivare: beroende på dess upplösning, antalet olika bläcker som används (verkligt bra använder sju olika bläcker, medan en billigare kanske använder tre), antalet tillgängliga strålar (vissa skrivarhuvuden har fler än 100!) som avger bläck samtidigt, den använda <quote
+>dither</quote
+>-algoritmen, och många andra saker, så beror det slutliga rasterformatet och överföringsordningen till skrivenheten i stor utsträckning på den exakta modellen som används.</para>
+
+<para
+>Under den tidigaste användningen av <quote
+>radskrivardemonen</quote
+>, var skrivare maskiner som mekaniskt hamrade fram rader med <acronym
+>ASCII</acronym
+>-text på långa papper, som veks i sick-sack, och matades fram från en kartong som stod under bordet... Vilken skillnad mot idag!</para>
+
+</sect2>
+
+
+<sect2>
+<title
+><acronym
+>RIP</acronym
+>: Från &PostScript; till raster</title>
+
+<para
+>Innan de slutliga rasterbilderna fästs på pappersark, måste de på något sätt räknas fram från sin abstrakta &PostScript;-representation. Detta är en mycket beräkningsintensiv process (Den kallas <quote
+>Raster Imaging Process</quote
+>, eller oftare <quote
+><acronym
+>RIP</acronym
+></quote
+>).</para>
+
+<para
+>För &PostScript;-skrivare hanteras <acronym
+>RIP</acronym
+> av skrivaren själv. Du skickar bara &PostScript;-filen till den. <quote
+>Rasterprocessorn</quote
+> (också kallad <acronym
+>RIP</acronym
+>) inne i skrivaren är ansvarig (och specialiserad) för att utföra uppgiften att tolka &PostScript;- sidbeskrivningar väl och att fästa rasterbilden på papper.</para>
+
+<para
+>Mindre &PostScript;-enheter har en inbyggd hårdvara för <acronym
+>RIP</acronym
+>. Den är byggd i kisel, på en särskilt krets. Stora professionella skrivare har ofta sin <acronym
+>RIP</acronym
+> implementerad med programvara för <acronym
+>RIP</acronym
+> inne i en snabb dator som kör &UNIX;, ofta en Sun SPARC Solaris- eller en &SGI; &IRIX;-dator.</para>
+
+</sect2>
+
+<sect2>
+<title
+><application
+>Ghostscript</application
+> är en <acronym
+>RIP</acronym
+> i programvara</title>
+
+<para
+>Men vad händer om du inte är tursam nog att ha en &PostScript;-skrivare tillgänglig?</para>
+
+<para
+>Du måste utföra <acronym
+>RIP</acronym
+>-innan du skickar utskriftsdata till skrivenheten. Du måste hantera den &PostScript; som skapats av programmet på värddatorn (utskriftsklienten) själv. Du måste veta exakt hur rasterformatet på målskrivarens skrivenhet ska sättas samman.</para>
+
+<para
+>Med andra ord, eftersom du inte kan lita på att skrivaren själv förstår och tolkar &PostScript;, blir förfarandet en hel del mer komplicerat. Du behöver programvara som försöker lösa problemen som uppstår åt dig.</para>
+
+<para
+>Det här är exakt vad det överallt förekommande &ghostscript;-paketet gör åt många &Linux;-, *BSD- och andra &UNIX;-datorer som behöver skriva ut till skrivare utan &PostScript;. &ghostscript; är en &PostScript;-tolk, en programvara för <acronym
+>RIP</acronym
+>, som klarar av att hantera många olika enheter.</para>
+
+</sect2>
+
+<sect2>
+<title
+><quote
+>Drivrutiner</quote
+> och <quote
+>filter</quote
+> i allmänhet</title>
+
+<para
+>För att skapa rasterbilder från &PostScript;-indata, används ett koncept med <quote
+>filter</quote
+> av &ghostscript;. Det finns många olika filter i &ghostscript;, några specialiserade för en viss skrivarmodell. &ghostscript; filter specialiserade för en viss enhet har ofta utvecklats utan medgivande eller stöd från tillverkaren i fråga. Utan tillgång till specifikationer och dokumentation, var detta en mycket krävande process för att återskapa protokoll och dataformat.</para>
+
+<para
+>Alla &ghostscript;-filter fungerar inte lika bra för sina skrivare. Men ändå producerar några av de nyaste, som <application
+>stp</application
+>-filtren från utskriftsprojektet för <application
+>Gimp</application
+>, utmärkta resultat som ger fotografisk kvalitet jämförbar med eller till och med överlägsen deras motsvarighet bland drivrutiner för &Microsoft; &Windows;.</para>
+
+<para
+>&PostScript; är det som de flesta program skapar för utskrift på &UNIX; och &Linux;. Filter är arbetshästarna för alla sådana utskriftssystem. I huvudsak skapar de riktiga bitmappar från vilken &PostScript;-indata som helst för skrivare utan &PostScript;.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Drivrutiner, filter och utmatningsrutiner i CUPS</title>
+
+<para
+>&CUPS; använder sina egna filter, även om filtersystemet är baserat på Ghostscript. I själva verket är filtren pstoraster och imagetoraster direkt härledda från Ghostscript-kod. &CUPS; har organiserat om och strömlinjeformat hela mekanismen i den här ärvda koden och organiserat den i ett fåtal klara och distinkta moduler.</para>
+
+<para
+>Följande bild (gjord med hjälp av &kivio;) ger en överblick över filtren och utmatningsrutinerna inne i &CUPS; och hur de passar ihop. <quote
+>Flödet</quote
+> är uppifrån och ner. Utmatningsrutiner är särskilda filter: de konverterar inte data till ett annat format, utan skickar färdiga filer till skrivaren. Det finns olika utmatningsrutiner för olika överföringsprotokoll.</para>
+
+<screenshot id="architecture-diagram">
+<screeninfo
+>&kprinter; dialogrutan efter uppstart (&kivio; utkast) </screeninfo>
+<mediaobject>
+<imageobject>
+<imagedata fileref="cups-filterarchitecture-kivio-70Percent-scaled.png"
+format="PNG"/></imageobject>
+<textobject>
+<phrase
+>&kprinter; dialogrutan efter uppstart (&kivio; utkast)</phrase
+></textobject>
+</mediaobject>
+</screenshot>
+
+</sect2>
+<sect2>
+<title
+>Köhantering och utskriftsdemoner</title>
+
+<para
+>Förutom den tunga delen av filteruppgiften att skapa en bitmapp klar för utskrift, behöver all utskriftsprogramvara använda en kömekanism. Denna är till för att rada upp olika jobb från olika användare för olika skrivare och filter och skicka dem till målen på motsvarande sätt. Utskriftsdemonen tar hand om allt det här.</para>
+
+<para
+>Den här demonen ser till att det blir ordning på torpet: den ansvarar också för jobbstyrning: användare ska kunna avbryta, stoppa, starta om sina jobb (men inte andras jobb), och så vidare.</para>
+
+</sect2>
+
+</sect1>
+
+
+
+<sect1 id="cups-and-ppd">
+<title
+>Utflykt: Hur <quote
+>CUPS</quote
+> utnyttjar kraften i &PPD;:er</title>
+
+<para
+>När du nu vet hur en &PostScript;-fil (som beskriver sidlayout på ett i stort sett enhetsoberoende sätt) förvandlas till en rasterbild, kanske du frågar: <quote
+>Men det finns ju olika sorters rasterutmatningsenheter, först så skiljer de i upplösning, sedan finns det olika pappersstorlekar, det fortsätter med många  efterbehandlingsalternativ (dubbelsidig utskrift, broschyrer, hålslagning och häftning med olika sorters färgat papper från olika magasin, etc.). Hur passar det här in i vår modell med enhetsoberoende &PostScript;?</quote
+></para>
+
+<para
+>Svaret följer med de så kallade &PostScript; skrivarbeskrivningsfiler (&PPD;). En &PPD; beskriver alla enhetsberoende funktioner som kan användas för en viss skrivarmodell. Den innehåller också de kodade kommandon som måste användas för att anropa olika funktioner i enheten. Men &PPD;:er är inte hemliga på något sätt, de är enkla <acronym
+>ASCII</acronym
+> textfiler.</para>
+
+<para
+>&PPD;:er <quote
+>uppfanns</quote
+> av Adobe för att göre det lätt för tillverkare att implementera sina egna funktioner för &PostScript;-skrivare, och på samma gång behålla ett standardiserat sätt att göra detta. &PPD;:er är bra dokumenterade och beskrivna av Adobe. Deras specifikation är en defacto öppen standard.</para>
+
+<sect2 id="ppd-files">
+<title
+>Enhetsberoende utskriftsalternativ</title>
+
+<para
+>Kom ihåg att avancerad &PostScript;-utskrift utvecklades ursprungligen bara för användning på  &Microsoft; &Windows;- och Apple &Mac;-system. Under en lång tid var all funktionsrik utskrift på moderna skrivare inte tillgänglig för &Linux; och &UNIX;. &CUPS; ändrar detta i ett svep. &CUPS; är helt integrerad med &PPD;:er, och därför kan befintliga &PPD;:er användas fullt ut av alla system som hanteras av &CUPS;.</para>
+
+<para
+>Via &PPD;:er kunde skrivartillverkare lägga till enhetsspecifika hårdvarufunktioner i sina produkter, för funktioner som dubbelsidig utskrift, häftning, håltagning, efterbehandling etc.. Skrivardrivrutinerna laddar en &PPD; precis som ytterligare en konfigurationsfil. På detta sätt får skrivardrivrutinen reda på tillgängliga enhetsalternativ och hur de anropas. Drivrutinen visar dem också i ett grafiskt gränssnitt för användaren. Genom den här mekanismen kan du fortfarande skriva ut <quote
+>enhetsoberoende</quote
+> filer med sidbeskrivningsspråket &PostScript;, och ange enhetsberoende efterbehandlingsalternativ efteråt, som läggs till i &PostScript; som skapats av programmet.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Var skaffar man &PPD;:er för &PostScript;-skrivare</title>
+
+<para
+>&PPD;:er användes inte rutinmässigt i &UNIX;- och &Linux;-system från början. Tillverkarna som tillhandahöll dessa &PPD;:er avsåg aldrig att de skulle användas för något annat än de ursprungligen stödda operativsystemen, &Microsoft; &Windows; och &MacOS;. Med det lysande draget att stödja och använda den befintliga &PPD;-specifikation, ger &CUPS; nu möjligheten att använda alla funktioner hos moderna skrivare för användare av &Linux; och &Linux;-liknande system. &kdeprint; gör dess användning ännu bekvämare än &CUPS;-utvecklarna någonsin drömt om.</para>
+
+<para
+>&CUPS; kan använda &Windows; original-&PPD;:er, som distribueras av tillverkare när det gäller &PostScript;-skrivare. De kostar normalt ingenting och kan hämtas från vilken &Windows;-dator som helst med en installerad &PostScript;-drivrutin för modellen i fråga, eller från disketterna som tillhandahålls med skrivaren. Det finns också flera platser på nätet där de kan laddas ner.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Varför särskilda &PPD;:er nu är användbara också för skrivare utan &PostScript;.</title>
+
+<para
+>Nu vet du hur &PostScript;-skrivare kan använda &PPD;:er. Men vad gäller för skrivare utan &PostScript;? &CUPS; har gjort ett mycket bra trick: Genom att använda samma format och datastruktur som &PostScript; skrivarbeskrivningar (&PPD;:er) i &PostScript;-världen, kan de tillgängliga alternativen för utskriftsjobb beskrivas på samma sätt för skrivare utan &PostScript;. För sina egna speciella syften har &CUPS; bara lagt till några få specialalternativ (nämligen raden som anger filtret som ska användas för ytterligare behandling av &PostScript;-filen).</para>
+
+<para
+>Så utvecklarna kunde använda samma programvara för att tolka skrivarbeskrivningsfilerna för tillgängliga alternativ för alla sorters skrivare. Utvecklarna av &CUPS; kunde förstås inte lita på att hårdvarutillverkare av skrivare utan &PostScript; plötsligt skulle utveckla  &PPD;:er. De var tvungna att göra den svåra starten själva, och skriva dem från grunden. Mer än 1000 av dessa är tillgängliga genom den kommersiella versionen av &CUPS;, som heter <application
+>ESP PrintPro</application
+>.</para>
+
+<para
+>Under tiden finns det en mängd  &CUPS;-specifika &PPD;:er tillgängliga. Till och med nu kommer de flesta inte från skrivartillverkarna, utan från utvecklare av fri programvara. &CUPS;-människorna bevisade det, och andra följde efter: Där utskrift på &Linux; och &UNIX; fortfarande var en röra för ett eller två år sedan, stöds nu en stor mängd skrivare, inklusive sjufärgers bläckstråleskrivare som leder fram till fotografisk kvalitet på utskrifterna.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Olika sätt att skaffa &PPD;:er för skrivare som inte stöder &PostScript;</title>
+
+<para
+>Du kan skaffa  &PPD;:er för att använda med &CUPS; och skrivare utan &PostScript; från olika ställen på Internet:</para>
+
+<itemizedlist>
+<listitem>
+<para
+>i första hand, finns arkivet på <ulink url="http://www.linuxprinting.org"
+>www.linuxprinting.org</ulink
+>, som låter dig skapa en <quote
+>CUPS-O-Matic</quote
+>-&PPD; medan du är uppkopplad, för alla skrivare som redan har stöd för traditionell utskrift med &ghostscript;. Det här hjälper dig att byta till &CUPS; med liten ansträngning, om du vill. Om din skrivare fungerade bra med den traditionella utskriften med &ghostscript;, använd CUPS-O-Matic för att koppla in din drivrutin i &CUPS;-systemet, så får du det bästa från båda världarna.</para>
+</listitem>
+
+<listitem>
+<para
+>i andra hand, finns det &CUPS; &PPD;:er för de över 120 skrivarmodeller som drivs av den nya allmänna <application
+>stp</application
+>-drivrutinen. <application
+>Stp</application
+> (betydde Stylus Photo från början) utvecklas nu av GIMP-utskriftsprojektet. Det påbörjades av Mike Sweet, den ledande &CUPS;-utvecklaren och är nu tillgängligt via <ulink url="http://gimp-print.sourceforge.net"
+>gimp-print.sourceforge.net</ulink
+>. Den här drivrutinen skriver ut med nästan fotografisk kvalitet på många moderna bläckstråleskrivare och kan anpassas för att skapa 120 &CUPS; &PPD;:er samtidigt som den kompileras. &HP; Laser- och DeskJet, <trademark class="registered"
+>Epson</trademark
+> Stylus och Photo Color modeller samt vissa <trademark class="registered"
+>Canon</trademark
+> och <trademark class="registered"
+>Lexmark</trademark
+> modeller täcks.</para>
+</listitem>
+
+<listitem>
+<para
+>i tredje hand, finns den kommersiella utökningen av &CUPS; från utvecklarna av &CUPS; själva: Den kallas <application
+>ESP PrintPro</application
+> och levereras med mer än 2.300 skrivardrivrutiner. Det följer till och med med förbättrade imagetoraster- och pstoraster-filter.</para>
+</listitem>
+</itemizedlist>
+
+<para
+>&CUPS; gör det verkligt lätt för tillverkare att lägga till stöd för utskrift på &Linux; och &UNIX; för sina modeller till en rimlig kostnad. Den modulära grundstommen i &CUPS; möjliggör anslutning av vilket filter (=drivrutin) som helst med minimal ansträngning, för att komma åt och utnyttja hela grundstommen för utskrifts som &CUPS; skapar.</para>
+
+<para
+>Läs mer om de underbara funktionerna hos &CUPS; i &CUPS;-dokumentationen, tillgänglig på <ulink url="http://www.cups.org/documentation.html"
+>http://www.cups.org/documentation.html</ulink
+> och <ulink url="http://wwww.danka.de/printpro/faq.html"
+>http://www.danka.de/printpro/faq.html</ulink
+>. Dessutom finns ett allmängiltigt arkiv för allt som har med utskrift för &Linux; och &UNIX; att göra på <ulink url="http://www.linuxprinting.org"
+>http://www.linuxprinting.org/</ulink
+>.</para>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="cups-ipp-support">
+<title
+>Varför &IPP;-stöd gör &CUPS; till det bästa tillgängliga valet</title>
+
+<sect2>
+<title
+><quote
+><acronym
+>LPD</acronym
+> måste dö!</quote
+></title>
+
+<para
+>Många utvecklare var länge djupt missnöjda med gamla goda <acronym
+>LPD</acronym
+>. En hel del nya projekt startades för att förbättra utskrift: <application
+>LPRng</application
+> är det bäst kända exemplet. Andra är <acronym
+>PDQ</acronym
+>, <acronym
+>PPR</acronym
+>, <acronym
+>PLP</acronym
+>, <acronym
+>GNUlpr</acronym
+> och <acronym
+>RLPR</acronym
+>, men inga av de nya programmen sågs som en <quote
+>vinnare</quote
+>, de flesta implementerar bara samma gamla <acronym
+>LPD</acronym
+>-specifikation med några (eller många) nya utökningar, vilket återigen gör att de inte kan fungera tillsammans.</para>
+
+<para
+>Efter att ha sett utveckling av inte bara ett, utan flera olika möjliga alternativ till den vördnadsbjudande <acronym
+>BSD</acronym
+> varianten av <acronym
+>LPD</acronym
+>, myntade Grant Taylor, upphovsmannen till <citetitle
+>Linux Printing HOWTO</citetitle
+>, till sist uttrycket <citetitle
+>LPD måste dö!</citetitle
+> i sin <quote
+>Kampanj för att avskaffa radskrivardemonen</quote
+>.</para>
+
+<!-- FIXME: look up URLs for the above -->
+
+</sect2>
+
+<sect2>
+<title
+>Hur &IPP; uppstod</title>
+
+<para
+>Tillsammans med det ovanstående, på den industriella sidan, fanns det försök att komma förbi de välkända svagheterna med <acronym
+>LPD</acronym
+>. Det började med egna utökningar till enkla gamla <acronym
+>LPD</acronym
+>, och gick så långt som  &Hewlett-Packard;s försök att etablera &HP; JetDirect som en ny standard för nätverksutskriftsprotokoll. Resultatet var ännu fler samarbetsproblem.</para>
+
+<para
+>Till sist tog ett initiativ att definiera en ny gemensam industri- och <acronym
+>IETF</acronym
+>-standard form, <quote
+>Printer Working Group</quote
+> eller <acronym
+>PWG</acronym
+>, en lös sammanslutning av tillverkare av hårdvara, programvara och operativsystem, tog fram det nya <quote
+>Internet utskriftsprotokollet</quote
+>, &IPP;. &IPP; v1.1 har nu godkänts av <acronym
+>IETF</acronym
+> (Internet Engineering Task Force) som en föreslagen standard, och åtnjuter nu enhälligt stöd av industrin i Europa, U.S.A. och Japan. De flesta nya nätverksskrivare har nu inbyggt stöd för &IPP;, förutom traditionell utskrift med <acronym
+>LPR</acronym
+>/<acronym
+>LPD</acronym
+> eller JetDirect.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Varför &IPP; löser många problem</title>
+
+<para
+>&IPP; har förutsättningar att lösa många av problemen som nätverksadministratörer råkar ut för. Det här yrket hanterar heterogena nätverksmiljöer där mer än hälften av arbetsdagen går åt att hantera skrivarproblem.</para>
+
+<para
+>Genom att skapa en enhetlig uppsättning med frågefunktioner för skrivare och servrar som stöder &IPP;, för att överföra filer och ställa in jobbstyrparametrar etc., så är &IPP; förutbestämd att fungera med alla operativsystem. Det kommer dock inte att tas i bruk över en natt, eftersom många äldre utskriftsenheter fortfarande kommer att användas under många år. Därför är bakåtkompatibilitet förberedd för alla &IPP;-implementationer. &CUPS; tillhandahåller duglighet för utskrift med &IPP; i alla miljöer.</para>
+
+<para
+>Den mest uppenbara fördelen kommer att bli dess integration i den befintliga uppsättningen med robusta <acronym
+>IP</acronym
+>-protokoll. Eftersom den är en utökning av det beprövade och robusta <acronym
+>HTTP</acronym
+> 1.1 protokollet, för specialaktiviteten att hantera utskriftsfiler och relaterad data, är det också mycket lätt att koppla in andra standarder när de utvecklas och tas i bruk.</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Grundläggande, DIGEST- och certifikatautentisering för användare som försöker komma åt en utskriftsservice.</para>
+</listitem>
+<listitem>
+<para
+>SSL3 och <acronym
+>TLS</acronym
+> kryptering för att överföra data.</para>
+</listitem>
+<listitem>
+<para
+>Tvåvägskommunikation med skrivarenheter för klienter, med användning av <acronym
+>HTTP</acronym
+>/&IPP; <command
+>GET</command
+>- och <command
+>POST</command
+>-mekanismen.</para>
+</listitem>
+<listitem>
+<para
+>Integration av LDAP-katalogservice för att hålla en samhörande databas med tillgängliga skrivare, deras egenskaper och sidkostnader, etc., samt användarnas lösenord,  <acronym
+>ACL</acronym
+>:er etc.</para>
+</listitem>
+<listitem>
+<para
+>Utskrift med <quote
+>Pull</quote
+> (i motsats till den vanliga modellen med <quote
+>Push</quote
+>), där en server eller skrivare bara behöver få reda på webbadressen för ett dokument, där den hämtas från resursen på Internet och skrivs ut.</para>
+</listitem>
+</itemizedlist>
+
+</sect2>
+
+<!--
+<sect2>
+<title
+>&CUPS;, &IPP; and &kde;</title>
+
+<para
+>&CUPS; is the most advanced implementation of &IPP; on all &OS;
+platforms.  That makes &CUPS; a crucial ally to help "conquer the
+desktop" for projects like &kde;. &kdeprint; is the best utility to
+make &CUPS; core functionality available to &kde; Desktop
+users.</para>
+
+</sect2
+> -->
+
+<sect2>
+<title
+><quote
+>Koppla in och använd</quote
+> för skrivare av klienter</title>
+
+<para
+>Har du någonsin sett en demonstration av &CUPS; möjligheter på nätet? Du måste ha blivit riktigt imponerad om du inte visste i förväg vad du skulle få se.</para>
+
+<para
+>Tänk dig att du är administratör av ett lokalt nätverk. För teständamål installerade du en dator med &kde;/&CUPS; i ditt nätverk, fullständig med ett dussintal skrivare anpassade och fungerande: &PostScript;, LaserJets, InkJets och BubbleJets, och så vidare. Dina &kde;-användare på den datorn är mycket glada, de kan skriva ut som aldrig förr, och komma åt alla funktioner på varje skrivare. Det tog dig två timmar att få allt att fungera perfekt... och nu vill alla 100 andra användare på nätverket ha samma sak. Ytterligare två timmar för varje dator? Det finns inget sätt att göra det innan nyår, eller vad tror du?</para>
+
+<para
+>Fel. Ändra bara en inställning i den ursprungliga &CUPS;-datorn för att göra den till en <quote
+>server</quote
+>. Installera &CUPS; på fem andra datorer, som <quote
+>klienter</quote
+>. Lagom tills du har hunnit återvända till din första klient, märker du att användarna redan leker med inställningarna för det dussintal skrivare som du tidigare hade definierat på <quote
+>servern</quote
+>. På något magiskt sätt har skrivarna dykt upp i alla <quote
+>utskrifts</quote
+>-dialogrutor på de fem nya &CUPS;-klientdatorerna.</para>
+
+<para
+>Användarna skriver ut, men inte en enda drivrutin har installerats på klienterna, och inte heller har några skrivarköer definierats.</para>
+
+<para
+>Hur fungerar den här magin, då?</para>
+
+</sect2>
+
+<sect2>
+<title
+>Hur kan man <quote
+>se</quote
+> skrivare som inte har installerats lokalt?</title>
+
+<para
+>Svaret är inte alls komplicerat.</para>
+
+<para
+>Om en &CUPS;-server finns på ett lokalt nätverk, sänder den ut namnen på alla tillgängliga skrivare till nätverket, med <acronym
+>UDP</acronym
+>-protokollet och port 631. Port 631 är reserverad som en <quote
+>välkänt port</quote
+> av <acronym
+>IANA</acronym
+> (<quote
+>Internet Assigning Numbers Authority</quote
+>) för &IPP;-syften. Alla &CUPS;-klienter lyssnar efter &CUPS;-serverinformation som skickas till deras port 631. På detta sätt känner de till de tillgängliga skrivarna, och detta är också sättet de får reda på <quote
+>sökvägen</quote
+> till skrivarna.</para>
+
+<para
+>Genom att använda &IPP;, som egentligen är en smart utökning av <acronym
+>HTTP</acronym
+> v1.1, kan &CUPS; adressera alla objekt som hör ihop med utskriftssystemet via webbadresser. Utskriftsjobb som ska tas bort eller startas om, skrivare som ska tillfrågas eller ändras, administrativa uppgifter som ska utföras på servern, alla kan adresseras med olika webbadresser. Många viktiga saker kan utföras genom &CUPS; webbgränssnitt, som är tillgängligt med till exempel &konqueror;.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Att skriva ut utan att installera en drivrutin</title>
+
+<para
+>Och dessutom kan klienterna <quote
+>administrera</quote
+> och <quote
+>använda</quote
+> alla skrivare som de ser, precis som om de var lokalt installerade. Du kan förstås ange begränsningar för detta med styrlistor för åtkomst etc., så att inte <emphasis
+>alla</emphasis
+> klienter kan använda <emphasis
+>alla</emphasis
+> skrivare de vill.</para>
+
+<para
+>Klienterna kan till och med skriva ut utan de nödvändiga filtren (eller drivrutinerna) installerade lokalt.</para>
+
+<para
+>Hur fungerar det här då? Om en klient vill få reda på och välja skrivarspecifika alternativ, skickar den en begäran (som kallas <command
+>CUPS-get-ppd</command
+>) till servern. Servern talar om alla skrivarspecifika alternativ för klienten, som lästs från serversidans &PPD;. Användaren på klientsidan kan se alternativen och välja de som krävs. Han skickar sedan utskriftsfilen, oftast ofiltrerad <quote
+>obehandlad</quote
+> &PostScript;, kryddade med skrivaralternativen till utskriftsservern, med &IPP; som transportprotokoll. All ytterligare behandling, i synnerhet filtreringen för att skapa det slutgiltiga formatet för målskrivaren, görs sedan av servern. Servern har alla nödvändiga program (<quote
+>drivrutiner</quote
+> eller <quote
+>filter</quote
+>) för att göra detta.</para>
+
+<para
+>På det här sättet kan klienten skriva ut utan att behöva installera en lokal drivrutin.</para>
+
+<para
+>Alla ändringar på servern, som att lägga till eller ändra en skrivare, blir omedelbart <quote
+>kända</quote
+> för klienterna utan någon ytterligare anpassning.</para>
+
+</sect2>
+
+<sect2>
+<title
+><quote
+>Ingen administration</quote
+>, lastbalansering och <quote
+>felöverbyte</quote
+></title>
+
+<para
+>Några andra avancerade funktioner som är inbyggda i &CUPS; är möjligheten att göra <quote
+>lastbalansering</quote
+>.</para>
+
+<para
+>Om du definierar samma skrivarköer på två eller flera servrar, skickar klienterna sina jobb till den server som först svarar eller är tillgänglig. Det här innebär en automatisk lastbalansering bland servrar. Om du måste koppla ner en server för administrativt underhåll kommer de övriga bara att ta över dess uppgifter utan att användarna ens märker någon skillnad.</para>
+
+</sect2>
+
+</sect1>
+
+</chapter>

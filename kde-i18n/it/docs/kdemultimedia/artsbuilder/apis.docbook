@@ -1,0 +1,434 @@
+<!-- <?xml version="1.0" ?>
+<!DOCTYPE chapter PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" "dtd/kdex.dtd">
+To validate or process this file as a standalone document, uncomment
+this prolog. Be sure to comment it out again when you are done -->
+
+<chapter id="arts-apis">
+<title
+>Interfacce di programmazione dell'applicazione &arts;</title>
+
+<sect1 id="api-overview">
+<title
+>Panoramica</title>
+<para
+>aRts non è solamente un software, ma fornisce anche una varietà di API per vari scopi. In questa sezione, cercherò di descriverti la "grande immagine", un breve accenno su che cosa si pensa che facciano quelle API, e come interagiscano. </para>
+
+<para
+>C'è una distinzione importante da fare: la maggior parte delle API sono <emphasis
+>indipendenti dalla lingua e dalla posizione</emphasis
+> perché sono specificate come <emphasis
+>mcopidl</emphasis
+>. In questo modo puoi sostanzialmente usare i servizi che offrono da qualsiasi lingua, implementarli in qualsiasi lingua, e non dovrai preoccuparti di parlare con oggetti remoti o locali. Ecco una lista di questi primi: </para>
+
+
+<variablelist>
+<varlistentry>
+<term
+>core.idl</term>
+  <listitem
+><para
+>Definizioni di base che formano il nucleo della funzionalità MCOP, come il protocollo stesso, definizioni dell'oggetto, il trader, il sistema flow e così via. </para
+></listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+>artsflow.idl</term>
+
+  <listitem
+><para
+>Questi contengono il sistema flow che userai per connettere flussi audio, la definizione di <emphasis
+>Arts::SynthModule</emphasis
+> che è la base per qualsiasi interfaccia che ha flussi e infine alcuni oggetti audio interessanti </para
+></listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+>kmedia2.idl</term>
+
+
+  <listitem
+><para
+>Qua viene definito un oggetto che può eseguire un oggetto multimediale, <emphasis
+>Arts::PlayObject</emphasis
+>. I riproduttori multimediali come il KDE multimedia player noatun sarà capace di eseguire qualsiasi oggetto multimediale per il quale può essere trovato un PlayObject. Così ha senso implementare PlayObject per vari formati (come mp3, mpg video, midi, wav, ...) su quella base, e ce ne sono già molti. </para
+></listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+>soundserver.idl</term>
+
+  <listitem
+><para
+>Qui è definita un'interfaccia per l'ampio sistema server sonoro artsd. L'interfaccia è chiamata <emphasis
+>Arts::SoundServer</emphasis
+>, la quale implementa funzionalità come accettare i flussi dalla rete, suonare campioni, creare oggetti aRts o personalizzati e così via. La trasparenza di rete è implicitamente dovuta all'uso di MCOP (come per qualsiasi altra cosa qui). </para
+></listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+>artsbuilder.idl</term>
+  <listitem
+><para
+>Questo modulo definisce la funzionalità di base del grafico del flusso, cioè, come combinare semplici oggetti con altri più complessi, definendo un loro grafico. Esso definisce l'interfaccia di base <emphasis
+>Arts::StructureDesc</emphasis
+>, <emphasis
+>Arts::ModuleDesc</emphasis
+> e <emphasis
+>Arts::PortDesc</emphasis
+>, che contengono una descrizione della struttura, del modulo e della porta. C'è anche un modo per far uscire una "rete live di oggetti" da queste connessioni e descrizioni, usando una factory. </para
+></listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+>artsmidi.idl</term>
+
+  <listitem
+><para
+>Questo modulo definisce la funzionalità midi di base, come oggetti che producono eventi midi, cioè un <emphasis
+>Arts::MidiManager</emphasis
+> per connettere i produttori e i consumatori di eventi midi, e così via. Come sempre è sottintesa la trasparenza di rete. </para
+></listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+>artsmodules.idl</term>
+  <listitem
+><para
+>Qua ci sono vari filtri aggiuntivi, oscillatori, effetti, ritardi e così via, qualsiasi cosa richiesta per un'esecuzione del segnale in modo reale, e per compilare strumenti complessi ed effetti da questi semplici blocchi di compilazione di base. </para
+></listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+>artsgui.idl</term>
+
+  <listitem
+><para
+>Questo si occupa di oggetti visuali. Definisce il carattere tipo <emphasis
+> Arts::Widget</emphasis
+> dal quale derivano tutti i moduli GUI. Questo produrrà l'indipendenza dell'insieme degli strumenti, la modifica visuale delle GUI, e la serializzazione delle GUI. Inoltre, dato che gli elementi GUI hanno attributi normali, il loro valore può essere strettamente connesso ad alcuni moduli di elaborazione del segnale (come il valore di uno cursore al limite di taglio del filtro). Come sempre: trasparenza di rete. </para
+></listitem>
+
+</varlistentry>
+
+</variablelist>
+<para
+>Dove possibile, aRts stesso è implementato usando IDL. D'altra parte, ci sono alcune API con un <emphasis
+>linguaggio specifico</emphasis
+>, che usano sia il semplice C++ o C. È solitamente saggio usare le interfacce IDL dove è possibile, e le altre API dove necessario. Qui c'è una lista del linguaggio specifico delle API: </para>
+
+<variablelist>
+
+<varlistentry>
+<term
+>KNotify, KAudioPlayer (inclusi in libkdecore)</term>
+
+  <listitem
+><para
+>Ci sono API KDE convenienti per i casi più semplici e comuni, nei quali vuoi eseguire un campione. Gli API sono ottimizzati per il semplice C++, Qt/KDE, e sono semplici come recuperarli. </para
+></listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+>libartsc</term>
+  <listitem
+><para
+>Interfaccia del semplice C per il server sonoro. Molto utile per fare il porting di applicazioni vecchio stile. </para
+></listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+>libmcop</term>
+
+  <listitem
+><para
+>Qua si svolge tutta la magia per MCOP. La libreria contiene le cose di base che devi conoscere per scrivere una semplice applicazione MCOP, il mittente, gli orari, la gestione i/o, ma anche gli interni per far lavorare il protocollo MCOP stesso. </para
+></listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+>libartsflow</term>
+  <listitem
+><para
+>In aggiunta all'implementazione di artsflow.idl, qualche strumento interessante come la conversione rate dei campioni. </para
+></listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+>libqiomanager</term>
+
+  <listitem
+><para
+>Integrazione di MCOP nell'evento loop Qt, quando scrivi applicazioni Qt usando MCOP. </para
+></listitem>
+
+</varlistentry>
+
+</variablelist>
+
+
+
+</sect1>
+<sect1 id="knotify">
+<title
+>knotify</title>
+<para
+>Non ancora scritto </para>
+</sect1>
+
+<sect1 id="kaudioplayer">
+<title
+>kaudioplayer</title>
+<para
+>Non ancora scritto </para>
+</sect1>
+
+<sect1 id="libkmid">
+<title
+>libkmid</title>
+<para
+>Non ancora scritto </para>
+</sect1>
+
+<sect1 id="kmedia2">
+<title
+>kmedia2</title>
+<para
+>Non ancora scritto </para>
+</sect1>
+
+<sect1 id="soundserver">
+<title
+>server sonoro</title>
+<para
+>Non ancora scritto </para>
+</sect1>
+
+<sect1 id="artsflow">
+<title
+>artsflow</title>
+<para
+>Non ancora scritto </para>
+</sect1>
+
+<sect1 id="capi">
+<title
+><acronym
+>API</acronym
+> C</title>
+
+<sect2 id="capiintro">
+<title
+>Introduzione</title>
+
+<para
+>L' <acronym
+>API</acronym
+> &arts; C fu progettata per rendere più semplice scrivere e fare il port di semplici applicazioni C al server sonoro &arts;. Fornisce funzionalità di streaming (inviando flussi di campioni a <application
+>artsd</application
+>), sia a blocco o non blocco. Per la maggior parte delle applicazioni rimuovi semplicemente le poche chiamate del sistema che si occupano del tuo dispositivo audio e le rimpiazzi con appropriate chiamate &arts;.</para>
+
+<para
+>Ho fatto due port come esempio del concetto: <application
+>mpg123</application
+> e <application
+>quake</application
+>. Puoi scaricare le patch da <ulink url="http://space.twc.de/~stefan/kde/download/artsc-patches.tar.gz"
+>here</ulink
+>. Sentiti libero di proporre le tue proprie patch al responsabile di &arts; o dei pacchetti software multimediali in modo che possano integrare il supporto &arts; nel loro codice.</para>
+
+</sect2>
+
+<sect2 id="capiwalkthru">
+<title
+>In pochi passi</title>
+
+<para
+>Inviare l'audio al server sonoro con l' <acronym
+>API</acronym
+> è molto semplice:</para>
+<procedure>
+<step
+><para
+>includi il file di intestazione usando <userinput
+>#include &lt;artsc.h&gt;</userinput
+></para
+></step>
+<step
+><para
+>inizializza l' <acronym
+>API</acronym
+> con <function
+>arts_init()</function
+></para
+></step>
+<step
+><para
+>crea un flusso con <function
+>arts_play_stream()</function
+></para
+></step>
+<step
+><para
+>configura i parametri specifici con <function
+>arts_stream_set()</function
+></para
+></step>
+<step
+><para
+>scrivi un campionamento dei dati al flusso con <function
+>arts_write()</function
+></para
+></step>
+<step
+><para
+>chiudi il flusso con <function
+>arts_close_stream()</function
+></para
+></step>
+<step
+><para
+>libera l' <acronym
+>API</acronym
+> con <function
+>arts_free()</function
+></para
+></step>
+</procedure>
+
+<para
+>Ecco qua un piccolo programma di esempio che lo illustra:</para>
+
+<programlisting
+>#include &lt;stdio.h&gt;
+#include &lt;artsc.h&gt;
+int main()
+{
+    arts_stream_t stream;
+    char buffer[8192];
+    int bytes;
+    int errorcode;
+
+    errorcode = arts_init();
+    if (errorcode &lt; 0)
+    {
+        fprintf(stderr, "arts_init error: %s\n", arts_error_text(errorcode));
+        return 1;
+    }
+
+    stream = arts_play_stream(44100, 16, 2, "artsctest");
+
+    while((bytes = fread(buffer, 1, 8192, stdin)) &gt; 0)
+    {
+        errorcode = arts_write(stream, buffer, bytes);
+        if(errorcode &lt; 0)
+        {
+            fprintf(stderr, "arts_write error: %s\n", arts_error_text(errorcode));
+            return 1;
+        }
+    }
+
+    arts_close_stream(stream);
+    arts_free();
+
+    return 0;
+}
+</programlisting>
+</sect2>
+
+<sect2 id="capiartscconfig">
+<title
+>Compilare e fare il link: <application
+>artsc-config</application
+></title>
+
+<para
+>Per compilare e fare il link dei programmi usando le <acronym
+>API</acronym
+> C di &arts;, l'utility <application
+>artsc-config</application
+> fornisce conoscenze di quali librerie hai bisogno per fare il link e dove sono incluse. È chiamata usando</para>
+
+<screen
+><userinput
+><command
+>artsc-config</command
+> <option
+>--libs</option
+></userinput
+>
+</screen>
+
+<para
+>trovare le librerie e </para>
+
+<screen
+><userinput
+><command
+>artsc-config</command
+> <option
+>--cflags</option
+></userinput
+>
+</screen>
+
+<para
+>scoprire flag del compilatore C aggiuntivi. L'esempio sopra potrebbe essere compilato usando la riga di comando:</para>
+
+<screen
+><userinput
+><command
+>cc</command
+> <option
+>-o artsctest artsctest.c `artsc-config --cflags` `artsc-config --libs`</option
+></userinput>
+
+<userinput
+><command
+>cc</command
+> <option
+>-o artsctest</option
+> <option
+>artsctest.c</option
+> <option
+>`artsc-config --cflags`</option
+> <option
+>`artsc-config --libs`</option
+></userinput
+>
+</screen>
+
+</sect2>
+
+<sect2 id="c-api-reference">
+<title
+>Riferimento alla libreria</title>
+
+<para
+>[TODO: generare la documentazione per artsc.h usando kdoc] </para>
+
+</sect2>
+
+</sect1>
+</chapter>
