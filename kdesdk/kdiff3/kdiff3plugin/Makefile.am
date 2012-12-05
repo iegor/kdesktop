@@ -13,8 +13,5 @@ libkdiff3plugin_la_LDFLAGS = -module $(all_libraries) $(KDE_PLUGIN)
 pluginsdir   = $(kde_servicesdir)
 plugins_DATA = kdiff3_plugin.desktop
 
-appsdir = $(kde_appsdir)/.hidden
-apps_DATA = kdiff3plugin.desktop
-
 messages: rc.cpp
 	$(XGETTEXT) *.cpp *.h -o $(podir)/kdiff3_plugin.pot

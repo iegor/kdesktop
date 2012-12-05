@@ -29,7 +29,7 @@ kdiff3_LDFLAGS = $(KDE_RPATH) $(all_libraries)
 kdiff3_LDADD   = $(LIB_KPARTS)
 
 # this is where the desktop file will go
-shelldesktopdir   = $(kde_appsdir)/Development
+shelldesktopdir   = $(xdg_appsdir)
 shelldesktop_DATA = kdiff3.desktop
 
 # this is where the shell's XML-GUI resource file goes
