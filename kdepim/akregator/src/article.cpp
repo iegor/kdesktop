@@ -310,13 +310,13 @@ void Article::setStatus(int stat)
         switch (stat)
         {
             case Read:
-                d->status = ( d->status | Private::Read) & ~Private::New;
+                d->status = (d->status | Private::Read) & ~Private::New;
                 break;
             case Unread:
-                d->status = ( d->status & ~Private::Read) & ~Private::New;
+                d->status = (d->status & ~Private::Read) & ~Private::New;
                 break;
             case New:
-                d->status = ( d->status | Private::New) & ~Private::Read;
+                d->status = (d->status | Private::New) & ~Private::Read;
                 break;
         }
         d->archive->setStatus(d->guid, d->status);
@@ -386,7 +386,7 @@ uint Article::hash() const
 
 bool Article::keep() const
 {
-    return ( statusBits() & Private::Keep) != 0;
+    return (statusBits() & Private::Keep) != 0;
 }
 
 RSS::Enclosure Article::enclosure() const
@@ -403,7 +403,7 @@ RSS::Enclosure Article::enclosure() const
 
 void Article::setKeep(bool keep)
 {
-    d->status = keep ? ( statusBits() | Private::Keep) : ( statusBits() & ~Private::Keep);
+    d->status = keep ? (statusBits() | Private::Keep) : (statusBits() & ~Private::Keep);
     d->archive->setStatus(d->guid, d->status);
     if (d->feed)
         d->feed->setArticleChanged(*this);
