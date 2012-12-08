@@ -1799,11 +1799,11 @@ void KMComposeWin::setMsg(KMMessage* newMsg, bool mayAutoSign,
                           bool allowDecryption, bool isModified)
 {
   //assert(newMsg!=0);
-  if(!newMsg)
-    {
-      kdDebug(5006) << "KMComposeWin::setMsg() : newMsg == 0!" << endl;
-      return;
-    }
+  if(!newMsg) {
+    kdDebug(5006) << "KMComposeWin::setMsg() : newMsg == 0!" << endl;
+    return;
+  }
+
   mMsg = newMsg;
   KPIM::IdentityManager * im = kmkernel->identityManager();
 
@@ -2179,8 +2179,13 @@ bool KMComposeWin::queryClose ()
     return false;
   if ( kmkernel->shuttingDown() || kapp->sessionSaving() )
     return true;
-  if ( mComposer && mComposer->isPerformingSignOperation() ) // since the non-gpg-agent gpg plugin gets a passphrase using QDialog::exec()
-    return false;                                            // the user can try to close the window, which destroys mComposer mid-call.
+  
+  /*
+   * since the non-gpg-agent gpg plugin gets a passphrase using QDialog::exec()
+   * the user can try to close the window, which destroys mComposer mid-call.
+   */
+  if ( mComposer && mComposer->isPerformingSignOperation() )
+    return false;
 
   if ( isModified() ) {
     bool istemplate = ( mFolder!=0 && mFolder->isTemplates() );
@@ -4036,8 +4041,7 @@ void KMComposeWin::doSend( KMail::MessageSender::SendMethod method,
                                "not have to enter it for each message.") );
       return;
     }
-    if ( to().isEmpty() )
-    {
+    if ( to().isEmpty() ) {
         if (  cc().isEmpty() && bcc().isEmpty()) {
           if ( mEdtTo ) mEdtTo->setFocus();
           KMessageBox::information( this,

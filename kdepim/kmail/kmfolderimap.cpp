@@ -949,6 +949,10 @@ void KMFolderImap::checkFolders( const QStringList& subfolderNames,
     const QString& myNamespace )
 {
   QPtrList<KMFolder> toRemove;
+
+	if(!folder()->child())
+		return;
+
   KMFolderNode *node = folder()->child()->first();
   while ( node )
   {
@@ -1074,6 +1078,7 @@ void KMFolderImap::checkValidity()
   if ( account()->mailCheckProgressItem() ) {
     account()->mailCheckProgressItem()->setStatus( folder()->prettyURL() );
   }
+	open( "checkvalidity" ); // kdepim patchset3 kmail-3.5.6-fixes.diff
   ImapAccountBase::jobData jd( url.url() );
   KIO::SimpleJob *job = KIO::get(url, false, false);
   KIO::Scheduler::assignJobToSlave(account()->slave(), job);

@@ -275,9 +275,10 @@ void KMAcctImap::processNewMail(bool interactive)
   if (!mFolder || !mFolder->folder() || !mFolder->folder()->child() ||
       makeConnection() == ImapAccountBase::Error)
   {
+  	// patchset 3: kmail-3.5.6-fixes.diff checkDone( false, CheckError ); moved up
+    checkDone( false, CheckError );
     mCountRemainChecks = 0;
     mCheckingSingleFolder = false;
-    checkDone( false, CheckError );
     return;
   }
   // if necessary then initialize the list of folders which should be checked
@@ -352,7 +353,14 @@ void KMAcctImap::processNewMail(bool interactive)
         else {
           connect(imapFolder, SIGNAL(numUnreadMsgsChanged(KMFolder*)),
               this, SLOT(postProcessNewMail(KMFolder*)));
+
+	  /*
+	    This removes the local kmfolderimap if its imapPath
+	    is somehow empty, and removing it calls createFolderList,
+	    invalidating mMailCheckFolders, and causing a crash
+	   */
           bool ok = imapFolder->processNewMail(interactive);
+
           if (!ok)
           {
             // there was an error so cancel
@@ -362,6 +370,12 @@ void KMAcctImap::processNewMail(bool interactive)
               mMailCheckProgressItem->incCompletedItems();
               mMailCheckProgressItem->updateProgress();
             }
+	    
+	    /*
+	     since the list of folders might have been updated at this point,
+	     mMailCheckFolders may be invalid, so break
+	     */
+	    break;
           }
         }
       }

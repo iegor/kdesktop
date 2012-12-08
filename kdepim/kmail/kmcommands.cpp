@@ -1231,7 +1231,7 @@ KMCommand::Result KMForwardInlineCommand::execute()
     for ( KMMessage *msg = linklist.first(); msg; msg = linklist.next() ) {
       TemplateParser parser( fwdMsg, TemplateParser::Forward,
         msg->body(), false, false, false, false);
-        parser.process( msg, 0, true );
+        parser.process( msg, false, true );
 
       fwdMsg->link( msg, KMMsgStatusForwarded );
     }
@@ -1423,8 +1423,9 @@ KMRedirectCommand::KMRedirectCommand( QWidget *parent,
 KMCommand::Result KMRedirectCommand::execute()
 {
   KMMessage *msg = retrievedMessage();
-  if ( !msg || !msg->codec() )
+  if ( !msg || !msg->codec() ) {
     return Failed;
+  }
 
   RedirectDialog dlg( parentWidget(), "redirect", true,
                       kmkernel->msgSender()->sendImmediate() );
@@ -1535,7 +1536,7 @@ KMCommand::Result KMCustomForwardCommand::execute()
     for ( KMMessage *msg = linklist.first(); msg; msg = linklist.next() ) {
       TemplateParser parser( fwdMsg, TemplateParser::Forward,
         msg->body(), false, false, false, false);
-        parser.process( msg, 0, true );
+        parser.process( msg, false, true );
 
       fwdMsg->link( msg, KMMsgStatusForwarded );
     }
