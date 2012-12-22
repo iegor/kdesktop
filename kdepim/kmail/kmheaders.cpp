@@ -15,6 +15,7 @@ using KMail::HeaderItem;
 #include "kmmsgdict.h"
 #include "kmdebug.h"
 #include "kmfoldertree.h"
+#include "kmfolderimap.h" // Added with kmail-3.5.6-fixes.diff (patchset 3)
 #include "folderjob.h"
 using KMail::FolderJob;
 #include "actionscheduler.h"
@@ -88,7 +89,6 @@ QPixmap* KMHeaders::pixAttachment = 0;
 QPixmap* KMHeaders::pixReadFwd = 0;
 QPixmap* KMHeaders::pixReadReplied = 0;
 QPixmap* KMHeaders::pixReadFwdReplied = 0;
-
 
 //-----------------------------------------------------------------------------
 KMHeaders::KMHeaders(KMMainWidget *aOwner, QWidget *parent,
@@ -221,6 +221,11 @@ KMHeaders::~KMHeaders ()
   {
     writeFolderConfig();
     writeSortOrder();
+    if(mFolder->folderType() == KMFolderTypeImap)
+    {
+    	KMFolderImap *imap = static_cast<KMFolderImap*>(mFolder->storage());
+	imap->setSelected(false);
+    }
     mFolder->close("kmheaders");
   }
   writeConfig();

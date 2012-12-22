@@ -950,8 +950,9 @@ void KMFolderImap::checkFolders( const QStringList& subfolderNames,
 {
   QPtrList<KMFolder> toRemove;
 
-	if(!folder()->child())
+	if(!folder()->child()) {
 		return;
+	}
 
   KMFolderNode *node = folder()->child()->first();
   while ( node )
@@ -1114,7 +1115,10 @@ void KMFolderImap::slotCheckValidityResult(KIO::Job * job)
   kdDebug(5006) << "KMFolderImap::slotCheckValidityResult of: " << fileName() << endl;
   mCheckingValidity = false;
   ImapAccountBase::JobIterator it = account()->findJob(job);
-  if ( it == account()->jobsEnd() ) return;
+
+  if ( it == account()->jobsEnd() )
+    return;
+  
   if (job->error()) {
     if ( job->error() != KIO::ERR_ACCESS_DENIED ) {
       // we suppress access denied messages because they are normally a result of
@@ -1183,6 +1187,7 @@ void KMFolderImap::slotCheckValidityResult(KIO::Job * job)
       mMailCheckProgressItem->setCompletedItems( 0 );
     }
     reallyGetFolder(startUid);
+    close("checkvalidity");
   }
 }
 
@@ -1217,8 +1222,8 @@ void KMFolderImap::getFolder(bool force)
     mCheckFlags = true;
   }
   checkValidity();
+  close("getfolder");
 }
-
 
 //-----------------------------------------------------------------------------
 void KMFolderImap::reallyGetFolder(const QString &startUid)
@@ -1238,6 +1243,7 @@ void KMFolderImap::reallyGetFolder(const QString &startUid)
       mMailCheckProgressItem->setStatus( i18n("Retrieving message status") );
     url.setPath(imapPath() + ";SECTION=UID FLAGS");
     KIO::SimpleJob *job = KIO::listDir(url, false);
+    open("listfolder");
     KIO::Scheduler::assignJobToSlave(account()->slave(), job);
     ImapAccountBase::jobData jd( url.url(), folder() );
     jd.cancellable = true;
@@ -1257,6 +1263,7 @@ void KMFolderImap::reallyGetFolder(const QString &startUid)
     KIO::Scheduler::assignJobToSlave(account()->slave(), newJob);
     ImapAccountBase::jobData jd( url.url(), folder() );
     jd.cancellable = true;
+    open("getMessage");
     account()->insertJob(newJob, jd);
     connect(newJob, SIGNAL(result(KIO::Job *)),
             this, SLOT(slotGetLastMessagesResult(KIO::Job *)));
@@ -1353,6 +1360,11 @@ void KMFolderImap::slotListFolderResult(KIO::Job * job)
   if (jd.total == 1) sets.append(*uid + ":" + *uid);
   else sets = makeSets( (*it).items );
   account()->removeJob(it); // don't use *it below
+
+  if(!sets.isEmpty())
+    open("getMessage");
+
+  close("listfolder");
 
   // Now kick off the getting of envelopes for the new mails in the folder
   for (QStringList::Iterator i = sets.begin(); i != sets.end(); ++i)
@@ -1548,7 +1560,7 @@ void KMFolderImap::slotGetMessagesData(KIO::Job * job, const QByteArray & data)
           (*it).cdata.find("\r\n", c+1) - c-10 ).toInt(&ok);
       if ( ok && exists < count() ) {
         kdDebug(5006) << "KMFolderImap::slotGetMessagesData - server has less messages (" <<
-          exists << ") then folder (" << count() << "), so reload" << endl;
+          exists << ") than folder (" << count() << "), so reload" << endl;
         open("getMessage");
         reallyGetFolder( QString::null );
         (*it).cdata.remove(0, pos);
@@ -1562,6 +1574,7 @@ void KMFolderImap::slotGetMessagesData(KIO::Job * job, const QByteArray & data)
     }
     (*it).cdata.remove(0, pos);
   }
+  open("digestsplit");
   pos = (*it).cdata.find("\r\n--IMAPDIGEST", 1);
   int flags;
   while (pos >= 0)
@@ -1643,6 +1656,7 @@ void KMFolderImap::slotGetMessagesData(KIO::Job * job, const QByteArray & data)
     (*it).done++;
     pos = (*it).cdata.find("\r\n--IMAPDIGEST", 1);
   } // while
+  close("digestsplit");
 }
 
 //-------------------------------------------------------------
@@ -1892,6 +1906,7 @@ void KMFolderImap::setStatus(int idx, KMMsgStatus status, bool toggle)
 
 void KMFolderImap::setStatus(QValueList<int>& _ids, KMMsgStatus status, bool toggle)
 {
+  open("setstatus");
   FolderStorage::setStatus(_ids, status, toggle);
   QValueList<int> ids;
   if ( mUploadAllFlags ) {
@@ -1976,6 +1991,7 @@ void KMFolderImap::setStatus(QValueList<int>& _ids, KMMsgStatus status, bool tog
     quiet( false );
     reallyGetFolder( QString::null );
   }
+  close("setstatus");
 }
 
 //-----------------------------------------------------------------------------
