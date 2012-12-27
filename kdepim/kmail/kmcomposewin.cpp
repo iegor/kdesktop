@@ -155,7 +155,7 @@ KMail::Composer * KMComposeWin::create( KMMessage * msg, uint identitiy ) {
 
 //-----------------------------------------------------------------------------
 KMComposeWin::KMComposeWin( KMMessage *aMsg, uint id  )
-  : MailComposerIface(), KMail::Composer( "kmail-composer#" ),
+  : /*MailComposerIface(),*/ KMail::Composer( "kmail-composer#" ),
     mSpellCheckInProgress( false ),
     mDone( false ),
     mAtmModified( false ),

@@ -95,7 +95,7 @@ namespace GpgME {
 }
 
 //-----------------------------------------------------------------------------
-class KMComposeWin : public KMail::Composer, virtual public MailComposerIface
+class KMComposeWin : public KMail::Composer //, virtual public MailComposerIface
 {
   Q_OBJECT
   friend class ::KMEdit;
@@ -107,8 +107,8 @@ private: // mailserviceimpl, kmkernel, kmcommands, callback, kmmainwidget
 public:
   static Composer * create( KMMessage * msg = 0, uint identity = 0 );
 
-  MailComposerIface * asMailComposerIFace() { return this; }
-  const MailComposerIface * asMailComposerIFace() const { return this; }
+  MailComposerIface * asMailComposerIFace() { return /*this*/ 0; }
+  const MailComposerIface * asMailComposerIFace() const { return /*this*/ 0; }
 
 public: // mailserviceimpl
   /**
