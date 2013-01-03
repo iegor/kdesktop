@@ -994,6 +994,7 @@ if( fileD1.open( IO_WriteOnly ) ) {
   if (len <= 0)
   {
     kdDebug(5006) << "Message added to folder `" << name() << "' contains no data. Ignoring it." << endl;
+		if(opened) close("mboxaddMsg");
     return 0;
   }
 
@@ -1017,8 +1018,10 @@ if( fileD1.open( IO_WriteOnly ) ) {
   }
   fseek(mStream,0,SEEK_END); // this is needed on solaris and others
   int error = ferror(mStream);
-  if (error)
+  if (error) {
+		if(opened) close("mboxaddMsg");
     return error;
+	}
 
   QCString messageSeparator( aMsg->mboxMessageSeparator() );
   fwrite( messageSeparator.data(), messageSeparator.length(), 1, mStream );
@@ -1135,6 +1138,7 @@ if( fileD1.open( IO_WriteOnly ) ) {
 
   if (aIndex_ret) *aIndex_ret = idx;
   emitMsgAddedSignals(idx);
+	if(opened) close("mboxaddMsg");
 
   // All streams have been flushed without errors if we arrive here
   // Return success!
@@ -1223,10 +1227,16 @@ int KMFolderMbox::compact( bool silent )
 {
   // This is called only when the user explicitely requests compaction,
   // so we don't check needsCompact.
+  int openCount = mOpenCount;
 
   KMail::MboxCompactionJob* job = new KMail::MboxCompactionJob( folder(), true /*immediate*/ );
   int rc = job->executeNow( silent );
   // Note that job autodeletes itself.
+
+	if(openCount > 0) {
+		open("mboxcompact");
+		mOpenCount = openCount;
+	}
 
   // If this is the current folder, the changed signal will ultimately call
   // KMHeaders::setFolderInfoStatus which will override the message, so save/restore it

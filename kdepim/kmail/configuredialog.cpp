@@ -1157,6 +1157,7 @@ AccountsPageReceivingTab::~AccountsPageReceivingTab()
   for (it = mNewAccounts.begin(); it != mNewAccounts.end(); ++it ) {
     delete (*it);
   }
+
   mNewAccounts.clear();
 
   // The modified accounts
@@ -1166,8 +1167,6 @@ AccountsPageReceivingTab::~AccountsPageReceivingTab()
     delete (*j);
   }
   mModifiedAccounts.clear();
-
-
 }
 
 void AccountsPage::ReceivingTab::slotAccountSelected()

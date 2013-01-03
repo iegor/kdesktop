@@ -950,7 +950,7 @@ void KMFolderSearch::examineAddedMessage(KMFolder *aFolder, Q_UINT32 serNum)
     KMMsgDict::instance()->getLocation(serNum, &folder, &idx);
     assert(folder && (idx != -1));
     assert(folder == aFolder);
-    KMFolderOpener openFolder(folder, "foldersearch");
+    KMFolderOpener openFolder(folder, "foldersearch::examineAddedMessage");
 
     // if we are already checking this folder, refcount
     if ( mFoldersCurrentlyBeingSearched.contains( folder ) ) {
@@ -975,7 +975,7 @@ void KMFolderSearch::slotSearchExamineMsgDone( KMFolder* folder,
     if ( search()->searchPattern() != pattern ) return;
     kdDebug(5006) << folder->label() << ": serNum " << serNum
      << " matches?" << matches << endl;
-    KMFolderOpener openFolder(folder, "foldersearch");
+    KMFolderOpener openFolder(folder, "foldersearch::slotSearchExamineMsgDone");
 
     Q_ASSERT( mFoldersCurrentlyBeingSearched.contains( folder ) );
 
