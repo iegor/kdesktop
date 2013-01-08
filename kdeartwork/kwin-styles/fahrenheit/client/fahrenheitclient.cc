@@ -132,7 +132,8 @@ FahrenheitButton::FahrenheitButton(FahrenheitClient *parent, const char *name,
     setBackgroundMode(NoBackground);
     setFixedWidth(16);
     setCursor(arrowCursor);
-    if (pixmap) setPixmap(pixmap);
+    if (!pixmap.isEmpty())
+			setPixmap(pixmap);
     QToolTip::add(this, tip);
 }
 
