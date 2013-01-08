@@ -484,7 +484,6 @@ int KMFolder::canAccess()
 
 void KMFolder::close( const char *owner, bool force )
 {
-  // do not emit closed() in here - as this would regain too early
   mStorage->close( owner, force );
 }
 

@@ -471,12 +471,15 @@ void KMFolderCachedImap::reloadUidMap()
   uidMapDirty = false;
 }
 
-/* Reimplemented from KMFolderMaildir */
 KMMessage* KMFolderCachedImap::take(int idx)
 {
   uidMapDirty = true;
   rememberDeletion( idx );
   return KMFolderMaildir::take(idx);
+}
+
+void KMFolderCachedImap::takeTemporarily( int idx ) {
+	KMFolderMaildir::take( idx );
 }
 
 // Add a message without clearing it's X-UID field.
@@ -1565,6 +1568,11 @@ bool KMFolderCachedImap::deleteMessages()
     job->start();
     return true;
   } else {
+
+    // Nothing to delete on the server, make sure the map is clear again.
+    // Normally this wouldn't be necessary, but there can be stale maps because of
+    // https://issues.kolab.org/issue3833.
+    mDeletedUIDsSinceLastSync.clear();
     return false;
   }
 }

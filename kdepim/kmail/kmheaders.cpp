@@ -15,6 +15,7 @@ using KMail::HeaderItem;
 #include "kmmsgdict.h"
 #include "kmdebug.h"
 #include "kmfoldertree.h"
+#include "kmfolderimap.h" // Added with kmail-3.5.6-fixes.diff (patchset 3)
 #include "folderjob.h"
 using KMail::FolderJob;
 #include "actionscheduler.h"
@@ -88,7 +89,6 @@ QPixmap* KMHeaders::pixAttachment = 0;
 QPixmap* KMHeaders::pixReadFwd = 0;
 QPixmap* KMHeaders::pixReadReplied = 0;
 QPixmap* KMHeaders::pixReadFwdReplied = 0;
-
 
 //-----------------------------------------------------------------------------
 KMHeaders::KMHeaders(KMMainWidget *aOwner, QWidget *parent,
@@ -221,6 +221,11 @@ KMHeaders::~KMHeaders ()
   {
     writeFolderConfig();
     writeSortOrder();
+    if(mFolder->folderType() == KMFolderTypeImap)
+    {
+    	KMFolderImap *imap = static_cast<KMFolderImap*>(mFolder->storage());
+	imap->setSelected(false);
+    }
     mFolder->close("kmheaders");
   }
   writeConfig();
@@ -687,8 +692,6 @@ void KMHeaders::setFolder( KMFolder *aFolder, bool forceJumpToUnread )
                  this, SLOT(folderCleared()));
       disconnect(mFolder, SIGNAL(expunged( KMFolder* )),
                  this, SLOT(folderCleared()));
-      disconnect(mFolder, SIGNAL(closed()),
-                 this, SLOT(folderClosed()));
       disconnect( mFolder, SIGNAL( statusMsg( const QString& ) ),
                   BroadcastStatus::instance(), SLOT( setStatusMsg( const QString& ) ) );
       disconnect(mFolder, SIGNAL(viewConfigChanged()), this, SLOT(reset()));
@@ -720,8 +723,6 @@ void KMHeaders::setFolder( KMFolder *aFolder, bool forceJumpToUnread )
               this, SLOT(folderCleared()));
       connect(mFolder, SIGNAL(expunged( KMFolder* )),
                  this, SLOT(folderCleared()));
-      connect(mFolder, SIGNAL(closed()),
-                 this, SLOT(folderClosed()));
       connect(mFolder, SIGNAL(statusMsg(const QString&)),
               BroadcastStatus::instance(), SLOT( setStatusMsg( const QString& ) ) );
       connect(mFolder, SIGNAL(numUnreadMsgsChanged(KMFolder*)),
@@ -2654,13 +2655,6 @@ void KMHeaders::folderCleared()
     mImperfectlyThreadedList.clear();
     mPrevCurrent = 0;
     emit selected(0);
-}
-
-
-void KMHeaders::folderClosed()
-{
-    mFolder->open( "kmheaders" );
-    folderCleared();
 }
 
 bool KMHeaders::writeSortOrder()

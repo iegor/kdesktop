@@ -286,6 +286,7 @@ namespace GpgME {
   // Globals
   //
   //
+	KDE_EXPORT void initializeLibrary();
 
   KDE_EXPORT GpgME::Error setDefaultLocale( int category, const char * value );
 
