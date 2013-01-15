@@ -174,21 +174,25 @@ Article& ArticleListView::ArticleItem::article()
 // paint ze peons
 void ArticleListView::ArticleItem::paintCell ( QPainter * p, const QColorGroup & cg, int column, int width, int align )
 {
-    if (article().status() == Article::Read)
-        KListViewItem::paintCell( p, cg, column, width, align );
-    else
-    {
-        // if article status is unread or new, we change the color: FIXME: make colors configurable
-        QColorGroup cg2(cg);
-    
-        if (article().status() == Article::Unread)
-            cg2.setColor(QColorGroup::Text, Qt::blue);
-        else // New
-            cg2.setColor(QColorGroup::Text, Qt::red);
-    
-        KListViewItem::paintCell( p, cg2, column, width, align );
-    }
+	if (article().status() == Article::Read)
+		KListViewItem::paintCell( p, cg, column, width, align );
+	else
+	{
+		// if article status is unread or new, we change the color: FIXME: make colors configurable
+		QColorGroup cg2(cg);
 
+		if (article().status() == Article::Unread)
+			cg2.setColor(QColorGroup::Text, Settings::useCustomColors() ? Settings::colorUnreadArticles() : Qt::blue);
+		else // New
+			cg2.setColor(QColorGroup::Text, Settings::useCustomColors() ? Settings::colorNewArticles() : Qt::red);
+
+		KListViewItem::paintCell( p, cg2, column, width, align );
+	}
+}
+
+void ArticleListView::slotPaletteOrFontChanged()
+{
+	triggerUpdate();
 }
 
 void ArticleListView::ArticleItem::updateItem(const Article& article)

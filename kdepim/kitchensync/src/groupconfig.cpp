@@ -27,8 +27,10 @@
 #include "syncprocess.h"
 #include "syncprocessmanager.h"
 
+#include <libqopensync/engine.h>
 #include <libqopensync/group.h>
 #include <libqopensync/plugin.h>
+#include <libqopensync/result.h>
 
 #include <kdialog.h>
 #include <kiconloader.h>
@@ -40,6 +42,7 @@
 #include <qlabel.h>
 #include <qlayout.h>
 #include <qpushbutton.h>
+#include <qtimer.h>
 
 GroupConfig::GroupConfig( QWidget *parent )
   : QWidget( parent )
@@ -84,14 +87,6 @@ GroupConfig::GroupConfig( QWidget *parent )
   mMemberView = new KJanusWidget( this, 0, KJanusWidget::IconList );
   topLayout->addWidget( mMemberView );
 
-  QBoxLayout *buttonLayout = new QHBoxLayout( topLayout );
-
-  QPushButton *addButton = new QPushButton( i18n("Add Member..."), this );
-  connect( addButton, SIGNAL( clicked() ), SLOT( addMember() ) );
-  buttonLayout->addWidget( addButton );
-
-  buttonLayout->addStretch( 1 );
-
   icon = KGlobal::iconLoader()->loadIcon( "bookmark", KIcon::Desktop );
   QFrame *page = mMemberView->addPage( i18n("Group"),
     i18n("General Group Settings"), icon );
@@ -99,6 +94,8 @@ GroupConfig::GroupConfig( QWidget *parent )
 
   mCommonConfig = new GroupConfigCommon( page );
   pageLayout->addWidget( mCommonConfig );
+
+  connect( mMemberView, SIGNAL( aboutToShowPage( QWidget* ) ), SLOT( memberWidgetSelected( QWidget* ) ) );
 }
 
 void GroupConfig::setSyncProcess( SyncProcess *process )
@@ -113,9 +110,9 @@ void GroupConfig::setSyncProcess( SyncProcess *process )
 
 void GroupConfig::updateMembers()
 {
-  QValueList<MemberConfig *>::ConstIterator memberIt;
+  QMap<QWidget*, MemberConfig *>::ConstIterator memberIt;
   for ( memberIt = mMemberConfigs.begin(); memberIt != mMemberConfigs.end(); ++memberIt )
-    (*memberIt)->saveData();
+    memberIt.data()->saveData();
 
   QValueList<QFrame *>::ConstIterator it2;
   for ( it2 = mConfigPages.begin(); it2 != mConfigPages.end(); ++it2 ) {
@@ -125,10 +122,9 @@ void GroupConfig::updateMembers()
   mConfigPages.clear();
   mMemberConfigs.clear();
 
-  QSync::Group group = mProcess->group();
-  QSync::Group::Iterator it( group.begin() );
-  for ( ; it != group.end(); ++it ) {
-    QSync::Member member = *it;
+  const QSync::Group group = mProcess->group();
+  for ( int i = 0; i < group.memberCount(); ++i ) {
+    QSync::Member member = group.memberAt( i );
     MemberInfo mi( member );
     QFrame *page = mMemberView->addPage( mi.name(), 
       QString( "%1 (%2)" ).arg( mi.name() ).arg(member.pluginName()), mi.desktopIcon() );
@@ -137,7 +133,7 @@ void GroupConfig::updateMembers()
     mConfigPages.append( page );
 
     MemberConfig *memberConfig = new MemberConfig( page, member );
-    mMemberConfigs.append( memberConfig );
+    mMemberConfigs.insert( page, memberConfig );
     pageLayout->addWidget( memberConfig );
 
     memberConfig->loadData();
@@ -148,13 +144,28 @@ void GroupConfig::saveConfig()
 {
   mProcess->group().save();
 
-  QValueList<MemberConfig *>::ConstIterator it;
+  QMap<QWidget*, MemberConfig*>::ConstIterator it;
   for ( it = mMemberConfigs.begin(); it != mMemberConfigs.end(); ++it )
-    (*it)->saveData();
+    it.data()->saveData();
 
   mCommonConfig->save();
 
+  const QSync::Group group = mProcess->group();
+  for ( int i = 0; i < group.memberCount(); ++i ) {
+    const QSync::Member member = group.memberAt( i );
+    mProcess->engine()->discover( member );
+  }
+
   mProcess->reinitEngine();
+}
+
+void GroupConfig::memberWidgetSelected( QWidget *wdg )
+{
+  /**
+   * Emit 'true' whenever a real member widget is selected by the
+   * user.
+   */
+  emit memberSelected( wdg != mCommonConfig->parentWidget() );
 }
 
 void GroupConfig::addMember()
@@ -173,6 +184,19 @@ void GroupConfig::addMember()
       int index = mMemberView->pageIndex( mConfigPages.last() );
       mMemberView->showPage( index );
     }
+  }
+}
+
+void GroupConfig::removeMember()
+{
+  QWidget *selectedWidget = mMemberView->pageWidget( mMemberView->activePageIndex() );
+  if ( selectedWidget && mMemberConfigs.contains( selectedWidget ) ) {
+    MemberConfig *config = mMemberConfigs[ selectedWidget ];
+
+    SyncProcessManager::self()->removeMember( mProcess, config->member() );
+    mMemberConfigs.remove( selectedWidget );
+
+    QTimer::singleShot( 0, this, SLOT( updateMembers() ) );
   }
 }
 

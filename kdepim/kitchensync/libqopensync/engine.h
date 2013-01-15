@@ -22,11 +22,13 @@
 #ifndef QSYNC_ENGINE_H
 #define QSYNC_ENGINE_H
 
-#include <libqopensync/group.h>
-
 class OSyncEngine;
 
 namespace QSync {
+
+class Group;
+class Member;
+class Result;
 
 class Engine
 {
@@ -57,6 +59,11 @@ class Engine
       Starts the synchronization process.
      */
     Result synchronize();
+
+    /**
+      Starts the discover process for a certain member.
+     */
+    Result discover( const Member &member );
 
     /**
       Stops the synchronization process.

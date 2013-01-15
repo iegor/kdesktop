@@ -41,9 +41,8 @@ benchmarkfeaturelist_COMPILE_FIRST = kde-features.h
 kde-features.cpp: kde-features.h
 kde-features_parser.h kde-features_parser.cpp: kde-features.h
 
-kde-features.h kde-features.cpp kde-features_parser.h kde-features_parser.cpp: $(srcdir)/kde-features.rng \
-  $(top_builddir)/kode/kxml_compiler/kxml_compiler
-	$(top_builddir)/kode/kxml_compiler/kxml_compiler \
+kde-features.h kde-features.cpp kde-features_parser.h kde-features_parser.cpp: $(srcdir)/kde-features.rng
+${KDEDIR}/bin/kxml_compiler \
           --custom-parser $(srcdir)/kde-features.rng
 
 METASOURCES = AUTO
