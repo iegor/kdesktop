@@ -2925,7 +2925,7 @@ if test "$ac_cv_gnu_extensions" = "yes"; then
 fi
 ])
 
-AC_DEFUN_ONCE([KDE_CHECK_COMPILER_FLAG],
+AC_DEFUN([KDE_CHECK_COMPILER_FLAG],
 [
 AC_MSG_CHECKING([whether $CXX supports -$1])
 kde_cache=`echo $1 | sed 'y% .=/+-,%____p__%'`
@@ -3207,7 +3207,7 @@ AC_DEFUN_ONCE([AC_CHECK_COMPILERS],
 
   if test "$kde_use_debug_define" = "yes"; then
     CXXFLAGS="-DNDEBUG -DNO_DEBUG $CXXFLAGS"
-  fi  
+  fi
 
   if test "$kde_use_profiling" = "yes"; then
     KDE_CHECK_COMPILER_FLAG(pg,
