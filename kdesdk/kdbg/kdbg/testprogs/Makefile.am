@@ -2,13 +2,12 @@
 EXTRA_DIST = xsldoc.xsl xsldoc.xml
 
 # set the include path for X, qt and KDE
-INCLUDES= $(all_includes)
-# always compile with debugging info switched on
-AM_CXXFLAGS = -g
+INCLUDES = $(all_includes)
 
+# always compile with debugging info switched on
 # Disable optimization to ensure that variables are not hidden by the
 # compiler
-CXXFLAGS:=$(patsubst -O%,,$(CXXFLAGS))
+AM_CXXFLAGS = -g $(patsubst -O%,,$(CXXFLAGS))
 
 if BUILDTESTPROGS
 PROGS = \
