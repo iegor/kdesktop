@@ -1,6 +1,6 @@
 SUBDIRS=admin appframework existing kapp kpartapp kpartplugin
 
-VERSION := `cat $(srcdir)/VERSION`
+VERSION = `cat $(srcdir)/VERSION`
 
 bin_SCRIPTS = kapptemplate
 
