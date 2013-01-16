@@ -1,0 +1,325 @@
+dnl =======================================================
+dnl FILE: ./admin/configure.in.min
+dnl =======================================================
+
+dnl    This file is part of the KDE libraries/packages
+dnl    Copyright (C) 2001 Stephan Kulow (coolo@kde.org)
+ 
+dnl    This file is free software; you can redistribute it and/or
+dnl    modify it under the terms of the GNU Library General Public
+dnl    License as published by the Free Software Foundation; either
+dnl    version 2 of the License, or (at your option) any later version.
+ 
+dnl    This library is distributed in the hope that it will be useful,
+dnl    but WITHOUT ANY WARRANTY; without even the implied warranty of
+dnl    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+dnl    Library General Public License for more details.
+ 
+dnl    You should have received a copy of the GNU Library General Public License
+dnl    along with this library; see the file COPYING.LIB.  If not, write to
+dnl    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+dnl    Boston, MA 02110-1301, USA.
+
+# Original Author was Kalle@kde.org
+# I lifted it in some mater. (Stephan Kulow)
+# I used much code from Janos Farkas
+
+dnl Process this file with autoconf to produce a configure script.
+
+AC_INIT(acinclude.m4) dnl a source file from your sub dir
+
+dnl This is so we can use kde-common
+AC_CONFIG_AUX_DIR(admin)
+
+dnl This ksh/zsh feature conflicts with `cd blah ; pwd`
+unset CDPATH
+
+dnl Checking host/target/build systems, for make, install etc.
+AC_CANONICAL_SYSTEM 
+dnl Perform program name transformation
+AC_ARG_PROGRAM
+
+dnl Automake doc recommends to do this only here. (Janos)
+AM_INIT_AUTOMAKE(kdeadmin, "3.5.10") dnl searches for some needed programs
+
+KDE_SET_PREFIX
+
+dnl generate the config header
+AM_CONFIG_HEADER(config.h) dnl at the distribution this done
+
+dnl Checks for programs.
+AC_CHECK_COMPILERS
+AC_ENABLE_SHARED(yes)
+AC_ENABLE_STATIC(no)
+KDE_PROG_LIBTOOL
+
+dnl for NLS support. Call them in this order!
+dnl WITH_NLS is for the po files
+AM_KDE_WITH_NLS
+
+dnl KDE_USE_QT
+AC_PATH_KDE
+dnl =======================================================
+dnl FILE: configure.in.in
+dnl =======================================================
+
+#MIN_CONFIG
+KDE_ENABLE_HIDDEN_VISIBILITY
+AC_CHECK_SETENV
+AC_CHECK_UNSETENV
+
+CXXFLAGS="$CXXFLAGS $KDE_DEFAULT_CXXFLAGS"
+
+AC_CHECK_HEADERS(sys/stropts.h stropts.h)
+AC_CHECK_HEADERS(sys/time.h)
+AC_HEADER_TIME
+dnl =======================================================
+dnl FILE: ./kcron/configure.in.in
+dnl =======================================================
+
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_CHECK_HEADERS(sstream)
+AC_LANG_RESTORE
+dnl =======================================================
+dnl FILE: ./kdat/configure.in.in
+dnl =======================================================
+
+AC_MSG_CHECKING(whether sys/mtio.h defines GMT_EOF and mtget has a member mt_gstat)
+AC_LANG_C
+AC_TRY_COMPILE(
+[#include <sys/mtio.h>],
+[struct mtget tapeStatus; GMT_EOF ( tapeStatus.mt_gstat );],
+[AC_MSG_RESULT(yes)],
+[  DO_NOT_COMPILE="$DO_NOT_COMPILE kdat"
+  AC_MSG_RESULT([no...Skipping kdat]) ]
+)
+
+dnl =======================================================
+dnl FILE: ./knetworkconf/backends/configure.in.in
+dnl =======================================================
+
+dnl ==============================================================
+dnl Set SCRIPTS_DIR, FILES_DIR & LOCALE_DIR
+dnl ==============================================================
+KDE_EXPAND_MAKEVAR(KDE_DATADIR, kde_datadir)
+scriptsdir="$KDE_DATADIR/knetworkconf/backends"
+
+AC_SUBST(scriptsdir)
+
+dnl ==============================================================
+dnl END: Set SCRIPTS_DIR, FILES_DIR & LOCALE_DIR
+dnl ==============================================================
+
+dnl Keep the comment on the line below, it works that way.
+dnl AC_OUTPUT(knetworkconf/backends/system-tools-backends.pc knetworkconf/backends/network-conf knetworkconf/backends/debug.pl knetworkconf/backends/file.pl knetworkconf/backends/general.pl knetworkconf/backends/network.pl knetworkconf/backends/parse.pl knetworkconf/backends/platform.pl knetworkconf/backends/process.pl knetworkconf/backends/replace.pl knetworkconf/backends/report.pl knetworkconf/backends/service-list.pl knetworkconf/backends/service.pl knetworkconf/backends/util.pl knetworkconf/backends/xml.pl)
+echo "Backend configured."
+dnl =======================================================
+dnl FILE: ./ksysv/configure.in.in
+dnl =======================================================
+
+dnl Disabled on BSD, where it doesn't apply
+AC_MSG_CHECKING(if ksysv can be compiled)
+case "$host" in
+  *-*-*bsd-gnu) ksysv_compile=yes;;
+  *-*-*bsd*) ksysv_compile=no;;
+  *) ksysv_compile=yes;;
+esac
+AC_MSG_RESULT($ksysv_compile)
+if test "$ksysv_compile" = "no"; then
+  DO_NOT_COMPILE="$DO_NOT_COMPILE ksysv"
+fi
+dnl =======================================================
+dnl FILE: ./kuser/configure.in.in
+dnl =======================================================
+
+dnl this is for kuser:
+
+AC_DEFUN([KUSER_CRYPT_TESTS], [
+  AC_REQUIRE([KDE_MISC_TESTS]) dnl for LIBCRYPT
+  AC_REQUIRE([KDE_SHADOWPASSWD]) dnl for LIBSHADOW and LIBGEN
+])
+ 
+KUSER_CRYPT_TESTS
+
+dnl Checks for header files.
+AC_HEADER_DIRENT
+AC_HEADER_STDC
+AC_CHECK_HEADERS(crypt.h fcntl.h mntent.h linux/quota.h linux/unistd.h \
+                 paths.h sys/fs/ufs_quota.h sys/mntent.h sys/mnttab.h \
+                 sys/quota.h sys/time.h unistd.h sys/params.h sys/param.h \
+                 signal.h sys/mount.h sys/fcntl.h)
+
+case "$host" in 
+*irix*) AC_DEFINE(HAVE_IRIX, 1, [Irix])
+       ;;
+*linux*) AC_DEFINE(HAVE_LINUX, 1, [Linux])
+       ;;
+esac
+
+AC_ARG_WITH(hometemplate, [  --with-hometemplate     use specified template for homedir [default=/home/%U] ], ku_hometemplate="$withval", ku_hometemplate="/home/%U")
+AC_DEFINE_UNQUOTED(KU_HOMETEMPLATE, "$ku_hometemplate",[default template for homedir])
+
+AC_ARG_WITH(first-uid, [  --with-first-uid        first normal user ID [default=500] ], ku_firstuid="$withval", ku_firstuid="500")
+AC_DEFINE_UNQUOTED(KU_FIRSTUID, $ku_firstuid, [first user ID])
+AC_SUBST(KU_FIRSTUID)
+
+AC_ARG_WITH(first-gid, [  --with-first-gid        first normal group ID [default=500] ], ku_firstgid="$withval", ku_firstgid="500")
+AC_DEFINE_UNQUOTED(KU_FIRSTGID, $ku_firstgid, [first group ID])
+AC_SUBST(KU_FIRSTGID)
+
+AC_ARG_WITH(private-groups, [  --with-private-groups   user private groups [default=no] ], ku_userprivategroup="$withval", ku_userprivategroup="no")
+if test "$ku_userprivategroup" = "yes"; then
+  ku_userprivategroup="true"
+else
+  ku_userprivategroup="false"
+fi
+AC_DEFINE_UNQUOTED(KU_USERPRIVATEGROUP, $ku_userprivategroup, [private groups])
+
+AC_ARG_WITH(home-perm, [  --with-home-perm        home directory permissions [default=0700] ], ku_homedir_perm="$withval", ku_homedir_perm="0700")
+AC_DEFINE_UNQUOTED(KU_HOMEDIR_PERM, $ku_homedir_perm, [home directory permissions])
+AC_SUBST(KU_HOMEDIR_PERM)
+
+AC_ARG_WITH(mailbox-perm, [  --with-mailbox-perm     mailbox permissions [default=0660] ], ku_mailbox_perm="$withval", ku_mailbox_perm="0660")
+AC_DEFINE_UNQUOTED(KU_MAILBOX_PERM, $ku_mailbox_perm, [mailbox permissions])
+AC_SUBST(KU_MAILBOX_PERM)
+
+AC_ARG_WITH(mailbox-gid, [  --with-mailbox-gid      mailbox gid [default=0] ], ku_mailbox_gid="$withval", ku_mailbox_gid="0")
+AC_DEFINE_UNQUOTED(KU_MAILBOX_GID, $ku_mailbox_gid, [mailbox gid])
+AC_SUBST(KU_MAILBOX_GID)
+
+KDE_CHECK_FUNC_EXT(fgetpwent, [#include <pwd.h>], [(void) fgetpwent(0)], [], FGETPWENT)
+KDE_CHECK_FUNC_EXT(fgetgrent, [#include <grp.h>], [(void) fgetgrent(0)], [], FGETGRENT)
+KDE_CHECK_FUNC_EXT(fgetspent, [#include <shadow.h>], [(void) fgetspent(0)], [], FGETSPENT)
+
+AC_LANG_SAVE
+dnl AC_C_BIGENDIAN has a bug (one of its tests uses "main()" instead of
+dnl "int main()") so C++ compilers would break. Thats why we switch languages
+AC_C_BIGENDIAN
+AC_LANG_RESTORE
+dnl =======================================================
+dnl FILE: ./lilo-config/configure.in.in
+dnl =======================================================
+
+KDE_FIND_PATH(lilo, LILO, [/sbin /usr/sbin /usr/local/sbin /opt/lilo],
+[
+	DO_NOT_COMPILE="$DO_NOT_COMPILE lilo-config" 
+])
+
+dnl =======================================================
+dnl FILE: ./lilo-config/qt/configure.in.in
+dnl =======================================================
+
+# There's no point in compiling the Qt-only frontend inside a KDE package...
+# Leaving it out, but there's not much of a point in removing the code (it still
+# has its uses), and it's quite short, so...
+DO_NOT_COMPILE="$DO_NOT_COMPILE qt"
+KDE_CREATE_SUBDIRSLIST
+AM_CONDITIONAL(doc_SUBDIR_included, test "x$doc_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kcron_SUBDIR_included, test "x$kcron_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kdat_SUBDIR_included, test "x$kdat_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kfile_plugins_SUBDIR_included, test "x$kfile_plugins_SUBDIR_included" = xyes)
+AM_CONDITIONAL(knetworkconf_SUBDIR_included, test "x$knetworkconf_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kpackage_SUBDIR_included, test "x$kpackage_SUBDIR_included" = xyes)
+AM_CONDITIONAL(ksysv_SUBDIR_included, test "x$ksysv_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kuser_SUBDIR_included, test "x$kuser_SUBDIR_included" = xyes)
+AM_CONDITIONAL(lilo_config_SUBDIR_included, test "x$lilo_config_SUBDIR_included" = xyes)
+AM_CONDITIONAL(secpolicy_SUBDIR_included, test "x$secpolicy_SUBDIR_included" = xyes)
+AC_CONFIG_FILES([ Makefile ])
+AC_CONFIG_FILES([ doc/Makefile ])
+AC_CONFIG_FILES([ doc/kcron/Makefile ])
+AC_CONFIG_FILES([ doc/kdat/Makefile ])
+AC_CONFIG_FILES([ doc/knetworkconf/Makefile ])
+AC_CONFIG_FILES([ doc/kpackage/Makefile ])
+AC_CONFIG_FILES([ doc/ksysv/Makefile ])
+AC_CONFIG_FILES([ doc/kuser/Makefile ])
+AC_CONFIG_FILES([ doc/lilo-config/Makefile ])
+AC_CONFIG_FILES([ kcron/Makefile ])
+AC_CONFIG_FILES([ kdat/Makefile ])
+AC_CONFIG_FILES([ kdat/pics/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/deb/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/rpm/Makefile ])
+AC_CONFIG_FILES([ knetworkconf/Makefile ])
+AC_CONFIG_FILES([ knetworkconf/backends/Makefile ])
+AC_CONFIG_FILES([ knetworkconf/knetworkconf/Makefile ])
+AC_CONFIG_FILES([ knetworkconf/pixmaps/Makefile ])
+AC_CONFIG_FILES([ kpackage/Makefile ])
+AC_CONFIG_FILES([ kpackage/icon/Makefile ])
+AC_CONFIG_FILES([ kpackage/pics/Makefile ])
+AC_CONFIG_FILES([ kpackage/toolbar/Makefile ])
+AC_CONFIG_FILES([ ksysv/Makefile ])
+AC_CONFIG_FILES([ ksysv/pics/Makefile ])
+AC_CONFIG_FILES([ ksysv/toolbar/Makefile ])
+AC_CONFIG_FILES([ kuser/Makefile ])
+AC_CONFIG_FILES([ kuser/icon/Makefile ])
+AC_CONFIG_FILES([ kuser/pic/Makefile ])
+AC_CONFIG_FILES([ kuser/toolbar/Makefile ])
+AC_CONFIG_FILES([ lilo-config/Makefile ])
+AC_CONFIG_FILES([ lilo-config/common/Makefile ])
+AC_CONFIG_FILES([ lilo-config/common/tests/Makefile ])
+AC_CONFIG_FILES([ lilo-config/kde/Makefile ])
+AC_CONFIG_FILES([ lilo-config/kde-qt-common/Makefile ])
+AC_CONFIG_FILES([ lilo-config/qt/Makefile ])
+AC_CONFIG_FILES([ secpolicy/Makefile ])
+AC_CONFIG_FILES([ knetworkconf/backends/system-tools-backends.pc ])
+AC_CONFIG_FILES([ knetworkconf/backends/network-conf ])
+AC_CONFIG_FILES([ knetworkconf/backends/debug.pl ])
+AC_CONFIG_FILES([ knetworkconf/backends/file.pl ])
+AC_CONFIG_FILES([ knetworkconf/backends/general.pl ])
+AC_CONFIG_FILES([ knetworkconf/backends/network.pl ])
+AC_CONFIG_FILES([ knetworkconf/backends/parse.pl ])
+AC_CONFIG_FILES([ knetworkconf/backends/platform.pl ])
+AC_CONFIG_FILES([ knetworkconf/backends/process.pl ])
+AC_CONFIG_FILES([ knetworkconf/backends/replace.pl ])
+AC_CONFIG_FILES([ knetworkconf/backends/report.pl ])
+AC_CONFIG_FILES([ knetworkconf/backends/service-list.pl ])
+AC_CONFIG_FILES([ knetworkconf/backends/service.pl ])
+AC_CONFIG_FILES([ knetworkconf/backends/util.pl ])
+AC_CONFIG_FILES([ knetworkconf/backends/xml.pl ])
+AC_OUTPUT
+# Check if KDE_SET_PREFIX was called, and --prefix was passed to configure
+if test -n "$kde_libs_prefix" -a -n "$given_prefix"; then
+  # And if so, warn when they don't match
+  if test "$kde_libs_prefix" != "$given_prefix"; then
+    # And if kde doesn't know about the prefix yet
+    echo ":"`kde-config --path exe`":" | grep ":$given_prefix/bin/:" 2>&1 >/dev/null
+    if test $? -ne 0; then
+      echo ""
+      echo "Warning: you chose to install this package in $given_prefix,"
+      echo "but KDE was found in $kde_libs_prefix."
+      echo "For this to work, you will need to tell KDE about the new prefix, by ensuring"
+      echo "that KDEDIRS contains it, e.g. export KDEDIRS=$given_prefix:$kde_libs_prefix"
+      echo "Then restart KDE."
+      echo ""
+    fi
+  fi
+fi
+
+if test x$GXX = "xyes" -a x$kde_have_gcc_visibility = "xyes" -a x$kde_cv_val_qt_gcc_visibility_patched = "xno"; then
+  echo ""
+  echo "Your GCC supports symbol visibility, but the patch for Qt supporting visibility"
+  echo "was not included. Therefore, GCC symbol visibility support remains disabled."
+  echo ""
+  echo "For better performance, consider including the Qt visibility supporting patch"
+  echo "located at:"
+  echo ""
+  echo "http://bugs.kde.org/show_bug.cgi?id=109386"
+  echo ""
+  echo "and recompile all of Qt and KDE. Note, this is entirely optional and"
+  echo "everything will continue to work just fine without it."
+  echo ""
+fi
+
+if test "$all_tests" = "bad"; then
+  if test ! "$cache_file" = "/dev/null"; then
+    echo ""
+    echo "Please remove the file $cache_file after changing your setup"
+    echo "so that configure will find the changes next time."
+    echo ""
+  fi
+else
+  echo ""
+  echo "Good - your configure finished. Start make now"
+  echo ""
+fi
