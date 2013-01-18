@@ -1,166 +1,164 @@
+/* config.h.  Generated from config.h.in by configure.  */
 /* config.h.in.  Generated from configure.in by autoheader.  */
 
 /* Define to 1 if you have the <Carbon/Carbon.h> header file. */
-#undef HAVE_CARBON_CARBON_H
+/* #undef HAVE_CARBON_CARBON_H */
 
 /* Define if you have the CoreAudio API */
-#undef HAVE_COREAUDIO
+/* #undef HAVE_COREAUDIO */
 
 /* Define to 1 if you have the <crt_externs.h> header file. */
-#undef HAVE_CRT_EXTERNS_H
+/* #undef HAVE_CRT_EXTERNS_H */
 
 /* Defines if your system has the crypt function */
-#undef HAVE_CRYPT
+#define HAVE_CRYPT 1
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
-#undef HAVE_DLFCN_H
+#define HAVE_DLFCN_H 1
 
 /* Define if you have DPMS support */
-#undef HAVE_DPMS
+#define HAVE_DPMS 1
 
 /* Define if you have the DPMSCapable prototype in <X11/extensions/dpms.h> */
-#undef HAVE_DPMSCAPABLE_PROTO
+#define HAVE_DPMSCAPABLE_PROTO 1
 
 /* Define if you have the DPMSInfo prototype in <X11/extensions/dpms.h> */
-#undef HAVE_DPMSINFO_PROTO
+#define HAVE_DPMSINFO_PROTO 1
 
 /* Define to 1 if you have the `gettimeofday' function. */
-#undef HAVE_GETTIMEOFDAY
+#define HAVE_GETTIMEOFDAY 1
 
 /* Defines if you have GL (Mesa, OpenGL, ...) */
-#undef HAVE_GL
+#define HAVE_GL 1
 
 /* Define to 1 if you have the <inttypes.h> header file. */
-#undef HAVE_INTTYPES_H
+#define HAVE_INTTYPES_H 1
 
 /* Defines if your system has the libart library */
-#undef HAVE_LIBART
+#define HAVE_LIBART 1
 
 /* Define if you have libjpeg */
-#undef HAVE_LIBJPEG
+#define HAVE_LIBJPEG 1
 
 /* Define if you have libpng */
-#undef HAVE_LIBPNG
+#define HAVE_LIBPNG 1
 
 /* Define if you have a working libpthread (will enable threaded code) */
-#undef HAVE_LIBPTHREAD
+#define HAVE_LIBPTHREAD 1
 
 /* Define if you have libz */
-#undef HAVE_LIBZ
+#define HAVE_LIBZ 1
 
 /* Define to 1 if you have the <memory.h> header file. */
-#undef HAVE_MEMORY_H
+#define HAVE_MEMORY_H 1
 
 /* Define if your system needs _NSGetEnviron to set up the environment */
-#undef HAVE_NSGETENVIRON
+/* #undef HAVE_NSGETENVIRON */
 
 /* Define if you have res_init */
-#undef HAVE_RES_INIT
+#define HAVE_RES_INIT 1
 
 /* Define if you have the res_init prototype */
-#undef HAVE_RES_INIT_PROTO
+#define HAVE_RES_INIT_PROTO 1
 
 /* Define if you have a STL implementation by SGI */
-#undef HAVE_SGI_STL
+#define HAVE_SGI_STL 1
 
 /* Define to 1 if you have the `snprintf' function. */
-#undef HAVE_SNPRINTF
+#define HAVE_SNPRINTF 1
 
 /* Define to 1 if you have the <stdint.h> header file. */
-#undef HAVE_STDINT_H
+#define HAVE_STDINT_H 1
 
 /* Define to 1 if you have the <stdlib.h> header file. */
-#undef HAVE_STDLIB_H
+#define HAVE_STDLIB_H 1
 
 /* Define to 1 if you have the <strings.h> header file. */
-#undef HAVE_STRINGS_H
+#define HAVE_STRINGS_H 1
 
 /* Define to 1 if you have the <string.h> header file. */
-#undef HAVE_STRING_H
+#define HAVE_STRING_H 1
 
 /* Define if you have strlcat */
-#undef HAVE_STRLCAT
+/* #undef HAVE_STRLCAT */
 
 /* Define if you have the strlcat prototype */
-#undef HAVE_STRLCAT_PROTO
+/* #undef HAVE_STRLCAT_PROTO */
 
 /* Define if you have strlcpy */
-#undef HAVE_STRLCPY
+/* #undef HAVE_STRLCPY */
 
 /* Define if you have the strlcpy prototype */
-#undef HAVE_STRLCPY_PROTO
+/* #undef HAVE_STRLCPY_PROTO */
 
 /* Define to 1 if you have the <sys/bitypes.h> header file. */
-#undef HAVE_SYS_BITYPES_H
+#define HAVE_SYS_BITYPES_H 1
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
-#undef HAVE_SYS_STAT_H
+#define HAVE_SYS_STAT_H 1
 
 /* Define to 1 if you have the <sys/types.h> header file. */
-#undef HAVE_SYS_TYPES_H
+#define HAVE_SYS_TYPES_H 1
 
 /* Define to 1 if you have the <unistd.h> header file. */
-#undef HAVE_UNISTD_H
+#define HAVE_UNISTD_H 1
 
 /* Define to 1 if you have the `vsnprintf' function. */
-#undef HAVE_VSNPRINTF
+#define HAVE_VSNPRINTF 1
 
 /* Suffix for lib directories */
-#undef KDELIBSUFF
+#define KDELIBSUFF ""
 
 /* Name of package */
-#undef PACKAGE
+#define PACKAGE "kdeartwork"
 
 /* Define to the address where bug reports for this package should be sent. */
-#undef PACKAGE_BUGREPORT
+#define PACKAGE_BUGREPORT ""
 
 /* Define to the full name of this package. */
-#undef PACKAGE_NAME
+#define PACKAGE_NAME ""
 
 /* Define to the full name and version of this package. */
-#undef PACKAGE_STRING
+#define PACKAGE_STRING ""
 
 /* Define to the one symbol short name of this package. */
-#undef PACKAGE_TARNAME
-
-/* Define to the home page for this package. */
-#undef PACKAGE_URL
+#define PACKAGE_TARNAME ""
 
 /* Define to the version of this package. */
-#undef PACKAGE_VERSION
+#define PACKAGE_VERSION ""
 
 /* The size of `char *', as computed by sizeof. */
-#undef SIZEOF_CHAR_P
+#define SIZEOF_CHAR_P 4
 
 /* The size of `int', as computed by sizeof. */
-#undef SIZEOF_INT
+#define SIZEOF_INT 4
 
 /* The size of `long', as computed by sizeof. */
-#undef SIZEOF_LONG
+#define SIZEOF_LONG 4
 
 /* The size of `short', as computed by sizeof. */
-#undef SIZEOF_SHORT
+#define SIZEOF_SHORT 2
 
 /* The size of `size_t', as computed by sizeof. */
-#undef SIZEOF_SIZE_T
+#define SIZEOF_SIZE_T 4
 
 /* The size of `unsigned long', as computed by sizeof. */
-#undef SIZEOF_UNSIGNED_LONG
+#define SIZEOF_UNSIGNED_LONG 4
 
 /* Define to 1 if you have the ANSI C header files. */
-#undef STDC_HEADERS
+#define STDC_HEADERS 1
 
 /* Version number of package */
-#undef VERSION
+#define VERSION "3.5.10"
 
 /* Defined if compiling without arts */
-#undef WITHOUT_ARTS
+#define WITHOUT_ARTS 1
 
 /* Defines where xscreensaver stores it's config files */
-#undef XSCREENSAVER_CONFIG_DIR
+#define XSCREENSAVER_CONFIG_DIR "/usr/share/xscreensaver/config"
 
 /* Defines where xscreensaver stores its graphic hacks */
-#undef XSCREENSAVER_HACKS_DIR
+#define XSCREENSAVER_HACKS_DIR "/usr/lib/misc/xscreensaver"
 
 /*
  * jpeg.h needs HAVE_BOOLEAN, when the system uses boolean in system
@@ -257,8 +255,8 @@ int snprintf(char *str, size_t n, char const *fmt, ...);
 
 
 /* type to use in place of socklen_t if not defined */
-#undef kde_socklen_t
+#define kde_socklen_t socklen_t
 
 /* type to use in place of socklen_t if not defined (deprecated, use
    kde_socklen_t) */
-#undef ksize_t
+#define ksize_t socklen_t

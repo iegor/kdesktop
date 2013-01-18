@@ -3081,6 +3081,13 @@ else
 fi
 ])
 
+AC_DEFUN([GENTOO_DUMMY_CFLAGS],
+[
+  dnl this prevents stupid AC_PROG_CC to add "-g" to the default CFLAGS
+  CFLAGS=" $CFLAGS"
+])
+AC_BEFORE([GENTOO_DUMMY_CFLAGS],[AC_PROG_CC])
+
 AC_DEFUN_ONCE([AC_CHECK_COMPILERS],
 [
   AC_ARG_ENABLE(debug,
@@ -3141,9 +3148,7 @@ AC_DEFUN_ONCE([AC_CHECK_COMPILERS],
     [kde_use_profiling="no"]
   )
 
-  dnl this prevents stupid AC_PROG_CC to add "-g" to the default CFLAGS
-  CFLAGS=" $CFLAGS"
-
+  AC_REQUIRE([GENTOO_DUMMY_CFLAGS])
   AC_REQUIRE([AC_PROG_CC])
 
   AC_REQUIRE([AC_PROG_CPP])
@@ -4581,7 +4586,7 @@ fi
 
 PYTHONINC=-I$python_incdir
 
-python_libdirs="$ac_python_dir/lib$kdelibsuff /usr/lib$kdelibsuff /usr/local /usr/lib$kdelibsuff $kde_extra_libs"
+python_libdirs="$ac_python_dir/lib$kdelibsuff /usr/lib$kdelibsuff /usr/lib /usr/local /usr/lib$kdelibsuff $kde_extra_libs"
 AC_FIND_FILE(libpython$version.so, $python_libdirs, python_libdir)
 if test ! -r $python_libdir/libpython$version.so; then
   AC_FIND_FILE(libpython$version.a, $python_libdirs, python_libdir)
@@ -4649,18 +4654,22 @@ fi
 
 AC_DEFUN([KDE_CHECK_PYTHON],
 [
-  KDE_CHECK_PYTHON_INTERN("2.5",
-    [KDE_CHECK_PYTHON_INTERN("2.4",
-     [KDE_CHECK_PYTHON_INTERN("2.3", 
-       [KDE_CHECK_PYTHON_INTERN("2.2", 
-         [KDE_CHECK_PYTHON_INTERN("2.1", 
-           [KDE_CHECK_PYTHON_INTERN("2.0", 
-             [KDE_CHECK_PYTHON_INTERN($1, $2) ])
-           ])
-         ])
-       ])
-     ])
-  ])
+	KDE_CHECK_PYTHON_INTERN("2.7",
+		[KDE_CHECK_PYTHON_INTERN("2.6",
+			[KDE_CHECK_PYTHON_INTERN("2.5",
+				[KDE_CHECK_PYTHON_INTERN("2.4",
+					[KDE_CHECK_PYTHON_INTERN("2.3", 
+						[KDE_CHECK_PYTHON_INTERN("2.2", 
+							[KDE_CHECK_PYTHON_INTERN("2.1", 
+								[KDE_CHECK_PYTHON_INTERN("2.0", 
+									[KDE_CHECK_PYTHON_INTERN($1, $2) ])
+								])
+							])
+						])
+					])
+				])
+			])
+		])
 ])
 
 AC_DEFUN([KDE_CHECK_STL],
@@ -6021,7 +6030,6 @@ AC_DEFUN([KDE_CHECK_PIE_SUPPORT],
 
 # 47 serial AC_PROG_LIBTOOL
 
-
 # AC_PROVIDE_IFELSE(MACRO-NAME, IF-PROVIDED, IF-NOT-PROVIDED)
 # -----------------------------------------------------------
 # If this macro is not defined by Autoconf, define it here.
@@ -6030,7 +6038,6 @@ m4_ifdef([AC_PROVIDE_IFELSE],
          [m4_define([AC_PROVIDE_IFELSE],
 	         [m4_ifdef([AC_PROVIDE_$1],
 		           [$2], [$3])])])
-
 
 # AC_PROG_LIBTOOL
 # ---------------

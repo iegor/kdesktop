@@ -95,7 +95,7 @@ picsdir = $(kde_datadir)/kscreensaver
 desktop_DATA = KBanner.desktop KPolygon.desktop \
                KSlideshow.desktop KLines-saver.desktop KLorenz.desktop \
                KBlob.desktop KVm.desktop \
-               KClock.desktop $(X11_DESKTOP_FILES) $(GL_DESKTOP_FILES) $(LIBART_DESKTOP_FILES) $(ARTS_GL_DESKTOP_FILES)
+               $(X11_DESKTOP_FILES) $(GL_DESKTOP_FILES) $(LIBART_DESKTOP_FILES) $(ARTS_GL_DESKTOP_FILES)
 
 desktopdir = $(kde_appsdir)/System/ScreenSavers
 
