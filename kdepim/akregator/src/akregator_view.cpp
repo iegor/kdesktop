@@ -298,6 +298,8 @@ View::View( Part *part, QWidget *parent, ActionManagerImpl* actionManager, const
     connect( m_articleList, SIGNAL(signalDoubleClicked(const Article&, const QPoint&, int)),
                 this, SLOT( slotOpenArticleExternal(const Article&, const QPoint&, int)) );
 
+    connect( m_part, SIGNAL(signalSettingsChanged()), m_articleList, SLOT(slotPaletteOrFontChanged()));
+
     m_articleViewer = new ArticleViewer(m_articleSplitter, "article_viewer");
     m_articleViewer->setSafeMode();  // disable JS, Java, etc...
 

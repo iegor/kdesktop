@@ -67,7 +67,7 @@ struct Article::Private : public Shared
     // to read their values, you should therefore use the accessor methods of the Article
     // hash(), pubDate(), statusBits() rather than accessing them directly.
     uint hash;
-    QDateTime pubDate;  
+    QDateTime pubDate;
     int status;
 };
 
@@ -101,7 +101,7 @@ void Article::initialize(RSS::Article article, Backend::FeedStorage* archive)
                               + article.commentsLink().url() );
 
     d->guid = article.guid();
-    
+
     if (!d->archive->contains(d->guid))
     {
         d->archive->addEntry(d->guid);
@@ -113,7 +113,6 @@ void Article::initialize(RSS::Article article, Backend::FeedStorage* archive)
         }
         else
         { // article is not deleted, let's add it to the archive
-        
             d->archive->setHash(d->guid, hash() );
             QString title = article.title().isEmpty() ? buildTitle(article.description()) :  article.title();
             d->archive->setTitle(d->guid, title);
@@ -126,7 +125,7 @@ void Article::initialize(RSS::Article article, Backend::FeedStorage* archive)
             d->pubDate = article.pubDate().isValid() ? article.pubDate() : QDateTime::currentDateTime();
             d->archive->setPubDate(d->guid, d->pubDate.toTime_t());
             d->archive->setAuthor(d->guid, article.author());
-                        
+
             QValueList<RSS::Category> cats = article.categories();
             QValueList<RSS::Category>::ConstIterator end = cats.end();
 

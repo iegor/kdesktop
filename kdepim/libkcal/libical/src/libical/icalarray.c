@@ -2,8 +2,7 @@
   ======================================================================
   FILE: icalarray.c
   CREATOR: Damon Chaplin 07 March 2001
-  
-    
+
  (C) COPYRIGHT 2001, Ximian, Inc.
 
  This program is free software; you can redistribute it and/or modify
@@ -16,8 +15,6 @@
 
     The Mozilla Public License Version 1.0. You may obtain a copy of
     the License at http://www.mozilla.org/MPL/
-
-
  ======================================================================*/
 
 /** @file icalarray.c
@@ -36,23 +33,20 @@
 #include "icalarray.h"
 #include "icalerror.h"
 
-
-static void icalarray_expand		(icalarray	*array,
-					 int		 space_needed);
+static void icalarray_expand(icalarray *array, int space_needed);
 
 /** @brief Constructor
  */
 
-icalarray*
-icalarray_new			(int		 element_size,
-				 int		 increment_size)
+icalarray* icalarray_new(int element_size, int increment_size)
 {
     icalarray *array;
 
     array = (icalarray*) malloc (sizeof (icalarray));
-    if (!array) {
-	icalerror_set_errno(ICAL_NEWFAILED_ERROR);
-	return NULL;
+    if (!array)
+    {
+        icalerror_set_errno(ICAL_NEWFAILED_ERROR);
+        return NULL;
     }
 
     array->element_size = element_size;
@@ -67,31 +61,23 @@ icalarray_new			(int		 element_size,
 /** @brief Destructor
  */
 
-void
-icalarray_free			(icalarray	*array)
+void icalarray_free(icalarray *array)
 {
     if (array->data)
-	free (array->data);
+        free (array->data);
     free (array);
 }
 
-
-void
-icalarray_append		(icalarray	*array,
-				 const void		*element)
+void icalarray_append(icalarray *array, const void *element)
 {
     if (array->num_elements >= array->space_allocated)
-	icalarray_expand (array, 1);
+        icalarray_expand (array, 1);
 
-    memcpy ((char *)(array->data) + ( array->num_elements * array->element_size ), element,
-	    array->element_size);
+    memcpy ((char *)(array->data) + ( array->num_elements * array->element_size ), element, array->element_size);
     array->num_elements++;
 }
 
-
-void*
-icalarray_element_at		(icalarray	*array,
-				 int		 position)
+void* icalarray_element_at(icalarray *array, int position)
 {
     assert (position >= 0);
     assert ((unsigned int)position < array->num_elements);
@@ -99,10 +85,7 @@ icalarray_element_at		(icalarray	*array,
     return (char *)(array->data) + (position * array->element_size);
 }
 
-
-void
-icalarray_remove_element_at	(icalarray	*array,
-				 int		 position)
+void icalarray_remove_element_at(icalarray *array, int position)
 {
     void *dest;
     int elements_to_move;
@@ -114,25 +97,17 @@ icalarray_remove_element_at	(icalarray	*array,
     elements_to_move = array->num_elements - position - 1;
 
     if (elements_to_move > 0)
-	memmove (dest, (char *)dest + array->element_size,
-		 elements_to_move * array->element_size);
+        memmove (dest, (char*)dest + array->element_size, elements_to_move * array->element_size);
 
     array->num_elements--;
 }
 
-
-void
-icalarray_sort			(icalarray	*array,
-				 int	       (*compare) (const void *,
-							   const void *))
+void icalarray_sort(icalarray *array, int (*compare)(const void*, const void*))
 {
     qsort (array->data, array->num_elements, array->element_size, compare);
 }
 
-
-static void
-icalarray_expand		(icalarray	*array,
-				 int		 space_needed)
+static void icalarray_expand(icalarray *array, int space_needed)
 {
     int new_space_allocated;
     void *new_data;
@@ -140,22 +115,20 @@ icalarray_expand		(icalarray	*array,
     new_space_allocated = array->space_allocated + array->increment_size;
 
     if ((unsigned int)space_needed > array->increment_size)
-	new_space_allocated += space_needed;
+        new_space_allocated += space_needed;
 
-	/*
+    /*
     new_data = realloc (array->data,
-			new_space_allocated * array->element_size);
-	*/
-	new_data = malloc(new_space_allocated * array->element_size);
+    new_space_allocated * array->element_size);
+    */
+    new_data = malloc(new_space_allocated * array->element_size);
 
     if (new_data) {
-	memcpy(new_data,array->data,array->element_size*array->space_allocated);
-	free(array->data);
-	array->data = new_data;
-	array->space_allocated = new_space_allocated;
+        memcpy(new_data, array->data, array->element_size*array->space_allocated);
+        free(array->data);
+        array->data = new_data;
+        array->space_allocated = new_space_allocated;
     } else {
-	icalerror_set_errno(ICAL_ALLOCATION_ERROR);
+        icalerror_set_errno(ICAL_ALLOCATION_ERROR);
     }
 }
-
-

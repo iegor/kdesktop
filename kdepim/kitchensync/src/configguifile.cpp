@@ -55,13 +55,20 @@ void ConfigGuiFile::load( const QString &xml )
   QDomDocument doc;
   doc.setContent( xml );
   QDomElement docElement = doc.documentElement();
-  QDomNode n;
-  for( n = docElement.firstChild(); !n.isNull(); n = n.nextSibling() ) {
-    QDomElement e = n.toElement();
-    if ( e.tagName() == "path" ) {
-      mFilename->setURL( e.text() );
-    } else if ( e.tagName() == "recursive" ) {
-      mRecursive->setChecked( e.text() == "TRUE" );
+
+  QDomNode node;
+  for ( node = docElement.firstChild(); !node.isNull(); node = node.nextSibling() ) {
+    QDomElement e = node.toElement();
+    if ( e.tagName() == "directory" ) {
+      QDomNode subNode;
+      for ( subNode = e.firstChild(); !subNode.isNull(); subNode = subNode.nextSibling() ) {
+        QDomElement subElement = subNode.toElement();
+        if ( subElement.tagName() == "path" ) {
+          mFilename->setURL( subElement.text() );
+        } else if ( subElement.tagName() == "recursive" ) {
+          mRecursive->setChecked( subElement.text() == "TRUE" );
+        }
+      }
     }
   }
 }
@@ -69,13 +76,18 @@ void ConfigGuiFile::load( const QString &xml )
 QString ConfigGuiFile::save() const
 {
   QString xml;
-  xml = "<config>";
-  xml += "<path>" + mFilename->url() + "</path>";
-  xml += "<recursive>";
-  if ( mRecursive->isChecked() ) xml += "TRUE";
-  else xml += "FALSE";
-  xml += "</recursive>";
-  xml += "</config>";
+  xml = "<config>\n";
+  xml += "  <directory>\n";
+  xml += "    <path>" + mFilename->url() + "</path>\n";
+  xml += "    <objtype>data</objtype>\n";
+  xml += "    <recursive>";
+  if ( mRecursive->isChecked() )
+    xml += "TRUE";
+  else
+    xml += "FALSE";
+  xml += "</recursive>\n";
+  xml += "  </directory>\n";
+  xml += "</config>\n";
 
   return xml;
 }

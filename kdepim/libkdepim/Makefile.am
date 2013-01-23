@@ -48,7 +48,7 @@ libkdepim_la_LIBADD  = $(top_builddir)/libkcal/libkcal.la \
                        $(LIB_KIO) $(LIB_KABC) $(LIB_KPARTS) $(LIB_KIMPROXY) $(LIB_POLL) -lqui
 #               $top_builddir)/libkdepim/resources/libkpimresources.la
 
-include_HEADERS = kdepimmacros.h
+include_HEADERS = kdepimmacros.h kpimprefs.h
 
 AM_CXXFLAGS = -DQT_PLUGIN
 kde_widget_LTLIBRARIES = kdepimwidgets.la

@@ -318,19 +318,18 @@ char* icalparser_get_next_value(char* line, char **end, icalvalue_kind kind)
 	/* ignore all , for query value. select dtstart, dtend etc ... */
 	else if( kind == ICAL_QUERY_VALUE) {
 	    if ( next != 0) {
-		p = next+1;
-		continue;
+	        p = next+1;
+	        continue;
 	    }
 	    else
-		break;
+		    break;
 	}
 
 	/* If the comma is preceded by a '\', then it is a literal and
-	   not a value separator*/  
-      
+	   not a value separator*/
+
 	if ( (next!=0 && *(next-1) == '\\') ||
-	     (next!=0 && *(next-3) == '\\')
-	    ) 
+	     (next!=0 && *(next-3) == '\\') )
 	    /*second clause for '/' is on prev line. HACK may be out of bounds */
 	{
 	    p = next+1;

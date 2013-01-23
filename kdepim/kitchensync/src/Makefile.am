@@ -24,7 +24,7 @@ libkitchensync_la_SOURCES = aboutpage.cpp mainwidget.cpp groupconfigdialog.cpp \
                             pluginpicker.cpp configgui.cpp configguiblank.cpp configguifile.cpp \
                             memberinfo.cpp groupconfigcommon.cpp kwidgetlist.cpp \
                             configguipalm.cpp conflictdialog.cpp singleconflictdialog.cpp \
-                            addresseediffalgo.cpp calendardiffalgo.cpp \
+                            addresseediffalgo.cpp calendardiffalgo.cpp xmldiffalgo.cpp \
                             htmldiffalgodisplay.cpp genericdiffalgo.cpp multiconflictdialog.cpp \
                             configguiirmc.cpp \
                             configguisyncmlobex.cpp configguisyncmlhttp.cpp configguiopie.cpp  \

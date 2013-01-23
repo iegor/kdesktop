@@ -24,13 +24,13 @@
 
 #include <qstringlist.h>
 
-class OSyncEnv;
+class OSyncGroupEnv;
 
 namespace QSync {
 
 class Conversion
 {
-  friend class Environment;
+  friend class PluginEnv;
 
   public:
     Conversion();
@@ -47,7 +47,7 @@ class Conversion
     QStringList objectTypes() const;
 
   private:
-    OSyncEnv *mEnvironment;
+    OSyncGroupEnv *mGroupEnv;
 };
 
 }

@@ -88,8 +88,7 @@ char* sspm_strdup(const char* str){
     return s;
 }
 
-
-static struct  major_content_type_map 
+static struct  major_content_type_map
 {
     enum sspm_major_type type;
     const char* str;
@@ -108,12 +107,12 @@ static struct  major_content_type_map
     {SSPM_UNKNOWN_MAJOR_TYPE,"" },
 };
 
-static struct  minor_content_type_map 
+static struct  minor_content_type_map
 {
     enum sspm_minor_type type;
     const char* str;
 
-} minor_content_type_map[]  = 
+} minor_content_type_map[]  =
 {
     {SSPM_ANY_MINOR_TYPE,"*" },
     {SSPM_PLAIN_MINOR_TYPE,"plain" },
@@ -127,12 +126,10 @@ static struct  minor_content_type_map
     {SSPM_UNKNOWN_MINOR_TYPE,"" } 
 };
 
-
-
 struct encoding_map {
     enum sspm_encoding encoding;
     const char* str;
-} sspm_encoding_map[] = 
+} sspm_encoding_map[] =
 {
     {SSPM_NO_ENCODING,""},
     {SSPM_QUOTED_PRINTABLE_ENCODING,"quoted-printable"},
@@ -144,17 +141,16 @@ struct encoding_map {
 
 };
 
-
 char* sspm_get_parameter(const char* line, const char* parameter)
 {
     char *p,*s,*q;
     static char name[1024];
-    
+
     /* Find where the parameter name is in the line */
     p = strstr(line,parameter);
 
     if( p == 0){
-	return 0;
+        return 0;
     }
 
     /* skip over the parameter name, the '=' and any blank spaces */
@@ -162,7 +158,7 @@ char* sspm_get_parameter(const char* line, const char* parameter)
     p+=strlen(parameter);
 
     while(*p==' ' || *p == '='){
-	p++;
+        p++;
     }
 
     /*now find the next semicolon*/
@@ -173,13 +169,13 @@ char* sspm_get_parameter(const char* line, const char* parameter)
     q = strchr(p,'\"');
 
     if(q !=0){
-	p = q+1;
+        p = q+1;
     }
 
     if(s != 0){
-	strncpy(name,p,(size_t)s-(size_t)p);
+        strncpy(name,p,(size_t)s-(size_t)p);
     } else {
-	strcpy(name,p);
+        strcpy(name,p);
     }
 
     /* Strip off trailing quote, if it exists */
@@ -187,9 +183,9 @@ char* sspm_get_parameter(const char* line, const char* parameter)
     q = strrchr(name,'\"');
 
     if (q != 0){
-	*q='\0';
+        *q='\0';
     }
-    
+
     return name;
 }
 
@@ -225,19 +221,18 @@ char* sspm_value(char* line)
     c++;
 
     if (s == 0){
-	s = c+strlen(line);
+        s = c+strlen(line);
     }
 
     for(p=value; c != s; c++){
-	if(*c!=' ' && *c!='\n'){
-	    *(p++) = *c;
-	}
+    if(*c!=' ' && *c!='\n'){
+        *(p++) = *c;
+    }
     }
 
     *p='\0';
 
     return value;
-
 }
 
 static const char *mime_headers[] = {
@@ -505,13 +500,14 @@ const char* sspm_major_type_string(enum sspm_major_type type)
 const char* sspm_minor_type_string(enum sspm_minor_type type)
 {
     int i;
-    for (i=0; minor_content_type_map[i].type !=  SSPM_UNKNOWN_MINOR_TYPE; 
-	 i++){
-	if(type == minor_content_type_map[i].type){
-	    return minor_content_type_map[i].str;
-	}
+    for (i=0; minor_content_type_map[i].type !=  SSPM_UNKNOWN_MINOR_TYPE; i++)
+    {
+        if(type == minor_content_type_map[i].type)
+        {
+            return minor_content_type_map[i].str;
+        }
     }
-    
+
     return minor_content_type_map[i].str; /* Should return SSPM_UNKNOWN_MINOR_TYPE */
 }
 
@@ -519,13 +515,14 @@ const char* sspm_minor_type_string(enum sspm_minor_type type)
 const char* sspm_encoding_string(enum sspm_encoding type)
 {
     int i;
-    for (i=0; sspm_encoding_map[i].encoding !=  SSPM_UNKNOWN_ENCODING; 
-	 i++){
-	if(type == sspm_encoding_map[i].encoding){
-	    return sspm_encoding_map[i].str;
-	}
+    for (i=0; sspm_encoding_map[i].encoding !=  SSPM_UNKNOWN_ENCODING; i++)
+    {
+        if(type == sspm_encoding_map[i].encoding)
+        {
+            return sspm_encoding_map[i].str;
+        }
     }
-    
+
     return sspm_encoding_map[i].str; /* Should return SSPM_UNKNOWN_MINOR_TYPE */
 }
 
@@ -1237,13 +1234,11 @@ char *decode_base64(char *dest,
     return(dest);
 }
 
-
 /***********************************************************************
 								       
  Routines to output MIME
 
 **********************************************************************/
-
 
 struct sspm_buffer {
 	char* buffer;
@@ -1420,7 +1415,7 @@ void sspm_write_base64(struct sspm_buffer *buf, char* inbuf,int size )
 	}
     }
 }
-             
+
 void sspm_encode_base64(struct sspm_buffer *buf, char* data, size_t size)
 {
     char *p;
@@ -1456,12 +1451,11 @@ void sspm_encode_base64(struct sspm_buffer *buf, char* data, size_t size)
 
     }
 
-    
     /* If the inbuf was not exactly filled on the last byte, we need
        to spit out the odd bytes that did get in -- either one or
        two. This will result in an output of two bytes and '==' or
        three bytes and '=', respectively */
-    
+
     if (i%3 == 1 && first == 0){
 	    sspm_write_base64(buf, inbuf, 2);
     } else if (i%3 == 2 && first == 0){
@@ -1472,40 +1466,40 @@ void sspm_encode_base64(struct sspm_buffer *buf, char* data, size_t size)
 
 void sspm_write_header(struct sspm_buffer *buf,struct sspm_header *header)
 {
-    
     int i;
-    char temp[TMP_BUF_SIZE];			       
+    char temp[TMP_BUF_SIZE];
     const char* major; 
     const char* minor; 
-    
+
     /* Content-type */
 
     major = sspm_major_type_string(header->major);
     minor = sspm_minor_type_string(header->minor);
 
-    if(header->minor == SSPM_UNKNOWN_MINOR_TYPE ){
-	assert(header->minor_text !=0);
-	minor = header->minor_text;
+    if(header->minor == SSPM_UNKNOWN_MINOR_TYPE )
+    {
+        assert(header->minor_text !=0);
+        minor = header->minor_text;
     }
-    
+
     snprintf(temp,sizeof(temp),"Content-Type: %s/%s",major,minor);
 
     sspm_append_string(buf,temp);
 
     if(header->boundary != 0){
-	snprintf(temp,sizeof(temp),";boundary=\"%s\"",header->boundary);
-	sspm_append_string(buf,temp);
+        snprintf(temp,sizeof(temp),";boundary=\"%s\"",header->boundary);
+        sspm_append_string(buf,temp);
     }
-    
+
     /* Append any content type parameters */    
     if(header->content_type_params != 0){
-	for(i=0; *(header->content_type_params[i])!= 0;i++){
-	    strncpy(temp,header->content_type_params[i],sizeof(temp));
-	    sspm_append_char(buf,';');
-	    sspm_append_string(buf,temp);
-	}
+    for(i=0; *(header->content_type_params[i])!= 0;i++){
+        strncpy(temp,header->content_type_params[i],sizeof(temp));
+        sspm_append_char(buf,';');
+        sspm_append_string(buf,temp);
     }
-    
+    }
+
     sspm_append_char(buf,'\n');
 
     /*Content-Transfer-Encoding */

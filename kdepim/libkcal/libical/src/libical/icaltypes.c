@@ -84,7 +84,6 @@ struct icaltriggertype icaltriggertype_from_string(const char* str)
 
     null_tr = tr;
 
-
     /* Suppress errors so a failure in icaltime_from_string() does not cause an abort */
     es = icalerror_get_error_state(ICAL_MALFORMEDDATA_ERROR);
     if(str == 0) goto error;
@@ -94,10 +93,9 @@ struct icaltriggertype icaltriggertype_from_string(const char* str)
 
     tr.time = icaltime_from_string(str);
 
-    if (icaltime_is_null_time(tr.time)){
-
-	tr.duration = icaldurationtype_from_string(str);
-
+    if (icaltime_is_null_time(tr.time))
+    {
+        tr.duration = icaldurationtype_from_string(str);
         if (icaldurationtype_is_bad_duration(tr.duration)) goto error;
     } 
 

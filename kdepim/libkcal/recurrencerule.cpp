@@ -1098,7 +1098,6 @@ QDateTime RecurrenceRule::getPreviousDate( const QDateTime& afterDate ) const
   return QDateTime();
 }
 
-
 QDateTime RecurrenceRule::getNextDate( const QDateTime &preDate ) const
 {
 // kdDebug(5800) << "         RecurrenceRule::getNextDate: " << preDate << endl;
