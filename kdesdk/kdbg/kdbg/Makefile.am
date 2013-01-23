@@ -6,7 +6,7 @@ SUBDIRS = doc pics typetables testprogs
 
 ####### This part is very kdbg specific
 # you can add here more. This one gets installed 
-bin_PROGRAMS = 	kdbg
+bin_PROGRAMS = kdbg
 
 # Which sources should be compiled for kdbg.
 kdbg_SOURCES = \

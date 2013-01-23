@@ -98,7 +98,7 @@ public:
      * Does the file name match this library?
      */
     bool matchFileName(const QString& fileName) const {
-	return m_shlibNameRE.match(fileName) >= 0;
+	    return m_shlibNameRE.exactMatch(fileName);
     }
 
     /**
