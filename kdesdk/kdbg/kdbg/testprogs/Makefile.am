@@ -7,7 +7,7 @@ INCLUDES = $(all_includes)
 # always compile with debugging info switched on
 # Disable optimization to ensure that variables are not hidden by the
 # compiler
-AM_CXXFLAGS = -g $(patsubst -O%,,$(CXXFLAGS))
+AM_CXXFLAGS = -g $(patsubst -O%,,$CXXFLAGS)
 
 if BUILDTESTPROGS
 PROGS = \

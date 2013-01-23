@@ -28,14 +28,42 @@ PICTOGRAMS = \
 	watchdis.xpm \
 	pointer.xpm
 
-
 pics_DATA = $(PICTOGRAMS)
 picsdir = $(kde_datadir)/kdbg/pics
 
 # application icon
 KDE_ICON = kdbg
 
-animation = $(shell cd "$(srcdir)" && echo hi22-action-pulse0000*.png)
+animation = \
+	hi22-action-pulse000000.png \
+	hi22-action-pulse000001.png \
+	hi22-action-pulse000002.png \
+	hi22-action-pulse000003.png \
+	hi22-action-pulse000004.png \
+	hi22-action-pulse000005.png \
+	hi22-action-pulse000006.png \
+	hi22-action-pulse000007.png \
+	hi22-action-pulse000008.png \
+	hi22-action-pulse000009.png \
+	hi22-action-pulse000010.png \
+	hi22-action-pulse000011.png \
+	hi22-action-pulse000012.png \
+	hi22-action-pulse000013.png \
+	hi22-action-pulse000014.png \
+	hi22-action-pulse000015.png \
+	hi22-action-pulse000016.png \
+	hi22-action-pulse000017.png \
+	hi22-action-pulse000018.png \
+	hi22-action-pulse000019.png \
+	hi22-action-pulse000020.png \
+	hi22-action-pulse000021.png \
+	hi22-action-pulse000022.png \
+	hi22-action-pulse000023.png \
+	hi22-action-pulse000024.png \
+	hi22-action-pulse000025.png \
+	hi22-action-pulse000026.png \
+	hi22-action-pulse000027.png \
+	hi22-action-pulse000028.png
 
 # this requires ImageMagick
 hi22-action-pulse.png: hi22-action-pulse.pngseq
