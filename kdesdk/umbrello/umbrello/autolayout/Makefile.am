@@ -14,7 +14,7 @@ libautolayout_la_SOURCES = newautolayoutdialog.ui autolayoutdlg.cpp \
 	graphvizgraph.cpp graphviznode.cpp dotautolayouter.cpp neatoautolayouter.cpp \
 	circoautolayouter.cpp
 
+DISTCLEANFILES = neatoautolayouter.cpp circoautolayouter.cpp
+
 #libautolayout_la_LIBADD = /usr/lib/graphviz/libdotneato.la
 #libautolayout_la_LDFLAGS = -ldotneato -L/usr/lib/graphviz
-
-
