@@ -15,6 +15,8 @@ konqsidebar_delicious_la_SOURCES = plugin.cpp widget.ui mainWidget.cpp plugin.sk
 konqsidebar_delicious_la_LDFLAGS = -module $(KDE_PLUGIN) $(all_libraries)
 konqsidebar_delicious_la_LIBADD  = $(LIB_KPARTS) $(LIB_KIO) -lkonqsidebarplugin
 
+konqsidebar_delicious_la_COMPILE_FIRST = widget.h
+
 globaladddir   = $(kde_datadir)/konqsidebartng/add
 globaladd_DATA = delicious_add.desktop
 
