@@ -1,0 +1,134 @@
+This file is roughly based on your systems errno.h.
+Many perl errors can be exported as errors defined in errno.h by doing the
+ following:
+use Errno qw(EINTR EIO :POSIX);
+or simply use Errno.
+
+The semantics of this file are as follows:
+ A numerical error code followed by a human readable upper case short definition, which is followed by an 
+explanation of the actual error code. 
+We assume, that the interpreter you use returns an
+error code of 1 upon failing to execute your script and an error code of 0 if
+the execution is successful. This does NOT include any data passed from 
+the script or any errors which might occur during runtime, it is simply a 
+way for us to determine wheter your script started at all and if any more 
+output should be expected.
+Some of the errors described below can be categorized, those categories range
+from warning over critical to fatal.
+An error which would terminate your script and therefore close the running
+process, would be considered as fatal. 
+An error which would prevent your script from sending valid output, yet 
+not terminate its process would be considered as critical. Any other 
+error is considered as warning. A warning is always
+OPTIONAL, critical errors and fatal errors MUST be implemented
+
+Depending on which script language or programming language you use it is
+up to you, to determine wheter an error is fatal, critical or just a warning,
+some suggestions have been made in the list below.
+Generic and system error section:
+0       NOERR           No error has been detected
+1       EPERM           The operation is not permitted by the executing program.
+                                Which means, that some fatal error occurred and
+                                your script could not even be started.
+2       ENOENT          A file or directory your script wanted to read or write
+                                could not be found and the scripts operation was
+                                hampered by that.
+5       EIO                     There has been an error while your script
+                                attempted to read or write data
+7       E2BIG                 If your scripts accepts arguments at the command
+                                line, this error means, that too many arguments
+                                were entered. This error code is not in 
+				effect yet.
+8       ENOEXEC         If your script relies on system level programs and that
+                                        program could not be executed, use this
+                                        error code to report that to
+                                        knewsticker. This is an informational
+                                        error code and not necessarily a fatal
+                                        one
+13      EACCESS            permission to a resource or file has been denied to
+                                        your script, which does not allow it to
+                                        properly function, this error is fatal
+                                        and should be followed at once by
+                                        and exit code of 1
+19      ENODEV               A device you are trying to write to is not
+                                        available, as above this error code is
+                                        fatal, it should be followed by an exit
+                                        code of 1 to terminate your scripts
+                                        operation.
+28      ENOSPC              There is no more space left on the device you are
+                                        trying to write a temporary file to.
+30      EROFS                 You are trying to write a temporary file to an
+                                        read only file system
+38      ENOSYS               Your script tried to call a function which was not
+                                        implemented or it is trying to access an
+                                        external resource which does not exist.
+                                        You can also use this error code when
+                                        you are writing a perl script and the
+                                        modules functions you are trying to
+                                        access is not present.
+61      ENODATA             Your script has not been able to retrieve any data.
+                                        Thus no XML can be returned. This error
+                                        is critical, yet not necessarily fatal.
+---------------------------------------------------------
+Network related errors.
+64      ENONET               The machine you are using is not connected to a
+                                        network. This error is fatal
+71      EPROTO              Your script tried to access a protocol which is not
+                                        implemented. This would mean, that you
+                                        are trying to use SNMP on a system that
+                                        does not understand it
+89       EDESTADDRREQ  Your script requires for the user to enter a destination
+                                                address to retrieve data from.
+                                                This error is used when that has
+                                                not been done. It is
+                                                informational yet fatal
+                                                to the script
+94      ESOCKTNOSUPPORT Your script is trying to use a socket type not supported
+                                                        by the system, for
+                                                        example trying to open a
+                                                        unix socket of a
+                                                        system where this is not
+                                                        supported
+101 ENETUNREACH                 The network you are trying to access is
+                                          unreachable
+102 ENETRESET           The network you were trying to access dropped the
+                                            connection with a reset
+104 ECONNRESET          The connection you had has been reset by your peer
+110 ETIMEDOUT           The connection you were trying to establish timed out
+111 ECONNREFUSED  The connection you were trying to established has been refused
+112 EHOSTDOWN           The host you are trying to reach is down
+113 EHOSTUNREACH      The host you are trying to reach is unreachable, no route
+                                                to host
+Please NOTE that above error codes ONLY correspond to the error numbers defined
+on Linux i386 machines if you wish to use the Perl method mentioned.
+The error codes which are mentioned above are _reserved_ for newsticker internal
+use and have not necessarily anything to do with the error codes returned by
+your system.
+
+----------------
+Since we are possibly dealing often with HTTP error codes this is a specialized
+section you may use to return errors based on that protocol.
+These error codes correspond to the actual HTTP error codes, thus enabling 
+you to handle them easier when passing them on to Knewsticker.
+Client errors:
+400 EBADREQ             Bad Request. Your script sent a bad request, not
+                                        understood by the server, which is
+                                        reporting this back to you.
+401 ENOAUTH             No authorization has been issued for an area that needs
+                                        some form of authorization before it can
+                                        be accessed
+402 EMUSTPAY            You cannot access the data without paying for it, this
+                                        is not a bogus error, it is defined as
+                                        such in the http protocol
+403 EFORBIDDEN          You are forbidden to access the source you requested
+404 ENOTFOUND           The data you tried to access could not be found.
+408 ETIMEOUT                Your HTTP request timed out, this is an error which
+                                        reflects timeouts for the HTTP protocol
+                                        ONLY. Generic time outs are handled in
+                                        the above paragraph
+Server errors:
+500 ESERVERE            A server error has been encountered.
+505 EHTTPNOSUP      The HTTP protocol version you attempted to use was not
+                                        understood by the http server or source
+                                        you were trying to access
+-------------------
