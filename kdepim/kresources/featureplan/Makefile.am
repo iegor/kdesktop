@@ -42,8 +42,8 @@ kde-features.cpp: kde-features.h
 kde-features_parser.h kde-features_parser.cpp: kde-features.h
 
 kde-features.h kde-features.cpp kde-features_parser.h kde-features_parser.cpp: $(srcdir)/kde-features.rng
-${KDEDIR}/bin/kxml_compiler \
-          --custom-parser $(srcdir)/kde-features.rng
+	${KDEDIR}/bin/kxml_compiler \
+	--custom-parser $(srcdir)/kde-features.rng
 
 METASOURCES = AUTO
 DISTCLEANFILES = kde-features.h kde-features.cpp \
