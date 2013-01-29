@@ -1,6 +1,6 @@
 ## kdebase/Makefile.am
 ## (C) 1997 Stephan Kulow
 
-SUBDIRS = src profiles
+SUBDIRS = src profiles pixmaps
 
 include $(top_srcdir)/admin/Doxyfile.am
