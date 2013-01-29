@@ -54,7 +54,7 @@ void KOIncidenceToolTip::maybeTip(const QPoint & pos)
   KOAgendaItem *item = dynamic_cast<KOAgendaItem*>( parentWidget() );
   if ( !item )
     return;
-  if ( mText.isEmpty() )
+  if ( !mText )
     mText = IncidenceFormatter::toolTipString( item->incidence() );
   tip( QRect( QPoint( 0, 0 ), item->size() ), mText );
 }
