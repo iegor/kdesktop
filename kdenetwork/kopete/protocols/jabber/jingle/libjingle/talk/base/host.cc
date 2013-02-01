@@ -29,7 +29,8 @@
 #include "talk/base/logging.h"
 #include "talk/base/network.h"
 #include "talk/base/socket.h"
-#include <string>
+#include <cstring>
+#include <cstdlib>
 #include <iostream>
 #include <cassert>
 #include <errno.h>

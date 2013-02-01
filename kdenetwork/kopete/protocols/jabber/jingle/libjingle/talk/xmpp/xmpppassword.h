@@ -31,6 +31,8 @@
 #include "talk/base/linked_ptr.h"
 #include "talk/base/scoped_ptr.h"
 
+#include <cstring>
+
 namespace buzz {
 
 class XmppPasswordImpl {

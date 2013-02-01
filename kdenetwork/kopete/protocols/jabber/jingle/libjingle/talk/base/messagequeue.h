@@ -32,6 +32,7 @@
 #include "talk/base/criticalsection.h"
 #include "talk/base/socketserver.h"
 #include "talk/base/jtime.h"
+#include <cstring>
 #include <vector>
 #include <queue>
 #include <algorithm>

@@ -30,11 +30,13 @@
 #endif
 
 #include <cassert>
+#include <algorithm>
 
 #ifdef POSIX
 extern "C" {
 #include <errno.h>
 #include <fcntl.h>
+#include <string.h>
 #include <sys/time.h>
 #include <unistd.h>
 }

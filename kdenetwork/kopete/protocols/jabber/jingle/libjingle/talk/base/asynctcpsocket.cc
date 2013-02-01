@@ -32,6 +32,7 @@
 #include "talk/base/byteorder.h"
 #include "talk/base/common.h"
 #include "talk/base/logging.h"
+#include <cstring>
 
 #if defined(_MSC_VER) && _MSC_VER < 1300
 namespace std {

@@ -42,6 +42,7 @@
 #endif
 
 #include <cassert>
+#include <cstring>
 
 #include "talk/base/base64.h"
 #include "talk/base/basicdefs.h"
