@@ -55,6 +55,9 @@
 //#include <linux/videodev.h>
 #include <linux/videodev2.h>
 //#include <linux/libv4l1-videodev.h>
+
+#include <libv4l1-videodev.h>
+
 #define VIDEO_MODE_PAL_Nc  3
 #define VIDEO_MODE_PAL_M   4
 #define VIDEO_MODE_PAL_N   5

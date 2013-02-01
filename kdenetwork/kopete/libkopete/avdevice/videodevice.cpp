@@ -48,15 +48,9 @@ VideoDevice::VideoDevice()
 	minheight = 1;
 }
 
-
 VideoDevice::~VideoDevice()
 {
 }
-
-
-
-
-
 
 #ifdef V4L2_CAP_VIDEO_CAPTURE
 
@@ -81,12 +75,7 @@ void VideoDevice::enumerateMenu (void)
 	}
 }
 
-
 #endif
-
-
-
-
 
 /*!
     \fn VideoDevice::xioctl(int fd, int request, void *arg)
@@ -275,9 +264,6 @@ int VideoDevice::checkDevice()
 					}
 				}
 			}
-
-
-
 
 // -----------------------------------------------------------------------------------------------------------------
 // This must turn up to be a proper method to check for controls' existence.
