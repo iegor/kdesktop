@@ -168,7 +168,7 @@ void KopeteGroupViewItem::refreshDisplayName()
 	// Sorting in this slot is extremely expensive as it's called dozens of times and
 	// the sorting itself is rather slow. Therefore we call delayedSort, which tries
 	// to group multiple sort requests into one.
-	using namespace Kopete::UI::ListView;
+	using namespace Kopete::UI;
 	if ( ListView::ListView *lv = dynamic_cast<ListView::ListView *>( listView() ) )
 		lv->delayedSort();
 	else
