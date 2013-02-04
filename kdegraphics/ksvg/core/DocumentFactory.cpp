@@ -38,7 +38,7 @@ namespace KSVG
 		Private() { m_docs.setAutoDelete(true); }
 		~Private() { m_docs.clear(); }
 	
-		void setup(bool bFit) { m_docs.append(new SVGDocumentImpl(!bFit /* animations */, bFit)); }
+		void setup(bool bFit) { m_docs.append(new SVGDocumentImpl(false /* animations */, bFit)); }
 		SVGDocumentImpl *doc() const { return m_docs.current(); }
 
 	private:

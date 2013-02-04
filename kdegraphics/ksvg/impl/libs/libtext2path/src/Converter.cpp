@@ -23,7 +23,7 @@
 #include "myboost/shared_ptr.hpp"
 #include <fontconfig/fontconfig.h>
 #include <fribidi/fribidi.h>
-#include <fribidi/fribidi_types.h>
+#include <fribidi/fribidi-types.h>
 
 #include "Font.h"
 #include "Glyph.h"

@@ -5,9 +5,9 @@ KDE_CXXFLAGS = $(USE_EXCEPTIONS)
 bin_PROGRAMS = svgdisplay printnodetest
 
 svgdisplay_SOURCES = SVGTestWidget.cc svgdisplay.cc
-svgdisplay_LDADD =  $(LIB_KDECORE) ../../libksvg.la
+svgdisplay_LDADD =  $(LIB_KDECORE) -lfribidi ../../libksvg.la
 svgdisplay_LDFLAGS = $(KDE_RPATH) $(all_libraries)
 
 printnodetest_SOURCES = printnodetest.cpp
-printnodetest_LDADD =  $(LIB_KDECORE) ../../libksvg.la
+printnodetest_LDADD =  $(LIB_KDECORE) -lfribidi ../../libksvg.la
 printnodetest_LDFLAGS = $(KDE_RPATH) $(all_libraries)

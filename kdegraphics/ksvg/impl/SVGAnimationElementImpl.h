@@ -108,7 +108,6 @@ protected:
 	ECalcMode m_calcMode : 2;
 	ERestart m_restart : 2;
 	EAttributeType m_attributeType : 2;
-	SVGElementImpl *m_targetElement;
 
 	QString m_href;
 	QString m_attributeName;

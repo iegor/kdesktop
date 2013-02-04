@@ -79,6 +79,12 @@ void SVGAnimatedPointsImpl::parsePoints(QString _points, SVGPointListImpl *point
 	_points = _points.simplifyWhiteSpace();
 
 	QStringList pointList = QStringList::split(' ', _points);
+
+	/* The list is of (x,y) pairs, so it must have an even
+	 * number of elements. */
+	if (pointList.count() % 2)
+		return;
+
 	for(QStringList::Iterator it = pointList.begin(); it != pointList.end(); it++)
 	{
 		SVGPointImpl *point = SVGSVGElementImpl::createSVGPoint();
