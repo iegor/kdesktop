@@ -57,7 +57,7 @@
 #define HAVE_FREETYPE_2_2_x 1
 
 /* Defines if your system has the fribidi library */
-/* #undef HAVE_FRIBIDI */
+#define HAVE_FRIBIDI 1
 
 /* Define to 1 if you have the `fseek64' function. */
 #define HAVE_FSEEK64 0
@@ -189,7 +189,7 @@
 #define HAVE_RES_INIT_PROTO 1
 
 /* Defines if your system has the sane libraries */
-/* #undef HAVE_SANE */
+#define HAVE_SANE 1
 
 /* Define if you have setenv */
 #define HAVE_SETENV 1
