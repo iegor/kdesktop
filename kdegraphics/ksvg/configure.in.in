@@ -113,11 +113,11 @@ fi
 
 # Check for lcms
 have_lcms_header='no'
-KDE_CHECK_HEADER(lcms/lcms.h,have_lcms_header='yes',,)
+KDE_CHECK_HEADER(lcms2.h,have_lcms_header='yes',,)
 if test "$have_lcms_header" = 'yes'
 then
-	LCMS_LIBS='-llcms'
-	AC_DEFINE(LCMS_HEADER, <lcms/lcms.h>, [The correct header])
+	LCMS_LIBS='-llcms2'
+	AC_DEFINE(LCMS_HEADER, <lcms2.h>, [The correct header])
 else
 	# Alternative! Debian does it this way...
 	KDE_CHECK_HEADER(lcms.h,have_lcms_header='yes',,)
@@ -167,23 +167,24 @@ fi
 AC_SUBST(LCMS_LIBS)
 
 # Check for fribidi
-KDE_FIND_PATH(fribidi-config, FRIBIDI_CONFIG, [${prefix}/bin ${exec_prefix}/bin /usr/local/bin /opt/local/bin],)
+KDE_FIND_PATH(fribidi, FRIBIDI, [${prefix}/bin ${exec_prefix}/bin /usr/local/bin /opt/local/bin],)
 
-if test -n "$FRIBIDI_CONFIG"; then
-  vers=`$FRIBIDI_CONFIG --version 2>/dev/null | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
+if test -n "$FRIBIDI"; then
+  vers=`$FRIBIDI --version 2>/dev/null | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 10 + $2) * 10 + $3;}'`
+  echo "FRIBIDI VERSION: "
   if test -n "$vers" && test "$vers" -ge 10004
   then
-     FRIBIDI_LIBS="`$FRIBIDI_CONFIG --libs`"
+     FRIBIDI_LIBS="`$PKG_CONFIG --libs fribidi`"
      FRIBIDI_RPATH=
      for args in $FIBIDI_LIBS; do
-	  case $args in
-	    -L*)
-  	       FRIBIDI_RPATH="$FRIBIDI_CONFIG $args"
- 	       ;;
-          esac
+	case $args in
+		-L*)
+		FRIBIDI_RPATH="$FRIBIDI $args"
+		;;
+	esac
      done
      FRIBIDI_RPATH=`echo $FRIBIDI_RPATH | sed -e "s/-L/-R/g"`
-     FRIBIDI_CFLAGS="`$FRIBIDI_CONFIG --cflags`"
+     FRIBIDI_CFLAGS="`$PKG_CONFIG --cflags fribidi`"
 
      AC_DEFINE_UNQUOTED(HAVE_FRIBIDI, 1, [Defines if your system has the fribidi library])
   fi

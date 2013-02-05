@@ -45,7 +45,8 @@ kolourpaint_LDADD = $(LIB_KDEPRINT) \
     pixmapfx/libkolourpaintpixmapfx.la \
     tools/libkolourpainttools.la \
     views/libkolourpaintviews.la \
-    widgets/libkolourpaintwidgets.la
+    widgets/libkolourpaintwidgets.la \
+    libkdefx/libkdefx.la
 
 AM_CPPFLAGS = -I$(srcdir)/cursors -I$(srcdir)/interfaces \
     -I$(srcdir)/pixmapfx \

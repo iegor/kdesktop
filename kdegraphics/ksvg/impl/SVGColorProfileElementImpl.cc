@@ -43,7 +43,7 @@ SVGColorProfileElementImpl::SVGColorProfileElementImpl(DOM::ElementImpl *impl) :
 	KSVG_EMPTY_FLAGS
 
 	m_loaded = false;
-	
+
 	// Spec: Default value 'auto', if not overwritten later
 	m_renderingIntent = RENDERING_INTENT_AUTO;
 }
@@ -109,7 +109,7 @@ void SVGColorProfileElementImpl::putValueProperty(ExecState *exec, int token, co
 				m_renderingIntent = RENDERING_INTENT_ABSOLUTE_COLORIMETRIC;
 			else
 				m_renderingIntent = RENDERING_INTENT_AUTO;
-			break;		 
+			break;
 		}
 		default:
 			kdWarning() << "Unhandled token in " << k_funcinfo << " : " << token << endl;
@@ -156,12 +156,12 @@ bool SVGColorProfileElementImpl::canLoad()
 bool SVGColorProfileElementImpl::canLoad(bool remote, bool &tempFile, QString &open, bool verbose)
 {
 	KURL file;
-	
+
 	if(!KURL::isRelativeURL(href()->baseVal().string()))
 		file = KURL(href()->baseVal().string());
 	else
 		file = KURL(ownerDoc()->baseUrl(), href()->baseVal().string());
-	
+
 	if(file.path().isEmpty())
 	{
 		if(verbose)
@@ -173,12 +173,12 @@ bool SVGColorProfileElementImpl::canLoad(bool remote, bool &tempFile, QString &o
 	if(file.isLocalFile())
 	{
 		open = file.path();
-		
+
 		if(!QFile::exists(open))
 		{
 			if(verbose)
 				kdDebug() << "Couldn't load color profile " << file.path() << "! It does not exist." << endl;
-			
+
 			return false;
 		}
 	}
@@ -198,28 +198,29 @@ bool SVGColorProfileElementImpl::loadColorProfile()
 {
 	QString open;
 	bool tempFile = false;
-	
+
 	if(!canLoad(true, tempFile, open, false))
 		return false;
 
 	m_hInput = cmsOpenProfileFromFile(open.latin1(), "r");
 	m_hOutput = cmsCreate_sRGBProfile();
 
-	unsigned int dwIn = BYTES_SH(2) | CHANNELS_SH(_cmsChannelsOf(m_inputColorSpace));
-	unsigned int dwOut = BYTES_SH(2) | CHANNELS_SH(_cmsChannelsOf(m_outputColorSpace));
-	
+	unsigned int dwIn = BYTES_SH(2) | CHANNELS_SH(cmsChannelsOf(m_inputColorSpace));
+	unsigned int dwOut = BYTES_SH(2) | CHANNELS_SH(cmsChannelsOf(m_outputColorSpace));
+
 	if(m_renderingIntent != RENDERING_INTENT_AUTO)
-		m_hTrans = cmsCreateTransform(m_hInput, dwIn, m_hOutput, dwOut, m_renderingIntent - 2, cmsFLAGS_NOTPRECALC);
+		m_hTrans = cmsCreateTransform(m_hInput, dwIn, m_hOutput, dwOut, m_renderingIntent - 2, cmsFLAGS_NOOPTIMIZE);
 	else
-		m_hTrans = cmsCreateTransform(m_hInput, dwIn, m_hOutput, dwOut, cmsTakeRenderingIntent(m_hInput), cmsFLAGS_NOTPRECALC);
-	
+		// this maybe stupid O_o. dkCmsTakeRenderingIntent -> cmsGetHeaderRenderingIntent
+		m_hTrans = cmsCreateTransform(m_hInput, dwIn, m_hOutput, dwOut, cmsGetHeaderRenderingIntent(m_hInput), cmsFLAGS_NOOPTIMIZE);
+
 	m_inputColorSpace = cmsGetColorSpace(m_hInput);
 	m_outputColorSpace = cmsGetColorSpace(m_hOutput);
 	m_loaded = true;
 
 	if(tempFile)
 		KIO::NetAccess::removeTempFile(open);
-	
+
 	return true;
 }
 
@@ -237,7 +238,7 @@ QRgb SVGColorProfileElementImpl::correctPixel(float r, float g, float b)
 			return qRgb(0, 0, 0);
 	}
 
-	unsigned short input[MAXCHANNELS], output[MAXCHANNELS];
+	unsigned short input[cmsMAXCHANNELS], output[cmsMAXCHANNELS];
 
 	input[0] = ((unsigned int) r) * 257;
 	input[1] = ((unsigned int) g) * 257;
@@ -245,7 +246,7 @@ QRgb SVGColorProfileElementImpl::correctPixel(float r, float g, float b)
 
 	cmsDoTransform(m_hTrans, input, output, 1);
 
-	if(m_outputColorSpace == icSigRgbData)
+	if(m_outputColorSpace == cmsSigRgbData)
 		return qRgb(output[0] / 257, output[1] / 257, output[2] / 257);
 
 	return qRgb(0, 0, 0);
@@ -255,7 +256,7 @@ QImage *SVGColorProfileElementImpl::correctImage(QImage *input)
 {
 	if(!canLoad())
 		return input;
-	
+
 	for(int y = 0; y < input->height(); y++)
 	{
 		for(int x = 0; x < input->width(); x++)
