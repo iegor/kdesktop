@@ -62,7 +62,7 @@ private:
 	void closeColorProfile();
 
 	bool canLoad();
-	bool canLoad(bool remote, bool &tempFile, QString &open, bool verbose);	
+	bool canLoad(bool remote, bool &tempFile, QString &open, bool verbose);
 
 	DOM::DOMString m_local;
 	DOM::DOMString m_name;
@@ -74,8 +74,8 @@ private:
 	cmsHTRANSFORM m_hTrans;
 	int m_intent;
 
-	icColorSpaceSignature m_inputColorSpace, m_outputColorSpace;
-	
+	cmsColorSpaceSignature m_inputColorSpace, m_outputColorSpace;
+
 public:
 	KSVG_GET
 	KSVG_PUT
