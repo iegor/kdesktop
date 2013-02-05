@@ -36,3 +36,7 @@ install-data-local: uninstall.desktop
 
 rcdir = $(kde_datadir)/kandy
 rc_DATA = kandyui.rc kandymobileui.rc
+
+KDE_ICON = AUTO
+# kandyicon_ICON = AUTO
+# kandyicondir = $(kde_datadir)/icons
