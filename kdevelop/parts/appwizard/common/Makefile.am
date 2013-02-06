@@ -28,7 +28,9 @@ incadmin.tar.gz:
 	gzip incadmin.tar
 
 scons.tar.gz:
-	$(TAR) -cf scons.tar --exclude=.svn -C $(srcdir)/scons configure admin/scons-mini.tar.bz2 admin/generic.py admin/kde.py
+	$(TAR) -cf scons.tar --exclude=.svn -C $(srcdir)/scons \
+		configure admin/scons-mini.tar.bz2 \
+		admin/generic.py admin/kde.py
 	gzip scons.tar
 
 appwizarddatadir = ${kde_datadir}/kdevappwizard
