@@ -1,7 +1,5 @@
-#include <iostream.h>
-
+#include <iostream>
 #include <kcmdlineargs.h>
-
 
 int main(int argc, char **argv)
 {
@@ -17,7 +15,7 @@ int main(int argc, char **argv)
 	uint nb = s.toUInt(&ok);
 	if ( !ok ) qFatal("The argument is not an unsigned integer.");
 
-    cout << "--------------" << endl;
+    std::cout << "--------------" << std::endl;
 
     // constants
     const uint width = 10;
@@ -27,14 +25,14 @@ int main(int argc, char **argv)
 
 	// compute level
 	uint level = (nb / nbLinesPerLevel) + 1;
-	cout << "Level : " << level << endl << endl;
+	std::cout << "Level : " << level << std::endl << std::endl;
 
     // compute max score due to drop down
     uint ddScore =
         ((width*height) / blocksPerPiece) * height; // board full of pieces
     ddScore +=
         ((nb * width) / blocksPerPiece) * height; // piece for removed lines
-    cout << "Max Score from drop down pieces : " << ddScore << endl;
+    std::cout << "Max Score from drop down pieces : " << ddScore << std::endl;
 
     // compute max score due to removed lines
     uint score = 0;
@@ -48,12 +46,12 @@ int main(int argc, char **argv)
     if ( nb==3 ) score += 300;
     else if ( nb==2 ) score += 100;
     else if ( nb==1 ) score += 40;
-    cout << "Max score from removed lines : " << score << endl;
-    cout << "Max count of tetris : " << nb_tetris << endl;
+    std::cout << "Max score from removed lines : " << score << std::endl;
+    std::cout << "Max count of tetris : " << nb_tetris << std::endl;
 
-    cout << endl;
-    cout << "Max score : " << ddScore + score << endl;
+    std::cout << std::endl;
+    std::cout << "Max score : " << ddScore + score << std::endl;
 
-    cout << "--------------" << endl;
+    std::cout << "--------------" << std::endl;
 	return 0;
 }
