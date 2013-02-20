@@ -1,0 +1,34 @@
+#MIN_CONFIG
+KDE_ENABLE_HIDDEN_VISIBILITY
+AC_CHECK_RANDOM
+AC_CHECK_USLEEP
+CXXFLAGS="$CXXFLAGS $KDE_DEFAULT_CXXFLAGS"
+
+KDE_INIT_DOXYGEN([KDE Games API Reference], [Version $VERSION])
+
+# Allow for stand-alone releases of applications with cvs2pack
+if test -d $srcdir/libkdegames ; then
+	AC_SUBST(LIB_KDEGAMES, "\$(top_builddir)/libkdegames/libkdegames.la")
+	AC_SUBST(LIB_KDEGAMES_DEP, '$(LIB_KDEGAMES)')
+else
+	AC_SUBST(LIB_KDEGAMES, "-lkdegames")
+	AC_SUBST(LIB_KDEGAMES_DEP, "")
+fi
+
+artsc_config_test_path=$prefix/bin:$exec_prefix/bin:$KDEDIR/bin:$PATH
+AC_PATH_PROG(ARTSCCONFIG, artsc-config, no, $artsc_config_test_path)
+
+if test "x$build_arts" = "xyes" && test "x$ARTSCCONFIG" != "xno" ; then
+        LIB_ARTS="-lartskde"
+        ARTS_PREFIX=[`$ARTSCCONFIG --arts-prefix`]
+        ARTS_CFLAGS="-I$ARTS_PREFIX/include/arts"
+        AC_DEFINE(HAVE_ARTS, 1, [have arts support in juk])
+else
+        build_arts="no"
+        LIB_ARTS=""
+        ARTS_CFLAGS=""
+        AC_DEFINE(HAVE_ARTS, 0, [no arts support in juk])
+fi
+
+AC_SUBST(LIB_ARTS)
+AC_SUBST(ARTS_CFLAGS)
