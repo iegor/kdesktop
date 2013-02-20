@@ -1,0 +1,1259 @@
+<chapter id="project-management">
+
+<chapterinfo>
+  <authorgroup>
+    <author
+><firstname
+>Bernd</firstname
+><surname
+>Pol</surname
+></author>
+    <author
+><firstname
+>Ian</firstname
+><surname
+>Wadham</surname
+></author>
+    <!-- ROLES_OF_TRANSLATORS -->
+  </authorgroup>
+</chapterinfo>
+
+<title
+>Compilación y gestión de proyectos</title>
+
+<para
+>Este capítulo trata solo de proyectos compilados, como los de C++, &Java; o Fortran. Los proyectos para lenguajes de guiones, como Python y PHP, funcionan de un modo muy diferente. </para>
+
+<para
+>Aquí encontrará la siguiente información:</para>
+<itemizedlist>
+  <listitem
+><para
+><link linkend="automake-manager-summary"
+>Sumario de &automanag;</link
+>, que contiene una introducción a &automanag;, </para
+></listitem>
+  <listitem
+><para
+><link linkend="automake-manager-operation"
+>Funcionamiento del gestor de automake</link
+>, que describe de forma básica cómo trabajar con &automanag;, </para
+></listitem>
+</itemizedlist>
+
+<sect1 id="automake-manager-summary">
+<title
+>Sumario de &automanag;</title>
+
+<para
+>En el capítulo sobre <link linkend="unixdev-buildsystems"
+>sistemas de construcción</link
+> vimos una breve introducción sobre los sistemas de construcción más usados en los entornos &UNIX;. En las siguientes secciones veremos esto con más detalle. </para>
+<para
+>Existe cierta confusión sobre cómo denominar esto. &GNU; los llama «sistemas de construcción» cuando describen Automake, Autoconf y Libtool. QMake se refiere a sí mismo como «una herramienta para escribir Makefiles para diferentes compiladores y plataformas». En &kde; se usa a menudo el término «sistemas de gestión de proyectos». Nosotros usaremos este término en un sentido más amplio para describir los entornos integrados que &kdevelop; utilizará para organizar y construir sus proyectos. De todos modos, en el contexto de esta sección, hablaremos principalmente sobre «sistemas de construcción automatizados». </para>
+
+<sect2 id="automake-manager-summary-buildsys">
+<title
+>La necesidad de un sistema de construcción automatizado</title>
+
+<para
+>Si tiene un sencillo programa «Hola mundo» escrito en C, puede compilarlo y enlazarlo usando &gcc; <parameter
+>-o hola hola.c</parameter
+> y ejecutarlo usando el comando <command
+>./hola</command
+>, por lo que no necesitará un archivo <filename
+>Makefile</filename
+>. </para>
+<para
+>Si tiene una aplicación en C con varios módulos y archivos de cabecera y solo pretende ejecutarla en su propia máquina (&ie;, se trata de una aplicación doméstica), solo necesitará un sencillo <filename
+>Makefile</filename
+>, que es bastante fácil de escribir a mano (use <userinput
+>info make</userinput
+> para ver cómo hacerlo). </para>
+<para
+>Los problemas empiezan cuando: </para>
+<itemizedlist>
+  <listitem
+><para
+>Su código fuente, documentación, gráficos, sonidos, traducciones, archivos de datos, &etc;, se encuentran situados en más de una carpeta, </para
+></listitem>
+  <listitem
+><para
+>Tiene una jerarquía de carpetas y subcarpetas, </para
+></listitem>
+  <listitem
+><para
+>Está usando bibliotecas que no son parte del juego tradicional de &UNIX;, como la biblioteca de código objeto de &Qt; o las bibliotecas del escritorio &kde;, </para
+></listitem>
+  <listitem
+><para
+>Está usando un preprocesador para generar parte de su código fuente, como el precompilador MOC de Qt, </para
+></listitem>
+  <listitem
+><para
+>Pretende distribuir su aplicación a todo el mundo, a personas que puede que no tengan el mismo sistema &UNIX;/&Linux;, software o hardware que usted, </para
+></listitem>
+  <listitem
+><para
+>Necesita una utilidad de instalación y desinstalación automática, </para
+></listitem>
+  <listitem
+><para
+>Pretende que su aplicación sea parte del escritorio &kde;. </para
+></listitem>
+</itemizedlist>
+
+<para
+>Si se encuentra en una o varias de las situaciones anteriores, probablemente necesite un <emphasis
+>sistema de construcción</emphasis
+>. En el ejemplo anterior hemos usado &gcc; para compilar y construir el programa «Hola mundo», pero no todos los compiladores de C se llaman «&gcc;». De modo que si distribuye su aplicación a alguien que utilice otro compilador de C distinto, su Makefile debe usar de algún modo el nombre del compilador de esta persona, o en caso contrario su aplicación no podrá ser compilada (y esto solo es un sencillo ejemplo de lo que puede ir mal). </para>
+<para
+>Un sistema de construcción se encargará de allanar estas diferencias por usted. </para>
+<itemizedlist>
+  <listitem
+><para
+>Comprobará que las bibliotecas que necesita estén presentes en cada máquina de destino, </para
+></listitem>
+  <listitem
+><para
+>recorrerá automáticamente todas las carpetas de su aplicación en busca de archivos para preprocesar, compilar o instalar, y </para
+></listitem>
+  <listitem
+><para
+>también instalará los componentes de su aplicación en las carpetas de destino correctas, asegurándose de que </para
+></listitem>
+  <listitem
+><para
+>las carpetas sean creadas en la máquina de destino cuando sea necesario. </para
+></listitem>
+</itemizedlist>
+
+<para
+>En breve, un sistema de construcción ofrece métodos seguros para que su aplicación pueda ser compilada e instalada correctamente en cualquier máquina de destino. Como hemos mostrado anteriormente en la sección <link linkend="makesystems"
+>Sistemas de gestión de proyectos</link
+>, &kdevelop; ofrece tres sistemas de construcción automatizados y la posibilidad de crear su propio Makefile (pulse sobre los nombres de proyecto para obtener más información): </para>
+<itemizedlist>
+  <listitem
+><para
+><link linkend="automake-project"
+>Proyectos automake</link
+> que utilizan las herramientas de desarrollo estándar de &GNU;. </para
+></listitem>
+  <listitem
+><para
+><link linkend="qmake-project"
+>Proyectos QMake</link
+> que utilizan el gestor de proyectos QMake de Trolltech. </para
+></listitem>
+  <listitem
+><para
+><link linkend="ant-project"
+>Proyectos ANT</link
+> que utilizan el gestor de proyectos ANT de Apache para desarrollos en &Java;. </para
+></listitem>
+  <listitem
+><para
+><link linkend="custom-project"
+>Proyectos personalizados</link
+> que necesitan que usted mantenga sus propios <filename
+>Makefiles</filename
+>. </para
+></listitem>
+</itemizedlist>
+
+<important>
+<para
+>Debe seleccionar una de estas cuatro alternativas cuando cree un proyecto, pero <emphasis
+>esta elección es difícil de cambiar después</emphasis
+>, por lo que debería tenerlo en cuenta antes de comenzar. </para>
+</important>
+
+</sect2
+> <!--  automake-manager-summary-buildsys -->
+
+<sect2 id="automake-references">
+<title
+>Manuales sobre Autoconf/Automake/Libtool</title>
+<para
+>Existen varios manuales disponibles sobre el sistema de construcción de &GNU; (<command
+>Autoconf</command
+>, <command
+>Automake</command
+> y <command
+>Libtool</command
+>) que utiliza &automanag;. </para>
+<itemizedlist>
+  <listitem
+><para
+>Un corto <ulink url="http://www.kdevelop.org/index.html?filename=tutorial_autoconf.html"
+>manual de autoconf</ulink
+> escrito por Christopher W. Curtis se encuentra disponible en la página web de &kdevelop;. Se concentra en algunos pasos básicos para modificar un <filename
+>Makefile</filename
+>. </para
+></listitem>
+  <listitem
+><para
+>Un manual más detallado se puede encontrar en la extensa colección de manuales existente en <ulink url="http://www.amath.washington.edu/~lf/tutorials/autoconf/toolsmanual_toc.html"
+>«Desarrollo de software con GNU»</ulink
+>. </para
+></listitem>
+  <listitem
+><para
+>Y también existe el famoso <ulink url="http://sources.redhat.com/autobook"
+>«libro para novatos»</ulink
+> titulado «Autoconf, Automake, y Libtool». Se trata de una introducción concisa y fácil de leer sobre todos los puntos principales de las herramientas &GNU;. </para
+></listitem>
+</itemizedlist>
+
+</sect2
+> <!--  automake-references -->
+
+<sect2 id="automake-manager-basics">
+<title
+>¿Qué hace &automanag;?</title>
+
+<para
+>El <link linkend="applicationwizard"
+>&appwizard;</link
+> habrá preparado algunos archivos <filename
+>Makefile.am</filename
+> iniciales tras crear un <guilabel
+>Nuevo proyecto</guilabel
+> que utilice el sistema de construcción de &GNU;, como <menuchoice
+><guimenuitem
+>C++</guimenuitem
+> <guimenuitem
+>KDE</guimenuitem
+> <guimenuitem
+>Infraestructura de aplicación</guimenuitem
+></menuchoice
+>. Durante el desarrollo, &automanag; crea el resto de archivos <filename
+>Makefile.am</filename
+> en los proyectos que usan el sistema de construcción de &GNU;, y los mantiene de modo parecido a como los creó el &appwizard; y &automanag;. </para>
+<para
+>Solo habrá un <filename
+>Makefile.am</filename
+> en cada carpeta de su proyecto, y contendrá los archivos que se van a compilar o a instalar. También contendrá sus opciones de compilación, creación e instalación de archivos, y una referencia a cualquier subcarpeta que también contenga otro <filename
+>Makefile.am</filename
+> y, posiblemente, más archivos para compilar, construir e instalar. </para>
+
+<note
+><para
+>Las carpetas de su proyecto y los archivos de código fuente pueden estar contenidos en una estructura de cualquier profundidad, o tal vez prefiera una estructura de proyecto plana, con todas las subcarpetas en el nivel superior. </para
+></note>
+
+<para
+>El propósito del sistema de construcción de &GNU; es la generación de estructuras de archivos de código fuente que puedan ser compilados, construidos e instalados en cualquier sistema &UNIX; o &Linux; mediante el uso de los sencillos comandos: </para>
+
+<screen
+>./configure
+make
+make install    # normalmente como «root».
+</screen>
+
+<para
+>y que puedan ser desinstalados posteriormente mediante el uso del comando <command
+>make uninstall</command
+> (normalmente como «root»). </para>
+
+<para
+>¿Cómo funciona esto? Bien, <command
+>configure</command
+> es un guión que <itemizedlist>
+  <listitem
+><para
+>decide los detalles de cualquier sistema en el que se ejecuta, como qué compilador y bibliotecas se deben usar y dónde están situados, y luego </para
+></listitem>
+  <listitem
+><para
+>crea archivos <filename
+>Makefile</filename
+> recursivos rellenando los campos a sustituir en los correspondientes archivos <filename
+>Makefile.in</filename
+>. </para
+></listitem>
+</itemizedlist>
+</para>
+<para
+>Los <filename
+>Makefile.in</filename
+> son archivos de «entrada» (plantillas que proporcionan información básica para los <filename
+>Makefile</filename
+>s que se deben obtener de ellos rellenando cierta información dependiente del sistema). Son generados por la utilidad <command
+>automake</command
+> a partir de los archivos <filename
+>Makefile.am</filename
+>. </para>
+<para
+>El proceso de ir desde <filename
+>Makefile.am</filename
+> (<filename
+>.am</filename
+> indica que se trata de archivos de plantilla para «automake») hasta los archivos <filename
+>Makefile</filename
+> se gestiona automáticamente por el &promanag; de &kdevelop;, usando la utilidad <command
+>autoconf</command
+>, macros <command
+>M4</command
+> y otros procesos arcanos que no necesitamos conocer aquí. </para>
+<para
+>De modo que, cuando se ejecuta <command
+>make</command
+>, se recogen automáticamente las piezas necesarias del entorno actual, como compiladores y bibliotecas. Del mismo modo, <command
+>make install</command
+> sitúa los componentes de su aplicación (como ejecutables, documentación y archivos de datos) en los lugares correctos de ese entorno. </para>
+
+<para
+>Si distribuye su aplicación como un «tarball» (un único archivo comprimido que &kdevelop; puede crear por usted), se incluirán los archivos <filename
+>Makefile.in</filename
+> y el guión <filename
+>configure</filename
+>, de modo que el receptor pueda compilar, construir e instalar su aplicación sin necesidad de tener <command
+>automake</command
+>, <command
+>autoconf</command
+> ni &kdevelop; en su máquina. Los archivos <filename
+>Makefile.am</filename
+> también se incluyen, pero solo para el caso de que el receptor necesite realizar alguna modificación en el código fuente. </para>
+<note
+><para
+>Las reglas son algo distintas si decide distribuir su código fuente mediante un repositorio basado en la web, como &cvs;. </para
+></note>
+
+</sect2
+> <!--  automake-manager-basics -->
+
+<sect2 id="automake-manager-basics-summary">
+<title
+>Sumario de lo que hace el gestor Automake</title>
+
+<itemizedlist>
+  <listitem
+><para
+>Genera archivos <filename
+>Makefile.am</filename
+> en subcarpetas que se conocen como «subproyectos». </para
+></listitem>
+  <listitem
+><para
+>Actualiza los archivos <filename
+>Makefile.am</filename
+> cuando cambia la estructura del proyecto. </para
+></listitem>
+  <listitem
+><para
+>Actualiza los archivos <filename
+>Makefile.am</filename
+> cuando se añaden o eliminan archivos del proyecto. </para
+></listitem>
+  <listitem
+><para
+>Acepta definiciones sobre cómo se deben construir o instalar los diferentes archivos y modifica los archivos <filename
+>Makefile.am</filename
+> de acuerdo con esta información. </para
+></listitem>
+  <listitem
+><para
+>Acepta parámetros usados durante la construcción o instalación (&eg;, nombres de bibliotecas), y se asegura de que sean usados durante los procesos de compilación y construcción. </para
+></listitem>
+</itemizedlist>
+
+</sect2
+> <!--  automake-manager-basics-summary -->
+
+<sect2 id="automake-file-contents">
+<title
+>Contenido de los archivos de automake</title>
+
+<para
+>Un archivo <filename
+>Makefile.am</filename
+> contiene líneas con nombres de variables seguidas por un signo de igualdad y una lista de archivos o parámetros. Los nombres de las «variables» constan de dos partes, como <varname
+>bin_PROGRAMS</varname
+>, <varname
+>myapp_SOURCES</varname
+> o <varname
+>kdelnk_DATA</varname
+>. La segunda parte es la <emphasis
+>principal</emphasis
+>, y representa algo de donde se debe construir o instalar. La primera parte se conoce como <emphasis
+>prefijo</emphasis
+> y representa: </para>
+<itemizedlist>
+  <listitem
+><para
+>Una <emphasis
+>carpeta</emphasis
+> donde realizar la instalación (&eg;, <filename
+>bin</filename
+>), </para
+></listitem>
+  <listitem
+><para
+>Un <emphasis
+>calificador</emphasis
+> primario  (&eg;, <varname
+>myapp</varname
+>, para <varname
+>SOURCES</varname
+>, que indica que los archivos de código fuente listados a continuación de <varname
+>myapp_SOURCES</varname
+> sirven para construir <filename
+>myapp</filename
+>), </para
+></listitem>
+  <listitem
+><para
+>Un <emphasis
+>prefijo</emphasis
+> especial <varname
+>noinst</varname
+> (de «no instalar»), que se usa normalmente para listar los archivos de cabecera del programa (<filename
+>.h</filename
+>), </para
+></listitem>
+  <listitem
+><para
+>O el prefijo especial <varname
+>EXTRA</varname
+>, para cosas <emphasis
+>dependientes de la configuración</emphasis
+>. </para
+></listitem>
+</itemizedlist>
+
+<para
+>Para más información sobre <command
+>Automake</command
+> y los archivos <filename
+>Makefile.am</filename
+>, consulte <userinput
+>info Automake</userinput
+>. </para>
+<para
+>Básicamente, &automanag; crea y actualiza los nombres de variable y las listas de archivos y de parámetros. Observe el siguiente ejemplo de un <filename
+>Makefile.am</filename
+> de una aplicación típica, llamada <filename
+>myapp</filename
+>. </para>
+
+<screen
+>## Makefile.am para myapp
+
+# este es el programa que se instala; su nombre se usa en las variables
+# del resto de archivos Makefile.am
+bin_PROGRAMS = myapp
+
+# ruta de inclusión para X, qt y KDE
+INCLUDES = $(all_includes)
+
+# ruta donde buscar las bibliotecas
+myapp_LDFLAGS = $(KDE_RPATH) $(all_libraries)
+
+# las bibliotecas con las que enlazar
+myapp_LDADD   = $(LIB_KFILE) $(LIB_KDEPRINT)
+
+# archivos de código fuente que se van a compilar para myapp
+myapp_SOURCES = main.cpp myapp.cpp myappview.cpp
+
+# estas son las cabeceras de su proyecto
+noinst_HEADERS = myapp.h myappview.h
+
+# dejar que automoc se haga cargo de los archivos de metadatos (moc)
+METASOURCES = AUTO
+
+KDE_ICON = myapp
+
+# aquí es donde irá el archivo de enlace para KDE
+kdelnkdir = $(kde_appsdir)/Utilities
+kdelnk_DATA = myapp.desktop
+
+# aquí es donde irá el archivo de recursos XML para la interfaz gráfica
+rcdir = $(kde_datadir)/myapp
+rc_DATA = myappui.rc
+
+AM_CXXFLAGS = -DMY_C++_PREPROCESSOR_OPTION
+</screen>
+
+<para
+>Como puede ver, muchos de los elementos de la parte de la derecha son símbolos con el formato <varname
+>$(xxx)</varname
+>. Se trata de <emphasis
+>variables de entorno</emphasis
+> que están definidas en el entorno real de &kde; y que se sustituyen por sus valores reales cuando <command
+>./configure</command
+> genera los archivos <filename
+>Makefile</filename
+> finales en la máquina de destino. </para>
+
+<para
+>Además, tras trabajar durante algún tiempo con &kdevelop;, es una buena idea ejecutar el comando <command
+>./configure --help</command
+>, que le mostrará la cantidad de cosas que puede cambiar durante los procesos de construcción e instalación, como para disponer de un entorno de pruebas. En particular, el comando: <screen>
+./configure --prefix=/donde/usted/quiera
+</screen
+> hará que toda la instalación se realice en una estructura de carpetas de su elección, cambiando para ello la variable interna <varname
+>$(prefix)</varname
+> al valor <filename class="directory"
+>/donde/usted/quiera</filename
+>. </para>
+
+</sect2
+> <!-- automake-file-contents -->
+
+</sect1
+> <!--  automake-manager-summary -->
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+<sect1 id="automake-manager-operation">
+<title
+>Operación del gestor de Automake</title>
+
+<para
+>En este capítulo encontrará una descripción básica sobre los elementos de &automanag; y sobre cómo usarlos. Esto cubre: <itemizedlist>
+  <listitem
+><para
+><link linkend="automake-manager-operation-window"
+>La ventana de &automanag;</link
+> describe la estructura básica de la ventana principal de &automanag;. </para
+></listitem>
+  <listitem
+><para
+><link linkend="automake-manager-operation-survey-window"
+>La ventana de vista general</link
+> describe los elementos de la ventana de la parte superior. </para
+></listitem>
+  <listitem
+><para
+><link linkend="automake-manager-operation-detail-window"
+>La ventana de vista detallada</link
+> describe los elementos de la ventana de la parte inferior. </para
+></listitem>
+  <listitem
+><para
+><link linkend="automake-manager-operation-navigate"
+>Navegación a través de &automanag;</link
+> lista algunas operaciones básicas que puede realizar en el &automanag;. </para
+></listitem>
+  <listitem
+><para
+><link linkend="automake-manager-operation-popups"
+>Menús desplegables del &automanag;</link
+> describe las ventanas que aparecerán cuando seleccione una acción en el &automanag;. </para
+></listitem>
+</itemizedlist>
+</para>
+
+<sect2 id="automake-manager-operation-window">
+<title
+>La ventana de &automanag;</title>
+
+<informaltable frame="none">
+<tgroup cols="2"
+><tbody
+><row>
+  <entry
+><inlinemediaobject>
+    <imageobject>
+      <imagedata fileref="automakemanager.png" format="PNG"/>
+    </imageobject>
+  </inlinemediaobject
+></entry>
+  <entry valign="top"
+><itemizedlist>
+    <listitem
+><para
+>&automanag; se ejecuta en una ventana dividida en dos partes: la parte superior se llama <emphasis
+>vista general</emphasis
+>, y la inferior <emphasis
+>vista detallada</emphasis
+>. Entre ambas existe una estrecha barra que se puede arrastrar con el ratón para ajustar el tamaño de las vistas. En el modo IDEAl también puede arrastrar el borde de la ventana para ajustar su anchura. </para
+></listitem>
+    <listitem
+><para
+>En la parte superior de cada vista existe una <emphasis
+>barra de herramientas</emphasis
+>, los botones que se activarán cuando seleccione un elemento de su vista. Esto proporciona un modo de acceder a las acciones ofrecidas para dicho elemento de la vista. El resto son los menús de contexto, que aparecerán cuando pulse con el botón derecho del ratón, como se describirá a continuación. </para
+></listitem>
+    <listitem
+><para
+>En el modo IDEAl existen dos pequeños botones adicionales en la parte izquierda de la barra de título de la ventana de &automanag;: una flecha hacia la derecha de forma triangular y un botón en forma de punto. El botón de la flecha se usa para <emphasis
+>cerrar la ventana</emphasis
+>. El botón del punto, por el contrario, <emphasis
+>mantendrá la ventana abierta</emphasis
+> incluso si se selecciona otra ventana de &kdevelop; (de otro modo, la ventana de &automanag; se cerrará automáticamente cuando otra ventana pase al primer plano). </para
+></listitem>
+  </itemizedlist
+></entry>
+</row
+></tbody
+></tgroup>
+</informaltable>
+
+</sect2
+> <!-- automake-manager-operation-window -->
+
+<sect2 id="automake-manager-operation-survey-window">
+<title
+>La ventana de vista general</title>
+
+<para
+>La ventana de vista general contiene una lista en forma de árbol con todas las carpetas de su proyecto que contengan archivos del programa, documentación o datos. Cada subcarpeta contiene un archivo <filename
+>Makefile.am</filename
+> y se conoce en &automanag; como un <emphasis
+>subproyecto</emphasis
+>. Típicamente existen tres subproyectos en un proyecto de &kde;, como se muestra en la ilustración: </para>
+
+<itemizedlist>
+  <listitem
+><para
+><filename
+>src</filename
+> &ndash; los archivos de código fuente de su aplicación, </para
+></listitem>
+  <listitem
+><para
+><filename
+>doc</filename
+> &ndash; su manual de usuario, </para
+></listitem>
+  <listitem
+><para
+><filename
+>po</filename
+> &ndash; las cadenas de texto de su código fuente que necesitan traducción a otros idiomas (&eg;, títulos de ventanas, opciones de menú, etiquetas de botones, textos de diálogos y mensajes de varios tipos). </para
+></listitem>
+</itemizedlist>
+
+<para
+>Observe que el subproyecto <filename
+>doc</filename
+> siempre contiene un subproyecto <filename
+>en</filename
+>, que podrá ver si pulsa sobre el símbolo <symbol
+>+</symbol
+> que hay junto a la palabra <filename
+>doc</filename
+>. Esto se debe a que el idioma básico para toda la documentación de &kde; es el inglés de los Estados Unidos («en»). Si su aplicación se convierte en parte de &kde;, los equipos de traducción de &kde; podrán traducir su documentación en inglés de los Estados Unidos a otros idiomas, que acabarán residiendo en otros subproyectos, como <filename
+>es</filename
+> (para el español) o <filename
+>fr</filename
+> (para el francés). Las cadenas de texto del subproyecto <filename
+>po</filename
+> permiten que su aplicación pueda ser manejada por personas que no conozcan el idioma inglés. </para>
+
+<note
+><para
+>Los subproyectos <filename
+>doc</filename
+> y <filename
+>po</filename
+> sirven para diferentes propósitos: <filename
+>doc</filename
+> contiene <emphasis
+>documentación</emphasis
+> (como el manual del usuario), mientras que <filename
+>po</filename
+> contiene cadenas de texto para traducir procedentes de la <emphasis
+>interfaz de usuario</emphasis
+>, que está integrada en el código fuente de la aplicación. </para
+></note>
+
+<para
+>La ventana de vista general sirve (entre otras cosas) como herramienta de navegación. Si selecciona un subproyecto en la ventana de vista general, se mostrarán sus detalles correspondienes en la ventana de vista detallada. </para>
+
+</sect2
+> <!-- automake-manager-operation-survey-window -->
+
+<sect2 id="automake-manager-operation-detail-window">
+<title
+>La ventana de vista detallada</title>
+
+<para
+>La vista detallada contiene una lista en forma de árbol de todos los archivos del subproyecto actualmente seleccionado en la ventana de vista general, además de las reglas de compilación, construcción e instalación para este subproyecto. De este modo, ambas vistas le proporcionan acceso a todos los componentes de su aplicación y a toda la información sobre cómo compilarla, construirla e instalarla. </para>
+
+<sect3>
+<title
+>Objetivos</title>
+
+<para
+>La lista de árbol de la ventana detallada posee dos niveles. El nivel superior contiene lo que se denomina <emphasis
+>objetivos</emphasis
+> de &automanag;, y el siguiente nivel contiene listas de archivos que definen cada objetivo. </para>
+
+<para
+>Este concepto de un objetivo en &automanag; difiere algo de lo que se entiende por un objetivo en un <filename
+>Makefile</filename
+>. En breve:</para>
+<itemizedlist>
+  <listitem
+><para
+>La definición sobre cómo un conjunto de archivos se debe compilar, construir o instalar se conoce como <emphasis
+>objetivo</emphasis
+> en &automanag;, aunque en <command
+>automake</command
+> se denomina <emphasis
+>variable</emphasis
+>. </para
+></listitem>
+  <listitem
+><para
+>Un <emphasis
+>objetivo</emphasis
+> de <command
+>make</command
+> es normalmente algo bastante distinto, como por ejemplo el parámetro de un comando <command
+>make</command
+> (por ejemplo, <userinput
+>make install</userinput
+> o <userinput
+>make clean</userinput
+>). </para>
+  <para
+>No obstante, algunas variables de <filename
+>Makefile.am</filename
+> representan a un <emphasis
+>subobjetivo</emphasis
+> subyacente en <command
+>make</command
+>. </para
+></listitem>
+</itemizedlist>
+
+</sect3>
+</sect2
+> <!-- automake-manager-operation-detail-window -->
+
+<sect2 id="automake-manager-operation-navigate">
+<title
+>Navegación en &automanag;</title>
+
+<para
+>Tanto en la ventana de vista general como en la detallada, puede pulsar sobre los símbolos <symbol
+>+</symbol
+> o <symbol
+>-</symbol
+> que hay junto al nombre de un subproyecto o de un objetivo para desplegar o plegar su vista en árbol. Si hace esto con un <emphasis
+>subproyecto</emphasis
+> en la ventana de vista general, se mostrarán u ocultarán los subproyectos del siguiente nivel (si existen). Si lo hace sobre un <emphasis
+>objetivo</emphasis
+> en la vista detallada, se mostrará u ocultará la lista de archivos de dicho objetivo. </para>
+
+<variablelist>
+<varlistentry>
+<term
+>Abrir un archivo para editarlo</term>
+<listitem>
+<para
+>Si <emphasis
+>pulsa con el botón izquierdo del ratón</emphasis
+> sobre el nombre de un archivo en la vista detallada, se abrirá su correspondiente archivo en la ventana de edición de &kdevelop;.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Activación de los botones de la barra de herramientas de &automanag;</term>
+<listitem>
+<para
+>Si <emphasis
+>pulsa con el botón izquierdo del ratón</emphasis
+> sobre el nombre de un subproyecto en la ventana de vista general, se resaltará su nombre y se activarán algunos botones en la barra de herramientas que hay en la parte superior de la vista.</para>
+
+<note>
+  <para
+>Se le recomienda que utilice el <emphasis
+>botón derecho del ratón y los menús de contexto</emphasis
+> en lugar de los botones de la barra de herramientas, ya que así le resultará mucho más fácil ver y comprender lo que está haciendo. </para>
+  <para
+>Las operaciones realizadas sobre los subproyectos y sobre los objetivos producen efectos sobre la estructura, compilación, construcción e instalación de su aplicación. </para>
+</note>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Selección de acciones/menús desplegables</term>
+<listitem>
+<para
+>Si <emphasis
+>pulsa con el botón derecho del ratón</emphasis
+> sobre el nombre de un subproyecto, objetivo o archivo, se le mostrará un menú desplegable donde podrá seleccionar las acciones a realizar sobre el subproyecto, objetivo o archivo, como añadir un objetivo al subproyecto, añadir un archivo al objetivo, o eliminar el archivo seleccionado de su objetivo. </para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</sect2
+> <!-- automake-manager-operation-navigate -->
+
+<sect2 id="automake-manager-operation-popups">
+<title
+>Menús desplegables de &automanag;</title>
+
+<para
+>Las siguientes secciones explican brevemente qué operaciones permiten los menús que se mostrarán al pulsar con el botón derecho en la ventana del &automanag;. Se refieren únicamente a la ventana de vista general. Encontrará descripciones más detalladas de la mayor parte de las operaciones posibles en un capítulo posterior. </para>
+<!-- ### add a link to this chapter when ready -->
+
+<sect3 id="automake-manager-operation-popups-file">
+<title
+>El menú desplegable para un archivo</title>
+
+<para
+>Cuando pulse con el botón derecho del ratón sobre un <emphasis
+>nombre de archivo</emphasis
+> en la vista detallada se le mostrará el siguiente menú, que le permitirá seleccionar una de entre varias operaciones a realizar sobre dicho archivo. En la ilustración inferior el icono del archivo <filename
+>hi-16app-myapp.png</filename
+> ha sido seleccionado en el objetivo <guilabel
+>Datos de icono de myapp</guilabel
+> perteneciente al subproyecto <guilabel
+>myapp/src</guilabel
+>. </para>
+
+<informaltable frame="none">
+<tgroup cols="2"
+><tbody
+><row>
+  <entry
+><inlinemediaobject>
+    <imageobject>
+      <imagedata fileref="automake-file-popup.png" format="PNG"/>
+    </imageobject>
+  </inlinemediaobject
+></entry>
+  <entry valign="bottom"
+><itemizedlist>
+    <listitem
+><para
+>El principal elemento del menú desplegable para este archivo es <guimenuitem
+>Eliminar</guimenuitem
+> el archivo de su objetivo (es decir, que no vuelva a utilizarse para compilar, construir o instalar su objetivo). </para
+></listitem>
+    <listitem
+><para
+>El elemento <guimenuitem
+>CVS</guimenuitem
+> ofrece varias operaciones CVS sobre el archivo. </para
+></listitem>
+    <listitem
+><para
+>El elemento <guimenuitem
+>Abrir con</guimenuitem
+> le permite abrir el archivo con una variedad de editores o con cualquier otra aplicación (por ejemplo, puede abrir el archivo de icono de nuestro ejemplo con <application
+>KIcon</application
+>). </para
+></listitem>
+    <listitem
+><para
+>El elemento <guimenuitem
+>Perforce</guimenuitem
+> se utiliza para operaciones similares a las de CVS, pero utilizando en su lugar el sistema de control de versiones comercial «<application
+>Perforce</application
+>». </para
+></listitem>
+  </itemizedlist
+></entry>
+</row
+></tbody
+></tgroup>
+</informaltable>
+
+</sect3
+> <!-- automake-manager-operation-popups-file -->
+
+<sect3 id="automake-manager-operation-popups-target">
+<title
+>El menú desplegable para un objetivo</title>
+
+<para
+>Cuando pulse con el botón derecho sobre un <emphasis
+>objetivo</emphasis
+> de la vista detallada se le mostrará el siguiente menú emergente, que le permite seleccionar una de entre varias operaciones a realizar sobre él. En la imagen inferior se ha seleccionado el objetivo <guilabel
+>myapp (Programa en bin)</guilabel
+> del subproyecto <guilabel
+>myapp/src</guilabel
+>. </para>
+
+<informaltable frame="none">
+<tgroup cols="2"
+><tbody
+><row>
+  <entry
+><inlinemediaobject>
+    <imageobject>
+      <imagedata fileref="automake-target-popup.png" format="PNG"/>
+    </imageobject>
+  </inlinemediaobject
+></entry>
+  <entry valign="bottom"
+><itemizedlist>
+    <listitem
+><para
+>El elemento <guimenuitem
+>Opciones</guimenuitem
+> de un objetivo sólo es aplicable a los archivos de código fuente. El el diálogo correspondiente puede especificar los modificadores para el enlazador, las rutas donde encontrar bibliotecas e incluso proporcionar una lista de las bibliotecas reales que se deben enlazar con su aplicación. </para
+></listitem>
+    <listitem
+><para
+>El elemento <guimenuitem
+>Crear nuevo archivo</guimenuitem
+> muestra un diálogo en el que puede introducir el nombre del archivo que se generará y su tipo (de entre los disponibles en una lista desplegable). </para
+></listitem>
+    <listitem
+><para
+>El elemento <guimenuitem
+>Añadir archivos existentes</guimenuitem
+> muestra un diálogo mediante el que puede añadir un archivo existente a este objetivo. </para
+></listitem>
+    <listitem
+><para
+>El elemento <guimenuitem
+>Eliminar</guimenuitem
+> de un objetivo le permite eliminar de manera virtual dicho objetivo y todos sus archivos de la estructura del proyecto. </para
+></listitem>
+    <listitem
+><para
+>El elemento <guimenuitem
+>Convertir en objetivo activo</guimenuitem
+> sólo es aplicable a los objetivos que contengan archivos de código fuente. Los archivos nuevos siempre se añadirán al objetivo activo. </para
+></listitem>
+    <listitem
+><para
+>El elemento <guimenuitem
+>Construir objetivo</guimenuitem
+> se encarga de llamar a todas las operaciones de compilación necesarias para construir el código del objetivo seleccionado. </para
+></listitem>
+  </itemizedlist
+></entry>
+</row
+></tbody
+></tgroup>
+</informaltable>
+
+</sect3
+> <!-- automake-manager-operation-popups-target -->
+
+<sect3 id="automake-manager-operation-popups-subproject">
+<title
+>El menú desplegable para un subproyecto</title>
+
+<para
+>Cuando pulsa con el &RMB; sobre un <emphasis
+>subproyecto</emphasis
+> en la ventana de vista general se le muestra el siguiente menú, que le permite realizar cambios importantes en la estructura de su proyecto y en el modo en que se compila, construye o instala. Puede utilizarlo para expandir o modificar la estructura básica de proyecto que ha creado el &appwizard;. </para>
+
+
+<informaltable frame="none">
+<tgroup cols="2"
+><tbody
+><row>
+  <entry
+><inlinemediaobject>
+    <imageobject>
+      <imagedata fileref="automake-subproject-popup.png" format="PNG"/>
+    </imageobject>
+  </inlinemediaobject
+></entry>
+  <entry valign="bottom"
+><itemizedlist>
+    <listitem
+><para
+>Para un subproyecto, el elemento <guimenuitem
+>Opciones</guimenuitem
+> controla el modo en que dicho subproyecto será compilado, construido e instalado. El diálogo que se muestra contiene las pestañas: «Compilador», «Inclusiones», «Prefijos» y «Orden de construcción». </para
+></listitem>
+    <listitem
+><para
+>El elemento <guimenuitem
+>Añadir subproyecto</guimenuitem
+> crea una nueva carpeta y el archivo de esqueleto Makefile.am. </para
+></listitem>
+    <listitem
+><para
+>El elemento <guimenuitem
+>Añadir objetivo</guimenuitem
+> muestra un diálogo en el que puede establecer las reglas de compilación, construcción e instalación para un grupo de archivos pertenecientes a su subproyecto. </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Añadir servicio</guimenuitem
+> (pendiente de escribir...) </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Añadir aplicación</guimenuitem
+> (pendiente de escribir...) </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Añadir subproyectos existentes</guimenuitem
+> (pendiente de escribir...) </para
+></listitem>
+    <listitem
+><para
+>El elemento <guimenuitem
+>Eliminar subproyecto</guimenuitem
+> del menú desplegable de un subproyecto es el modo adecuado para eliminar dicho subproyecto, ya que ajustará los archivos <filename
+>Makefile.am</filename
+> automáticamente. También se le ofrecerá la opción de eliminar todos los archivos (o enlaces a ellos) existentes en la subcarperta correspondiente. Obviamente, esta característica se debe usar con precaución. </para
+></listitem>
+    <listitem
+><para
+>El elemento <guimenuitem
+>Construir</guimenuitem
+> llama a las operaciones necesarias de compilación para construir el código del subproyecto seleccionado. </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Forzar reedición</guimenuitem
+> (pendiente de escribir...) </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Limpiar</guimenuitem
+> (pendiente de escribir...) </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Instalar</guimenuitem
+> (pendiente de escribir...) </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Instalar (como usuario «root»)</guimenuitem
+> (pendiente de escribir...) </para
+></listitem>
+  </itemizedlist
+></entry>
+</row
+></tbody
+></tgroup>
+</informaltable>
+
+</sect3
+> <!-- automake-manager-operation-popups-subproject -->
+
+</sect2
+> <!-- automake-manager-operation-popups -->
+
+</sect1
+> <!-- automake-manager-operation -->
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+<sect1 id="autoproject">
+<title
+>Proyectos automake</title>
+<indexterm zone="autoproject"
+><primary
+><command
+>autoproyecto</command
+></primary
+></indexterm>
+<indexterm zone="autoproject"
+><primary
+>&automake;</primary
+></indexterm>
+<indexterm zone="autoproject"
+><primary
+>&autoconf;</primary
+></indexterm>
+<indexterm zone="autoproject"
+><primary
+>&libtool;</primary
+></indexterm>
+
+<para
+>(... pendiente de escribir ...) </para>
+
+
+<sect2 id="autoconf">
+<title
+>Autoconf</title>
+<indexterm zone="autoconf"
+><primary
+>El guión <filename
+>configure</filename
+></primary
+></indexterm>
+<indexterm zone="autoconf"
+><primary
+>El guión <filename
+>config.status</filename
+></primary
+></indexterm>
+<indexterm zone="autoconf"
+><primary
+><filename
+>Makefile.in</filename
+></primary
+></indexterm>
+<indexterm zone="autoconf"
+><primary
+><filename
+>config.h.in</filename
+></primary
+></indexterm>
+
+<para
+><filename
+>Makefile.in</filename
+> en <filename
+>Makefile</filename
+> </para>
+
+<programlisting
+>prefix = @prefix@
+INSTALL = @INSTALL@
+build_triplet = @build@
+CXX = @CXX@
+</programlisting>
+
+<programlisting
+>prefix = /home/bernd/kde3
+INSTALL = /usr/bin/ginstall -c -p
+build_triplet = i686-pc-linux-gnu
+CXX = g++
+</programlisting>
+
+<para
+><filename
+>config.h.in</filename
+> en <filename
+>config.h</filename
+> </para>
+
+<programlisting
+>/* Definir si tiene instalado libz */
+#undef HAVE_LIBZ
+/* El tamaño de un número entero, calculado por sizeof */
+#undef SIZEOF_INT
+</programlisting>
+
+<programlisting
+>/* Definir si tiene instalado libz */
+#define HAVE_LIBZ 1
+/* El tamaño de un número entero, calculado por sizeof */
+#define SIZEOF_INT 4
+</programlisting>
+
+</sect2
+> <!-- autoconf -->
+
+
+<sect2 id="automake">
+<title
+>Automake</title>
+
+<para
+>(... pendiente de escribir ...) </para>
+
+</sect2
+> <!--automake  -->
+
+
+<sect2 id="automake-manager">
+<title
+>&automanag; de &kdevelop;</title>
+
+<figure id="screenshot-automake-manager" float="1">
+<title
+>Una captura de pantalla del gestor de automake</title>
+<mediaobject>
+<imageobject
+><imagedata fileref="automake-manager.png"/></imageobject>
+</mediaobject>
+</figure>
+
+</sect2
+> <!-- automake-manager -->
+
+
+<sect2 id="automakelibrary">
+<title
+>Construir e instalar bibliotecas</title>
+
+<para>
+<itemizedlist>
+<listitem
+><para
+>-rpath </para
+></listitem>
+<listitem
+><para
+>PIC </para
+></listitem>
+<listitem
+><para
+>static </para
+></listitem>
+<listitem
+><para
+>plugins: no-undefined </para
+></listitem>
+</itemizedlist>
+</para>
+
+</sect2
+> <!-- automakelibrary -->
+
+</sect1
+> <!-- autoproject -->
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+<sect1 id="customproject">
+<title
+>Makefiles personalizados y guiones de construcción</title>
+<indexterm zone="customproject"
+><primary
+><filename
+>Makefile</filename
+></primary
+></indexterm>
+<indexterm zone="customproject"
+><primary
+><filename
+>build.xml</filename
+></primary
+></indexterm>
+
+<para
+>(... pendiente de escribir ...) </para>
+
+</sect1
+> <!-- customproject -->
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+<sect1 id="compileroptions">
+<title
+>Opciones del compilador</title>
+
+<para
+>(... pendiente de escribir ...) </para>
+
+</sect1
+> <!-- compileroptions -->
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+<sect1 id="makeoptions">
+<title
+>Opciones de make</title>
+
+<para
+>(... pendiente de escribir ...) </para>
+
+</sect1
+> <!-- makeoptions -->
+
+</chapter
+> <!-- project-management -->

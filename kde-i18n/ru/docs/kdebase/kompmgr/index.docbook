@@ -1,0 +1,586 @@
+<?xml version="1.0" ?>
+<!DOCTYPE book PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" "dtd/kdex.dtd" [
+ <!ENTITY kappname "kompmgr">
+ <!ENTITY package "kwin">
+ <!ENTITY % Russian "INCLUDE">
+ <!ENTITY % addindex "IGNORE">
+]>
+
+<book lang="&language;">
+<bookinfo>
+<title
+>Информация о &kappname;</title>
+
+<authorgroup>
+<author
+><personname
+><firstname
+>Thomas</firstname
+><surname
+>Luebking</surname
+></personname
+> <email
+>thomas.luebking@web.de</email
+> </author>
+
+<othercredit role="translator"
+><firstname
+>Иван</firstname
+><surname
+>Петров</surname
+><affiliation
+><address
+> <email
+>pis00593@udmglzs.udmene.ru</email
+></address
+></affiliation
+><contrib
+>Перевод на русский язык</contrib
+></othercredit
+> <othercredit role="translator"
+><firstname
+>Виктор</firstname
+><surname
+>Ерёмин</surname
+><affiliation
+><address
+> <email
+>ErV2005@rambler.ru</email
+></address
+></affiliation
+><contrib
+>Перевод на русский язык, проверка и правка перевода</contrib
+></othercredit
+> 
+</authorgroup>
+
+<copyright>
+<year
+>2005</year>
+<holder
+>Thomas Luebking</holder>
+</copyright>
+
+<legalnotice
+>&FDLNotice;</legalnotice>
+
+<date
+>2005-01-15</date>
+<releaseinfo
+>2.0.1</releaseinfo>
+
+<abstract>
+<para
+>&kappname; &mdash; движок композитной отрисовки (composite rendering), используемый &kwin;.</para>
+<para
+>Этот документ, в основном, содержит общие объяснения того, что это такое, как оно работает, какие есть ограничения, а не руководство по использованию (так как программа автоматически работает в фоновом режиме)</para
+> 
+</abstract>
+
+<keywordset>
+<keyword
+>KDE</keyword>
+<keyword
+>kwin</keyword>
+<keyword
+>движок отрисовки</keyword>
+</keywordset>
+</bookinfo>
+
+<chapter id="introduction">
+<title
+>Введение</title>
+
+<para
+>&kappname; основан на <application
+>xcompmgr</application
+>, расширении X.org, созданным Кейтом Паккардом (Keith Packard), которое реализует особый способ отрисовки элементов экрана.</para>
+
+<para
+>Композитный менеджер перехватывает вывод окон и составляет из этого одно изображение, которое и показывается на экране. Преимущество такого метода в том, что в сущности, с содержимым окон можно делать практически всё, включая смешивание их вместе (прозрачность), присоединение тени. Кроме того можно подсвечивать их, добавлять навязчивую рекламу в любом окне, сжимать их, добавлять растровые строки или всё что можно вообразить, ограниченное только возможностями вашей аппаратуры.</para>
+
+</chapter>
+
+<chapter id="xorg">
+<title
+>Xorg</title>
+
+<para
+>Для того, чтобы &kappname; работал вам обязательно нужен <emphasis
+>X.org 6.8 или более поздний</emphasis
+>. X.org ранних версий или XFree86 работать не будут.</para>
+
+<sect1 id="xsetup">
+<title
+>Настройка</title>
+<para
+>Нужно явно включить это расширение. Добавьте новую секцию в конфигурационный файл X.org:</para>
+
+<programlisting
+>Section "Extensions"
+    Option "Composite" "Enable"
+EndSection
+</programlisting>
+
+<para
+>Если ваш <acronym
+>GPU</acronym
+> (сложный чип, который является основой современной графической карты) поддерживает ускорение отрисовки, включите её. Лучше всего это поддерживает <trademark
+>NVIDIA</trademark
+>, меньше карты от ATI.</para>
+
+<programlisting
+>Section "Device"
+....
+....
+    Option     "RenderAccel" "true"
+....
+....
+EndSection</programlisting>
+
+<para
+>&kappname; теперь должен быть доступен. Для получения большей информации, смотрите <link linkend="problems"
+>FAQ</link
+>.</para>
+
+</sect1>
+
+</chapter>
+
+<chapter id="settings">
+<title
+>Настройка</title>
+
+<para
+>Эта глава описывает, какие параметры вы можете изменять, как это будет визуально выглядеть визуально и как скажется на производительности.</para>
+
+<sect1 id="translucency">
+<title
+>Прозрачность</title>
+
+<para
+>Прозрачный объект &mdash; это такой объект, который пропускает сквозь себя свет. В терминах окон графической среды это значит, что содержимое окон видно сквозь расположенное наверху окно.</para>
+
+<para
+>Прозрачность позволяет выделять особые окна, иметь трёхмерный взгляд на рабочий стол, отслеживать перекрывающиеся окна и, наконец, просто выглядит привлекательно. Ценой смешивания всего вместе является повышенные требования к  производительности системы.</para>
+
+<para
+>Вы можете независимо настраивать прозрачность следующих элементов:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Активные окна</guilabel
+></term>
+<listitem
+><para
+>Рекомендуется отключать прозрачность активного окна. Первая и основная причина - производительность, а вторая — то, что просмотр содержимого прозрачного окна заставляет ваши мозги отделять раздражающую просвечивающую информацию, что утомительно.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Неактивные окна</guilabel
+></term>
+<listitem
+><para
+>Если вы установите прозрачность неактивных окон, то активные окна будут выделяться и их легче будет определить. Тем не менее, если вы выберете меньшее значение, вам возможно будет труднее найти неактивное окно. Если вы выберете очень низкое значение (&lt; 20&percnt;) вы, возможно, не сможете определить порядок окон, так что случайно сможете нажать кнопку <guibutton
+>OK</guibutton
+> диалога, хотя вы просто хотели активировать окно. Оптимальными значениями являются 60&percnt;..80&percnt;.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Перемещаемые окна</guilabel
+></term>
+<listitem
+><para
+>Хотя увеличение прозрачности окон (непрозрачность &lt;20&percnt;) при перемещении — очень красивый эффект, это может сильно сказаться на производительности, особенно если вы не выключили тени (см. ниже). Попробуйте и, если почувствуете, что ваша система работает очень медленно, оставьте перемещаемые окна непрозрачными. Это значение также применяется для окон, у которых изменяется размер.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Специальные окна</guilabel
+></term>
+<listitem
+><para
+>Так как панели, такие как kicker, редко или вообще не перемещаются и обычно ограничены по размеру, это отлично смотрится и не сильно скажется на производительности системы.</para
+>  
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Считать окна со включенным "Всегда наверху" как активные</guilabel
+></term>
+<listitem
+><para
+>Если вы устанавливаете окно поверх всех остальных, вы обычно хотите держать его в фокусе, так что может иметь смысл так же выделить его.</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Отключить ARGB-окна</guilabel
+></term>
+<listitem
+><para
+>XRender поддерживает окна с альфа-маской, т.е. прозрачными секциями. На сегодняшний день нет или есть очень немного приложений, в которых можно использовать эту возможность, поскольку это не имеет смысла без использования композитного менеджера. Со временем это может измениться.</para>
+<para
+>С другой стороны, большинство приложений gtk 1.x (&eg; <application
+>xmms</application
+>) устанавливают такую альфа-маску, так что окна становится невозможно использовать (по крайней мере, если окна под ними не чёрные), так что для приложений gtk можно отключить поддержку ARGB-окон. Мы надеемся, что в ближайшем будущем в gtk появится соответствующий патч и это будет исправлено.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</sect1>
+
+<sect1 id="shadows">
+<title
+>Тени</title>
+<para
+>Почему кто-то может захотеть чтобы окна отбрасывали тени? Ну, например, просто потому, что это выглядит прикольно, или потому что это позволяет лучше различать окна или... потому что это выглядит прикольно!</para
+> 
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Использовать тени</guilabel
+></term>
+<listitem
+><para
+>Так как тени расходуют дополнительные ресурсы cpu/gpu, их можно отключить, сохраняя общие возможности альфа-канала.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Размер для активного окна</guilabel
+></term>
+<term
+><guilabel
+>Размер для неактивного окна</guilabel
+></term>
+<term
+><guilabel
+>Размер для специальных окон</guilabel
+></term>
+<listitem
+><para
+>Вы можете выбрать различный размер тени для различных состояний и типов окна. Эти значения не абсолютные, а зависят от разрешения экрана.</para>
+<para
+>В принципе, вы можете установить любые значения (если вручную править файл конфигурации, далеко за пределы предлагаемого значения <quote
+>32</quote
+>),  но большие тени требуют больше ресурсов cpu/gpu.</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Вертикальное смещение</guilabel
+></term>
+<term
+><guilabel
+>Горизонтальное смещение</guilabel
+></term>
+<listitem
+><para
+>По умолчанию, окно отбрасывает <quote
+>одинаковые со всех сторон</quote
+> тени, предполагающие фронтальный источник света. Пользователям, привыкшим к &MacOS;, может понравиться вертикальное смещение, а пользователям &Windows; — лёгкое смещение вправо и вниз. Поэкспериментируйте со значениями и оставьте понравившиеся.</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Цвет тени</guilabel
+></term>
+<listitem
+><para
+>Обычно тени, как результат неравномерного распределения света, являются градациями серого (таким образом максимальный цвет тени — это чёрный, или полное отсутствие света). Но это же виртуальный мир, и если кто-то захочет розовые тени, то почему бы и нет?</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Убирать тень при перемещении</guilabel
+></term>
+<listitem
+><para
+>Установите этот флажок, если вам нужна лучшая производительность (особенно если вы используете прозрачные передвигаемые окна).</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Убирать тень при изменении размера</guilabel
+></term>
+<listitem
+><para
+>Мы рекомендуем включить эту опцию вне зависимости от того, используется прозрачность при изменении размеров окна (передвижении) или нет. Изображение теней окон должно постоянно пересоздаваться при изменении размера, что значительно влияет на производительность системы.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</sect1>
+
+<sect1 id="effects">
+<title
+>Эффекты</title>
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Плавное появление окон</guilabel
+></term>
+<term
+><guilabel
+>Плавное изменение прозрачности</guilabel
+></term>
+<listitem
+><para
+>Вы можете захотеть, чтобы окна, вместо того, чтобы просто появляться, медленно проявлялись. Насколько это выглядит впечатляюще, настолько же впечатляюще это влияет на производительность, и с окнами, которые находятся в процессе появления труднее взаимодействовать. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><guilabel
+>Скорость плавного показа</guilabel
+></term>
+<term
+><guilabel
+>Скорость плавного скрытия</guilabel
+></term>
+<listitem
+><para
+>По соображениям удобства, упомянутым в разделе <guilabel
+>Плавное появление окон</guilabel
+>, наиболее практично использовать быстрое появление и (для большей привлекательности) медленное исчезновения. Это обеспечит вам приятные эффекты и приемлемую производительность системы, а также маленькую задержку перед появлением информации.</para
+> 
+</listitem>
+</varlistentry>
+</variablelist>
+</sect1>
+
+</chapter>
+
+<chapter id="problems">
+<title
+>Проблемы</title>
+
+<para
+>Используемое расширение очень ново. Оно может вызвать некоторые проблемы и даже вызвать отказ X, так что <emphasis
+>весьма рекомендуется даже не включать композитные расширения в Xorg.conf на критически важных производственных системах</emphasis
+>. Тем не менее, если вы хотите рискнуть и сделать систему чуть менее стабильной, то, конечно, хорошо иметь приятное для глаза окружение.</para>
+
+<para
+>В этом случае вы можете заметить некоторые проблемы или графические артефакты. Ниже приведены некоторые часто встречающиеся и пути их удаления: </para>
+
+<qandaset>
+<qandaentry>
+<question>
+<para
+>У меня X.org 6.8.x, но &kappname; не запускается</para>
+</question>
+<answer>
+<para
+>Вы должны явно включить соответствующее расширение, для этого надо добавить новую секцию в /etc/X11/xorg.conf:</para>
+<programlisting
+>Section "Extensions"
+   Option "Composite" "Enable"
+EndSection</programlisting>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Хорошо, &kappname; работает, но невыносимо медленно</para>
+</question>
+<answer>
+<para
+>Если это поддерживается вашим <acronym
+>GPU</acronym
+> (большинство карт <trademark
+>NVIDIA</trademark
+> и некоторые карты от ATI), включите ускорение отрисовки</para>
+<programlisting
+>Section "Device"
+....
+....
+Option     "RenderAccel" "true"
+....
+....
+EndSection
+</programlisting>
+
+<para
+>Если всё равно работает медленно, то можно попытаться отрегулировать использование памяти. Можно уменьшить глубину цвета экрана (&eg; с 24 до 16) или уменьшить разрешение (&eg; с 1280x1024 до 1024x768).</para
+> 
+
+<para
+>Обратите внимание на то, что в настоящее время ограничивающим фактором для расширения "Composite" является размер кэша CPU.</para>
+
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>После включения расширения «Composite» я больше не могу запустить никакие приложения <acronym
+>OpenGL</acronym
+>. У меня стоит карта от <trademark
+>NVIDIA</trademark
+>.</para>
+</question>
+<answer>
+<para
+>Для решения некоторых проблем <trademark
+>NVIDIA</trademark
+> отключает поддержку GLX  при включении «Composite». Включение возможно, но может вызвать проблемы на некоторых сочетаниях ядра/драйвера/GPU.</para
+> 
+<programlisting
+>Section "Device"
+....
+....
+Option  "AllowGLXWithComposite" "true"
+....
+....
+EndSection
+</programlisting>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Я хочу поиграть в игру, использующую <acronym
+>SDL</acronym
+> (но не <acronym
+>OpenGL</acronym
+>), вызываю, например, <application
+>scummvm</application
+>, но, когда compmgr активен, я вижу только тень!</para>
+</question>
+<answer>
+<para
+>Это проблема с PictType, возвращаемым SDL.</para>
+
+<para
+>Решение:</para>
+<screen
+>Вместо прямого вызова <command
+>scummvm</command
+>, вызывайте <command
+>SDL_VIDEO_X11_VISUALID=0x24 scummvm</command
+> Это заставит SDL использовать поддерживаемый формат и вы сможете играть также как и раньше. </screen>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Приложение ХХХ не запускается после включения расширения.</para>
+<para
+>Приложение YYY вызывает сбой X после включения расширения.</para>
+<para
+>Приложение ZZZ выглядит странно после активации композитного менеджера.</para>
+</question>
+<answer>
+<para
+>Расширение всё ещё экспериментально.</para>
+<para
+>Решение:</para>
+<para
+>Вместо прямого вызова <command
+>appName</command
+>, вызывайте <command
+>XLIB_SKIP_ARGB_VISUALS=1 appName</command
+></para>
+<para
+>Известные приложения, которые вызывают проблемы:</para>
+<itemizedlist>
+<listitem
+><para
+>Все приложения gtk1 (<application
+>gmplayer</application
+>, <application
+>xmms</application
+>, <application
+>gaim</application
+>) не запускаются, выглядят странно или приводят к сбою X</para
+></listitem>
+<listitem
+><para
+>&kuickshow; — показывает только чёрную рамку</para
+></listitem>
+<listitem
+><para
+>&Qt; <application
+>Designer</application
+> — приводит к сбою X</para
+></listitem>
+<listitem
+><para
+>&kopete; — приводит к сбою X</para
+></listitem>
+<listitem
+><para
+>&kolf; — приводит к сбою X</para
+></listitem>
+</itemizedlist>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Я пытаюсь посмотреть фильм, но в окне видео вижу только артефакты.</para>
+</question>
+<answer>
+<para
+>Скорей всего, вы используете видео драйвер <quote
+>xv</quote
+>. Он использует режим перекрытия, когда содержимое видео записывается напрямую в память видеокарты, минуя X. Поэтому окно считается статическим (цветной фон) и не обновляется соответствующим расширением.</para>
+<para
+>Будем надеяться на решение этой проблемы в будущем. В настоящее время лучшие результаты показывает <application
+>Xine</application
+>, но просмотр прозрачного видео всё равно не быстр.</para>
+</answer>
+</qandaentry>
+
+</qandaset>
+</chapter>
+
+<chapter id="credits-and-licenses">
+<title
+>Авторские права и лицензирование</title>
+
+<sect1 id="authors">
+<title
+>Авторы</title>
+<para
+>Томас Любкинг (Thomas Luebking) <email
+>baghira-style@gmx.net</email
+>: редактор</para>
+&underFDL; &underGPL; </sect1>
+
+
+</chapter>
+
+</book>
+<!--
+Local Variables:
+mode: sgml
+sgml-omittag: nil
+sgml-shorttag: t
+End:
+-->
+

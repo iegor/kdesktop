@@ -1,0 +1,138 @@
+<chapter id="security">
+<title
+>Säkerhetshänsyn med &kppp;</title>
+
+<para
+>Det här avsnittet är i huvudsak ämnat för systemadministratörer (<systemitem
+>root</systemitem
+>), de med höga säkerhetskrav eller helt enkelt tekniskt intresserade. Det är inte nödvändigt att läsa det här om du bara använder &Linux; hemma själv, även om du i alla fall kan lära dig ett och annat.</para>
+
+<sect1 id="security-restricting-access">
+<title
+>Att begränsa tillgången till &kppp;</title>
+
+<para
+>En systemadministratör kan vilja begränsa tillgången med avseende på vem som får använda &kppp;. Det finns två sätt att åstadkomma detta.</para>
+
+<sect2 id="security-group-permissions">
+<title
+>Att begränsa tillgången med gruppskydd</title>
+
+<para
+>Skapa en ny grupp (du skulle kunna vilja döpa den till <systemitem
+>dialout</systemitem
+> eller något liknande), och lägg till alla användare som ska få lov att använda &kppp; i den här gruppen. Skriv sedan på kommandoraden:</para>
+
+<screen
+><prompt
+>#</prompt
+> <userinput
+><command
+>chown</command
+> <option
+>root.dialout</option
+> <filename
+>/opt/kde/bin/kppp</filename
+></userinput>
+<prompt
+>#</prompt
+> <userinput
+><command
+>chmod</command
+> <option
+>4750</option
+> <filename
+>/opt/kde/bin/kppp</filename
+></userinput
+>
+</screen>
+
+<para
+>Det här förutsätter att &kde; installerades i <filename class="directory"
+> /opt/kde/</filename
+> och att den nya gruppen heter <systemitem
+>dialout</systemitem
+>.</para>
+
+</sect2>
+
+<sect2 id="security-kppps-way">
+<title
+>Att begränsa tillgången på &kppp;s eget sätt</title>
+
+<para
+>Innan det gör någonting, kontrollerar &kppp; om det finns en fil som heter <filename
+>/etc/kppp.allow</filename
+>. Om den här filen finns, tillåts bara användare som namnges i den här filen att ringa upp. Den här filen måste vara läsbar av alla (men förstås <emphasis
+>INTE</emphasis
+> skrivbar). Bara inloggningsnamn känns igen, så du kan inte använda en <acronym
+>UID</acronym
+> i den här filen. Här är ett kort exempel:</para>
+
+<screen
+># /etc/kppp.allow
+# kommentarrader som den här ignoreras
+# precis som tomma rader
+
+hans
+karl
+lena
+</screen>
+
+<para
+>I det ovanstående exemplet, tillåts bara användarna <systemitem
+>hans</systemitem
+>, <systemitem
+>karl</systemitem
+> och <systemitem
+>lena</systemitem
+> att ringa upp, liksom alla användare med <acronym
+>UID</acronym
+> 0 (så du behöver inte explicit ange root i filen).</para>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="security-why-suid">
+<title
+>Kppp har <acronym
+>SUID</acronym
+>-biten satt? Vad händer då med säkerheten?</title>
+
+<para
+>Det är mer eller mindre omöjligt att skriva ett uppringningsprogram som både är säkert och lätt att använda för ovana användare utan att sätta <acronym
+>SUID</acronym
+>-biten. &kppp; hanterar säkerhetsproblemen med följande strategi.</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Omedelbart efter att programmet har startat, så skapar &kppp; en ny process (fork).</para>
+</listitem>
+<listitem>
+<para
+>Huvudprocessen, som hanterar hela det grafiska gränssnittet med användarpåverkan, släpper <acronym
+>SUID</acronym
+>-tillståndet efter den nya processen skapats, och kör med normala användarrättigheter.</para>
+</listitem>
+<listitem>
+<para
+>Den nya processen behåller sina rättigheter, och ansvarar för alla åtgärder som behöver rättigheter som <systemitem
+>root</systemitem
+>. För att hålla den här delen säker, så används inga anrop till &kde;- eller &Qt;-biblioteken, utan bara enkla biblioteksanrop. Källkoden för den här processen är kort (omkring 500 rader) och väldokumenterad, så det är lätt att kontrollera den för att hitta säkerhetsluckor.</para>
+</listitem>
+<listitem>
+<para
+>Huvudprocessen och den nya processen kommunicerar med vanliga &UNIX; <acronym
+>IPC</acronym
+>.</para>
+</listitem>
+</itemizedlist>
+
+<para
+>Särskilt tack till Harri Porten för att ha skrivit den här utmärkta koden. Det ansågs omöjligt, men han lyckades inom en vecka.</para>
+
+</sect1>
+
+</chapter>

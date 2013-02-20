@@ -1,0 +1,686 @@
+<chapter id="theory">
+<title
+>Veidi teoreetilist tausta: &CUPS; <acronym
+>IPP</acronym
+>, &PostScript; ja <application
+>Ghostscript</application
+></title>
+
+<para
+>Selle peatüki siht on anda veidi teoreetilist tausta trükkimise kohta üldiselt ning eriti &CUPS;i kohta. Kui sa seda ei vaja, võid kohe edasi tõtata <link linkend="getting-started"
+>järgmise peatüki</link
+> juurde. Kuid on usutav, et millalgi jõuad siiski siia tagasi, sest vahel võib natuke teooriat mõne praktilise probleemi lahendamisel marjaks ära kuluda.</para>
+
+<sect1 id="basics-of-printing">
+<title
+>Trükkimise põhialused</title>
+
+<para
+>Trükkimine on keerukaimaid <acronym
+>IT</acronym
+>-tehnoloogia osasid.</para>
+
+
+<para
+>Kunagi ammustel aegadel pidi iga sellise rakenduse arendaja, mis suutis tekitada trükitava väljundi, kirjutama ise ka printeridraiveri. See oli päris keeruline, sest erinevatel rakendustel on ju erinevad failivormingud. Isegi ühelaadsed rakendused, näiteks tekstitöötlusrakendused, ei saa sageli üksteise vormingust aru. Seepärast puudus ka ühine liides kõigile printeritele, sest programmeerijad kirjutasid oma draiverid sageli vaid mõnd üksikut mudelit silmas pidades.</para>
+
+<para
+>Kui turule ilmus uus seade, pidi rakenduse autor sellele uue draiveri kirjutama, kui ta soovis, et rakendus seda toetaks. Ka tootjad ei saanud sugugi kindlad olla, et nende seadet üldse mõni maailmas tuntud rakendus toetab (kuigi viimaseid oli toona palju-palju vähem kui praegu).</para>
+
+<para
+>Kui süsteemiadministraator pidi tegelema kümne rakenduse ja tosina printeriga, tähendas see ühtlasi tegelemist nii umbes 120 draiveriga. Seepärast muutus rakenduste ja printerite vahelise ühtse liidese väljatöötamine lihtsalt hädavajalikuks.</para>
+
+<para
+>Suure tühimiku täitis <quote
+>lehekülje kirjeldamise keelte</quote
+> (PDL) teke, mis kirjeldasid üldiselt tindi ja tooneri graafilist esitust paberilehel (või muudel väljundseadmetel, näiteks monitoridel, fotolaomasinatel &etc;). </para>
+
+<para
+>Üks selliseid oli Adobe loodud &PostScript;. See tähendas, et rakenduse programmeerija võis nüüd keskenduda sellele, kuidas panna oma rakendus genereerima trükitaval leheküljel &PostScript; keelt, printerite tootjad aga sellele, kuidas õpetada oma seadmeid &PostScript;-ist aru saama.</para>
+
+<para
+>Aegamööda ilmus teisigi kirjeldusmeetodeid. &PostScript; tähtsaimad võistlejad olid <acronym
+>PCL</acronym
+> (&Hewlett-Packard; <quote
+>trükkimise kontrollkeel</quote
+>), <quote
+>ESC/P</quote
+> (Epson) ja <acronym
+>GDI</acronym
+> (&Microsoft; <quote
+>graafilise seadme liides</quote
+>).</para>
+
+<para
+>Lehekülje kirjeldamise keelte teke muutis kõigi elu hõlpsamaks ning soodustas edasist arendustegevust. Kuid endiselt panid kasutajate, administraatorite, arendajate ja tootjate pea valutama erinevad, omavahel sobimatud ning konkureerivad kirjelduskeeled.</para>
+
+<sect2>
+<title
+>&PostScript; mälus - bittrastrid paberil</title>
+
+<para
+>&PostScript; on kõige kasutatavam professionaalsetes trükikeskkondades, näiteks PrePress ja trükitööstus. &UNIX; ja &Linux; maailmas on &PostScript; domineeriv <acronym
+>PDL</acronym
+>-standard. Seepärast genereerib peaaegu iga rakendus lehekülgede esituse &PostScript;-is, kui vajutada nuppu <quote
+>trüki</quote
+>. Vaatame korraks lihtsat (käsitsi loodud) &PostScript; koodi. Järgnev tekst kirjeldab kaht lihtsat joonistust:</para>
+
+<example id="coded-postscript">
+<title
+>&PostScript; kood</title>
+<screen
+>%!PS
+100 100 moveto
+0 50 rlineto
+50 0 rlineto
+0 -50 rlineto
+closepath
+.7 setgray fill
+% first box over; next
+160 100 moveto
+0 60 rlineto
+45 10 rlineto
+0 -40 rlineto
+closepath
+.2 setgray fill</screen>
+</example>
+
+<para
+>See annab &PostScript; kujuteldavale <quote
+>sulele</quote
+> käsu joonistada teatud tüüpi kujund ning täita see siis halli erinevate toonidega. Esimene osa tähendab inimlikumas keeles <quote
+>Mine koordinaadile (100,100), tõmba joon pikkusega 50 üles, siis joon sealt paremale, siis alla ja siis tagasi alguspunkti. Seejärel täida kujund 70%-lise tumedusega halliga</quote
+></para>
+
+<example id="rendered-postscript">
+<title
+>Teisendatud &PostScript;</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="ps-boxes.png" format="PNG"/>
+</imageobject>
+<textobject>
+<phrase
+><xref linkend="coded-postscript"/> näide teisendatud pildina.</phrase>
+</textobject>
+</mediaobject>
+</example>
+
+<para
+>&PostScript; võib mõistagi täita märksa keerukamaid ülesandeid. See on võimas programmeerimiskeel paljude operaatorite ja funktsioonidega. On võimalik kirjutada isegi &PostScript; rakendusi, mis arvutavad pii väärtust, vormindavad kõvaketta või kirjutavad faile. &PostScript; peamine väärtus ja tugevus seisneb siiski selles, et ta suudab kirjeldada graafiliste objektide esitust leheküljel: ta võib skaleerida, peegeldada, tõlgendada, töödelda, pöörata ja moonutada kõike, mida on üldse võimalik paberile kanda, see tähendab kõikvõimalikes kirjatüüpides märke ja tähti, kujundeid, varje, värve, jooni, punkte, rastrit...</para>
+
+<para
+>&PostScript; fail kujutab endast ühe või mitme trükitava lehekülje suhteliselt abstraktset esitust. Ideaalis peaks ta kirjeldama lehekülgi seadmest sõltumatul viisil. &PostScript; ei ole sõna otseses mõttes <quote
+>nähtav</quote
+>, ta elab ainult kõvaketastel ja <acronym
+>RAM</acronym
+>-is tulevaste väljatrükkide kodeeritud esitusena.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Rasterpildid paberilehel</title>
+
+<para
+>Paberilehel nähtav on peaaegu alati <quote
+>rasterkujutis</quote
+>. Isegi kui silmad paistavad ütlevat, et tegemist on joonega, võta korralik luup ja sa näed, et joone asemel on hulk tillukesi punkte... (Näide vastupidisest on jooned, mis on tõmmatud <quote
+>sulgplotteriga</quote
+>.) See ongi ainus asi, mida tänapäeva printerite <quote
+>märkemootorid</quote
+> suudavad paberile kanda: tavalised punktid, erinevuseks vaid nende värv, suurus ja lahutusvõime, mille abil luuakse erinevatest bittrastrite mustritest koosnev <quote
+>leheküljekujutis</quote
+>.</para>
+
+<para
+>Erinevad printerid vajavad erinevat rasterkujutise ettevalmistusviisi. Näiteks tindiprinteri puhul sõltub lahutusvõimest, kasutatavate tintide hulgast (parimatel võib olla seitse erinevat tinti, odavamatel kõigest kolm), düüside arvust (mõnel trükipeal võib neid olla üle saja!), mis võivad korraga tinti väljastada, kasutatavast <quote
+>pseudotoonimise algoritmist</quote
+> ja veel paljust muust rastri lõplik vorming ning ülekandeviis märkemootorile ehk teisisõnu sõltub kõik väga tugevasti konkreetsest printerimudelist.</para>
+
+<para
+>Kunagi ammu, veel <quote
+>reaprinterideemonite</quote
+> elupäevil, olid printerid masinad, mis tagusid mehhaaniliselt <acronym
+>ASCII</acronym
+>-teksti ridu pikale siksakilise <acronym
+>maona</acronym
+> kokku pakitud paberilohele, mis venis välja laua all seisvast suurest karbist... Oh, kuidas ajad on muutunud!</para>
+
+</sect2>
+
+
+<sect2>
+<title
+><acronym
+>RIP</acronym
+>: &PostScript;-ist rastrini</title>
+
+<para
+>Enne seda, kui lõplikud rasterkujutised paberilehtedele kantakse, tuleb nad kuidagi abstraktsest &PostScript; esitusest välja tuletada. See kujutab endast päris mahukat arvutamistegevust, mis kannab nimetust <quote
+>rastriprotsess</quote
+> (tavaliselt lühendina <quote
+><acronym
+>RIP</acronym
+></quote
+>).</para>
+
+<para
+>&PostScript; printerite puhul võtab <acronym
+>RIP</acronym
+>-pimise enda peale seade ise, talle tuleb vaid &PostScript;-fail ette anda. Printeris asuv <quote
+>rasterprotsessor</quote
+> (ka selle puhul kasutatakse lühendit <acronym
+>RIP</acronym
+>) vastutab (ja enamasti tuleb ka päris hästi toime) &PostScript; lehekülje kirjelduse tõlgendamise ning rasterkujutise paberile kandmisega.</para>
+
+<para
+>Väiksemad &PostScript; seadmed kasutavad riistvaralist <acronym
+>RIP</acronym
+>-i, mis asub erilisel kiibil. Suurematel professionaalsetel printeritel on <acronym
+>RIP</acronym
+> tihti tarkvaraline, asudes spetsiaalses kiires &UNIX;-põhises arvutis, enamasti Sun SPARC Solaris või &SGI; &IRIX; masinal.</para>
+
+</sect2>
+
+<sect2>
+<title
+><application
+>Ghostscript</application
+> kui tarkvaraline <acronym
+>RIP</acronym
+></title>
+
+<para
+>Kuid mis saab siis, kui &PostScript; printerit ei ole?</para>
+
+<para
+><acronym
+>RIP</acronym
+>-pimine tuleb ette võtta enne trükiandmete saatmist märkemootorile. Selleks tuleb esitada &PostScript;, mille on loonud kasutatav rakendus masinal (trükkimise kliendil) endal. Peab ka täpselt teadma, milline näeb välja sihtprinteri märkemootori rastrivorming.</para>
+
+<para
+>Kuna pole võimalik tugineda printeri oskusele mõista ja tõlgendada &PostScript;-i, muutub kõik märksa keerulisemaks: vaja läheb tarkvara, mis suudaks probleemid lahendada.</para>
+
+<para
+>Just seda teebki kõikjale jõudev &ghostscript; paljudel &Linux;, *BSD ja muudel &UNIX; masinatel, mis peavad trükkima mitte-&PostScript; printeritele: &ghostscript; on &PostScript; tõlgendaja, tarkvaraline <acronym
+>RIP</acronym
+>, mis suudab töötada paljude erinevate seadmetega.</para>
+
+</sect2>
+
+<sect2>
+<title
+><quote
+>Draiverid</quote
+> ja <quote
+>filtrid</quote
+>: sissejuhatus</title>
+
+<para
+>&PostScript; sisendist rasterdatud bittrastrite loomiseks kasutab &ghostscript; niinimetatud <quote
+>filtreid</quote
+>. &ghostscript;i paketti kuulub hulk filtreid, osa neist spetsiaalselt teatud printerimudelitele mõeldud. &ghostscript;i filtrid on sageli välja töötatud ilma tootjapoolse teadmise või toeta. Spetsifikatsiooni ja dokumentatsioonita kujutab see endast väga vaevarikast protokollide ja andmevormingute lahtiharutamist.</para>
+
+<para
+>Mitte kõik &ghostscript;i filtrid ei tööta ühtmoodi hästi kõigi printeritega. Mõned uuemad, näiteks projekti <application
+>Gimp</application
+> Print <application
+>stp</application
+> filter, annavad aga suurepäraseid, fotokvaliteedini ulatuvaid tulemusi, olles mõnikord paremad isegi &Microsoft; &Windows; konkureerivatest draiveritest.</para>
+
+<para
+>&UNIX; ja &Linux; puhul tekitab enamik rakendusi trükkimiseks just &PostScript;-i. Seepärast on filtrid siin lihtsalt asendamatud. Põhimõtteliselt tekitavad nad suvalisest &PostScript;-sisendist korrektsed bittrastrid mitte-&PostScript; märkemootoritele.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Draiverid, filtrid ja taustarakendused CUPSis</title>
+
+<para
+>&CUPS; kasutab omaenda filtreid, kuigi temagi filtrisüsteemi aluseks on Ghostscript. Ennekõike filtrid pstoraster ja imagetoraster on otseselt arendatud Ghostscripti koodist. &CUPS; on selle suletud koodi ümber korraldanud ja mehaanikat parandanud ning organiseerinud mõneks selgelt eristatavaks mooduliks.</para>
+
+<para
+>Järgnev joonis (valmistatud &kivio; abil) annab ülevaate &CUPS;is toimivatest filtritest ja taustarakendustest ning nende omavahelistest suhtest. <quote
+>Kulg</quote
+> suundub ülalt alla. Taustarakendused on erilised filtrid, mis ei teisenda andmeid uude vormingusse, vaid saadavad valmis failid printerile. Erinevad ülekandeprotokollid kasutavad erinevaid taustarakendusi.</para>
+
+<screenshot id="architecture-diagram">
+<screeninfo
+>&kprinter;i dialoogi käivitamine (&kivio; joonistus) </screeninfo>
+<mediaobject>
+<imageobject>
+<imagedata fileref="cups-filterarchitecture-kivio-70Percent-scaled.png"
+format="PNG"/></imageobject>
+<textobject>
+<phrase
+>&kprinter;i dialoogi käivitamine (&kivio; joonistus)</phrase
+></textobject>
+</mediaobject>
+</screenshot>
+
+</sect2>
+<sect2>
+<title
+>Spuulerid ja trükkimisdeemonid</title>
+
+<para
+>Lisaks trükivalmis bittrastri loomiseks vajalikule raskele ja mahukale filtreerimisele vajab igasugune trükkimistarkvara spuulimismehhanismi, see tähendab meetodit, kuidas reastada erinevate kasutajate erinevatele printeritele ja filtritele lähetatud erinevad tööd ning saata nad vastavalt sihtkohale edasi. Selle eest kannab hoolt trükkimisdeemon.</para>
+
+<para
+>Deemon hoiab nii-öelda maja korras ning vastutab ühtlasi trükitööde kontrolli eest: kasutajatel peaks üldiselt olema lubatud oma (aga mitte teiste) töid peatada, tühistada, taaskäivitada &etc;</para>
+
+</sect2>
+
+</sect1>
+
+
+
+<sect1 id="cups-and-ppd">
+<title
+>Kõrvalepõige: kuidas <quote
+>CUPS</quote
+> kasutab &PPD; hiigelvõimalusi</title>
+
+<para
+>Nüüd, kui oled saanud mingi arusaama, kuidas &PostScript; keele fail (mis kirjeldab lehekülje väljanägemist üldiselt seadmest sõltumatult) teisendatakse rasterkujutiseks, võib tekkida küsimus: <quote
+>Aga olemas on ju mitut tüüpi rasterväljundseadmeid, mis erinevad lahutusvõime ja paberisuuruse poolest ja on väga erinevad ka mitmesuguste viimistlusvõimaluste poolest (duplekstrükk, brošüürid, perforeeritud ja köidetud väljund erinevatest salvedest pärit erinevat värvi paberil &etc;). Kuidas see kõik saab olla jõukohane seadmest sõltumatule &PostScript;-ile?</quote
+></para>
+
+<para
+>Vastus peitub niinimetatud &PostScript; printeri kirjeldamise (&PPD;) failides. &PPD; kirjeldab kõiki seadmepõhiseid omadusi, mida konkreetne printerimudel saab kasutada. Selles on ka kodeeritud käsud, mida tuleb kasutada seadme teatud omaduse väljakutsumiseks. Kuid &PPD; ei ole mitte suletud raamat, vaid lihtsakoelised <acronym
+>ASCII</acronym
+> tekstifailid.</para>
+
+<para
+>&PPD; <quote
+>leiutamise</quote
+> au kuulub Adobele, kes püüdis muuta tootjatel lihtsamaks oma võimaluste rakendamise &PostScript; printerites ning samal ajal luua selleks standardse meetodi. Adobe on &PPD;-de dokumentatsiooni ja kirjeldamise eest hästi hoolt kandnud. Sisuliselt on nende spetsifikatsioonid vabavara.</para>
+
+<sect2 id="ppd-files">
+<title
+>Seadmepõhised trükkimisvalikud</title>
+
+<para
+>Pea meeles, et algupäraselt loodi täiustatud &PostScript; trükkimise võimalus &Microsoft; &Windows; ja Apple &Mac; süsteemi tarbeks. Kaua aega ei olnud kõik moodsate seadmete rikkalikud trükkimisvõimalused &Linux; ja &UNIX; puhul lihtsalt kasutatavad. Otsustava muutuse tõi kaasa &CUPS;. &CUPS; on väga tihedalt seotud &PPD;-dega ning seepärast saavad kõik &CUPS;i kasutavad süsteemid täiel määral pruukida olemasolevate &PPD;-de võimalusi.</para>
+
+<para
+>&PPD;-de abil saavad printeritootjad kasutada oma toodetes seadmepõhiseid riistvaralisi võimalusi, näiteks duplekstrükk, köitmine, perforeerimine &etc; Printeridraiverid laevad &PPD;-d, nagu oleks need lihtsalt täiendavad seadistustefailid. Nii saab printeri draiver teada seadme võimalustest ja viisidest nende väljakutsumiseks, samuti saab draiver neid &GUI; kujul kasutajale näidata. Seda mehhanismi kasutades saab kasutaja endiselt luua <quote
+>seadmest sõltumatu</quote
+>&PostScript; lehekülje kirjeldamise faili ning määrata seadmepõhised viimistlustingimused, mis lisatakse rakenduse loodud &PostScript;-ile.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Kuidas hankida &PPD; &PostScript; printerile</title>
+
+<para
+>&PPD; ei leidnud alguses sugugi mitte sageli kasutamist &UNIX; ja &Linux; süsteemides. &PPD;-sid pakkuvad tootjad pidasid nende loomisel ikka ja ainult silmas &OS;e, millele need algselt mõeldud olidki: &Microsoft; &Windows; ja &MacOS;. Hiilgav mõte täielikult toetada ja ära kasutada olemasolevaid &PPD; spetsifikatsioone on lubanud &CUPS;il pakkuda kõiki moodsate printerite hiiglaslikke võimalusi &Linux; ja &Linux;-laadsete süsteemide kasutajatele. &kdeprint; muudab aga selle kasutamise veel lihtsamaks, kui &CUPS;i arendajad isegi unistada oskasid.</para>
+
+<para
+>&CUPS; suudab kasutada &Windows; &PPD;-sid, mida tootjad levitavad koos &PostScript; printeritega. Need on tavaliselt tasuta ning neid võib hankida igast &Windows; arvutist, kuhu on paigaldatud vastava mudeli &PostScript; draiver, või siis printeriga kaasasolevalt kettalt. Neid leiab ka mitmelt poolt veebist.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Kuidas spetsiaalsed &PPD;-d tulevad nüüd kasuks mitte-&PostScript; printeritel</title>
+
+<para
+>Nüüd on teada, kuidas kasutavad &PostScript; printerid &PPD;-sid. Aga mitte-&PostScript; printerid? &CUPS; on trikiga hakkama saanud: kasutades sama vormingut ja andmestruktuuri, mida pruugivad &PostScript; printeri kirjeldused (&PPD;-d) &PostScript; maailmas, suudab ta täpselt samamoodi kirjeldada saadaolevaid trükitöö võimalusi ka mitte-&PostScript; printeritele. &CUPS; on oma vajaduste rahuldamiseks lisanud küll mõned read (ennekõike rea, mis määrab filtri, mida kasutada &PostScript;-faili edasiseks töötlemiseks).</para>
+
+<para
+>Nii saavad arendajad kasutada üht ja sama tarkvaramootorit printeri kirjeldamise failide analüüsimiseks, et leida mis tahes printeri saadaolevad võimalused. Mõistagi ei saanud &CUPS;i arendajad loota, et mitte-&PostScript; printerite tootjad hakkavad järsku agaralt &PPD;-sid produtseerima. Nad pidid selle keerulise tegevusega ise alustama ning PPD-d nullist peale valmis kirjutama. Praegu on neid juba üle tuhande &CUPS;i kommertsversioonis <application
+>ESP PrintPro</application
+>.</para>
+
+<para
+>Samal ajal on ilmunud ka hulk &CUPS;ipõhiseid &PPD;-sid. Kuid isegi praegu ei ole enamik pärit mitte printeritootjatelt, vaid vabavara arendajatelt. &CUPS;i rahvas on sellise arengu heaks kiitnud ning tulemused ei ole jäänud tulemata: kui trükkimine &Linux; ja &UNIX; süsteemides oli veel mõne aasta eest tõeline imetegu, siis nüüd on tugi olemas väga paljudel printeritel, sealhulgas seitsmetindilistel printeritel, mis võimaldavad fotokvaliteediga trükki.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Erinevad võimalused hankida &PPD; mitte-&PostScript; printerile</title>
+
+<para
+>&PPD;-sid, mida kasutada &CUPS;i ja mitte-&PostScript; printeritega, leiab mitmelt poolt veebist:</para>
+
+<itemizedlist>
+<listitem>
+<para
+>esiteks <ulink url="http://www.linuxprinting.org"
+>www.linuxprinting.org</ulink
+> hoidlast, kus saab otse veebileheküljel luua <quote
+>CUPS-O-Matic</quote
+> &PPD; suvalisele printerile, mida traditsiooniline &ghostscript;iga trükkimine juba toetab. See aitab soovi korral hõlpsasti üle minna &CUPS;i kasutamisele. Kui printer tuleb korralikult toime traditsioonilise &ghostscript;-trükkimisega, kasuta CUPS-O-Maticut oma draiveri ühendamiseks &CUPS;-süsteemiga ja sa võid nautida parimat, mida kahe maailma liit pakkuda suudab.</para>
+</listitem>
+
+<listitem>
+<para
+>teiseks on &CUPS;i &PPD;-d olemas enam kui 120 printerimudelile, mida juhib uus universaalne <application
+>stp</application
+>-draiver. <application
+>stp</application
+> (algselt Stylus Photo tähistus) arendamine on nüüd projekti gimp-print kätes. Selle algatas &CUPS;i juhtivamaid arendajaid Mike Sweet ning praegu leiab selle aadressil <ulink url="http://gimp-print.sourceforge.net"
+>gimp-print.sourceforge.net</ulink
+>. See draiver suudab trükkida tõelise fotokvaliteediga suurel osal moodsatel tindiprinteritel ning seda on võimalik panna kasutama 120 &CUPS;i &PPD;-d. Muu hulgas sobib see kokku &HP; laser- ja tindiprinteritega, <trademark class="registered"
+>Epson</trademark
+> mudelitega Stylus ja Photo Color, samuti <trademark class="registered"
+>Canon</trademark
+> ja <trademark class="registered"
+>Lexmark</trademark
+> mõne mudeliga.</para>
+</listitem>
+
+<listitem>
+<para
+>kolmandaks on olemas &CUPS;i arendajate välja töötatud &CUPS;i kommertsvariant, mis kannab nime <application
+>ESP PrintPro</application
+> ja millega on kaasas enam kui 2300 printeridraiverit, sealhulgas isegi täiustatud imagetoraster ja pstoraster filtrid.</para>
+</listitem>
+</itemizedlist>
+
+<para
+>&CUPS; on teinud tootjatele äärmiselt lihtsaks toetada trükkimist nende mudelitega &Linux; ja &UNIX; süsteemides mõistlikult odava hinna eest. &CUPS;i mooduljas ülesehitus võimaldab kaasata iga filtri (= draiveri) minimaalse vaevaga ning pääseda ligi ja kasutada kogu &CUPS;i pakutavat trükkimisraamistikku.</para>
+
+<para
+>&CUPS;i vaimustavate omadustega saab lähemalt tutvuda &CUPS;i dokumentatsiooni abil aadressil <ulink url="http://www.cups.org/documentation.html"
+>http://www.cups.org/documentation.html</ulink
+> ja <ulink url="http://wwww.danka.de/printpro/faq.html"
+>http://www.danka.de/printpro/faq.html</ulink
+>. Lisaks sellele kujutab <ulink url="http://www.linuxprinting.org"
+>http://www.linuxprinting.org/</ulink
+> endast universaalset hoidlat kõige kohta, mis on seotud trükkimisega &Linux; ja &UNIX; süsteemides.</para>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="cups-ipp-support">
+<title
+>&IPP; tugi muudab &CUPS;i parimaks valikuks</title>
+
+<sect2>
+<title
+><quote
+><acronym
+>LPD</acronym
+> peab surema!</quote
+></title>
+
+<para
+>Paljud arendajad tundsid aegamööda üha suuremat rahulolematust iidse <acronym
+>LPD</acronym
+>-ga. Trükkimise edendamiseks alustati üsna mitme uue projektiga. Parim näide on ilmselt <application
+>LPRng</application
+>, mille kõrval nägid ilmavalgust ka <acronym
+>PDQ</acronym
+>, <acronym
+>PPR</acronym
+>, <acronym
+>PLP</acronym
+>, <acronym
+>GNUlpr</acronym
+> ja <acronym
+>RLPR</acronym
+>. Ükski neist aga ei suutnud saavutada <quote
+>läbimurret</quote
+>, enamik pelgalt rakendas ikka sedasama <acronym
+>LPD</acronym
+> spetsifikatsiooni, lisades mõne (või ka terve hulga) uusi võimalusi, mis paraku muutis nad teistega kokkusobimatuks.</para>
+
+<para
+>Nähes, kuidas auväärsele <acronym
+>BSD</acronym
+> stiilis <acronym
+>LPD</acronym
+>-le tekib mitte ainult üks, vaid mitu erinevat elujõulist alternatiivi, käis lõpuks <citetitle
+>Linuxi trükkimise HOWTO</citetitle
+> autor Grant Taylor välja loosungi <citetitle
+>LPD peab surema!</citetitle
+>, alustades <quote
+>kampaaniat reatrükkimisdeemoni kaotamiseks</quote
+>.</para>
+
+<!-- FIXME: look up URLs for the above -->
+
+</sect2>
+
+<sect2>
+<title
+>Kuidas sündis &IPP;</title>
+
+<para
+>Kirjeldatu kõrval püüti ka tööstuse poolel üle saada <acronym
+>LPD</acronym
+> teada-tuntud nõrkustest. See algas firmapõhiste täienduste lisamisega <acronym
+>LPD</acronym
+>-le ning jõudis lõpuks välja selleni, et &Hewlett-Packard; püüdis oma &HP; JetDirecti kehtestada uue standardse võrgutrükkimisprotokollina. Tulemuseks oli aga veelgi suurem erinevate süsteemide omavaheline sobimatus.</para>
+
+<para
+>Lõpuks hakkas ilmet võtma uue, tööstuse ja <acronym
+>IETF</acronym
+>-i ühine standard. <quote
+>Printeri töögrupp</quote
+> ehk <acronym
+>PWG</acronym
+> (see kujutas endast lõdvalt seotud riistvara, tarkvara ja operatsioonisüsteemide tootjate ühendust) lõi uue <quote
+>internetitrükkimise protokolli</quote
+> &IPP;. &IPP; v1.1 on nüüdseks saanud <acronym
+>IETF</acronym
+> (Interneti tehniline operatiivkogu) heakskiidu standardina ning töösturid nii Euroopas, USAs kui Jaapanis toetavad seda üksmeelselt. Suuremal osal praegustel võrguprinteritel on lisaks traditsioonilisele <acronym
+>LPR</acronym
+>/<acronym
+>LPD</acronym
+> või JetDirecti toele ka &IPP; tugi.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Kuidas &IPP; lahendab palju probleeme</title>
+
+<para
+>&IPP; võimaldab lahendada terve hulga võrguadministraatorite ees seisvaid probleeme. Tavaliselt on neil ju tegemist mitmekesise keskkonnaga ning sageli kulub enam kui pool nende tööajast just trükkimisprobleemide lahendamisele.</para>
+
+<para
+>&IPP;, millele on loodud &IPP;-ga ühilduvate printerite ja serverite ühtne päringufunktsioonide komplekt failide edastamiseks, trükitöö juhtatribuutide seadistamiseks &etc;, on kavandatud töötama kõigis &OS;ides. Üleminek ei juhtu siiski üleöö, sest paljud varasemad trükiseadmed on kahtlemata veel aastaid kasutusel. Seepärast näeb &IPP; ette tagasiühilduvuse kõigi &IPP; versioonidega. &CUPS; aga tõestab &IPP; trükkimismeetodi elujõulisust kõigis keskkondades.</para>
+
+<para
+>Tema kõige löövam külg on aga integreeritus muude olemasolevate ja oma töökindlust näidanud <acronym
+>IP</acronym
+> protokollidega. Kujutades endast tõestatult kvaliteetse protokolli <acronym
+>HTTP</acronym
+> 1.1 laiendust spetsiifiliselt trükifaili ja sellega seotud andmete käsitlemiseks, on seda ka väga hõlpus ühendada muude arendatavate ja kasutusele tulevate standarditega:</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Basic, Digest ja sertifitseerimisautentimine trükiteenuseid tarbida soovivatele kasutajatele.</para>
+</listitem>
+<listitem>
+<para
+>SSL3 ja <acronym
+>TLS</acronym
+> krüptimine andmeedastusel.</para>
+</listitem>
+<listitem>
+<para
+>Klientide kahesuunaline kommunikatsioon trükiseadmetega <acronym
+>HTTP</acronym
+>/&IPP;, <command
+>GET</command
+> ja <command
+>POST</command
+> vahendusel.</para>
+</listitem>
+<listitem>
+<para
+>LDAP kataloogiteenus, mis võimaldab pidevalt aktuaalsena hoida saadaolevate printerite, nende võimaluste, kulude &etc; andmebaasi, samuti paroole, <acronym
+>ACL</acronym
+>-e &etc;</para>
+</listitem>
+<listitem>
+<para
+><quote
+>Tõmbav</quote
+> (vastandina tavapärasele <quote
+>tõukavale</quote
+>) trükkimine, kus serverile või printerile on vaja vaid anda dokumendi &URL;, misjärel see ise hangib selle internetist ja trükib.</para>
+</listitem>
+</itemizedlist>
+
+</sect2>
+
+<!--
+<sect2>
+<title
+>&CUPS;, &IPP; and &kde;</title>
+
+<para
+>&CUPS; is the most advanced implementation of &IPP; on all &OS;
+platforms.  That makes &CUPS; a crucial ally to help "conquer the
+desktop" for projects like &kde;. &kdeprint; is the best utility to
+make &CUPS; core functionality available to &kde; Desktop
+users.</para>
+
+</sect2
+> -->
+
+<sect2>
+<title
+><quote
+>Plug'n'Play</quote
+> printer kliendile </title>
+
+<para
+>Oled sa kunagi näinud, mida &CUPS; õigupoolest võrgus suudab? Kui sa varem sellest midagi ei teadnud, peaks see päris rabavalt mõjuma.</para>
+
+<para
+>Kujuta ette, et oled <quote
+>kohtvõrgu</quote
+> administraator. Oled testimiseks paigaldanud võrku ühe täisväärtusliku &kde;/&CUPS;-masina, milles on seadistatud ja töökorda seatud kümneid printereid, olgu need siis &PostScript;, laser-, juga-, mullprinterid või mis tahes. Kõik &kde;-masina kasutajad on äärmiselt õnnelikud, sest nad võivad trükkida nagu ei kunagi varem, suutes võtta igast printerist välja <quote
+>viimase</quote
+>. Sul kulus kaks tundi, et kõik korralikult tööle hakkaks... ja nüüd tahavad kõik sada võrgus olevat inimest kogeda sedasama! Kaks tundi iga masina peale? Ei, enne järgmist aastat ma sellega küll hakkama ei saa, käib sul peas ringi.</para>
+
+<para
+>Unusta see. Vaid üks väike liigutus algupärases &CUPS;-masinas ja see muutub <quote
+>serveriks</quote
+>. Paigalda &CUPS; veel viiele masinale, sedakorda <quote
+>kliendina</quote
+>. Selleks ajaks, kui esimese kasutaja juurde tagasi jõuad, leiad, et ta juba proovib juba õnneliku näoga nende kümnete printerite seadistusi, mida varem määrasid <quote
+>serverile</quote
+>. Otsekui ime läbi on need ilmunud kõigi viie &CUPS;-kliendi <quote
+>trükkimisdialoogi</quote
+>.</para>
+
+<para
+>Kasutajad asuvad rõõmsalt trükkima, ometi ei ole klientidele paigaldatud ühtegi draiverit ega määratud trükijärjekorda.</para>
+
+<para
+>Kuidas see ime siis teoks saab?</para>
+
+</sect2>
+
+<sect2>
+<title
+>Võrguprinterite <quote
+>nägemine</quote
+></title>
+
+<para
+>Vastus ei ole sugugi keeruline.</para>
+
+<para
+>Kui &CUPS;i server asub kohtvõrgus (<acronym
+>LAN</acronym
+>), levindab see kõigi saadaolevate printerite nimed <acronym
+>LAN</acronym
+>-i, kasutades protokolli <acronym
+>UDP</acronym
+> ja porti 631. <acronym
+>IANA</acronym
+> (<quote
+>Internetinumbrite eraldamise kogu</quote
+>) on reserveerinud pordi 631 <quote
+>tuntud pordina</quote
+> &IPP; vajadustele. Kõik &CUPS;i kliendid näevad &CUPS;i serveri infot, mis jõuab nende porti 631. Nii saavadki nad teada olemasolevatest printeritest ning ühtlasi <quote
+>rajast</quote
+>, mis printerini viib.</para>
+
+<para
+>&IPP; abil, mis kujutab endast igati nutikat <acronym
+>HTTP</acronym
+> 1.1 laiendit, suudab &CUPS; anda kõigile trükkimissüsteemiga seotud objektidele <quote
+>üldise ressursiaadressi</quote
+> ehk <acronym
+>URL</acronym
+>-i. Trükitööde eemaldamine või taaskäivitamine, printerite uurimine või muutmine, serveri haldustööd - kõik see on &IPP; ja &CUPS;i abil taandatav teatud <acronym
+>URL</acronym
+>-ile. Päris palju tähtsaid asju saab korda ajada &CUPS;i veebiliidesega, mida saab kasutada näiteks &konqueror;is.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Trükkimine draiverit paigaldamata</title>
+
+<para
+>Lisaks sellele saavad ka kliendid põhimõtteliselt <quote
+>hallata</quote
+> ja <quote
+>kasutada</quote
+> iga nähtavat printerit, nagu oleks see otse nende masinaga ühendatud. Loomulikult on administraatori ülesanne seada sellele piiranguid ligipääsu kontrollimise nimekirjadega &etc;, et <emphasis
+>mitte ükski</emphasis
+> klient ei saaks kasutada <emphasis
+>iga ja kõiki</emphasis
+> printereid oma suva kohaselt.</para>
+
+<para
+>Kliendid saavad trükkida isegi siis, kui vastavat filtrit (või draiverit) ei ole nende masinale paigaldatud.</para>
+
+<para
+>Kuidas see siis käib? Kui klient soovib teada saada ja valida printeripõhiseid võimalusi, saadab ta soovi (käsu <command
+>CUPS-get-ppd</command
+>) serverile. Server teatab kliendile kõik printeripõhised võimalused, nagu ta need enda valduses olevalt &PPD;-lt välja loeb. Kliendi poolel asuv kasutaja näeb võimalusi ja valib soovikohased välja. Seejärel saadab ta trükifaili, tavaliselt filtreerimata <quote
+>toor</quote
+>-&PostScript;-i, millele on lisatud printeripõhised võimalused, &IPP;-d edastusprotokollina kasutades printserverile. Kogu edasise töötluse, ennekõike just filtreerimise printerile saadetava lõpliku vormingu loomiseks, võtab enda kanda server. Sellel on ka olemas vajalikud rakendused (<quote
+>draiverid</quote
+> või <quote
+>filtrid</quote
+>).</para>
+
+<para
+>Nii ongi kliendil võimalik trükkida, ilma et tema masinasse oleks vaja ühtegi draiverit paigaldada.</para>
+
+<para
+>Suvaline muutus serveril, näiteks printeri lisamine või muutmine, levib <quote
+>tuntud</quote
+> klientidele automaatselt, ilma igasuguse täiendava seadistamise vajaduseta.</para>
+
+</sect2>
+
+<sect2>
+<title
+><quote
+>Zero Administration</quote
+>, koormuse jagamine ja <quote
+>ümberlülitus rikkel</quote
+></title>
+
+<para
+>&CUPS;i mõningad täiustatud omadused suudavad näiteks <quote
+>koormust jagada</quote
+>.</para>
+
+<para
+>Kui määrata ühesugune trükijärjekord kahele või enamale serverile, saadavad kliendid oma töö esimesele vastavale või kättesaadavale serverile. Sellega kaasneb automaatne koormuse jagamine serverite vahel. Kui mõni serveritest võrgust ära võtta, näiteks haldustöödeks, võtavad teised tema ülesanded üle, ilma et kasutajad mingit vahet märkakski.</para>
+
+</sect2>
+
+</sect1>
+
+</chapter>

@@ -1,0 +1,294 @@
+<chapter id="modem-tricks">
+<title
+>Triki in namigi za modem</title>
+
+<para
+>Ta razdelek bi moral opogumiti bojazljivce za uporabo (ne tako) prikrite umetnosti prelisičenja modema. Tukajšnji ukazi so vsi standardni Hayes AT, vendar vsi modemi niso enaki, zato je lahko vaša pot različna.</para>
+
+<sect1 id="modem-sessions">
+<title
+>Seje modema</title>
+
+<para
+>Seja modema vam omogoča direktno upravljanje modema.Vi vnesete ukaze in modem bo odgovoril. Da pridobite modemsko sejo, ko ninobena povezava aktivna, pojdite v pogovorno okno <guibutton
+>Nastavitve</guibutton
+>,<guilabel
+>Modem</guilabel
+> <guibutton
+>Terminal.</guibutton
+> To bo odprlo okno za interaktivno nastavitev modema. Poskusite vpisati <userinput
+><command
+>ATZ</command
+></userinput
+> (toponovno nastavi(resetira) vaš modem) Morali bi dobiti odgovor OK. Uporabite <menuchoice
+><guimenu
+>Datoteka</guimenu
+><guimenuitem
+>Zapri</guimenuitem
+></menuchoice
+>, da končate sejo.</para>
+
+</sect1>
+
+<sect1 id="modem-profiles">
+<title
+>Profili modema</title>
+					
+<para
+>Eden izmed razlogov zaradi katerih želite dati direktne ukaze modemu je, da želite ohraniti garnituro modemskih nastavitev, če jih imate, ne da jih določate za vsako povezavo. Dober način kako se to naredi je preko modemskih profilov. Modemi imajo lahko shranjenih več oštevilčenih profilov, z 0,1,... <command
+>AT&amp;V</command
+> ukazom jih lahko pregledate vse. Privzeti profil je ponavadi 0 (to se lahko spremeni z <command
+>AT&amp;Y</command
+>.) Profil, ki je trenutno v uporabi, se imenuje <quote
+>aktivni</quote
+> profil.</para>
+
+<para
+>Ko spremenite nastavitev, se aktivni profil spremeni.  Ukaz <command
+>ATZ</command
+> bo modemu naročil, naj naloži privzeti profil tako, da bo izbrisal vse spremembe, ki ste jih naredili. Da shranite spremembe, naložite profil, ki ga želite spremeniti z ukazom <command
+>ATZ<replaceable
+>n</replaceable
+></command
+> (kjer <replaceable
+>n</replaceable
+> pomeni številko profila). Naredite željene spremembe in jih nato shranite z <command
+>AT&amp;W<replaceable
+>n</replaceable
+></command
+>. Da bo kppp uporabljal profil, ki ga želite, spremenite modemu inicializacijski niz (<guibutton
+>Nastavitve</guibutton
+> <guilabel
+>Modem</guilabel
+> <guibutton
+>Ukazi modemu</guibutton
+> <guilabel
+>Inicializacijski niz</guilabel
+>.) Na primer <command
+>ATZ1</command
+> bo določil, naj kppp resetira modem in uporabi shranjeni profil #1.</para>
+
+<para
+>Če želite resetirati vaš modem na neko znano začetno točko, uporabite <command
+>AT&amp;F&amp;W</command
+>, da nastavite aktivni profil na tovarniške nastavitve in da te nastavitve shrani kot privzeti profil.</para>
+
+<para
+>Primeri spremenjenih profilov so v naslednjih razdelkih.</para>
+
+</sect1>
+
+<sect1 id="modem-hangup">
+<title
+>Prisilite modem naj odloži</title>
+
+<para
+>Včasih ima &kppp; težave pri odložitvi modema. To je ponavadi rezultat nesporazuma mednastavitvami &kppp; in med modemskimi nastavitvami. Standardni modem uporablja dve metodi, da se odloči za odložitev: <link linkend="hangup-command-method"
+>Ukazi</link
+> in <link linkend="hangup-dtr-method"
+><acronym
+>DTR</acronym
+></link
+>. Način z ukazi vključuje pošiljanje ubežnega niza modemu, ki ga postavi v ukazni način, potem pa izda ukaz za odložitev (<command
+>ATH</command
+>)</para>
+
+<para
+>Izven &kppp;-ja, ko ročno nastavljate <application
+>pppd</application
+> paket, je pogosto koristno uporabljati način z ukazi, da lahko zakjučite terminalsko sejo in potem zaženete <application
+>pppd</application
+> brez da bi odložili modem. V večini drugih situacij je priljubljena metoda <acronym
+>DTR</acronym
+>, ker je preprostejša.</para>
+
+<sect2 id="hangup-dtr-method">
+<title
+><acronym
+>DTR</acronym
+> (<command
+>AT&amp;Dn</command
+>) metoda</title>
+
+<para
+>Način <acronym
+>DTR</acronym
+> bo odložil modem vsakič, ko bo &kppp; končal uporabljati modem. Če dobite modemsko sejo in povprašate za stanje preko <command
+>AT&amp;V</command
+> in je med drugimi prikazanimi nastavitvami za aktivni profil tudi <command
+>&amp;D0</command
+>, potem je <acronym
+>DTR</acronym
+> odložitvena metoda onemogočena. Da omogočite <acronym
+>DTR</acronym
+> metodo uporabite gumb <guibutton
+>Terminal</guibutton
+>. Potem:</para>
+
+<screen>
+<userinput
+><command
+>ATZ</command
+></userinput
+> <lineannotation
+># reset to default profile</lineannotation>
+<userinput
+><command
+>AT&amp;D2</command
+></userinput
+>  <lineannotation
+># Set to hang up on DTR drop</lineannotation>
+<userinput
+><command
+>AT&amp;W</command
+></userinput
+>  <lineannotation
+># Write to default profile</lineannotation>
+</screen>
+
+<sect3>
+<title
+>Kako deluje <acronym
+>DTR</acronym
+> metoda</title>
+
+<para
+>Vsakič ko se Data Terminal Ready (<acronym
+>DTR</acronym
+>) linija na serijski liniji med gostiteljevim računalnikom in modemom poveča, se modem odloži. Ko &kppp; odpre serijska vrata, se <acronym
+>DTR</acronym
+> linija potlači, zato lahko na zunanjem modemu vidite <acronym
+>DTR</acronym
+> (ali <acronym
+>TR</acronym
+>) lučko,ki se prižge, ko se to zgodi. Ko <acronym
+>TR</acronym
+> lučka ugasne (ker je &kppp; zaprl serijska vrata, ali še kaj slabšega!), bo modem odložil.</para>
+</sect3>
+
+</sect2>
+
+<sect2 id="hangup-command-method">
+<title
+>Ukazni način</title>
+
+<para
+>Drugi način kako modem odloži, ko je povezan (uporaben ko je <command
+>AT&amp;D<replaceable
+>n</replaceable
+></command
+> kjer <replaceable
+>n</replaceable
+> ni enak <returnvalue
+>2</returnvalue
+>), je da modem sprejme ukaz, ko je seja v napredovanju. Da ga pravilno odložite, vzpostavite modemsko sejo in postavite čas varovanja na kratek interval kot je:</para>
+
+<screen>
+<userinput
+><command
+>ATZ</command
+></userinput>
+<userinput
+><command
+>ATS12=5</command
+></userinput>
+<userinput
+><command
+>AT&amp;W</command
+></userinput>
+</screen>
+
+<para
+>Potem uporabite drsnik v <guilabel
+>Čas varovanja</guilabel
+>, da prilagodite vrednost registra <varname
+>S12</varname
+>) na <returnvalue
+>5</returnvalue
+>. Modem bi sedaj moral pravilno odložiti.</para>
+
+<sect3>
+<title
+>Kako deluje ukazni način</title>
+
+<para
+>Ko je lokalni modem povezan z oddaljenim modemom, je v <quote
+>povezanem</quote
+>, stanju, kjer pošlje vse znake, ki jih prejme oddaljenemu modemu brez prevajanja. Da modem sprejme znake kot ukaze, mora nekdo postaviti modem v stanje z ukazi. To naredi ubežni niz.</para>
+
+<para
+>Ubežni niz je definiran kot trije časovni intervali, katerih dolžina je definirana z <varname
+>S12</varname
+> (v petdesetinkah na sekundo.)</para>
+
+<itemizedlist
+> <listitem
+> <para
+>Tiše (quiet) (mora trajati več kot <varname
+>S12</varname
+>/50 sekund)</para
+> </listitem
+> <listitem
+> <para
+>Ubežni niz (definiran od registra <varname
+>S2</varname
+>, privzeto je <quote
+>+</quote
+>) se ponovi trikrat (manj kot <varname
+>S12</varname
+>/50 sekund med vsako ponovitvijo).</para
+> </listitem
+> <listitem
+> <para
+>Tiše (quiet) (mora trajati več kot <varname
+>S12</varname
+>/50 sekund)</para
+> </listitem
+> </itemizedlist>
+
+<para
+>Ko je enkrat modem v ukazovnem načinu, mu lahko pošljete ukaze. Da odloži mu pošljite <command
+>ATH</command
+>. Ubežni niz in odložitveni niz, ki jih uporablja &kppp; sta prikazana v pogovornih oknih <link linkend="modem-commands"
+><guilabel
+>Ukazi modemu</guilabel
+></link
+>. Te nastavitve bi morale ustrezati vašemu modemu.</para>
+
+</sect3>
+</sect2>
+</sect1>
+
+<sect1 id="tone-dialling-speedup">
+<title
+>Narediti tonsko klicanje hitrejše</title>
+
+<para
+>Če lahko uporabljate tonsko klicanje, se znesek časa, ki se porabi za klicanje lahko spremeni z uporabo <varname
+>S11</varname
+> registra. Ta podaja trajanje (v 100stotinkah sekunde), da pošlje vsak ton posebej med klicanjem. Privzeto je ponavadi 95 (skoraj sekunda.) Kako hitro lahko kličete je odvisno od opreme telefonske družbe, ki vzdržuje vašo linijo. Minimalno trajanje je 50, skoraj dvakrat hitrejše. Ta hitrost pogosto deluje. </para>
+
+<screen>
+<userinput
+><command
+>ATZ</command
+></userinput
+>        <lineannotation
+># reset to default profile</lineannotation>
+<userinput
+><command
+>ATS11=50</command
+></userinput
+>   <lineannotation
+># fastest possible dialling, use a higher number if it doesn't work</lineannotation>
+<userinput
+><command
+>AT&amp;W</command
+></userinput
+>   <lineannotation
+># write to default profile</lineannotation>
+</screen>
+
+</sect1>
+</chapter>
+

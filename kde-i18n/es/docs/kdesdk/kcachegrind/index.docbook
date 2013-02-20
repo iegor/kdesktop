@@ -1,0 +1,1034 @@
+<?xml version="1.0" ?>
+<!DOCTYPE book PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" "dtd/kdex.dtd" [
+  <!ENTITY kcachegrind '<application
+>KCachegrind</application
+>'>
+  <!ENTITY cachegrind "<application
+>Cachegrind</application
+>">
+  <!ENTITY calltree "<application
+>Calltree</application
+>">
+  <!ENTITY callgrind "<application
+>Callgrind</application
+>">
+  <!ENTITY valgrind "<application
+>Valgrind</application
+>">
+  <!ENTITY oprofile "<application
+>OProfile</application
+>">
+  <!ENTITY kappname "&kcachegrind;">
+  <!ENTITY package "kdesdk">
+  <!ENTITY % addindex "IGNORE">
+  <!ENTITY % Spanish "INCLUDE">
+]>
+
+<!-- ................................................................ -->
+
+<book lang="&language;">
+
+<bookinfo>
+<title
+>Manual de &kcachegrind;</title>
+
+<authorgroup>
+<author
+><firstname
+>Josef</firstname
+> <surname
+>Weidendorfer</surname
+> <affiliation
+> <address
+><email
+>Josef.Weidendorfer@gmx.de</email
+></address>
+</affiliation>
+</author>
+
+<othercredit role="translator"
+> <firstname
+>Marcos</firstname
+> <surname
+>Fouces Lago</surname
+> <affiliation
+><address
+><email
+>mfouces@yahoo.es</email
+></address
+></affiliation
+> <contrib
+>Traductor</contrib
+> </othercredit
+> 
+
+</authorgroup>
+
+<copyright>
+<year
+>2002-2004</year>
+<holder
+>Josef Weidendorfer</holder>
+</copyright>
+<legalnotice
+>&FDLNotice;</legalnotice>
+
+<date
+>2004-07-27</date>
+<releaseinfo
+>0.4.6</releaseinfo>
+
+<abstract>
+<para
+>&kcachegrind; es una herramienta para visualizar perfilados cómodamente escrita para el escritorio &kde;. </para>
+</abstract>
+
+<keywordset>
+<keyword
+>KDE</keyword>
+<keyword
+>kdesdk</keyword>
+<keyword
+>Cachegrind</keyword>
+<keyword
+>Callgrind</keyword>
+<keyword
+>Valgrind</keyword>
+<keyword
+>Perfilado</keyword>
+</keywordset>
+
+</bookinfo>
+
+
+<chapter id="introduction">
+<title
+>Introducción</title>
+
+<para
+>&kappname; es una herramienta para visualizar cómodamente la salida de herramientas de perfilado de software. En este capítulo se explican para qué sirve un perfilado, cómo se hace así como algunos ejemplos de herramientas disponibles para ello. </para>
+
+<sect1 id="introduction-profiling">
+<title
+>Perfilado</title>
+
+<para
+>Cuando se desarrolla un programa, una de las etapas finales consiste en optimizar su rendimiento. Dado que no es muy productivo dedicar mucho tiempo a optimizar funciones escasamente usadas, necesitaremos saber en qué partes del programa se concentra la mayoría del tiempo de ejecución. </para>
+
+<para
+>Para el código secuencial, suele ser suficiente recabar datos estadísticos sobre características de ejecución de las aplicaciones, cosas como el tiempo que el programa pasa ejecutando una misma función o línea de código. Esto es lo que recibe el nombre de perfilado. El programa s ejecuta bajo el control de una herramienta de perfilado que será la que nos aporte la información sobre la ejecución de un programa cuando esté se cierre. En contraste con esto, en el código paralelo los problemas de rendimiento suelen ser causa de que un procesador está esperando información  de otro. Dado que no es sencillo reconocer esto, en este caso sería preferible generar un trazado de tiempos en que ocurren los eventos pero KCachegrind no puede visualizar estos datos. </para>
+
+<para
+>Después de analizar los datos de perfilado obtenidos, será sencillo ver los puntos fuertes y débiles del código: podremos, por ejemplo, comprobar el número de llamadas e identificar las partes del código que pueden ser optimizadas. Una vez optimizado el código, puede comprobarse si se ha hecho bien realizando otro perfilado. </para>
+</sect1>
+
+<sect1 id="introduction-methods">
+<title
+>Métodos de perfilado</title>
+
+<para
+>Para medir exactamente el tiempo transcurrido o registrar lo que sucede durante la ejecución de una determinada parte del programa (p.ej. una función) será necesario añadir algún código antes y después de estas partes que nos permita realizar estas medidas. Este código cuenta el tiempo transcurrido o contabiliza algún evento y calcula diferencias. Esto hace que sea necesario cambiar el código original antes de ejecutarlo. esto recibe el nombre de instrumentación y puede realizarse por el propio programa, el compilador o el propio sistema en ejecución. Dados que las partes de interés suelen estar anidadas, la sobrecarga producida por las propias medidas a menudo influye en las propias medidas. La instrumentación debe hacerse selectivamente y sus resultados deben interpretarse con cuidado. Esto hace que el análisis de rendimiento mediante medidas exactas sea un proceso muy complejo.</para>
+
+<para
+>Es posible realizar medidas exactas gracias a los contadores hardware (incluyendo aquellos que se incrementan con cada ciclo de procesador) incluidos en los modernos procesadores que se incrementan cada vez que ocurre un determinado evento. Dado que queremos relacionar eventos con determinadas regiones de código, necesitaremos gestionar cualquier evento incrementando un contador para dicha región de código. Obviamente, esto es imposible de llevar a cabo mediante software, pero asumiendo que, estadísticamente, la distribución de eventos en el código fuente es similar al considerar sólo algunas medidas en lugar de considerarlas podemos usar un método llamado sampling (muestreo) para realizar las medidas. El muestreo temporal (Time Based Sampling o TBS) hace uso de un temporizador para monitorizar cada cierto tiempo el contador de un programa y crear un histograma sobre el código del programa. El muestreo de eventos (Event Based Sampling o EBS) hace uso de los contadores por hardware de los modernos procesadores</para>
+
+<para
+>Otro método de medida consiste en simular lo que ocurre en el sistema cuando se ejecuta un determinado código. La simulación se realiza siempre partiendo de un modelo más o menos exacto del sistema, sin embargo es posible obtener modelos muy precisos que funcionen casi igual que en la realidad en los cuales el tiempo empleado en la simulación sea inaceptablemente alto. La ventaja de la simulación es que podemos insertar código más o menos complejo en el código a estudiar sin alterar los resultados. Es muy cómodo realizar esto directamente antes de la ejecución debido a que usamos el binario original sin necesidad de recompilarlo. La simulación es útil cuando se simulan sólo partes de una máquina con un modelo sencillo, así además se obtienen resultados de más fácil interpretación. A menudo el problema de trabajar con hardware real es que varios efectos de diferentes partes de la máquina se solapan en un mismo resultado.</para>
+</sect1>
+
+<sect1 id="introduction-tools">
+<title
+>Herramientas de perfilado</title>
+
+<para
+>La más conocida es la herramienta de perfilado de GCC <application
+>gprof</application
+>; para su uso, es necesario compilar los programas a perfilar con la opción <option
+>pg</option
+>, al ejecutarlos se crea un archivo llamado <filename
+>gmon.out</filename
+> que puede convertirse a un formato legible mediante <command
+>gprof</command
+>. Una desventaja es que se necesita recompilar el programa y enlazarlo estáticamente. Este método se llama instrumentación generada mediante el compilador que consiste en la medida de los arcos de las llamadas entre funciones y las correspondientes llamadas entre las funciones - Junto con el TBS - que nos aportará un histograma de distribución temporal en el código. Usando amabas fuentes de información, es posible calcular heurísticamente el tiempo dedicado a la ejecución de una función junto con el de todas las que han sido llamadas por ella. </para>
+
+<para
+>Para medir con exactitud los eventos que están ocurriendo en un momento dado, están disponibles algunas librerías con funciones capaces de leer los contadores de rendimiento del hardware. Las más conocidas son el parche PerfCtr para Linux y las librerías PAPI y PCL independientes de la arquitectura del sistema. Aún así, es necesario instrumentalizar el código como en el caso anterior. Puede optar por usar las propias librerías o por sistemas de instrumentación automática como ADAPTOR (para la instrumentación de código en FORTRAN) o DynaProf (inyección de código a través de DynInst).</para>
+
+<para
+>&oprofile; es un herramienta de perfilado para Linux basada en el muestreo.</para>
+
+<para
+>Una manera cómoda para realizar perfilados consiste en el uso de Cachegrind o Callgrind, dos simuladores que usan la estructura de instrumentación de &valgrind;. Debido a que no es necesario recurrir a contadores por hardware (a menudo difíciles de acceder en las actuales distribuciones de Linux) y a que es posibles perfilar los binarios sin modificarlos, es una buena alternativa a otras herramientas de perfilado. Puede minimizarse el problema de la ralentización causado por la simulación realizándola sólo en las partes del programa que nos interesan e incluso en unos pocos ciclos de algún bucle.Sin medir/simular la instrumentación, el uso de Valgrind sólo tiene una factor de ralentización en un rango de 3 a 5. También es posible desactivar la simulación de caché si sólo nos interesan  el gráfico y el número de llamadas. </para>
+
+<para
+>La simulación del caché es el primer paso para aproximarnos a los tiempos de ejecución reales ya que los sistemas modernos hacen un fuerte uso de los caches (buffers pequeños y rápidos que permiten acelerar accesos repetidos a las mismas celdas de memoria). &cachegrind; realiza la simulación del caché atrapando esos accesos a la memoria. La información obtenida incluye el número de la instrucción o acceso a la memoria y las pérdidas del caché de primero y segundo nivel y las relaciona con las áreas del código correspondientes. Combinando los datos de dichas pérdidas mediante el empleo de las pérdidas latentes de los procesadores más comunes, es posible obtener una estimación del tiempo empleado. </para>
+
+<para
+>Callgrind es una extensión de &cachegrind; que crea el gráfico de llamadas de un programa al vuelo, &ie; como las funciones se llaman entre sí y cuantos eventos ocurren mientras se ejecuta una función. También es posible separar la información a recabar por hebras o por contextos de llamadas. Puede aportar datos de perfilado a nivel de instrucción que permita anotar código desensamblado. </para>
+</sect1>
+
+<sect1 id="introduction-visualization">
+<title
+>Visualización</title>
+
+<para
+>Las herramientas de perfilado suelen producir gran cantidad de información. El deseo de navegar fácilmente por el gráfico de llamadas,poder alternar fácilmente el orden de listado de las funciones y de ver los diferentes tipos de eventos hicieron que se escribiera un interfaz gráfico para ello. </para>
+
+<para
+>&kappname; es una herramienta para visualizar información de perfilado que cumple esas características. Aunque ha sido pensada para visualizar la información generada por &cachegrind; y &calltree;, existen conversores para mostrar datos generados por otros programas. En el apéndice puede ver una descripción del formato usado en los archivos creados por Cachegrind/Callgrind. </para>
+
+<para
+>Aparte de permitir la visualización de una lista de funciones ordenadas según sus costes inclusivos o exclusivos y, opcionalmente, agrupadas según el archivo fuente, librería compartida o clase C++, &kappname; también ofrece varios métodos de visualización para un función determinada: <itemizedlist>
+<listitem
+><para
+>Un gráfico de llamadas que muestra la sección del gráfico de llamadas que rodea a la función seleccionada.</para>
+</listitem>
+<listitem
+><para
+>Un mapa en forma de árbol que permite ver las relaciones entre funciones anidadas conjuntamente con datos sobre el coste computacional que acarrean para que puede detectar enseguida funciones problemáticas.</para>
+</listitem>
+<listitem
+><para
+>Ventanas para ver el código fuente y anotaciones del desensamblador para que pueda disponer de información de los costos computacionales relacionadas con las correspondientes líneas de código e instrucciones de ensamblador.</para>
+</listitem>
+</itemizedlist>
+
+</para>
+</sect1>
+</chapter>
+
+<chapter id="using-kcachegrind">
+<title
+>Uso de &kcachegrind;</title>
+
+<sect1 id="using-profile">
+<title
+>Generar datos para visualizar</title>
+
+<para
+>En primer lugar, es necesario obtener información del rendimiento midiendo varios aspectos sobre una aplicación en ejecución mediante el uso de una herramienta de perfilado. &kcachegrind; no incluye ninguna herramienta de perfilado, pero trabaja muy bien en conjunción con &callgrind; y, si usa un convertidor, también con &oprofile;. Aunque no es el objetivo de este manual dar una explicación detallada acerca del perfilado con estas herramientas, en la siguiente sección se dan algunas ideas básicas para que pueda empezar a trabajar. </para>
+
+<sect2>
+<title
+>&callgrind;</title>
+
+<para
+>&callgrind; está disponible en <ulink url="http://kcachegrind.sf.net"
+>http://kcachegrind.sf.net</ulink
+>. Observe que antes se llamaba &calltree;. </para>
+
+<para
+>Su uso más común consiste en ejecutar el comando que inicia la aplicación a perfilar precedido de <application
+>callgrind</application
+>, así: <blockquote
+><para
+><command
+>callgrind programa argumentos</command
+></para
+></blockquote
+>. Cuando cierre el programa se creará un archivo llamado <filename
+>callgrind.out.pid</filename
+>, éste es el que deberemos cargar en &kcachegrind;. </para>
+
+<para
+>Un uso más avanzado sería realizar un volcado de información cada vez que se invoca una determinada función. P. ej. si sólo quiere perfilar el renderizado de páginas web en <command
+>konqueror</command
+>, puede querer volcar los datos cada vez que seleccione Ver/Recargar. La llamada que nos interesa en este caso en <symbol
+>KonqMainWindow::slotReload</symbol
+>. Utilice <blockquote
+><para
+><command
+>callgrind --dump-before=KonqMainWindow::slotReload konqueror </command
+></para
+></blockquote
+> para obtener varios archivos nombrados como antes pero añadiéndole un número de secuencia. También verá un archivo sin ese número, éste es el que deberá cargar en &kcachegrind;, no se preocupe por los demás ya que se cargarán automáticamente. </para>
+
+</sect2>
+
+<sect2>
+<title
+>&oprofile;</title>
+
+<para
+>&oprofile; está disponible en <ulink url="http://oprofile.sf.net"
+>http://oprofile.sf.net</ulink
+>. Para instalarlo sólo debe seguir las (sencillas) instrucciones dadas ahí. Compruebe antes si está disponible en su distribución. </para>
+
+<para
+>El perfilado a nivel del sistema sólo puede hacerse con privilegios de root dado que se precisa observar todas las acciones que lleva a cabo. Primero configure el proceso de perfilado mediante el interfaz gráfico <command
+>oprof_start</command
+> o el comando opcontrol. La configuración estándar debería estar en modo TBS (vea la introducción). Para comenzar la medida ejecute <command
+>opconrtol -s</command
+>. Luego ejecute la aplicación de interés y posteriormente <command
+>opcontrol -d</command
+>. Esto escribirá los resultados en archivos bajo el directorio <filename
+>var/lib/oprofile/samples/</filename
+>. Para permitirle visualizar los datos en &kcachegrind;, deberá ejecutar <blockquote
+><para
+><command
+>opreport -gdf | op2callgrind </command
+></para
+></blockquote
+> en un directorio vacío. Esto creará un gran número de archivos, uno por cada programa que se está ejecutando en el sistema, cada uno de los cuales podrá cargarse separadamente en &kcachegrind;. </para>
+
+</sect2>
+</sect1>
+
+<sect1 id="using-basics">
+<title
+>Fundamentos de la interfaz de usuario</title>
+
+<para
+>Cuando abre &kcachegrind; con un archivo de información de perfilado como argumento o después de cargar uno seleccionando Archivo/Abrir, verá una barra lateral a la izquierda que contiene la lista de funciones y a la derecha, un área con la información de la función seleccionada. Este área puede configurarse para mostrar varias vistas al mismo tiempo. </para>
+
+<para
+>La primero vez que se inicia, este área aparece dividida en dos partes: superior e inferior, cada una de ellas con diferentes opciones de visualización accesibles mediante pestañas. Para moverse entre las distintas posibilidades, utilice el menú contextual de las pestañas y ajuste la barra de división adecuadamente. Para poder moverse rápidamente entre las distintas pestañas puede seleccionar Ver/Dividir para cambiar su aspecto y emplear los atajos de teclado para moverse por ellos. </para>
+
+<para
+>El tipo de evento activo es importante para la visualización: para &callgrind; puede ser p.ej. pérdidas de caché o estimación de ciclos mientras que para &oprofile; es el temporizador en el caso más sencillo. Puede cambiar este tipo de eventos desde un selector desplegable de la barra de herramientas o desde la vista de tipos de evento. Si selecciona la función <symbol
+>main</symbol
+> debería ver un pequeño resumen de las características de ejecución en la lista d la izquierda. Si mira al gráfico de llamadas debería ver las llamadas que tienen lugar en su programa. Observe que el gráfico de llamadas sólo muestra las funciones que más veces se emplean. Haciendo doble click en una función del gráfico, verá que cambia para mostrarle las funciones invocadas alrededor de la seleccionada. </para>
+
+<para
+>Para conocer mejor la interfaz gráfica de este programa, además de leer este manual debería consultar la documentación disponible en <ulink url="http://kcachegrind.sf.net"
+>http://kcachegrind.sf.net</ulink
+>. También puede ver la ayuda contextual de cada widget de &kcachegrind; pulsando en el botón <quote
+>¿Qué es esto?</quote
+> (el puntero con el interrogante) de la barra de herramientas. </para>
+</sect1>
+
+</chapter>
+
+
+<chapter id="kcachegrind-concepts">
+<title
+>Conceptos básicos</title>
+
+<para
+>En este capítulo se tratan algunos conceptos de &kcachegrind; y se introducen algunos de los términos usado en la interfaz. </para>
+
+<sect1 id="concepts-model">
+<title
+>El modelo de datos para la información de perfilado</title>
+
+<sect2>
+<title
+>Entidades de costes</title>
+
+<para
+>La contabilización de los costes computacionales de los tipo de eventos (tales como las pérdidas L2) s atribuyen a las entidades de costes, relacionadas con el código fuente o las estructuras de datos de un programa dado. Éstas no sólo pueden representar simples posiciones en el código o en los datos sino también registros complejos de una posición. P.ej. una llamada tiene una fuente y un objetivo o una dirección de datos puede tener un tipo de datos y una posición en el código donde se originó. </para>
+
+<para
+>Las entidades de coste reconocidas por KCachegrind vienen dadas en las siguientes posiciones:<itemizedlist
+><listitem
+><para
+>Instrucción. Una instrucción en ensamblador en una dirección especificada.</para
+></listitem
+> <listitem
+><para
+>Línea de código de una función. Todas las instrucciones que el compilador (a través de la información de depuración) mapea para una línea de código, identificada por el nombre de l archivo y por el número de línea y que son ejecutadas en el contexto de una función. Una línea de código de una función incorporada ('inline') podrá aparecer en el contexto de varias funciones. Las instrucciones que sin ninguna referencia a una línea de código aparecen referenciadas a la línea 0 del archivo "???".</para
+></listitem
+> <listitem
+><para
+>Función. Todas las líneas de código de que está constituida una función componen la función en si. Está identificada por su nombre y por su localización si estuviese disponible. esta última es necesaria porque los binarios de un programa podrán contener funciones con el mismo nombre. Si una herramienta de perfilado no es capaz de detectar el nombre del símbolo de una función, p. ej. porque no está disponible la información de depurado,  suele usarse la dirección de la primera instrucción ejecutada o"???". </para
+></listitem
+> <listitem
+><para
+>Objeto binario. Todas las funciones cuyo código está dentro del rango de un determinado objeto binario ya sea el ejecutable principal o una librería dinámica.</para
+></listitem
+> <listitem
+><para
+>Archivo de código fuente. Todas las funciones cuya primera instrucción está referenciada en una línea de dicho archivo.</para
+></listitem
+> <listitem
+><para
+> Clase. en general, los nombre de las funciones suelen estar ordenados de forma jerárquica en espacios de nombres, p. ej. los 'namespaces' de C++ o las clases de los lenguajes de programación orientados a objetos. Como tal, una clase puede contener funciones de dicha clase o otras clases incluidas en ella.</para
+></listitem
+> <listitem
+><para
+> Parte del perfilado. Alguna sección de la ejecución de un perfilado con un determinado identificador de hebra, de proceso y línea de órdenes ejecutada.</para
+></listitem
+> </itemizedlist
+>. Tal como se ve en la lista, un conjunto de entidades de coste suele definir otra entidad de coste, por tanto existe una jerarquía de inclusión que debería ser obvia con la explicación anterior. </para>
+
+<para
+>Tuplas de posiciones. <itemizedlist
+><listitem
+><para
+> Una llamada de una instrucción a la función objetivo.</para
+></listitem
+><listitem
+><para
+> Llamada desde una línea de código a otra destino.</para
+></listitem
+><listitem
+><para
+> Llamada desde una función origen a otra destino.</para
+></listitem
+><listitem
+><para
+> Salto (in)condicional desde una instrucción de origen a otra</para
+></listitem
+><listitem
+><para
+> Salto (in)condicional desde una línea de código a otra</para
+></listitem
+></itemizedlist
+> No se permiten saltos entre funciones dado que no tendrían sentido en un gráfico de llamadas. Las secuencias como el tratamiento de excepciones y los 'long jumps' de C tendrán que ser traducidos en saltos en la pila de llamadas de acuerdo con las necesidades. </para>
+
+</sect2>
+
+
+
+<sect2>
+<title
+>Tipos de eventos</title>
+
+<para
+>Es posible especificar tipos arbitrarios de eventos en la información de perfilado simplemente asignándole un nombre. Su coste computacional en relación a una entidad de coste es un número de 64 bits. </para>
+<para
+>Los tipos de eventos cuyos costes se especifican en una información de perfilado se denominan eventos reales. También es posible especificar formular para eventos calculados a partir de los reales, éstos se denominan eventos heredados. </para>
+</sect2>
+
+</sect1>
+
+<sect1 id="concepts-state">
+<title
+>Estado de visualización</title>
+
+<para
+>El estado de visualización de la ventana de KCachegrind incluye: <itemizedlist
+><listitem
+><para
+>Los tipos primario y secundario de los eventos seleccionados para mostrarse,</para
+></listitem
+> <listitem
+><para
+>El agrupamiento de funciones (usado en la lista de perfilado de la función y en el resaltado de la entidad),</para
+></listitem
+> <listitem
+><para
+>las partes del perfilado cuyos costes serán incluidosen la visualización</para
+></listitem
+> <listitem
+><para
+>una entidad de coste activa (esto es una función seleccionada en la barra de perfilado de la función)</para
+></listitem
+> <listitem
+><para
+>una entidad de coste seleccionada.</para
+></listitem
+></itemizedlist
+>. Este estado influye en las visualizaciones. </para>
+<para
+>La visualización se muestra siempre para la entidad de coste activa. Cuando una visualización determinada no es adecuada para ella, se desactiva. Este es el caso p. ej. cuando se desactiva la anotación de los fuentes para un objeto ELF cuando se selecciona mediante un doble click. </para>
+<para
+>Por ejemplo, para una función activa la lista de llamantes muestra todas las funciones llamadas desde la activa: es posible seleccionar una de ellas sin activarla; si el gráfico de llamadas está visible, también seleccionará la misma función. </para>
+
+</sect1>
+
+<sect1 id="concepts-guiparts">
+<title
+>Partes de la GUI</title>
+
+<sect2>
+<title
+>Barras laterales</title>
+<para
+>Las barras laterales (móviles) son pequeñas ventanas que pueden situarse en cualquier lateral de una ventana de KCachegrind. Siempre contienen una lista de entidades de coste listadas según un determinado criterio. <itemizedlist>
+<listitem
+><para
+>Perfil plano. Es una lista de funciones con sus costes inclusivos y exclusivos,  número de llamadas y el nombre y posición de las funciones. </para
+></listitem>
+<listitem
+><para
+>Vistazo general de las partes </para
+></listitem>
+<listitem
+><para
+>Pila de llamadas </para
+></listitem>
+</itemizedlist>
+</para>
+</sect2>
+
+<sect2>
+<title
+>Área de visualización</title>
+<para
+>El área de visualización, generalmente la parte derecha de la ventana principal de KCachegrind está formada por una (por omisión) o más pestañas alienadas vertical u horizontalmente. Cada pestaña permite visualizar información diferente de una sola entidad de coste al mismo tiempo. El nombre de dicha entidad aparece en la parte superior de la pestaña. Si hay varias pestañas, sólo una de ellas estará activa. El nombre de la entidad en la pestaña activa aparece en negrita y determina la entidad de coste activa en la ventana de KCachegrind. </para>
+</sect2>
+
+<sect2>
+<title
+>Áreas accesibles mediante las pestañas</title>
+<para
+>Cada página puede contener hasta cuatro áreas de visualización llamadas: superior, inferior, izquierda y derecha. Cada área puede contener varias vistas apiladas. El área visible se selecciona mediante unas pestañas. A través del menú contextual de las páginas podrá escoger el tipo de visualización que desee. </para>
+</sect2>
+
+<sect2>
+<title
+>Visualización sincronizada a través de la entidad seleccionada en la pestaña</title>
+<para
+>Aparte de una entidad activa, cada página tiene un entidad seleccionada. Dado que la mayoría de los tipos de visualización muestran varias entidades con la activa en el centro, podrá cambiar la seleccionada navegando dentro de la visualización (pinchando con el ratón o a través de teclado). Típicamente, los objetos seleccionados se muestran resaltados. Cambiando la entidad seleccionada en una de las visualizaciones, verá como también aparece resaltada la nueva entidad en las demás. </para>
+</sect2>
+
+<sect2>
+<title
+>Sincronización entre pestañas</title>
+<para
+>Si existen varias páginas, al cambiar la selección en una de ellas también se cambiará la selección en la siguiente (a la derecha/al fondo). Este tipo de asociaciones debería, por ejemplo, facilitarle la navegación entre los gráficos de llamadas. </para>
+</sect2>
+
+<sect2>
+<title
+>Disposiciones</title>
+<para
+>La disposición de todas las páginas en una ventana puede ser guardada (vea Ver/Disposición). Después de duplicar la disposición actual (CTRL+plus o a través del menú) y cambiar algunos tamaños o cambiar de sitio una área de visualización, también podrá mover rápidamente entre la disposición anterior y actual mediante el atajo CTRL+izquierda/derecha. El conjunto de las disposiciones se guarda entre las sesiones de perfilado de un mismo comando. Podrá poner como está disposición como predeterminada para las siguientes sesiones de KCachegrind o volver a la configuración por omisión. </para>
+</sect2>
+</sect1>
+
+<sect1 id="concepts-sidedocks">
+<title
+>Barras laterales</title>
+
+<sect2>
+<title
+>Perfilados sencillos</title>
+<para
+>Los perfilados sencillos contienen una lista de grupos y otra lista de funciones. La lista de grupos contiene todos los grupos entre los cuales está repartido el coste, según el tipo de grupo escogido. La lista de grupos permanece oculta cuando está desactivada la agrupación. </para>
+<para
+>La lista de funciones contiene las funciones de los grupos seleccionados (o todas las funciones si está desactivada la opción de agrupamiento) ordenadas según una de las columnas. Puede configurar el número máximo de funciones que se muestra desde la pestaña Preferencias de KCachegrind. </para>
+</sect2>
+
+<sect2>
+<title
+>Vista de las partes</title>
+<para
+>Durante la ejecución de un perfilado pueden crearse varios archivos con la información obtenida, éstos podrán cargarse conjuntamente en KCachegrind. La barra móvil de partes se los mostrará ordenados horizontalmente según la hora de su creación, el tamaño de los rectángulos es proporcional a los costes de cada una de las partes. Podrá seleccionar una o varias partes para que se muestren sólo los costes asociados a ésta. </para>
+<para
+>Cada parte puede subdividirse de dos maneras: <itemizedlist>
+<listitem
+><para
+>Particionado: el usuario ve la repartición en grupos para una parte de los datos del perfilado según el grupo seleccionado. P.ej. si se seleccionan los grupos de objetos ELF, se verán rectángulos coloreados para cada objeto ELF usado (ejecutable o librería dinámica) con un tamaño acorde a su coste. </para
+></listitem>
+<listitem
+><para
+>Repartición del coste inclusivo: se muestra un rectángulo con el coste inclusivo de la función activa en esa parte. Éste a su vez se dividirá para mostrar los costes inclusivos de las funciones que llama. </para
+></listitem>
+</itemizedlist>
+</para>
+</sect2>
+
+<sect2>
+<title
+>Pila de llamadas</title>
+<para
+>Es una pila de las llamadas más probables, puramente ficticia. Se crea a partir de la función activa en ese momento y se le añaden los llamantes/llamadas con los mayores costes al principio y al final. </para>
+<para
+>La columna de costes y llamadas muestra el coste usado para todas las llamadas desde la función en la línea de arriba. </para>
+</sect2>
+</sect1>
+
+<sect1 id="concepts-visualizations">
+<title
+>Visualizaciones</title>
+
+<sect2>
+<title
+>Tipos de eventos</title>
+<para
+>Esta lista muestra todos los tipos de costes disponibles así como los costes propios e inclusivos de la función activada para ese tipo de evento. </para>
+<para
+>Escogiendo un tipo de evento de la lista,  cambiará el tipo de costes en todas las visualizaciones de KCachegrind. </para>
+</sect2>
+
+<sect2>
+<title
+>Listas de llamadas</title>
+<para
+>Muestran todas las llamadas desde y hacia la función activa. Por 'todas' nos referimos a todas las accesibles en ambas direcciones, incluso cuando existen funciones intermedias. </para>
+<para
+>La lista de llamadas incluye: <itemizedlist>
+<listitem
+><para
+>Llamantes directos </para
+></listitem>
+<listitem
+><para
+>Llamados directos </para
+></listitem>
+<listitem
+><para
+>Todos los llamantes </para
+></listitem>
+<listitem
+><para
+>Todos los llamados </para
+></listitem>
+</itemizedlist>
+</para>
+</sect2>
+
+<sect2>
+<title
+>Mapas</title>
+<para
+>Una visualización en árbol del tipo de evento primario a través de la jerarquía de llamadas. Cada uno de los rectángulos coloreados representa una función, su tamaño intenta ser proporcional al coste (piense que las representaciones gráficas tienen sus limitaciones) durante la ejecución de la función. </para>
+<para
+>Para el mapa de llamantes el gráfico muestra la jerarquía encadenada de todas las llamantes de la función activada; parar el mapa de llamadas, se mostrará la jerarquía anidada de todas las llamadas de la función activa. </para>
+<para
+>Puede modificar el aspecto desde el menú contextual. Si desea ver una proporcionalidad exacta seleccione 'Ocultar bordes incorrectos'. Dado que esta opción puede necesitar mucho tiempo, es posible que desee limitar el nivel máximo de anidamiento. 'Mejor' determina la dirección de reparto de los descendientes a partir de las proporciones de los ascendientes. 'Siempre el mejor' decide sobre el espacio restante de cada elemento del mismo nivel. 'Ignorar proporciones' ocupa el espacio para el nombre de la función antes de diseñar sus descendientes. Observe que las proporciones pueden resultar bastante erróneas. </para>
+<para
+>Es posible navegar mediante los cursores izquierda/derecha para los elementos del mismo nivel y arriba/abajo para subir o bajar por los niveles de anidamiento. 'Intro' activa el item actual. </para>
+</sect2>
+
+<sect2>
+<title
+>Gráfico de llamadas</title>
+<para
+>Aquí se muestra el gráfico de llamadas alrededor de la función activada. El coste que se muestra es únicamente el correspondiente a la ejecución de la función activa, esto es que los de la función main() - si es visible - deberían coincidir con los de la actual función activa dado que forma parte del coste inclusivo de main() mientras la función está en ejecución. </para>
+<para
+>En el caso de ciclos, las flechas de llamadas en azul indican que es una llamada inexistente añadida para corregir el gráfico. </para>
+<para
+>Si el gráfico resulta ser mayor que el área de diseño, se mostrará una vista general en uno de los lados. Existen otras opciones de visualización al igual que el el árbol de llamadas, la función seleccionada aparece resaltada. </para>
+</sect2>
+
+<sect2>
+<title
+>Anotaciones</title>
+<para
+>La lista anotada muestra las instrucciones del código desensambladas de la función activa en ese momento junto con el coste asociado a la ejecución de una línea de código o instrucción. Si hay una llamada, se insertan algunas líneas en el código con detalles acerca de la misma: el coste inclusivo dentro de la llamada, el número de llamadas que ocurren y el destino de la llamada. </para>
+<para
+>Si selecciona una de esas líneas de información sobre la llamada se activará el destino de la llamada. </para>
+</sect2>
+</sect1>
+
+</chapter>
+
+
+<chapter id="commands">
+<title
+>Referencia de comandos</title>
+
+<sect1 id="kcachegrind-mainwindow">
+<title
+>Ventana principal de &kcachegrind;</title>
+<para
+></para>
+
+<sect2>
+<title
+>El menú <guimenu
+>Archivo</guimenu
+></title>
+<para>
+<variablelist>
+
+<varlistentry>
+<term
+><menuchoice
+><shortcut
+> <keycombo
+>&Ctrl;<keycap
+>N</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Archivo</guimenu
+> <guimenuitem
+>Nuevo</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+>Abre una nueva ventana donde cargar la información del perfilado</action
+>. Esto no es realmente necesario dado que seleccionando Archivo/Abrir también abrirá una nueva ventana si la actual está mostrando otros datos. </para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><menuchoice
+><shortcut
+> <keycombo
+>&Ctrl;<keycap
+>O</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Archivo</guimenu
+> <guimenuitem
+>Abrir</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+>Abre el diálogo de apertura de archivo para que pueda cargar un archivo de información de perfilado.</action
+>. Si ya tiene información cargada en la ventana principal, se abrirá otra ventana. Si desea cargar más datos de perfilado utilice Archivo/Añadir. </para>
+<para
+>El nombre de los archivos de perfilado suele terminar en ..-, donde .. se usan cuando tenemos varios archivos de perfilado pertenecientes a un mismo análisis. Cuando se cargue un archivo terminado en «.», también se cargaran otros archivos, si los hay, que pertenezcan a ese mismo perfilado. </para>
+<para
+>Por ejemplo: si existen los archivos cachegrind.out.123 y cachegrind.out.123.1, al cargar el primero también lo hará el segundo. </para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><menuchoice
+><guimenu
+>Archivo</guimenu
+> <guimenuitem
+>Añadir</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+>Añade información de perfilado en la ventana actual</action
+>. Con esta opción puede cargar varios archivos en una misma ventana aunque no correspondan al mismo análisis. Esto puede ser útil, por ejemplo, para comparar dos casos similares. </para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><menuchoice
+><guimenu
+>File</guimenu
+> <guimenuitem
+>Recargar</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+>Recarga la información de perfilado</action
+>. Esto es más interesante después de que haya sido generado otro archivos de datos de perfilado para la ejecución de una aplicación ya cargada. </para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><menuchoice
+><shortcut
+> <keycombo
+>&Ctrl;<keycap
+>Q</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Archivo</guimenu
+> <guimenuitem
+>Salir</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+>Cierra</action
+> &kappname;</para
+></listitem>
+</varlistentry>
+</variablelist>
+</para>
+
+</sect2>
+
+<sect2>
+<title
+>El menú <guimenu
+>Ver</guimenu
+></title>
+<para>
+<variablelist>
+
+<varlistentry>
+<term
+><menuchoice
+><guimenu
+>Ver</guimenu
+> <guimenuitem
+>Tipo de evento primario</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+>(Por hacer)</action
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><menuchoice
+><guimenu
+>Ver</guimenu
+> <guimenuitem
+>Tipo de evento secundario</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+>(Por hacer)</action
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><menuchoice
+><guimenu
+>Ver</guimenu
+> <guimenuitem
+>Agrupación</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+>(Por hacer)</action
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><menuchoice
+><guimenu
+>Ver</guimenu
+> <guimenuitem
+>Disposición</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+>(Por hacer)</action
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><menuchoice
+><guimenu
+>Ver</guimenu
+> <guimenuitem
+>Dividir</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+>(Por hacer)</action
+></para
+></listitem>
+</varlistentry>
+
+</variablelist>
+</para>
+
+</sect2>
+
+
+</sect1>
+</chapter>
+
+<chapter id="faq">
+<title
+>Preguntas y respuestas</title>
+&reporting.bugs; &updating.documentation; <qandaset id="faqlist">
+
+
+<qandaentry>
+<question>
+<para
+>¿Qué es &kcachegrind;? No consigo hacerme una idea </para>
+</question>
+<answer>
+<para
+>&kcachegrind; es una herramienta útil en una de las últimas fases del desarrollo de un programa llamada perfilado. En pocas palabras: si no programa aplicaciones, no necesita &kcachegrind;. </para>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>¿Cuál es la diferencia entre 'coste inclusivo y propio? </para>
+</question>
+<answer>
+<para
+>Ambas son atributos de los costes para funciones de unos determinados tipos de eventos. Dado que las funciones se llaman entre si, tiene sentido distinguir el coste de la propia función (coste propio) y el coste de la misma más todas las funciones invocadas (coste inclusivo). 'Self' también se puede llamar coste exclusivo. </para>
+<para
+>P. ej. para la función main(), siempre verá un coste inclusivo cercano al 100%, mientras el coste propio </para>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>La barra de herramientas y/o la del menú tienen un aspecto bastante cutre ¿es normal?</para>
+</question>
+<answer>
+<para
+>Obviamente, KCachegrind ha sido mal instalado en su sistema. Es recomendable compilarlo e instalarlo en el mismo lugar que el resto de KDE, p. ej. <command
+>configure --prefix=/opt/kde3; make install</command
+>. Si decide instalarlo en otra parte como $HOME/kde debe asignar ese directorio a la variable de entorno KDEDIR antes de ejecutar KCachegrind. </para>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Si hace doble click sobre una función del gráfico de llamadas, verá para la función main el mismo coste que para la función seleccionada. ¿No se supone que debe ser constante al 100%? </para>
+</question>
+<answer>
+<para
+>Ha activado un función descendiente de main() con un coste menor que ésta. En cualquier caso sólo se muestra esa parte del coste total de una función mientras está activa. Esto es que el coste que se muestra para cualquier función nunca puede ser mayor que el de la función activada. </para>
+</answer>
+</qandaentry>
+
+
+</qandaset>
+</chapter>
+
+<chapter id="glossary">
+<title
+>Glosario</title>
+
+<para
+>A continuación se exponen una lista de diversos términos. <itemizedlist>
+<listitem
+><para
+>Perfillado: proceso mediante el cual se recoge información estadística sobre lo que ocurre durante la ejecución de un programa. </para
+></listitem>
+<listitem
+><para
+>Trazado: proceso mediante el cual se supervisa la ejecución de un programa y se registran los eventos que ocurren en un archivo de salida llamado traza (a veces también se le llama trazado). </para
+></listitem>
+<listitem
+><para
+>Traza: secuencia temporal de los eventos ocurridos mientras se analizaba la ejecución de un programa. Su tamaño suele ser directamente proporcional al tiempo de ejecución. </para
+></listitem>
+<listitem
+><para
+>Archivo de datos de perfilado: contiene la información obtenida durante el perfilado (o parte de ella) o producida al procesar de un trazado. Su tamaño suele ser similar al del código del programa. </para
+></listitem>
+<listitem
+><para
+>Parte de la información de perfilado (también llamado incorrectamente: parte del trazado): información de un archivo de perfilado. </para
+></listitem>
+<listitem
+><para
+>Experimento de perfilado. Un programa ejecutado bajo el control de una herramienta de perfilado y que está generando uno o más archivos con información de perfilado de sus partes o hebras ('threads'). </para
+></listitem>
+<listitem
+><para
+>Proyecto de perfilado. Configuración del experimento de perfilado usado para el programa a perfilar. En general, las comparaciones entre perfilados sólo tienen sentido con datos de un sólo proyecto de perfilado. </para
+></listitem>
+<listitem
+><para
+>Entidad de coste: es un concepto bastante abstracto, está relacionado con el código fuente del programa para el cual puede contabilizarse determinados eventos. Los parametros de las entidades de coste son la localización en el código (p.ej. línea de código, función), la localización de los datos (esto es el tipo de datos a los que se accede, objeto de los datos), la localización de la ejecución (esto es la tarea o proceso) y los tuplas de posiciones indicadas anteriormente (p.ej. llamadas o acceso a los objetos mediante la instrucción, datos obtenidos a partir del caché). </para
+></listitem>
+<listitem
+><para
+>Tipo de evento. La clase de evento al que se le pueden atribuir costes a una entidad de coste. Existe tipos de eventos reales y heredados </para
+></listitem>
+<listitem
+><para
+>Tipos de eventos reales. Un tipo de evento que se puede medir con una herramienta siempre que se tenga el sensor adecuado. </para
+></listitem>
+<listitem
+><para
+>Tipo de evento heredado. Un tipo de evento virtual definido por una fórmula resoluble a partir de tipos de eventos reales. </para
+></listitem>
+<listitem
+><para
+>Costes de los eventos. Suma de eventos de algún tipo de evento que ocurre mientras la ejecución está relacionada con alguna entidad de coste. El coste se atribuye a la entidad. </para
+></listitem>
+</itemizedlist>
+</para>
+</chapter>
+
+<chapter id="credits">
+
+
+<title
+>Créditos y licencia</title>
+
+<para
+>&kappname; </para>
+<para
+>Gracias a Julian Seward por su excelente herramienta &valgrind; y a Nicholas Nethercote por añadirle &cachegrind;. Sin estos programas, <application
+>KCachegrind</application
+> no existiría. También han contribuido con algunas ideas para esta GUI. </para>
+<para
+>Gracias también a todos los usuarios que enviaron informes de fallos y sugerencias. </para>
+&underFDL; </chapter>
+
+<appendix id="installation">
+<title
+>Instalación</title>
+
+<sect1 id="getting-kcachegrind">
+<title
+>Cómo obtener &kcachegrind;</title>
+
+<para
+>&kcachegrind; forma parte del paquete &package; de &kde;. Si desea más información visite  <ulink url="http://kcachegrind.sf.net"
+> http://kcachegrind.sf.net</ulink
+> </para>
+</sect1>
+
+<sect1 id="requirements">
+<title
+>Requisitos</title>
+
+<para
+>Para poder utilizar&kcachegrind;, necesitará &kde; 3.x. Para generar la información de perfilado es recomendable &cachegrind; o &calltree;/&callgrind;.  </para>
+</sect1>
+
+<sect1 id="compilation">
+<title
+>Compilación e instalación</title>
+&install.compile.documentation; </sect1>
+
+<sect1 id="configuration">
+<title
+>Configuración</title>
+
+<para
+>Todas las opciones de configuración están o bien en el propio diálogo de configuración o en los menús contextuales de las visualizaciones. </para>
+
+</sect1>
+
+</appendix>
+
+&documentation.index;
+</book>
+<!--
+Local Variables:
+mode: sgml
+sgml-minimize-attributes:nil
+sgml-general-insert-case:lower
+sgml-indent-step:0
+sgml-indent-data:nil
+End:
+-->
+
+
+
+
+
+
+
+
+
+
+
+
+

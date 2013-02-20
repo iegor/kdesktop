@@ -1,0 +1,4 @@
+KDE_LANG = it
+SUBDIRS = $(AUTODIRS)
+KDE_DOCS = kinfocenter/usb
+KDE_MANS = AUTO

@@ -1,0 +1,1609 @@
+<?xml version="1.0" ?>
+<!DOCTYPE book PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" "dtd/kdex.dtd" [
+  <!ENTITY kappname "kdesvn-build">
+  <!ENTITY package "kdesdk">
+  <!ENTITY % addindex "IGNORE">
+  <!ENTITY % Swedish "INCLUDE"
+> <!-- Change language only here -->
+  <!ENTITY svn "<application
+>Subversion</application
+>">
+  <!ENTITY kdesvn-build "<application
+>kdesvn-build</application
+>">
+]>
+
+<book lang="&language;">
+
+<bookinfo>
+<title
+>Handbok för skriptet &kdesvn-build;</title>
+
+<authorgroup id="authors">
+<author
+><firstname
+>Michael</firstname
+><surname
+>Pyne</surname
+> <affiliation
+><address
+><email
+>michael.pyne@kdemail.net</email
+></address
+></affiliation>
+</author
+> 
+<author
+><firstname
+>Carlos</firstname
+><surname
+>Woelz</surname
+> <affiliation
+><address
+><email
+>carloswoelz@imap-mail.com</email
+></address
+></affiliation>
+</author
+> 
+
+
+<othercredit role="translator"
+> <firstname
+>Stefan</firstname
+> <surname
+>Asserhäll</surname
+> <affiliation
+><address
+><email
+>stefan.asserhall@comhem.se</email
+></address
+></affiliation
+> <contrib
+>Översättare</contrib
+></othercredit
+> 
+
+</authorgroup>
+
+<copyright>
+<year
+>2005</year>
+<holder
+>Michael Pyne</holder>
+</copyright>
+
+<copyright>
+<year
+>2005</year>
+<holder
+>Carlos Woelz</holder>
+</copyright>
+
+
+<legalnotice
+>&FDLNotice;</legalnotice>
+
+<date
+>2005-06-18</date>
+<releaseinfo
+>0.97</releaseinfo>
+
+<abstract>
+<para
+>&kdesvn-build; är ett Perl-skript som bygger och installerar &kde;, direkt från källkoden som hämtas från &kde;:s &svn;-arkiv.</para>
+</abstract>
+
+<keywordset>
+<keyword
+>KDE</keyword>
+<keyword
+>kdesdk</keyword>
+<keyword
+>SVN</keyword>
+<keyword
+>Subversion</keyword>
+<keyword
+>KDE-utveckling</keyword>
+</keywordset>
+
+</bookinfo>
+
+
+<chapter id="introduction">
+<title
+>Inledning</title>
+
+<para
+>&kdesvn-build; är ett Perl-skript som hjälper användare att installera <ulink url="http://www.kde.org/"
+>&kde;</ulink
+> från <ulink url="http://subversion.tigris.org/"
+>&svn;</ulink
+>. Du kanske också vill fundera på att använda skriptet kde-build, som är inkluderat i &kde;:s kdesdk-modul. </para>
+
+<para
+>Här dokumenterar vi syntaxen för &kdesvn-build; inställningsfiler, dess kommandoradsväljare, funktioner och en översikt över alla nödvändiga steg som krävs för att bygga &kde; från källkod, inklusive stegen du måste utföra med användning av andra verktyg, eller med andra ord, steg som inte automatiskt utförs av skriptet &kdesvn-build;. </para>
+
+</chapter>
+
+<chapter id="getting-started">
+<title
+>Komma igång</title>
+
+<para
+>I det här kapitlet visar vi hur &kdesvn-build; används för att checka ut moduler från &kde;-arkivet och bygga dem. Vi tillhandahåller också en grundläggande förklaring av &kde;:s &svn;-struktur och stegen du måste utföra innan skriptet körs. </para>
+
+<para
+>Alla ämnen som presenteras i det här kapitlet täcks med ännu mer detaljer i guiden <ulink url="http://quality.kde.org/develop/cvsguide/buildstep.php"
+>Building &kde; from Source Step by Step Guide</ulink
+> på <ulink url="http://quality.kde.org"
+>hemsidan för &kde;:s kvalitetsgrupp</ulink
+>. Om du kompilerar KDE för första gången, är det en god idé att läsa den, eller rådfråga den som en referenskälla. Du hittar detaljerad information om paketverktyg och krav, vanliga fallgropar vid kompilering och strategier och information om att köra den nya &kde;-installationen. </para>
+
+<sect1 id="before-building">
+<title
+>Förbereda systemet för att bygga &kde;</title>
+
+<para
+>Du rekommenderas att ladda ner och bygga &kde; med ett användarkonto. Om du redan har &kde;-paket installerade, är det bästa valet att skapa en annan (särskild) användare för att bygga och köra det nya &kde;. Fördelen med att bygga &kde; för en särskild användare är att du inte kan förstöra bassystemet, och du har alltid ett sätt att arbeta bekvämt när saker och ting går fel. </para>
+
+<para
+>Senare kan du installera som systemadministratör om du vill. Det här dokumentet täcker inte en installation som systemadministratör. Om du utför en systeminstallation, vet du troligen ändå vad du gör. </para>
+
+<para
+>Innan du använder skriptet &kdesvn-build; (eller någon annan byggstrategi) måste du installera utvecklingsverktyg och bibliotek som behövs för &kde;. Du behöver Qt-biblioteket, version 3.3.0 eller senare, Automake 1.8, Autoconf 2.5X (bättre med 
+>= 2.57 eftersom ett fel rapporterades med tidigare versioner), subversion-klienten (svn), gcc-kompilatorn med stöd för C++, libxml2, openssl, libbz2 och många fler (för en fullständig lista, besök <ulink url="http://www.kde.org/info/requirements/3.4.php"
+>KDE kompileringskrav</ulink
+>). Du kan oftast få verktygen paketerade för ditt system från din distribution eller leverantör. </para>
+
+<para
+>Vissa av paketen är uppdelade i bibliotek, program eller verktyg och utvecklingspaket. Du behöver åtminstone programmet eller biblioteket och dess utvecklingspaket. Om du är tveksam installera alla. Biblioteken du behöver ändras beroende på modulerna du avser att bygga, eftersom varje modul har sina egna krav. Guiden <ulink url="http://quality.kde.org/develop/cvsguide/buildstep.php#step1"
+>Building &kde; from Source Step by Step</ulink
+> har mer detaljinformation om specifika verktyg och tekniker som används för att installera och hitta programvaran som krävs. </para>
+
+<para
+>Du har troligen redan en version av skriptet &kdesvn-build; installerat på ditt 
+system. &kdesvn-build; kräver att du skapar en inställningsfil, som heter 
+<filename>.kdesvn-buildrc</filename>. Filen ska installeras i hemkatalogen 
+(~/), och innehålla all inställningsdata som krävs för att skriptet ska kunna 
+köras, som inställningsalternativ, kompileringsväljare, plats för källkoden, 
+målet för installationen (prefix), modulerna som ska byggas, etc. Förvald 
+inställningsdata tillhandahålls i filen 
+<filename>kdesvn-buildrc-sample</filename>. Du hittar mer information om 
+inställningsfilens syntax i <xref linkend="configure-data"/> 
+och i <xref linkend="kdesvn-buildrc"/>. </para>
+
+<para
+>Ett bra sätt att hämta senaste versionen är att bläddra till sidan kdesdk/scripts på webbplatsen <ulink url="http://websvn.kde.org/trunk/KDE"
+>websvn.kde.org</ulink
+>. Du ser en lista med filer tillgängliga i katalogen kdesdk/scripts i &kde;:s &svn;-arkiv. Klicka på länken &kdesvn-build; och ladda ner senaste versionen av skriptet. Gör samma sak med filen <filename
+>kdesvn-buildrc-sample</filename
+>. Gör skriptet körbart, och försäkra dig om att det finns i din sökväg. </para>
+
+</sect1>
+
+<sect1 id="configure-data">
+<title
+>Ange inställningsinformation</title>
+
+<para
+>För att använda skriptet måste du ha en fil i din hemkatalog som heter <filename
+>.kdesvn-buildrc</filename
+>, som ställer in allmänna alternativ och anger modulerna som du vill ladda ner och bygga. </para>
+
+<para
+>Använd filen <filename
+>kdesvn-buildrc-sample</filename
+> som en mall, för att ställa in allmänna alternativ och modulerna du vill bygga. </para>
+
+<para
+>Välj servern som ska användas för att checka ut från &svn; genom att ställa in det allmänna alternativet svn-server. Det anonyma &svn;-arkivet <emphasis
+>svn://anonsvn.kde.org/</emphasis
+> är förvalt, men ändra det om du har ett <ulink url="http://developer.kde.org/documentation/misc/firststepsaccount"
+>&kde; &svn;-konto</ulink
+>, eller om det finns en <ulink url="http://developer.kde.org/source/anonsvn.html"
+>spegelplats nära dig</ulink
+>. </para>
+
+<para
+>Var särskilt uppmärksam på de globala variablerna kdedir och qtdir, eftersom den första anger var det byggda &kde; ska installeras (normalt i <filename
+>~/kde</filename
+>), och den andra var (och om) Qt-biblioteket ska byggas och installeras (normalt <filename
+>~/kdesvn/build/qt-copy</filename
+>). Du måste känna till platserna för kdedir och qtdir senare, för att ställa in miljövariablerna som är nödvändiga för att köra den nya installationen. Kontrollera om de listade modulerna i själva verket är modulerna som du vill bygga. De förvalda alternativen i filen <filename
+>kdesvn-buildrc-sample</filename
+> bör vara tillräckliga för att få en någorlunda komplett installation av &kde;. Spara resultatet som <filename
+>.kdesvn-buildrc</filename
+> i din hemkatalog. </para>
+
+<para
+>Om du vill finjustera <filename
+>.kdesvn-buildrc</filename
+>, titta då på <xref linkend="kdesvn-buildrc"/> för detaljerad information om alla inställningsalternativ. </para>
+
+</sect1>
+
+<sect1 id="building-and-troubleshooting">
+<title
+>Att använda skriptet &kdesvn-build;</title>
+
+<para
+>Nu är du klar att köra skriptet. Logga in till användaren som du använder för att kompilera &kde; i ett terminalfönster, och kör skriptet: <screen
+><prompt
+>&percnt;</prompt
+><command
+>su</command
+> <option
+>-</option
+> <replaceable
+>utvecklings-användarnamn</replaceable>
+<prompt
+>&percnt;</prompt
+><command
+>kdesvn-build</command
+>
+</screen>
+</para>
+
+<para
+>Nu ska skriptet börja ladda ner källkoden och kompilera den. Det är inte troligt att du lyckas första gången du kompilerar &kde;. Förtvivla inte! Kontrollera loggfilerna för att se om du saknar några verktyg eller utvecklingspaket (platsen för loggfilerna anges av variabeln log-dir i inställningsfilen). Ibland blir huvudutvecklingsgrenen mycket instabil och svår att bygga, särskilt när en frysning av utvecklingen är nära. Ha tålamod. Du kan hitta fler vanliga exempel på saker som kan gå fel och deras lösning, samt allmänna tips och strategier för att bygga &kde; i guiden <ulink url="http://quality.kde.org/develop/cvsguide/buildstep.php#step1"
+>Building &kde; from Source Step by Step</ulink
+>. </para>
+
+</sect1>
+
+<sect1 id="environment">
+<title
+>Ställa in miljön för att köra det färska &kde;</title>
+
+<para
+>Med antagandet att du använder en särskild användare för att bygga &kde; och redan har en installerad version av &kde;, kan det vara något krångligt att köra det nya &kde;, eftersom det nya &kde; måste ges företräde över det gamla. Ändra miljövariabler för att försäkra dig om att det gör det. </para>
+
+<para
+>Öppna eller skapa filen <filename
+>.bash_profile</filename
+> i hemkatalogen med din favoriteditor, och lägg till följande i slutet på filen: <programlisting>
+KDEDIR=(sökväg till kdedir)
+KDEDIRS=$KDEDIR
+PATH=$KDEDIR/bin:$QTDIR/bin:$PATH
+LD_LIBRARY_PATH=$KDEDIR/lib:$LD_LIBRARY_PATH
+export KDEDIRS PATH LD_LIBRARY_PATH
+</programlisting
+> om du bygger modulen qt-copy, lägg istället till: <programlisting
+>QTDIR=(sökväg till qtdir)
+KDEDIR=(sökväg till kdedir)
+KDEDIRS=$KDEDIR
+PATH=$KDEDIR/bin:$QTDIR/bin:$PATH
+MANPATH=$QTDIR/doc/man:$MANPATH
+LD_LIBRARY_PATH=$KDEDIR/lib:$QTDIR/lib:$LD_LIBRARY_PATH
+export QTDIR KDEDIRS PATH MANPATH LD_LIBRARY_PATH
+</programlisting>
+</para>
+
+<para
+>Om du inte använder en särskild användare, ställ in en annorlunda <envar
+>$KDEHOME</envar
+> för den nya miljön i din <filename
+>.bash_profile</filename
+>: <programlisting
+>export KDEHOME="${HOME}/.kde-svn"
+
+# Skapa om det behövs
+[ ! -e ~/.kde-svn ] &amp;&amp; mkdir ~/.kde-svn
+</programlisting>
+</para>
+
+<note>
+<para
+>Om menyn senare är tom eller för överfull med program från din distribution, kanske du måste ställa in miljövariabeln xdg i <filename
+>.bash_profile</filename
+>: <programlisting
+>XDG_CONFIG_DIRS="/etc/xdg"
+XDG_DATA_DIRS="${KDEDIR}/share:/usr/share"
+export XDG_CONFIG_DIRS XDG_DATA_DIRS
+</programlisting>
+
+</para>
+</note>
+
+<para
+>Nu när vi är klara med det måste du försäkra dig om att rätt <application
+>startkde</application
+> skript kommer att användas: </para>
+
+<para
+>Öppna textfilen <filename
+>.xinitrc</filename
+> (eller <filename
+>.xsession</filename
+>, beroende på distribution) i hemkatalogen, eller skapa den om det behövs. Lägg till raden: <programlisting
+>exec ${KDEDIR}/bin/startkde
+</programlisting>
+</para>
+
+<para
+>Starta nu det färska &kde;: i BSD- och Linux-system med stöd för virtuella terminaler, används tangentkombinationerna Ctrl+Alt+F1..F12 för att byta mellan virtuella konsoller 1 till och med 12. Det låter dig köra mer än en skrivbordsmiljö samtidigt. De första sex är textterminaler, och de följande sex är grafiska skärmar. </para>
+
+<para
+>Om den grafiska skärmhanteraren istället visas när du startar, kan du använda den nya KDE-miljön även om den inte listas som ett alternativ. Tryck på Ctrl+Alt+F2, så visas en textterminal. Logga in som den särskilda användaren och skriv: </para>
+
+<screen
+>startx -- :1
+</screen>
+
+<tip>
+<para
+>Du kan köra KDE från källkod och det gamla KDE samtidigt. Logga in som din vanliga användare, och starta det stabila KDE-skrivbordet. Tryck på Ctrl+Alt+F2 (eller F1, F3, etc.), så visas en textterminal. Logga in som den särskilda användaren och skriv "startx -- :1". Du kan gå tillbaka till den vanliga användaren genom att trycka på Ctrl+Alt+F6 (eller F7, F8 etc. Prova dem. En av dem är den rätta.). För att återgå till KDE från källkod, tryck på Ctrl+Alt+F7 (eller F6, F8, etc.). Nu kan du byta mellan dina KDE-versioner, och testa den nya medan du vet att du snabbt kan återgå till säkerheten hos det stabila KDE-skrivbordet. </para>
+</tip>
+
+
+</sect1>
+
+</chapter>
+
+<chapter id="features">
+<title
+>Skriptets funktioner</title>
+
+<para
+>Funktionerna i &kdesvn-build; omfattar: </para>
+
+
+<itemizedlist>
+
+<listitem
+><para
+>Checkar automatiskt ut eller uppdaterar moduler från &svn;, enligt vad som är lämpligt. </para
+></listitem>
+
+<listitem
+><para
+>Beräknar tiden för att bygga moduler. </para
+></listitem>
+
+<listitem
+><para
+>Försöker automatiskt bygga om moduler som använder en inkrementell byggprocess, vilken tenderar att misslyckas efter vissa typer av incheckningar. </para
+></listitem>
+
+<listitem
+><para
+>Kan återuppta ett tidigare skript, eller starta byggprocessen från en viss modul. </para
+></listitem>
+
+<listitem
+><para
+>Levereras med en inbyggt rimlig uppsättning förvalda alternativ lämpligt för att bygga en grundläggande enanvändarinstallation av &kde; från det anonyma &svn;-arkivet. </para
+></listitem>
+
+<listitem
+><para
+>Levereras med stöd för <ulink url="http://www.kde.me.uk/index.php?page=unsermake"
+>Unsermake</ulink
+>. </para
+></listitem>
+
+<listitem
+><para
+>Expanderar dina inställningsalternativ med tilde. Du kan till exempel ange: <programlisting
+>qtdir ~/kdesvn/build/qt-copy</programlisting>
+</para
+></listitem>
+
+<listitem
+><para
+>Inställningsbara bygg-, källkods-, och loggningskataloger </para
+></listitem>
+
+<listitem
+><para
+>Sätter automatiskt upp ett byggsystem, med källkodskatalogen skild från byggkatalogen för att hålla källkodskatalogen orörd. Undantaget är <application
+>qt-copy</application
+>, som inte är konstruerad att byggas så (om du inte vill prova <link linkend="conf-use-qt-builddir-hack"
+><quote
+>QT med separat byggkatalog</quote
+></link
+>). </para
+></listitem>
+
+<listitem
+><para
+>Du kan ange allmänna alternativ att använda för alla moduler som checkas ut, och du kan dessutom ange alternativ som ska användas för enskilda moduler. </para
+></listitem>
+
+<listitem
+><para
+>Eftersom autoverktygen ibland blir osynkroniserade med ändringar i källkodsträdet, kan du tvinga att en modul byggs om genom att skapa en fil som heter refresh-me i byggkatalogen för modulen i fråga, eller genom att köra &kdesvn-build; med väljaren <option
+>--refresh-build</option
+>. </para
+></listitem>
+
+<listitem
+><para
+>Du kan ange diverse miljövariabler som ska användas under byggprocessen, inklusive <envar
+>KDEDIR</envar
+>, <envar
+>QTDIR</envar
+>, <envar
+>DO_NOT_COMPILE</envar
+> och <envar
+>CXXFLAGS</envar
+>. </para
+></listitem>
+
+<listitem
+><para
+>Kommandologgning. Loggar dateras och numreras så att du alltid har en logg av en körning av skriptet. Dessutom skapas en symbolisk länk som heter latest, som alltid pekar på den senaste loggen i loggkatalogen. </para
+></listitem>
+
+<listitem
+><para
+>Om du använder en användarbyggd &kde; istället för en systembyggd (som du måste vara systemadministratör för att installera), kan du låta skriptet installera åt dig. Jag har inte granskat koden, och den använder anropet <function
+>system()</function
+> flitigt, så jag rekommenderar  för närvarande att inte köra den som systemadministratör. </para
+></listitem>
+
+<listitem
+><para
+>Du kan använda <link linkend="conf-make-install-prefix"
+>make-install-prefix</link
+> för att inleda byggkommandoraden med ett separat kommando, som är användbart för sudo. </para
+></listitem>
+
+<listitem
+><para
+>Du kan använda alternativet <link linkend="conf-apidox"
+>apidox</link
+> för att automatiskt bygga och installera dokumentation om programmeringsgränssnittet för vissa moduler. </para
+></listitem>
+
+<listitem
+><para
+>Du kan checka ut bara en delmängd av en &kde; &svn;-modul. Du skulle till exempel kunna checka ut bara <application
+>taglib</application
+> från <application
+>kdesupport</application
+>, eller bara <application
+>K3B</application
+> från <application
+>extragear/multimedia</application
+>. Skriptet hämtar automatiskt in <application
+>kde-common</application
+> om det behövs för att få byggprocessen att fungera. </para
+></listitem>
+
+<listitem
+><para
+>Du kan <quote
+>låtsas</quote
+> att utföra åtgärden. Om du skickar med <option
+>--pretend</option
+> eller <option
+>-p</option
+> på kommandoraden, ger skriptet en mycket utförlig beskrivning av de kommandon som ska göras, utan att i själva verket utföra dem. </para
+></listitem>
+
+<listitem
+><para
+>Stöd för att checka ut specifika grenar av &svn;-moduler. Arbetet behöver fortfarande göras färdigt, men du kan redan välja grenen du vill bygga med inställningsalternativet <link linkend="conf-module-base-path"
+>module-base-path</link
+>. </para
+></listitem>
+
+</itemizedlist>
+
+<para
+>Saker som &kdesvn-build; INTE gör: </para>
+
+<itemizedlist>
+
+<listitem
+><para
+>Hitta den snabbaste spegelplatsen för &kde; &svn;. Det finns inte ens en lista medskickad med skriptet för närvarande, även om förvald server bör fungera bra. </para
+></listitem>
+
+<listitem
+><para
+>Borsta tänderna. Du måste komma ihåg att göra det själv. </para
+></listitem>
+
+<listitem
+><para
+>Tyvärr är skriptet troligen inte fritt från fel. </para
+></listitem>
+
+</itemizedlist>
+
+</chapter>
+
+<chapter id="kdesvn-buildrc">
+<title
+>Formatet för .kdesvn-buildrc</title>
+
+<para
+>För att använda skriptet måste du ha en fil i din hemkatalog som heter <filename
+>.kdesvn-buildrc</filename
+>, som beskriver modulerna som du vill ladda ner och bygga. </para>
+
+
+
+<para
+>Den börjar med allmänna alternativ, angivna enligt följande: </para>
+
+<programlisting
+>global
+<replaceable
+>alternativ-namn alternativ-värde</replaceable>
+<replaceable
+>[...]</replaceable>
+end global
+</programlisting>
+
+<para
+>De följs därefter av en eller flera modulsektioner, angivna på följande sätt: </para>
+
+<programlisting
+>module <replaceable
+>modul-namn</replaceable>
+<replaceable
+>alternativ-namn alternativ-värde</replaceable>
+<replaceable
+>[...]</replaceable>
+end module
+</programlisting>
+
+<para
+><replaceable
+>modul-namn</replaceable
+> måste vara en modul i &kde;:s &svn;-arkiv (till exempel kdelibs eller kdebase). Vissa alternativ överskrider de allmänna alternativen, vissa lägger till i de allmänna alternativen och vissa allmänna alternativ kan helt enkelt inte överskridas. </para>
+
+<para
+>Följande är en alfabetisk lista med alternativ du kan använda. Klicka på alternativet för att ta reda på mer om det. Om något inte är dokumenterat, skicka gärna e-post till upphovsmännen med adressen som du hittar <link linkend="authors"
+>ovan</link
+>. </para>
+
+<itemizedlist>
+<listitem
+><para
+><link linkend="conf-apidox"
+>apidox</link
+>, för att bygga dokumentation över programmeringsgränssnittet</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-apply-qt-patches"
+>apply-qt-patches</link
+>, för att förbättra qt-copy</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-binpath"
+>binpath</link
+>, för att ställa in variabeln <envar
+>PATH</envar
+>.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-branch"
+>branch</link
+>, för att checka ut från en gren istället för /trunk.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-build-dir"
+>build-dir</link
+>, för att ange katalog att bygga i.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-checkout-only"
+>checkout-only</link
+>, för att bara checka ut delar av en modul.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-colorful-output"
+>colorful-output</link
+> för att lägga till färg i skriptets utmatning.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-configure-flags"
+>configure-flags</link
+> för att ange vilka flaggor en modul ska ställas in med.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-cxxflags"
+>cxxflags</link
+> för att definiera variabeln <envar
+>CXXFLAGS</envar
+>.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-dest-dir"
+>dest-dir</link
+> för att ändra katalognamn för en modul.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-do-not-compile"
+>do-not-compile</link
+>, för att markera kataloger så att de hoppas över av byggprocessen.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-inst-apps"
+>inst-apps</link
+>, för att bara bygga och installera vissa kataloger.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-install-after-build"
+>install-after-build</link
+>, för att undvika att installera efter byggprocessen.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-kdedir"
+>kdedir</link
+>, för att ange katalog att installera KDE i.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-libpath"
+>libpath</link
+>, för att sätta variabeln <envar
+>LD_LIBRARY_PATH</envar
+>.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-make-install-prefix"
+>make-install-prefix</link
+>, för att köra ett hjälpprogram (som sudo) under installationen.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-make-options"
+>make-options</link
+>, för att skicka väljare till byggprogrammet.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-manual-build"
+>manual-build</link
+>, för att undvika att modulen byggs automatiskt.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-manual-update"
+>manual-update</link
+>, för att undvika att någonting görs automatiskt med modulen.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-module-base-path"
+>module-base-path</link
+>, för att ändra varifrån modulen laddas ner.(användbart för grenar och taggar).</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-niceness"
+>niceness</link
+>, för att ändra processorprioriteten.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-no-rebuild-on-fail"
+>no-rebuild-on-fail</link
+>, för att undvika att köra byggprocessen igen om den misslyckas.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-qtdir"
+>qtdir</link
+>, för att ange sökväg till Qt.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-set-env"
+>set-env</link
+>, för att sätta en miljövariabel.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-source-dir"
+>source-dir</link
+>, för att ändra vart källkoden laddas ner.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-stop-on-failure"
+>stop-on-failure</link
+>, för att få .kdesvn-build att stoppa så fort ett allvarligt fel hittas.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-svn-server"
+>svn-server</link
+>, för att ändra servern som källkoden automatiskt laddas ner från.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-use-qt-builddir-hack"
+>use-qt-builddir-hack</link
+>, för att ge Qt en separat byggkatalog från källkoden, som KDE.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-use-unsermake"
+>use-unsermake</link
+>, för att använda det avancerade byggsystemet unsermake.</para
+></listitem>
+</itemizedlist>
+
+
+<para
+>Här är en tabell över de olika alternativen, och några kommentarer om dem. Alla alternativ som överskrider det allmänna alternativet, överskrider också en kommandoradsväljare. </para>
+
+<table id="option-table">
+<title
+>Alternativtabell</title>
+<tgroup cols="3">
+
+<thead>
+<row>
+<entry
+>Alternativnamn</entry>
+<entry
+>Modul -&gt; Allmänt beteende</entry>
+<entry
+>Anmärkningar</entry>
+</row>
+</thead>
+
+<tbody>
+
+<row id="conf-apidox">
+<entry
+>apidox</entry>
+<entry
+>Överskrider allmän</entry>
+<entry
+>Sätt alternativet till <quote
+>true</quote
+> för att få &kdesvn-build; att automatiskt bygga och installera dokumentation om programmeringsgränssnittet för modulen efter den normala byggprocessen. Det fungerar bara för moduler där <quote
+>make apidox</quote
+> gör någonting, inklusive , bland annat kdelibs, kdebase och koffice. </entry>
+</row>
+
+<row id="conf-apply-qt-patches">
+<entry
+>apply-qt-patches</entry>
+<entry
+>Överskrider allmän</entry>
+<entry
+>Det här alternativet är bara användbart för qt-copy. Om det är inställt till ett värde skilt från noll, körs skriptet apply-patches i qt-copy innan byggprocessen, för att utföra inofficiella programfixar i qt-copy. Eftersom dessa programfixar normalt är orsaken till att använda qt-copy istället för en standardversion av Qt, ska det inte vara skadligt att aktivera det. Förvalt värde är att aktivera programfixarna.</entry>
+</row>
+
+<row id="conf-binpath">
+<entry
+>binpath</entry>
+<entry
+>Kan inte överskridas</entry>
+<entry
+><para
+>Sätt alternativet för att använda miljövariabeln PATH under byggprocessen. Du kan inte överskrida alternativet i ett modulalternativ. Förvalt värde är <filename class="directory"
+>/bin:/usr/bin:/usr/local/bin:/usr/X11R6/bin</filename
+>. Miljövariabeln ska innehålla sökvägar till utvecklingsverktygen åtskilda med kolon. Sökvägarna <filename class="directory"
+>$KDEDIR/bin</filename
+> och <filename class="directory"
+>$QTDIR/bin</filename
+> läggs automatiskt till. Du kan använda tilde (~) för eventuella sökvägar du lägger till med det här alternativet.</para>
+</entry>
+</row>
+
+<row id="conf-branch">
+<entry
+>branch</entry>
+<entry
+>Överskrider allmän</entry>
+<entry
+><para
+>Ange alternativet för att checka ut från en gren av KDE istället för det förvalda "trunk", där KDE-utveckling sker. För att till exempel checka ut grenen KDE 3.4, skulle du ange alternativet "3.4".</para>
+<para
+>Observera att vissa moduler använder ett annorlunda grennamn. I synnerhet följer inte modulen arts som krävs KDE:s versionsnummer. Modulen arts som hörde ihop med KDE 3.4 var version 1.4.</para>
+<para
+>Om kdesvn-build misslyckas med att ladda ner en gren med alternativet, kan du behöva ange webbadressen att ladda ner från för hand med alternativet <link linkend="conf-override-url"
+>override-url</link
+>.</para>
+</entry>
+</row>
+
+<row id="conf-build-dir">
+<entry
+>build-dir</entry>
+<entry
+>Överskrider allmän</entry>
+<entry
+>Använd det här alternativet för att byta katalog som innehåller källkoden att bygga. Det finns tre olika sätt att använda det: <itemizedlist
+><listitem
+><para
+>Relativt till &kde;:&svn;-källkodskatalog (se <link linkend="conf-source-dir"
+>alternativet source-dir</link
+>). Det är förvalt, och sättet som skriptet fungerade fram till version 0.61. Läget väljes om du skriver in ett katalognamn som inte börjar med tilde (~) eller snedstreck (/).</para
+><para
+>Förvalt värde är <filename class="directory"
+>build</filename
+></para
+></listitem
+><listitem
+><para
+>Absolut sökväg. Om du anger en sökväg som börjar med /, används sökvägen direkt. Till exempel <filename class="directory"
+>/tmp/kde-obj-dir/</filename
+></para
+></listitem
+><listitem
+><para
+>Relativt till din hemkatalog. Om du anger en sökväg som börjar med ~, används sökvägen relativt till din hemkatalog, på motsvarande sätt som skalets expansion av tilde. Till exempel skulle <filename class="directory"
+>~/builddir</filename
+> ställa in byggkatalogen till <filename class="directory"
+>/home/användarnamn/builddir</filename
+></para
+></listitem
+> </itemizedlist
+>Alternativet kan, kanske något oväntat, ändras per modul. </entry>
+</row>
+
+<row id="conf-checkout-only">
+<entry
+>checkout-only</entry>
+<entry
+>Överskrider allmän</entry>
+<entry
+>Sätt det här alternativet för att checka ut källkod från &svn; del för del. Värdet av alternativet ska vara en lista med kataloger åtskilda med mellanslag att checka ut. Om du inte inkluderar katalogen admin, inkluderas den automatiskt (om det behövs). När du checkar ut del för del hämtas katalogen admin in från kde-common, vilket är platsen den finns på &svn;-servern. Även om alternativet överskrider det allmänna alternativet, var medveten om att ange alternativet som ett allmänt alternativ inte är vettigt. </entry>
+</row>
+
+<row id="conf-configure-flags">
+<entry
+>configure-flags</entry>
+<entry
+>Lägger till i allmänna alternativ (utom för qt-copy)</entry>
+<entry
+>Använd det här alternativet för att ange vilka flaggor som ska skickas till ./configure när byggsystemet för modulen skapas. När det används som ett allmänt alternativ, används det för alla moduler som skriptet bygger. qt-copy använder en mycket annorlunda uppsättning inställningsalternativ än resten av &kde;, så det här alternativet <emphasis
+>överskrider</emphasis
+> de globala inställningarna när det används för qt-copy.</entry>
+</row>
+
+<row id="conf-colorful-output">
+<entry
+>colorful-output</entry>
+<entry
+>Kan inte överskridas</entry>
+<entry
+>Ställ in det här alternativet till false för att inaktivera färglagd utmatning från &kdesvn-build;. Alternativet är normalt <quote
+>true</quote
+>. Observera att &kdesvn-build; inte matar ut färgkoderna till någonting annat än en terminal (som xterm, &konsole; eller den vanliga Linux-konsollen). </entry>
+</row>
+
+<row id="conf-cxxflags">
+<entry
+>cxxflags</entry>
+<entry
+>Lägger till i allmänna alternativ</entry>
+<entry
+>Använd det här alternativet för att ange vilka flaggor som ska skickas till <command
+>./configure</command
+> som <envar
+>CXXFLAGS</envar
+> när byggsystemet för modulen skapas. Alternativet anges här istället för med <link linkend="conf-configure-flags"
+>configure-flags</link
+> eftersom alternativet också sätter miljövariabeln <envar
+>CXXFLAGS</envar
+> under byggprocessen. </entry>
+</row>
+
+<row id="conf-dest-dir">
+<entry
+>dest-dir</entry>
+<entry
+>Överskrider allmän</entry>
+<entry
+>Använd det här alternativet för att ändra namnet en modul ges på disk. Om modulen till exempel var extragear/network, skulle du kunna byta namn på den till extragear-network med alternativet. </entry>
+</row>
+
+<row id="conf-do-not-compile">
+<entry
+>do-not-compile</entry>
+<entry
+>Överskrider allmän</entry>
+<entry
+><para
+>Använd det här alternativet för att sätta miljövariabeln <envar
+>DO_NOT_COMPILE</envar
+> innan skriptet configure körs. Enligt <ulink url="http://developer.kde.org/documentation/other/developer-faq.html"
+>&kde;:s vanliga frågor för utvecklare</ulink
+>, ska det göra att alla toppnivåkataloger du skickar med inte byggs. Katalogerna ska skiljas åt med mellanslag.</para>
+
+<para
+>Observera att källkoden till programmen fortfarande laddas ner. Du kan använda direktivet <link linkend="conf-checkout-only"
+>checkout-only</link
+> för att välja kataloger som du vill checka ut.</para>
+</entry>
+</row>
+
+<row id="conf-inst-apps">
+<entry
+>inst-apps</entry>
+<entry
+>Överskrider allmän</entry>
+<entry
+><para
+>Det här är motsatsen till alternativet <link linkend="conf-do-not-compile"
+>do-not-compile</link
+>. Alternativet gör att bara angivna toppnivåkataloger byggs. Katalogerna ska åtskiljas med mellanslag.</para>
+
+<para
+>Eventuella ändringar får ingen effekt förrän nästa gång <command
+>make <option
+>-f</option
+> Makefile.cvs</command
+> körs, antingen automatiskt av skriptet, eller manuellt med alternativen <link linkend="cmdline-refresh-build"
+><option
+>--refresh-build</option
+></link
+> eller <link linkend="cmdline-recreate-configure"
+><option
+>--recreate-configure</option
+></link
+>. </para>
+
+<para
+>Observera att källkoden till programmen fortfarande laddas ner. Du kan använda direktivet <link linkend="conf-checkout-only"
+>checkout-only</link
+> för att välja kataloger som du vill checka ut.</para>
+</entry>
+</row>
+
+<row id="conf-install-after-build">
+<entry
+>install-after-build</entry>
+<entry
+>Överskrider allmän</entry>
+<entry
+>Det här alternativet används för att installera paketet efter det har byggts med lyckat resultat. Alternativet är normalt aktiverat. Om du vill inaktivera det, måste du sätta alternativet till 0 i inställningsfilen. Du kan också använda kommandoradsväljaren <link linkend="cmdline-no-install"
+><option
+>--no-install</option
+></link
+>. </entry>
+</row>
+
+<row id="conf-kdedir">
+<entry
+>kdedir</entry>
+<entry
+>Kan inte överskridas</entry>
+<entry
+>Det här alternativet anger katalogen som &kde; installeras i efter det har byggts. Förvalt värde är <filename class="directory"
+>~/kde</filename
+>. Om du ändrar det till en katalog som kräver åtkomst som systemadministratör, bör du också läsa om alternativet <link linkend="conf-make-install-prefix"
+>make-install-prefix</link
+>.</entry>
+</row>
+
+<row id="conf-libpath">
+<entry
+>libpath</entry>
+<entry
+>Kan inte överskridas</entry>
+<entry
+>Ange det här alternativet för att sätta miljövariabeln LD_LIBRARY_PATH under byggprocessen. Du kan inte överskrida inställningen med ett modulalternativ. Förvalt värde är tomt, men sökvägarna <filename class="directory"
+>$KDEDIR/lib</filename
+> och <filename class="directory"
+>$QTDIR/lib</filename
+> läggs automatiskt till. Du kan använda tilde (~) i alla sökvägar du lägger till med alternativet. </entry>
+</row>
+
+<row id="conf-log-dir">
+<entry
+>log-dir</entry>
+<entry
+>Överskrider allmän</entry>
+<entry
+>Använd det här alternativet för att ändra katalogen som används för att lagra loggfiler som skapas av skriptet. Inställningen kan ändras per modul från och med version 0.64 eller senare. </entry>
+</row>
+
+<row id="conf-make-install-prefix">
+<entry
+>make-install-prefix</entry>
+<entry
+>Överskrider allmän</entry>
+<entry
+>Sätt den här variabeln till en lista åtskilda med mellanslag, som tolkas som ett kommando och dess väljare för att föregå kommandot make install som används för att installera moduler. Det är användbart för att till exempel installera paket med sudo, men var försiktig när du hanterar systemadministratörsrättigheter.</entry>
+</row>
+
+<row id="conf-make-options">
+<entry
+>make-options</entry>
+<entry
+>Överskrider allmän</entry>
+<entry
+>Ange den här variabeln för att skicka kommandoradsväljare till kommandot make. Det är användbart för program som <ulink url="http://distcc.samba.org/"
+><application
+>distcc</application
+></ulink
+>. Programmet <application
+>distcc</application
+> låter dig dela upp ditt kompileringsarbete på mer än en dator. För att använda det, måste du använda väljaren <option
+>-j</option
+> till make. Nu kan du det. Enligt dokumentationen rekommenderas 2 * antal_processorer_i_nätverket. Jag har totalt en processor, så det skulle vara <option
+>-j2</option
+> i mitt fall.</entry>
+</row>
+
+<row id="conf-manual-build">
+<entry
+>manual-build</entry>
+<entry
+>Överskrider allmän</entry>
+<entry
+>Sätt alternativvärdet till <quote
+>true</quote
+> för att förhindra att byggprocessen försöker bygga modulen. Den hålls fortfarande uppdaterad vid uppdatering från &svn;. Alternativet motsvarar exakt kommandoradsväljaren <link linkend="cmdline-no-build"
+><option
+>--no-build</option
+></link
+>. </entry>
+</row>
+
+<row id="conf-manual-update">
+<entry
+>manual-update</entry>
+<entry
+>Överskrider allmän</entry>
+<entry
+>Sätt alternativvärdet till <quote
+>true</quote
+> för att förhindra att byggprocessen försöker uppdatera (och som en följd, bygga eller installera) modulen. Om du anger alternativet för en modul, är det i stort sett samma som att kommentera bort den. </entry>
+</row>
+
+<row id="conf-module-base-path">
+<entry
+>module-base-path</entry>
+<entry
+>Överskrider allmän</entry>
+<entry
+><para
+>Sätt det här alternativet för att överskrida &kdesvn-build;s förvalda katalogväg till modulen i fråga. Det kan till exempel användas för att hämta specifika grenar eller taggade versioner av bibliotek. <ulink url="http://websvn.kde.org/"
+>&kde;:s källkodsvisning</ulink
+> är ovärderlig som hjälp för att välja rätt sökväg.</para>
+<para
+>Observera att &kdesvn-build; konstruerar den slutliga sökvägen enligt följande mall: <varname
+>$svn-server</varname
+>/home/kde/<varname
+>$module-base-path</varname
+>/<varname
+>$module-name</varname
+>. </para>
+<para
+>Förvalt värde är antingen <quote
+>trunk</quote
+> eller <quote
+>trunk/KDE</quote
+>, beroende på modulnamn.</para>
+</entry>
+</row>
+
+<row id="conf-niceness">
+<entry
+>niceness</entry>
+<entry
+>Kan inte överskridas</entry>
+<entry
+>Ställ in alternativet till ett tal mellan 20 och 0. Ju högre nummer, desto lägre prioritet ställer &kdesvn-build; in åt sig själv. Förvalt värde är 10. </entry>
+</row>
+
+<row id="conf-no-rebuild-on-fail">
+<entry
+>no-rebuild-on-fail</entry>
+<entry
+>Överskrider allmän</entry>
+<entry
+>Ställ in det här alternativvärdet till <quote
+>true</quote
+> för att alltid förhindra att &kdesvn-build; försöker bygga om modulen om en inkrementell byggprocess skulle misslyckas. Normalt försöker &kdesvn-build; bygga om modulen från början för att motverka effekten att en enstaka &svn;-uppdatering orsakar problem med byggsystemet.</entry>
+</row>
+
+<row id="conf-override-url">
+<entry
+>override-url</entry>
+<entry
+>Överskrider allmän</entry>
+<entry
+>Om du anger alternativet, använder kdesvn-build dess värde som webbadress att skicka till Subversion <emphasis
+>helt oförändrad</emphasis
+>. Du bör i allmänhet använda det om du vill ladda ner en specifik utgåva, men kdesvn-build kan inte räkan ut vad du menar genom att använda <link linkend="conf-branch"
+>branch</link
+>. </entry>
+</row>
+
+<row id="conf-qtdir">
+<entry
+>qtdir</entry>
+<entry
+>Kan inte överskridas</entry>
+<entry
+>Sätt alternativet för att använda miljövariabeln QTDIR under byggprocessen. Du kan inte överskrida alternativet i ett modulalternativ. Förvalt värde är <filename class="directory"
+><varname
+>$(source-dir)</varname
+>/build/qt-copy</filename
+>, som använder modulen qt-copy som ingår i &kde;:s källkodsarkiv. Du kan använda tilde (~) för att representera din hemkatalog. </entry>
+</row>
+
+<row id="conf-set-env">
+<entry
+>set-env</entry>
+<entry
+>Överskrider allmän</entry>
+<entry
+><para
+>Det här alternativet accepterar en uppsättning värden åtskilda av mellanslag, där det första värdet är miljövariabeln att sätta, och följande värden är vad du vill sätta variabeln till. För att till exempel sätta variabeln RONALD till McDonald, skulle du skriva följande kommando under lämplig sektion:</para>
+<screen
+><command
+>set-env</command
+> <envar
+>RONALD</envar
+> <userinput
+>McDonald</userinput
+></screen>
+<para
+>Det här alternativet är speciellt på så sätt att det kan upprepas utan att överskrida tidigare inställningar med set-env i samma sektion av inställningsfilen. På så sätt kan du ange mer än en miljövariabel per modul (eller globalt).</para>
+</entry>
+</row>
+
+<row id="conf-source-dir">
+<entry
+>source-dir</entry>
+<entry
+>Kan inte överskridas</entry>
+<entry
+>Det här alternativet används för att ange katalogen på datorn där &kde;:s &svn;-källkod ska lagras. Om du inte anger värdet, är förvalt värde <filename class="directory"
+>~/kdesvn</filename
+>. Om du anger värdet, använd en absolut sökväg. </entry>
+</row>
+
+<row id="conf-svn-server">
+<entry
+>svn-server</entry>
+<entry
+>Kan inte överskridas</entry>
+<entry
+>Det här alternativet används för att ange servern som används vid utcheckning från &svn;. Förval är det anonyma &svn;-arkivet, <emphasis
+>svn://anonsvn.kde.org/</emphasis
+>.</entry>
+</row>
+
+<row id="conf-stop-on-failure">
+<entry
+>stop-on-failure</entry>
+<entry
+>Överskrider allmän</entry>
+<entry
+>Ställ in det här alternativvärdet till <quote
+>true</quote
+> för att göra att skriptet slutar köra efter ett fel uppstår i bygg- eller installationsprocessen. Alternativet är normalt av. </entry>
+</row>
+
+<row id="conf-tag">
+<entry
+>tag</entry>
+<entry
+>Överskrider allmän</entry>
+<entry
+><para
+>Använd väljaren för att ladda ner en specifik utgåva av en modul.</para>
+<para
+><emphasis
+>Observera:</emphasis
+> Det är höga odds att du INTE VILL andvända alternativet. KDE-utgåvor är tillgängliga på arkivform från <ulink url="ftp://ftp.kde.org/"
+>KDE:s FTP-plats</ulink
+> eller en av dess <ulink url="http://download.kde.org/download.php"
+>spegelplatser</ulink
+>.</para>
+<para
+>Om du använder kdesvn-build eftersom du har svårighet att få en KDE-utgåva att bygga på din distribution, fundera på att använda byggverktyget <ulink url="http://developer.kde.org/build/konstruct/"
+>Konstruct</ulink
+> istället, som fungerar med utgåvornas arkiv.</para>
+</entry>
+</row>
+
+<row id="conf-use-qt-builddir-hack">
+<entry
+>use-qt-builddir-hack</entry>
+<entry
+>Överskrider allmän</entry>
+<entry
+>Även om alternativet överskrider det allmänna alternativet, är det bara vettigt för qt-copy. Sätt alternativet till <quote
+>true</quote
+> för att aktivera skriptets <emphasis
+>experimentella</emphasis
+> läge med källkatalog skild från byggkatalog. När det är aktiverat, kopierar &kdesvn-build; qt-copy källkodsmodulen till byggkatalogen, och utför byggprocessen därifrån. Det betyder att miljövariabeln QTDIR istället ska vara inställd till <filename class="directory"
+>$(qt-copy-build-dir)/qt-copy/lib</filename
+>. Du måste också ändra alternativet <link linkend="conf-qtdir"
+>qtdir</link
+> på motsvarande sätt. Att bygga inkrementellt ska fortfarande fungera med detta läge, eftersom tidsstämplar bevaras efter kopieringen. Om du använder alternativet <link linkend="conf-apply-qt-patches"
+>apply-qt-patches</link
+>, utföra programfixarna i byggkatalogen, inte källkodskatalogen. Alternativets förvalda värde är <quote
+>true</quote
+>. </entry>
+</row>
+
+<row id="conf-use-unsermake">
+<entry
+>use-unsermake</entry>
+<entry
+>Överskrider allmän</entry>
+<entry
+>Set this option to a non-zero value in order to use the experimental unsermake program instead of automake when running the configure script. This can lead to some serious decreases in build time, especially for <ulink url="http://www.csh.rit.edu/slashdot/distcc.html"
+>distributed building systems</ulink
+>. This option defaults to <quote
+>true</quote
+> (for most modules). </entry>
+</row>
+
+</tbody>
+
+</tgroup>
+</table>
+
+</chapter>
+
+<chapter id="cmdline">
+<title
+>Kommandoradsväljare och miljövariabler</title>
+
+<para
+>Skriptet använder inte miljövariabler. Om du behöver sätta miljövariabler för bygg- eller installationsprocessen, se alternativet <link linkend="conf-set-env"
+>set.-env</link
+>. </para>
+
+<para
+>Skriptet accepterar följande kommandoradsväljare: </para>
+
+<variablelist>
+
+<varlistentry id="cmdline-help">
+<term
+><option
+>--help</option
+></term>
+<listitem
+><para
+>visa bara enkel hjälp om skriptet. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-version">
+<term
+><option
+>--version</option
+></term>
+<listitem
+><para
+>visa programmets version. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-author">
+<term
+><option
+>--author</option
+></term>
+<listitem
+><para
+>visa upphovsmannens kontaktinformation. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-color">
+<term
+><option
+>--color</option
+></term>
+<listitem
+><para
+>aktivera färglagd utmatning. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-no-color">
+<term
+><option
+>--no-color</option
+></term>
+<listitem
+><para
+>inaktivera färglagd utmatning. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-pretend">
+<term
+><option
+>--pretend</option
+> (eller <option
+>-p</option
+>)</term>
+<listitem
+><para
+>utför INTE någonting, men beter sig som om det vore så. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-svn-only">
+<term
+><option
+>--svn-only</option
+></term>
+<listitem
+><para
+>utför bara uppdatering av källkoden. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-build-only">
+<term
+><option
+>--build-only</option
+></term>
+<listitem
+><para
+>utför bara byggprocessen. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-ignore-modules">
+<term
+><option
+>--ignore-modules</option
+></term>
+<listitem
+><para
+>don't including the modules passed on the rest of the command line in the update/build process. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-no-svn">
+<term
+><option
+>--no-svn</option
+></term>
+<listitem
+><para
+>hoppa över att kontakta &svn;-servern. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-no-build">
+<term
+><option
+>--no-build</option
+></term>
+<listitem
+><para
+>hoppa över byggprocessen. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-no-install">
+<term
+><option
+>--no-install</option
+></term>
+<listitem
+><para
+>installera inte automatiskt paket efter de har byggts. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-debug">
+<term
+><option
+>--debug</option
+></term>
+<listitem
+><para
+>aktiverar felsökningsläge för skriptet. För närvarande betyder det att all utmatning skickas till standardutmatningen förutom att loggas i loggkatalogen som vanligt. Dessutom är många funktioner mycket utförligare om vad de gör i felsökningsläge. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-no-rebuild-on-fail">
+<term
+><option
+>--no-rebuild-on-fail</option
+></term>
+<listitem
+><para
+>försök inte att bygga om moduler som har misslyckats att byggas från början. &kdesvn-build; försöker aldrig göra detta med en modul där ett försök att bygga från början redan har gjorts. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-refresh-build">
+<term
+><option
+>--refresh-build</option
+></term>
+<listitem
+><para
+>skapa om byggsystemet och bygg från grunden. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-reconfigure">
+<term
+><option
+>--reconfigure</option
+></term>
+<listitem
+><para
+>kör skriptet configure igen utan att rensa byggkatalogen. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-recreate-configure">
+<term
+><option
+>--recreate-configure</option
+></term>
+<listitem
+><para
+>kör <command
+>make <option
+>-f</option
+> Makefile.cvs</command
+> igen för att skapa skriptet configure, och fortsätt bygga som vanligt. Alternativet inbegriper <option
+><link linkend="cmdline-reconfigure"
+>--reconfigure</link
+></option
+>. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-resume">
+<term
+><option
+>--resume</option
+></term>
+<listitem
+><para
+>som försöker att fortsätta bygga från stället där skriptet slutade förra gången. Skriptet börjar bygga modulen efter den senaste modulen som kompilerades sist när skriptet kördes, vare sig det lyckades eller inte. Alternativet inbegriper <link linkend="cmdline-no-svn"
+><option
+>--no-svn</option
+></link
+>. Du bör inte ange andra modulnamn på kommandoraden. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-resume-from">
+<term
+><option
+>--resume-from</option
+></term>
+<listitem
+><para
+>som är som <link linkend="cmdline-resume"
+><option
+>--resume</option
+></link
+>, utom att du anger modulen där byggprocessen ska börja som nästa parameter på kommandoraden. Alternativet inbegriper <link linkend="cmdline-no-svn"
+><option
+>--no-svn</option
+></link
+>. Du bör inte ange andra modulnamn på kommandoraden. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-rc-file">
+<term
+><option
+>--rc-file</option
+></term>
+<listitem
+><para
+>som tolkar nästa kommandoradsväljare som filen att läsa konfigurationsinställningarna från. Förvalt värde för väljaren är ~/.kdesvn-buildrc. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-prefix">
+<term
+><option
+>--prefix=&lt;/sökväg/till/kde&gt;</option
+></term>
+<listitem
+><para
+>som låter dig ändra katalogen som &kde; installeras i från kommandoraden. Alternativet inbegriper <link linkend="cmdline-reconfigure"
+><option
+>--reconfigure</option
+></link
+>. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-build-system-only">
+<term
+><option
+>--build-system-only</option
+></term>
+<listitem
+><para
+>stoppa efter att ha kört <command
+>make <option
+>-f</option
+> Makefile.cvs</command
+>. Skriptet configure behöver fortfarande köras, vilket &kdesvn-build; gör nästa gång. Detta låter dig förbereda alla konfigureringsskript på en gång så att du kan titta på <command
+>./configure <option
+>--help</option
+></command
+> för varje modul, och redigera dina flaggor till configure i enlighet med det. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-install"
+><term
+><option
+>--install</option
+></term>
+<listitem
+><para
+>om detta är den enda kommandoradsväljaren, försöker skriptet installera alla moduler som har byggts med lyckat resultat, förutom qt-copy som inte behöver installeras. Om kommandoradsväljare anges efter <option
+>--install</option
+>, antas de alla vara moduler att installera. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-global-option">
+<term
+><option
+>--&lt;option-name&gt;=</option
+></term>
+<listitem
+><para
+>Du kan använda väljaren för att överskrida ett alternativ i din inställningsfil för varje modul. För att till exempel överskrida alternativet <link linkend="conf-log-dir"
+>log-dir</link
+>, skulle du ange <option
+>--log-dir=/sökväg/till/katalog</option
+>. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-module-option">
+<term
+><option
+>--&lt;modulnamn&gt;,&lt;alternativnamn&gt;=</option
+></term>
+<listitem
+><para
+>Du kan använda väljaren för att överskrida ett alternativ i inställningsfilen för en viss modul. För att till exempel överskrida alternativet <link linkend="conf-use-unsermake"
+>use-unsermake</link
+> för kdemultimedia, skulle du ange <option
+>--kdemultimedia,use-unsermake=false</option
+>. </para
+></listitem>
+</varlistentry>
+
+</variablelist>
+
+<para
+>Alla övriga kommandoradsväljare antas vara moduler att uppdatera och bygga. Blanda helst inte ihop bygga och installera. </para>
+
+</chapter>
+
+<chapter id="credits-and-licenses">
+<title
+>Tack till och licenser</title>
+&underFDL; </chapter>
+
+</book>

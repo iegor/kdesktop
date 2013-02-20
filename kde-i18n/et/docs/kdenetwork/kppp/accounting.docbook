@@ -1,0 +1,162 @@
+<appendix id="appendix-accounting-template">
+<title
+>Telefoniarve arvestamise malli näidis</title>
+
+<para
+>Kui sa ei leia oma piirkonnale reeglit, tuleb sul see ise kirjutada järgnevat malli eeskujuks võttes. Ära pelga, tegelikult on see üpris lihtne.</para>
+
+<para
+>Ära unusta omaloodud reegleid saatmast ka &kppp; hooldajale. Loodud reegli süntaksit saab kontrollida &kppp; käsurea võtmega <userinput
+><option
+>-r</option
+> <replaceable
+>reeglifail</replaceable
+></userinput
+> ning see tuleb  paigaldada kataloogi <filename class="directory"
+>${KDEDIR}/share/apps/kppp/Rules</filename
+> või <filename class="directory"
+>${HOME}/.kde/share/apps/kppp/Rules</filename
+>, enne kui seda saab dialoogis valida.</para>
+
+<programlisting
+>################################################################
+#
+# Lahtiütlus/Litsents
+# Selle malli autoriõigus (c): Mario Weilguni &lt;mweilguni@kde.org&gt;
+# Selle litsents on sama, mis kppp paketil, 
+# mis on osa 
+#
+################################################################
+#
+# See on kppp näidisreeglistik. Seda võib kasutada mallina,
+# kui tekib vajadus luua oma reeglistik. Kui sa seda teed,
+# eemalda kõik kommentaarid ja lisa enda omad. See lubab
+# teistel kasutajatel hõlpsamini sinu reeglistikku kontrollida.
+# 
+# Palun signeeri tariififail oma nime ja e-posti aadressiga, et
+# ma saaksin vajadusel sinuga ühendust võtta.
+#
+# MÄRKUS: selle reeglistiku reeglid ei ole iseenesest suuremat
+#       väärt ning teenivad ainult näitlikustamise ülesannet
+#
+# MÄRKUS FAILINIMEDE KOHTA:
+#        kui lood oma reeglistiku, kasuta failinimedes tühiku
+#        asemel "_" ning laiendina ".rst 
+#           s.t. fail "Eesti kohalikud kõned"
+#          --> tuleb salvestada kui "Eesti_kohalikud_kõned.rst"
+#
+# Tänan, Bernd Wuebben
+# wuebben@math.cornell.edu / wuebben@kde.org
+################################################################
+
+
+################################################################
+#
+# REEGLISTIKU NIMI. Seda ON VAJA arvestamiseks.
+#
+################################################################
+name=vaikimisi
+
+################################################################
+# Rahaühiku seadistused
+################################################################
+
+# Määrab Eesti krooni (EEK, võib olla ka kr) kasutatavaks
+# rahaühiku sümboliks (seda ei ole tingimata vaja, vaikimisi on "$")
+currency_symbol=EEK
+
+# Määrab rahaühiku sümboli positsiooni.
+# (ei ole hädavajalik, vaikimisi on "right" ehk paremal)
+currency_position=right 
+
+# Määrab komakohtade arvu.
+# (ei ole hädavajalik, vaikimisi on "2"
+currency_digits=2
+
+
+
+################################################################
+# Ühenduse seadistused
+################################################################
+
+# MÄRKUS: reeglid rakenduvad ülalt alla - 
+#       VIIMANE sobiv reegel on see, mida kasutatakse
+#       maksumuse arvutamiseks.
+
+# Kõnealustamise tasu. Kui sinu operaator kõne alustamist
+# ei maksusta, määra "0" või muuda kommentaariks.
+per_connection=0.0
+
+
+# Kõne minimaalne maksumus. Kui reaalse kõne maksumus
+# on sellest väiksem, kasutatakse siin määratud väärtust.
+minimum_costs=0.0
+
+
+# Maksad 0,74 krooni esimese 180 sekundi ( 3 minuti) eest
+# sõltumata sellest, kas ühendus kestis 1 või 180 sekundit.
+# See reegel kehtib esimese 180 sekundi jooksul prioriteetsena
+# kõigi teiste reeglite, eriti vaikereegli ('default') ees.
+# Selle graafiline selgitus costgraphs.gif asub kppp
+# dokumentide katalogis.
+flat_init_costs=(0.74,180)
+
+# See on vaikereegel, mida kasutatakse siis, kui ükski muu
+# reegel ei sobi. Esimene komponent "0.1" on ühe "ühiku"
+# hind, "72" aga kestvus sekundites.
+# Seega tähendab siinne reegel: "Iga 72 sekundi järel lisatakse
+# arvele 0,1 EEK".
+default=(0.1, 72)
+
+#
+# Keerulisemad reeglid:
+#
+
+# "Esmaspäevast pühapäevani kell 12.00 AM kuni 11.59 PM
+# maksab iga 72 sekundit 0,2 EEK"
+on () between () use (0.2, 2)
+
+# Sama, mis eelmine
+on (monday..sunday) between () use (0.2, 2)
+
+# Sama, mis eelmine. Kasutada tuleb 24-tunnist esitust, muidu
+# ei toimi arvestus õigesti. (Näide: 15:00 = 3 pm)
+on (monday..sunday) between (0:00..23:59) use (0.2, 2)
+
+# Kehtib reedel, laupäeval, pühapäeval ja esmaspäeval 8 AM kuni 1 PM
+on (friday..monday) between (8:00..13:00) use(0.3,72)
+
+# TÄHELEPANU:
+on(monday..friday) between (21:00..5:00) use (0.4,2)
+# EI rakendu laupäeval 0:00-5:00, vaid ainult esmaspäev-reede, nagu kirjas.
+
+# Rakendub antud kuupäeval (jõulupühal)
+on (12/25) between () use (0.3,72)
+
+# Rakendub kuupäevade vahemikus ja ühel nädalapäeval
+on (12/25..12/27, 12/31, 07/04, monday) between () use (0.4, 72)
+
+# Rakendub lihavõttepühal
+on (easter) between () use (0.3,72)
+
+# Rakendub suurel reedel (lihavõtted - 2 päeva)
+on (easter-2) between () use (0.3,72)
+
+on (thursday) between (20:00..21:52) use (8.2, 1)
+
+
+# Parameetriga "on()" reeglid sõltuvad vaid reaalajast.
+# Reegli saab panna sõltuma ka ühenduses oldud sekunditest,
+# määrates selle kolmanda parameetrina "use()".
+# Oletame, et normaaltariif õhtul on  0,20 minutis ja see
+# väheneb 20% võrra pärast tunniajalist ühendust. Selline
+# reegel näeb välja nii:
+
+on () between (19:30..08:00) use (0.20, 60)
+on () between (19:30..08:00) use (0.16, 60, 3600)
+
+# Arvesta, et sarnaselt teistele rakendatakse neid reegleid
+# vastavalt nende järjekorrale.
+</programlisting>
+
+</appendix>

@@ -1,0 +1,567 @@
+<appendix id="highlight">
+<title
+>Zvýrazňovanie syntaxu</title>
+
+<sect1 id="highlight-overview">
+
+<title
+>Prehľad</title>
+
+<para
+>Zvýrazňovanie syntaxu spôsobuje, že editor automaticky zobrazuje text v rôznych štýloch a farbách v závislosti na jeho úlohe v súbore. V zdrojovom kóde programu môžu byť príkazy vypísané tučné, dátové typy a komentáre môžu používať inú farbu než zvyšok textu. Tým sa výrazne zlepší čitateľnosť textu a to pomáha, aby bol autor výkonnejší.</para>
+
+<mediaobject
+> <imageobject
+><imagedata format="PNG" fileref="highlighted.png"/></imageobject
+> <textobject
+><phrase
+>Funkcia v jazyku Perl so zvýraznením.</phrase
+></textobject
+> <caption
+><para
+>Funkcia v jazyku Perl so zvýraznením.</para
+> </caption
+> </mediaobject>
+
+<mediaobject
+> <imageobject
+><imagedata format="PNG" fileref="unhighlighted.png"/></imageobject
+> <textobject
+><phrase
+>Rovnaká funkcia Perl bez zvýraznenia.</phrase
+></textobject
+> <caption
+><para
+>Rovnaká funkcia Perl bez zvýraznenia.</para
+></caption
+> </mediaobject>
+
+<para
+>Dva príklady. Ktorý sa číta lepšie?</para>
+
+<para
+>&kate; obsahuje flexibilný, konfigurovateľný a výkonný systém pre zvýrazňovanie syntaxu a štandardná distribúcia poskytuje definície pre veľké množstvo programovacích jazykov, jazykov markup, skriptovacích jazykov a iných textových formátov. Navyše môžete definovať svoje vlastné definície pomocou jednoduchých súborov &XML;.</para>
+
+<para
+>&kate; automaticky určuje správne pravidlá pri otvorení súboru na základe jeho typu &MIME;. Typ súboru je určený podľa prípony alebo, ak žiadnu nemá, podľa jeho obsahu. V prípade, že sa nepodarí správne určenie, môžete správne pravidlá nastaviť pomocou menu <menuchoice
+><guimenu
+>Dokumenty</guimenu
+><guisubmenu
+>Zvýrazňovací mód</guisubmenu
+></menuchoice
+>.</para>
+
+<para
+>Štýly a farby použité v každej definícii zvýraznenia spolu s typmi &MIME;, pre ktoré by sa mala definícia použiť, je možné nastaviť pomocou stránky <link linkend="config-dialog-editor-hl"
+>Zvýraznenie</link
+> v <link linkend="config-dialog"
+>dialógu nastavenia</link
+>.</para>
+
+<note
+> <para
+>Zvýraznenie syntaxu má zlepšiť čitateľnosť správneho textu, ale nemôžete si myslieť, že funguje ako overenie vášho textu. Označenie textu môže byť v závislosti na používanom formáte dosť zložité a v niektorých prípadoch budú autori pravidiel radi, ak dosiahnu 98% presnosť označenia. Aby ste ale narazili na nesprávne 2%, budete musieť mať asi dosť šťastia.</para
+> </note>
+
+<tip
+> <para
+>Môžete si stiahnuť aktualizované alebo nové definície zvýrazňovania z webovej stránky &kate; kliknutím na tlačidlo <guibutton
+>Stiahnutie</guibutton
+> v <link linkend="config-dialog-editor-hl"
+>stránke Zvýraznenie</link
+> v <link linkend="config-dialog"
+>dialógu nastavenia</link
+>.</para
+> </tip>
+
+</sect1>
+
+<sect1 id="katehighlight-system">
+
+<title
+>Systém zvýrazňovania &kate;</title>
+
+<para
+>Táto kapitola detailné popisuje mechanizmus zvýrazňovania syntaxu &kate; Má zmysel v prípade, že vás to zaujíma, alebo chcete napísať alebo upraviť definíciu zvýrazňovania.</para>
+
+<sect2 id="katehighlight-howitworks">
+
+<title
+>Ako to funguje</title>
+
+<para
+>Vždy, ked otvoríte súbor, jednou z prvých vecí, ktoré &kate; urobí je, že detekuje, ktorú definíciu zvýrazňovania má použiť pre tento súbor. Počas čítania obsahu súboru a ked píšete, systém zvýrazňovania analyzuje text pomocou pravidiel definovaných v definícii vybraného zvýrazňovania a označovať časti textu v závislosti na jeho kontexte.</para>
+
+<para
+>Ak niečo napíšete do dokumentu, nový text sa analyzuje a označuje za behu, takže ak zmažete znak, ktorý označuje začiatok alebo koniec kontextu, štýl okolného textu sa zmení podľa toho.</para>
+
+<para
+>Definície syntaxu používané systémom v &kate; sú súbory &XML; obsahujúce <itemizedlist
+> <listitem
+><para
+>Pravidlá pre určenie role textu, organizované do kontextových blokov</para
+></listitem
+> <listitem
+><para
+>Zoznamy kľúčových slov</para
+></listitem
+> <listitem
+><para
+>Definície položiek štýlu</para
+></listitem
+> </itemizedlist
+> </para>
+
+<para
+>Pri analýze textu sa vyhodnocujú pravidlá pre detekciu v poradí, v ktorom sú definované a ak začiatok aktuálneho reťazca odpovedá pravidlu, použije sa odpovedajúci kontext. Začiatočný bod v texte sa presunie na koncový bod, kam až pravidlo odpovedá a začnú sa pravidlá vyhodnocovať znovu.</para>
+
+</sect2>
+
+<sect2 id="highlight-system-rules">
+<title
+>Pravidlá</title>
+
+<para
+>Detekčné pravidlá sú jadrom systému zvýrazňovania. Pravidlo je reťazec, znak alebo <link linkend="regular-expressions"
+>regulárny výraz</link
+> oproti ktorému sa text porovnáva. Obsahuje informácie o tom, ktorý štýl sa má použiť pre nájdený text. Môže prepnúť kontext bud na nejaký priamo určený alebo na predchádzajúci, ktorý sa používal predtým.</para>
+
+<para
+>Pravidlá sú utriedené v skupinách kontextu. Skupina kontextu sa používa pre hlavné textové koncepty formátu, napríklad reťazce alebo komentáre v programovom kóde. To zabezpečí, že systém zvýrazňovania nemusí prehľadávať všetky pravidlá ak to nie je nutné a že niektoré sekvencie znakov v texte môžu byť chápané rôzne v rôznych kontextoch. </para>
+
+</sect2>
+
+<sect2 id="highlight-context-styles-keywords">
+<title
+>Kontextové štýly a kľúčové slová</title>
+
+<para
+>V niektorých programovacích jazykoch sa celé čísla v kompilátore (programe, ktorý prevádza programovací jazyk na spustiteľný program) spracovávajú inak ako reálne a môžu niektoré znaky chápať špeciálne, ak sú napríklad v úvodzovkách. V takých prípadoch má zmysel ich zobrazenie iným spôsobom tak, aby ich bolo ľahké nájsť. Takže aj ked nereprezentujú špeciálne kontexty, môže ich zvýrazňovací systém tak chápať a označiť inak.</para>
+
+<para
+>Definície syntaxu môžu obsahovať toľko štýlov, koľko ich je treba.</para>
+
+<para
+>Vo veľa formátoch sú zoznamy slov, ktoré reprezentujú špeciálne koncepty. Napríklad programovacie jazyky obsahujú koncept príkazov, koncept mien datových typov a koncept zabudovaných funkcií. Systém zvýrazňovania &kate; dokáže takéto zoznamy detekovať a označiť slová textu pre zvýraznenie konceptov textových formátov.</para>
+
+</sect2>
+
+<sect2 id="kate-highlight-system-default-styles">
+<title
+>Štandardné štýly</title>
+
+<para
+>Ak otvoríte zdrojový kód C++, &Java; alebo dokument <acronym
+>HTML</acronym
+> v &kate;, uvidíte, že aj ked sú označené iné časti textu, použijú sa rovnaké farby. To preto, lebo &kate; má preddefinované štandardné štýly, ktoré sa využívajú v jednotlivých definíciách.</para>
+
+<para
+>Preto je jednoduché rozpoznať podobné koncepty v rôznych formátoch. Napríklad komentáre existujú skoro vo všetkých programovacích, skriptovacích a markup jazykoch. A ak sú vo všetkých jazykoch zobrazené rovnakým štýlom, nemusíte sa nad nimi vôbec zamýšľať.</para>
+
+<tip
+> <para
+>Všetky štýly v definícii používajú jeden zo štandardných štýlov. Niektoré definície používajú viac štýlov než koľko je štandardných, takže ak používate nejaký formát často, asi sa vyplatí v dialógu nastavenia overiť, že sa pre rovnaké koncepty používa rovnaký štýl. Napríklad, existuje iba jeden štandardný štýl pre reťazce, ale v programovacom jazyku perl existujú dva typ reťazcov. Preto má zmysel, aby zvýraznenie pre ne používalo trochu iné štýly.</para
+> </tip>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="katehighlight-xml-format">
+<title
+>&XML; formát definície zvýrazňovania</title>
+
+<sect2>
+<title
+>Prehľad</title>
+
+<para
+>Táto kapitola obsahuje prehľad formátu pre definíciu zvýrazňovania. Popisuje hlavné časti, ich význam a použitie. Detailne popisuje pravidlá pre detekciu.</para>
+
+<para
+>Formálna definície, čiže <acronym
+>DTD</acronym
+> je uložená v súbore <filename
+>language.dtd</filename
+>, ktorý by mal byť nainštalovaný na vašom systéme v priečinku <filename
+>$<envar
+>KDEDIR</envar
+>/share/apps/kate/syntax</filename
+>.</para>
+
+<variablelist
+> <title
+>Hlavné časti definície zvýrazňovania v &kate;</title
+> <varlistentry
+> <term
+>Časť General</term
+> <listitem
+> <para
+>Časť General obsahuje informácie o formáte komentárov popisovaného jazyka a definuje, či sa u kľúčových slov rozlišuje veľkosť písmen.</para
+> </listitem
+> </varlistentry
+> <varlistentry
+> <term
+>Highlighting</term
+> <listitem
+> <para
+>Časť Highlighting obsahuje všetky dáta potrebné pre analýzu a zobrazenie textu. To znamená:</para
+> <variablelist
+> <varlistentry
+> <term
+>ItemDatas</term
+> <listitem
+><para
+>Obsahuje elementy ItemData, každý definuje štýl.</para
+></listitem
+> </varlistentry
+> <varlistentry
+> <term
+>Zoznamy kľúčových slov</term
+> <listitem
+> <para
+>Každý zoznam má meno a môže obsahovať ľubovoľný počet položiek.</para
+> </listitem
+> </varlistentry
+> <varlistentry
+> <term
+>Contexts</term
+> <listitem
+> <para
+>Obsahuje kontexy, ktoré môžu tiež obsahovať pravidlá pre detekciu.</para
+> </listitem
+> </varlistentry
+> </variablelist
+> </listitem
+> </varlistentry
+> </variablelist>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="kate-highlight-rules-detailled">
+<title
+>Pravidlá pre detekciu</title>
+
+<para
+>Táto časť popisuje pravidlá pre detekciu syntaxe.</para>
+
+<para
+>Každé pravidlo môže nájsť nula alebo viac znakov na začiatku reťazca, ktorý sa testuje. Ak pravidlo odpovedá, nájdeným znakom sa priradí štýl alebo <emphasis
+>atribút</emphasis
+> definovaný pravidlom a pravidlo môže požiadať o zmenu kontextu.</para>
+
+<para
+>Atribúty <emphasis
+>attribute</emphasis
+> a <emphasis
+>context</emphasis
+> sú spoločné a pre všetky pravidlá.</para>
+
+<para
+>Pravidlo vyzerá takto:</para>
+
+<programlisting
+>&lt;RuleName attribute=&quot;(identifier)&quot; context=&quot;(identifikátor|poradie)&quot; [atribúty pravidla] /&gt;</programlisting>
+
+<para
+><emphasis
+>attribute</emphasis
+> identifikuje štýl, ktorý sa má použiť pre nájdené znaky pomocou mena alebo indexu. <emphasis
+>context</emphasis
+> identifikuje kontext, ktorý sa odteraz bude používať.</para>
+
+<para
+>Atribút <emphasis
+>attribute</emphasis
+> je možné identifikovať menom alebo indexom (počítaným od 0) v skupine ItemDatas.</para>
+
+<para
+><emphasis
+>context</emphasis
+> je možné identifikovať pomocou:</para>
+
+<itemizedlist
+> <listitem
+> <para
+><emphasis
+>identifikátor</emphasis
+>, momentálne to môže byť iba index (počítaný od 0) v skupine kontextov.</para
+> </listitem
+> <listitem
+> <para
+><emphasis
+>poradie</emphasis
+> povie systému, že má zostať v aktuálnom kontexte (<userinput
+>#stay</userinput
+>) alebo sa vrátiť do predchádzajúceho kontextu (<userinput
+>#pop</userinput
+>).</para
+> <para
+>Ak sa chcete vrátiť o viac ako jedej krok, kľúčové slovo #pop: <userinput
+>#pop#pop#pop</userinput
+></para
+> </listitem
+> </itemizedlist>
+
+<para
+>Niektoré pravidlá môžu mať <emphasis
+>pod-pravidlá</emphasis
+>, ktoré sa potom vyhodnocujú iba v prípade, že sa rodičovské pravidlo aplikuje. Celý odpovedajúci reťazec sa nájde podľa atribútu v rodičovskom pravidle. Pod-pravidlá vyzerajú takto:</para>
+
+<programlisting>
+&lt;MenoPravidla (atribúty)&gt;
+  &lt;MenoPodPravidla (atribúty) /&gt;
+  ...
+&lt;/MenoPravidla&gt;
+</programlisting>
+
+
+<para
+>Atribúty špecifické pre jednotlivé pravidlá sú popísané v nasledujúcom zozname.</para
+> 
+
+<variablelist
+> <title
+>Detaily pravidiel</title
+> <varlistentry
+> <term
+>DetectChar</term
+> <listitem
+> <para
+>Detekuje jediný znak. Obvykle sa používa napríklad pre nájdenie konca reťazca v úvodzovkách.</para
+> <programlisting
+>&lt;DetectChar char=&quot;(znak)&quot; (spoločné atribúty) /&gt;</programlisting
+> <para
+>Atribút <userinput
+>char</userinput
+> definuje hľadaný znak.</para
+> </listitem
+> </varlistentry
+> <varlistentry
+> <term
+>Detect2Chars</term
+> <listitem
+> <para
+>Detekuje dva špecifické znaky v danom poradí.</para
+> <programlisting
+>&lt;Detect2Chars char=&quot;(znak)&quot; char1=&quot;(znak)&quot; (spoločné atribúty) /&gt;</programlisting
+> <para
+>Atribút <userinput
+>char</userinput
+> definuje prvý hľadaný znak a <userinput
+>char1</userinput
+> druhý.</para
+> </listitem
+> </varlistentry
+> <varlistentry
+> <term
+>AnyChar</term
+> <listitem
+> <para
+>Detekuje jeden znak zo skupiny zadaných znakov.</para
+> <programlisting
+>&lt;AnyChar String=&quot;(reťazec)&quot; (spoločné atribúty) /&gt;</programlisting
+> <para
+>Atribút <userinput
+>String</userinput
+> definuje množinu znakov.</para
+> </listitem
+> </varlistentry
+> <varlistentry
+> <term
+>StringDetect</term
+> <listitem
+> <para
+>Detekuje presný reťazec.</para
+> <programlisting
+>&lt;StringDetect String=&quot;(reťazec)&quot; [insensitive=&quot;TRUE|FALSE;&quot;] (spoločné atribúty) /&gt;</programlisting
+> <para
+>Atribút <userinput
+>String</userinput
+> definuje hľadaný reťazec. Atribút <userinput
+>insensitive</userinput
+> je štandardne <userinput
+>FALSE</userinput
+> a predáva sa funkcii pre porovnávanie reťazcov. Ak je hodnota <userinput
+>TURE</userinput
+>, použije sa porovnávanie bez rozlišovania veľkosti písmen.</para
+> </listitem
+> </varlistentry
+> <varlistentry
+> <term
+>RegExpr</term
+> <listitem
+> <para
+>Hľadá pomocou regulárneho výrazu.</para
+> <programlisting
+>&lt;RegExpr String=&quot;(reťazec)&quot; [insensitive=&quot;TRUE|FALSE;&quot;] [minimal=&quot;TRUE|FALSE&quot;] (spoločné atribúty) /&gt;</programlisting
+> <para
+>Atribút <userinput
+>String</userinput
+> definuje regulárny výraz.</para
+> <para
+><userinput
+>insensitive</userinput
+> je štandardne <userinput
+>FALSE</userinput
+> a predáva sa systému hľadania pomocou regulárnych výrazov.</para
+> <para
+><userinput
+>minimal</userinput
+> je štandardne <userinput
+>FALSE</userinput
+> a predáva sa systému hľadania pomocou regulárnych výrazov.</para
+> <para
+>Pretože sa pravidlá vždy hľadajú od začiatku aktuálneho reťazca, regulárny výraz začínajúci znakom <literal
+>^</literal
+> znamená pravidlo, ktoré má hľadať iba na začiatku riadku.</para
+> <para
+>Dalšie informácie o nich nájdete v kapitole <link linkend="regular-expressions"
+>Regulárne výrazy</link
+>.</para
+> </listitem
+> </varlistentry
+> <varlistentry
+> <term
+>Keyword</term
+> <listitem
+> <para
+>Detekuje kľúčové slovo zo zadaného zoznamu.</para
+> <programlisting
+>&lt;keyword String=&quot;(meno zoznamu)&quot; (spoločné atribúty) /&gt;</programlisting
+> <para
+>Atribút <userinput
+>String</userinput
+> identifikuje zoznam kľúčových slov pomocou mena. Zoznam s týmto menom musí existovať.</para
+> </listitem
+> </varlistentry
+> <varlistentry
+> <term
+>Int</term
+> <listitem
+> <para
+>Detekuje celé číslo.</para
+> <para
+><programlisting
+>&lt;Int (spoločné atribúty) /&gt;</programlisting
+></para
+> <para
+>Toto pravidlo nemá žiadne špecifické atribúty. Pod-pravidlá sa typicky používajú pre detekciu kombinácií <userinput
+>L</userinput
+> a <userinput
+>U</userinput
+> po čísle, používané pre určenie celých čísel v programovom kóde.</para
+> </listitem
+> </varlistentry
+> <varlistentry
+> <term
+>Float</term
+> <listitem
+> <para
+>Detekuje reálne číslo.</para
+> <para
+><programlisting
+>&lt;Float (spoločné atribúty)
+/&gt;</programlisting
+></para
+> <para
+>Toto pravidlo nemá žiadne špeciálne atribúty.</para
+> </listitem
+> </varlistentry
+> <varlistentry
+> <term
+>HlCOct</term
+> <listitem
+> <para
+>Detekuje číslo v osmičkovej sústave.</para
+> <para
+><programlisting
+>&lt;HlCOct (spoločné atribúty) /&gt;</programlisting
+></para
+> <para
+>Toto pravidlo nemá žiadne špeciálne atribúty.</para
+> </listitem
+> </varlistentry
+> <varlistentry
+> <term
+>HlCHex</term
+> <listitem
+> <para
+>Detekuje šestnástkové číslo.</para
+> <para
+><programlisting
+>&lt;Int (spoločné atribúty) /&gt;</programlisting
+></para
+> <para
+>Toto pravidlo nemá žiadne špeciálne atribúty.</para
+> </listitem
+> </varlistentry
+> <varlistentry
+> <term
+>HlCStringChar</term
+> <listitem
+> <para
+>Detekuje znak začínajúci \ (escaped).</para
+> <para
+><programlisting
+>&lt;HlCStringChar (spoločné atribúty)
+/&gt;</programlisting
+></para
+> <para
+>Toto pravidlo nemá žiadne špeciálne atribúty.</para
+> <para
+>Nájde textovú reprezentáciu neviditeľných znakov obvykle používaných v programovacích jazykoch, napríklad <userinput
+>\n</userinput
+> (koniec riadku) alebo <userinput
+>\t</userinput
+> (tabulátor).</para
+> <para
+>Nasledujúce znaky budú nájdené ak sú po <literal
+>\</literal
+>: <userinput
+>abefnrtv&quot;'?</userinput
+>. Okrem toho to nájde aj escapované šestnástkové a osmičkové čísla, napríklad <userinput
+>\033</userinput
+>.</para
+> </listitem
+> </varlistentry
+> <varlistentry
+> <term
+>RangeDetect</term
+> <listitem
+> <para
+>Detekuje reťazec s definovanými začiatočnými a koncovými znakmi.</para
+> <programlisting
+>&lt;RangeDetect char=&quot;(znak)&quot;  char1=&quot;(znak)&quot; (spoločné atribúty) /&gt;</programlisting
+> <para
+><userinput
+>char</userinput
+> definuje prvý znak rozsahu, <userinput
+>char2</userinput
+> definuje posledný znak rozsahu.</para
+> <para
+>Hodí sa napríklad pre detekovanie malých reťazcov v úvodzovkách, ale uvedomte si, že systém pracuje po riadkoch, nenájde reťazce, ktoré majú viac riadkov.</para
+> </listitem
+> </varlistentry
+> <varlistentry
+> <term
+>LineContinue</term
+> <listitem
+> <para
+>Zodpovedá koncu riadku.</para
+> <programlisting
+>&lt;LineContinue (spoločné atribúty) /&gt;</programlisting
+> <para
+>Toto pravidlo nemá žiadne špeciálne atribúty.</para
+> <para
+>Toto pravidlo sa hodí pre prepínanie kontextu na konci riadku.</para
+> </listitem
+> </varlistentry
+> </variablelist>
+
+</sect1>
+
+</appendix>
+

@@ -1,0 +1,558 @@
+<?xml version="1.0" ?>
+<!DOCTYPE book PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" "dtd/kdex.dtd" [
+ <!ENTITY kappname "kompmgr">
+ <!ENTITY package "kwin">
+ <!ENTITY % French "INCLUDE">
+ <!ENTITY % addindex "IGNORE">
+]>
+
+<book lang="&language;">
+<bookinfo>
+<title
+>Inormations sur &kappname;</title>
+
+<authorgroup>
+<author
+><personname
+><firstname
+>Thomas</firstname
+><surname
+>Luebking</surname
+></personname
+> <email
+>thomas.luebking@web.de</email
+> </author>
+
+&traducteurYohannHamon; 
+</authorgroup>
+
+<copyright>
+<year
+>2005</year>
+<holder
+>Thomas Luebking</holder>
+</copyright>
+
+<legalnotice
+>&FDLNotice;</legalnotice>
+
+<date
+>2005-01-15</date>
+<releaseinfo
+>2.0.1</releaseinfo>
+
+<abstract>
+<para
+>&kappname; est un moteur de rendu composite à utiliser avec &kwin;.</para>
+<para
+>Ce document est plus une explication générale de ce qu'il fait, comment il fonctionne et quelles sont les restrictions plutôt qu'une documentation sur la façon de l'utiliser (puisque qu'il fonctionne automatiquement en arrière plan).</para
+> 
+</abstract>
+
+<keywordset>
+<keyword
+>KDE</keyword>
+<keyword
+>kwin</keyword>
+<keyword
+>Moteur de rendu</keyword>
+</keywordset>
+</bookinfo>
+
+<chapter id="introduction">
+<title
+>Introduction</title>
+
+<para
+>&kappname; est basé sur <application
+>xcompmgr</application
+>, implémentation de référence par Keith Packards pour l'utilisation des nouvelles fonctionnalités du système X.</para>
+
+<para
+>Un gestionnaire composite prélève la sortie de X windows et en fait une simple image qui sera affichée à l'écran. L'avantage de procéder de cette façon est que vous pouvez faire n'importe quoi avec le contenu de vos fenêtres, même les superposer (transparence) et ajouter des ombres. Vous pourriez également les teindres, ajouter une méchante publicité sur chaque fenêtre, les serrer, les diviser, ajouter des lignes défilantes (comme sur un vieil écran), ou tout autre chose que vous pourriez imaginer, ceci limité uniquement par votre matériel.</para>
+
+</chapter>
+
+<chapter id="xorg">
+<title
+>Xorg</title>
+
+<para
+>Vous avez obligatoirement besoin de <emphasis
+>X.org 6.8 ou suivant</emphasis
+> pour que &kappname; fonctionne. X.org 6.7 et précédents et XFree86 ne fonctionneront pas.</para>
+
+<sect1 id="xsetup">
+<title
+>Installation</title>
+<para
+>Vous devez explicitement activer l'extension composite. Ajoutez une nouvelle section à votre fichier de configuration X.org :</para>
+
+<programlisting
+>Section "Extensions"
+    Option "Composite" "Enable"
+EndSection
+</programlisting>
+
+<para
+>Si c'est possible pour votre <acronym
+>GPU</acronym
+> (la puce complexe qui fourni la puissance à votre carte graphique), activez l'accélération de rendu. C'est très bien supporté par les cartes <trademark
+>NVIDIA</trademark
+> et un peu moins bien par les ATI.</para>
+
+<programlisting
+>Section "Device"
+....
+....
+    Option     "RenderAccel" "true"
+....
+....
+EndSection</programlisting>
+
+<para
+>&kappname; devrait maintenant être opérationnel. Pour plus d'informations, merci d'aller voir la <link linkend="problems"
+>FAQ</link
+>.</para>
+
+</sect1>
+
+</chapter>
+
+<chapter id="settings">
+<title
+>Configuration</title>
+
+<para
+>Ce chapitre décrit quels sont les paramètres que vous pouvez modifier, quels en seront les résultats visuels et leur impact sur les performances.</para>
+
+<sect1 id="translucency">
+<title
+>Transparence</title>
+
+<para
+>Un objet transparent est un objet qui permet à la lumière de passer à travers lui. En terme de fenêtre sur votre bureau, cela signifie que le contenu des fenêtres peut être aperçu au travers d'une autre située au-dessus.</para>
+
+<para
+>La transparence vous permet de mettre en valeur des fenêtres spéciales, d'avoir une vue en 3 dimensions de votre bureau, de conserver la trace de fenêtres couvertes et puis c'est également très jolie. Mais il y a un prix, mélanger tout cela ensemble nécessite l'utilisation d'une partie des ressources du systèmes.</para>
+
+<para
+>Vous pouvez configurer la transparence de manière indépendante pour ces différents éléments :</para>
+
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Les fenêtres actives</guilabel
+></term>
+<listitem
+><para
+>Il est suggéré de désactiver la transparence pour la fenêtre active. La raison principale concerne les performances, et la seconde est parce qu'analyser le contenu d'une fenêtre transparente veut dire que votre cerveau a à éliminer l'information irritante passant au travers, ce qui est fatiguant.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Les fenêtres inactives</guilabel
+></term>
+<listitem
+><para
+>Si vous paramétrez les fenêtres inactives à transparentes, les fenêtres activent seront mises en valeur et il sera plus facile de se concentrer. Cependant, si vous choisissez une valeur trop basse, vous pourriez avoir du mal à trouver une fenêtre inactive. Si vous choisissez une valeur très basse (&lt;20&percnt;), vous pourriez ne pas être en mesure de distinguer l'ordre d'empilement des fenêtres - en conséquence vous pourriez accidentellement cliquer le bouton <guibutton
+>OK</guibutton
+> d'une boîte de dialogue lorsque vous vouliez juste activer une fenêtre. Les valeurs optimales se situent entre 60&percnt; et 80&percnt;.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Fenêtre en déplacement</guilabel
+></term>
+<listitem
+><para
+>Bien que ce soit un effet très jolie que d'avoir des fenêtres en déplacement très transparente (opacité &lt; 20&percnt;), il y a un très gros prix à payer au niveau performance, en particulier si vous ne désactivez pas les ombres (voir plus bas). Essayez simplement et si vous sentez que votre système est trop lent, conserver les fenêtres mouvantes opaques. Cette valeur s'applique également aux fenêtres en cours de redimensionnement.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Fenêtres dans le tableau de bord</guilabel
+></term>
+<listitem
+><para
+>Puisque les tableaux de bord comme kicker sont rarement, si ce n'est jamais, déplacés et ont généralement une taille réduite, c'est purement visuel et n'affectera pas de manière importante les performances de votre système.</para
+>  
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Traitez les fenêtres à conserver au-dessus comme des fenêtres actives.</guilabel
+></term>
+<listitem
+><para
+>Si vous paramétrez une fenêtre pour rester au-dessus des autres, vous voulez généralement la garder à l'oeil, il est alors logique de lui donner de l'importance.</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Désactiver les fenêtres ARBG</guilabel
+></term>
+<listitem
+><para
+>XRender permet la gestion de fenêtres avec un masque alpha, &cad; des parties transparentes. Actuellement il n'y a pas ou alors très peu d'applications qui utilisent cette fonctionnalité puisque cela n'a aucun sens si un manager composite n'est pas utilisé. Cela pourrait changer dans l'avenir.</para>
+<para
+>D'un autre côté, la plupart des applications gtk 1.x (&pex; <application
+>xmms</application
+>) paramètre un masque alpha, ce qui a pour résultat des fenêtres presque inutilisables (tant que les fenêtre sous-jacentes ne sont pas noirs), en conséquence vous pouvez désactiver le support des fenêtres ARBG ici pour pouvoir utiliser les applications gtk. Il faut espérer qu'il y aura un correctif pour gtk dans un futur proche pour corriger ceci.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</sect1>
+
+<sect1 id="shadows">
+<title
+>Ombres</title>
+<para
+>Pourquoi quelqu'un voudrait-il que ses fenêtres projetent des ombres ? Eh bien, peut-être simplement parce que c'est jolie, ou parce que ça permet une meilleure séparation des fenêtres, ou... parce que c'est jolie !</para
+> 
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Utiliser les ombres</guilabel
+></term>
+<listitem
+><para
+>Puisque les ombres nécessitent de la puissance cpu/gpu, elles peuvent être désactivées, tout en conservant la possibilité d'utiliser le canal alpha.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Taille de fenêtre active</guilabel
+></term>
+<term
+><guilabel
+>Taille de fenêtre inactive</guilabel
+></term>
+<term
+><guilabel
+>Taille de fenêtre dans le tableau de bord</guilabel
+></term>
+<listitem
+><para
+>Vous pouvez sélectionner différentes tailles pour les ombres des fenêtres de types différents ou dans des états différents. Les valeurs ne sont pas absolues, mais dépendront de la résolution de votre écran.</para>
+<para
+>En principe vous pouvez paramétrer la valeur que vous voulez (si vous ouvrez le ficher config à l'aide d'un éditeur de texte, et allez bien au-delà des <quote
+>32</quote
+> offerts), mais des ombres plus grandes coûteront plus de puissance cpu/gpu.</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Décalage vertical</guilabel
+></term>
+<term
+><guilabel
+>Décalage horizontal</guilabel
+></term>
+<listitem
+><para
+>Par défaut, les fenêtres projeteront des ombres <quote
+>égales tout autour</quote
+>, impliquant une source de lumière située en face. Les utilisateurs familliers avec &MacOS; pourrait aimer un décalage vertical, les utilisateurs &Windows; un léger décalage vers le sud-ouest. Testez différentes valeurs jusqu'à être satisfait.</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Couleur d'ombre</guilabel
+></term>
+<listitem
+><para
+>Généralement les ombres, en tant qu'absence de lumière, apparaissent en niveau de gris (en conséquence l'ombre maximale est noir, correspondant à aucune lumière). Mais hey ! On est dans un monde virtuel, et si vous voulez avoir des ombres rose, pourquoi pas ?</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Supprimer les ombres lors des mouvements</guilabel
+></term>
+<listitem
+><para
+>Sélectionnez ceci si vous avez besoin de plus de performances (particulièrement lorsque vous utilisez des déplacements de fenêtres transparentes).</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Supprimer les ombres lors du redimensionnement</guilabel
+></term>
+<listitem
+><para
+>C'est une bonne idée de sélectionner cet élément, que vous utilisiez la transparence lors du redimensionnement (déplacement) des fenêtres ou pas. Les images d'ombre des fenêtres doivent être recréées en permanence, ce qui a un impact important sur les performance du système.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</sect1>
+
+<sect1 id="effects">
+<title
+>Effets</title>
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Apparition des fenêtres</guilabel
+></term>
+<term
+><guilabel
+>Enchaînement entre les changements d'opacité</guilabel
+></term>
+<listitem
+><para
+>Plutôt que de simplement faire surgir une nouvelle fenêtre, vous pourriez vouloir la faire apparaître doucement. Ceci peut paraître très impressionnant, il y a également un prix impressionnant à payer du point de vue des performances et il est difficile d'intérragir de manière efficace avec des fenêtres qui sont en train d'apparaître. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><guilabel
+>Vitesse d'apparition</guilabel
+></term>
+<term
+><guilabel
+>Vitesse de disparition</guilabel
+></term>
+<listitem
+><para
+>Pour les raisons de facilité d'utilisation mentionnées dans <guilabel
+>Apparition des fenêtres</guilabel
+>, il est plus pratique d'utiliser une vitesse rapide pour l'apparition des fenêtres et (pour des effets plus jolie) une faible vitesse de disparition. Cela vous fournira de très jolies effets et une sensation de système fluide ainsi qu'une faible latence avant apparition de vos informations.</para
+> 
+</listitem>
+</varlistentry>
+</variablelist>
+</sect1>
+
+</chapter>
+
+<chapter id="problems">
+<title
+>Problèmes</title>
+
+<para
+>La totalité de l'extension composite est assez nouvelle. Elle pourrait provoquer quelques problèmes et même rendre X inutilisable, en conséquence <emphasis
+>il est fortement recommandé de ne pas du tout activer l'extension composite dans Xorg sur des systèmes de production</emphasis
+>. Si vous pouvez cependant prendre le risque d'avoir un système un peu moins stable, c'est certainement très agréable d'avoir quelques friandises pour les yeux par-ci par-là.</para>
+
+<para
+>Dans ce cas vous pourriez découvrir quelques problèmes. Voici quelques problèmes communs - et leurs solutions : </para>
+
+<qandaset>
+<qandaentry>
+<question>
+<para
+>J'ai X.org 6.8.x mais &kappname; ne parvient pas à démarrer</para>
+</question>
+<answer>
+<para
+>Vous devez explicitement activer l'extension composite, ajoutez une novelle section à /etc/X11/XorgConfig :</para>
+<programlisting
+>Section "Extensions"
+   Option "Composite" "Enable"
+EndSection</programlisting>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>D'accords, &kappname; fonctionne mais c'est horriblement lent</para>
+</question>
+<answer>
+<para
+>Si c'est implémenté par votre <acronym
+>GPU</acronym
+> (principalement par les cartes <trademark
+>NVIVIA</trademark
+> et en partie par les ATI), premièrement assurez vous que vous avez bien activé l'accélération de rendu.</para>
+<programlisting
+>Section "Device"
+....
+....
+Option     "RenderAccel" "true"
+....
+....
+EndSection
+</programlisting>
+
+<para
+>Si c'est toujours lent, vous pouvez essayer d'ajuster l'utilisation de votre mémoire. Soit diminuez la profondeur des couleurs de votre écran (&pex; de 24 à 16) ou diminuez votre résolution (&pex; de 1280x1024 à 1024x768).</para
+> 
+
+<para
+>Merci de notez que le facteur limitant de l'extension composite semble actuellement être la taille du cache du processeur.</para>
+
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Après avoir activé l'extension composite, je ne peux plus exécuter aucune applications <acronym
+>GLX</acronym
+>. J'ai une carte graphique <trademark
+>NVIDIA</trademark
+>.</para>
+</question>
+<answer>
+<para
+>Pour éviter quelques problèmes, <trademark
+>NVIDIA</trademark
+> désactive le support GLX lorsque l'extension composite est active. La réactivation est possible, mais pourrait engendrer des problèmes sur certaines associations kernel/driver/GPU.</para
+> 
+<programlisting
+>Section "Device"
+....
+....
+Option  "AllowGLXWithComposite" "true"
+....
+....
+EndSection
+</programlisting>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Je voulais jouer à un jeu utilisant <acronym
+>SDL</acronym
+> (mais pas <acronym
+>GL</acronym
+>), disons <application
+>scummvm</application
+>, mais lorsque compmgr est actif la seule chose que je puisse voir est une ombre !</para>
+</question>
+<answer>
+<para
+>Ceci est un problème avec le PictType de SDL.</para>
+
+<para
+>Solution :</para>
+<screen
+>Au lieu d'exécuter <command
+>scummvm</command
+> directement, exécutez <command
+>SDL_VIDEO_X11_VISUALID=0x24 scummvm</command
+>. Cela indiquera à SDL d'utiliser un format compatible et vous pourrez jouer comme jamais. </screen>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>L'application XXX refuse de démarrer après que j'ai activé l'extension composite.</para>
+<para
+>L'application YYY détraque X après l'activation de l'extension composite.</para>
+<para
+>L'application ZZZ paraît étrange après l'activation du manager composite.</para>
+</question>
+<answer>
+<para
+>L'extension composite est toujours expérimentale.</para>
+<para
+>Solution :</para>
+<para
+>Au lieu d'exécuter directement <command
+>appName</command
+>, exécuter <command
+>XLIB_SKIP_ARGB_VISUALS=1 appName</command
+>.</para>
+<para
+>Les applications connues pour avoir des problèmes :</para>
+<itemizedlist>
+<listitem
+><para
+>Toutes les applications gtk1 (&pex; <application
+>gmplayer</application
+>, <application
+>xmms</application
+>, <application
+>gaim</application
+>) - échouent au démarrage ou apparaissent étrange ou même détraquent X</para
+></listitem>
+<listitem
+><para
+>&kuickshow; - n'affiche qu'un cadre noir</para
+></listitem>
+<listitem
+><para
+>&Qt; <application
+>Designer</application
+> - détraque X</para
+></listitem>
+<listitem
+><para
+>&kopete; - détraque </para
+></listitem>
+<listitem
+><para
+>&kolf; - détraque </para
+></listitem>
+</itemizedlist>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>J'essaye de regarder une vidéo, mais je ne vois que des artefacts dans la fenêtre de la vidéo.</para>
+</question>
+<answer>
+<para
+>Vous utilisez <quote
+>xv</quote
+> comme moteur vidéo. Ceci est le mode overlay, où le contenu de la vidéo est directement écrit dans la mémoire de la carte vidéo, et ne passe pas par X. En conséquence la fenêtre semble être fixe (avec un fond coloré) et n'est pas mise à jour par l'extension endommagé.</para>
+<para
+>Il devrait y avoir un correctif à ce problème dans le future. Pour l'instant j'ai les meilleurs résultats en utilisant <application
+>Xine</application
+> mais l'affichage de vidéos transparentes n'est quoi qu'il arrive pas rapide.</para>
+</answer>
+</qandaentry>
+
+</qandaset>
+</chapter>
+
+<chapter id="credits-and-licenses">
+<title
+>Remerciements et licence</title>
+
+<sect1 id="authors">
+<title
+>Auteurs</title>
+<para
+>Thomas Luebking <email
+>baghira-style@gmx.net</email
+> - Éditeur</para>
+&underFDL; &underGPL; </sect1>
+
+
+</chapter>
+
+</book>
+<!--
+Local Variables:
+mode: sgml
+sgml-omittag: nil
+sgml-shorttag: t
+End:
+-->
+

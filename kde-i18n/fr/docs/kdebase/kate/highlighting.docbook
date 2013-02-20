@@ -1,0 +1,1370 @@
+<appendix id="highlight">
+<appendixinfo>
+<authorgroup>
+<author
+><personname
+><firstname
+></firstname
+></personname
+></author>
+&traducteurJoelleCornavin; 
+</authorgroup>
+</appendixinfo>
+<title
+>Travailler avec la coloration syntaxique</title>
+
+<sect1 id="highlight-overview">
+
+<title
+>Vue d'ensemble</title>
+
+<para
+>La coloration syntaxique est une fonction qui fait afficher automatiquement du texte à l'éditeur dans différents styles / couleurs selon la fonction de la chaîne en rapport avec le but du fichier. Dans le code source d'un programme par exemple, des instructions de contrôle peuvent être rendues en gras, alors que des types de données et des commentaires prennent des couleurs différentes du reste du texte. Ce comportement améliore considérablement la lisibilité du texte et aide ainsi l'auteur à être plus efficace et plus productif.</para>
+
+<mediaobject>
+<imageobject
+><imagedata format="PNG" fileref="highlighted.png"/></imageobject>
+<textobject
+><phrase
+>Une fonction Perl, rendue avec la coloration syntaxique.</phrase
+></textobject>
+<caption
+><para
+>Une fonction Perl rendue avec la coloration syntaxique.</para>
+</caption>
+</mediaobject>
+
+<mediaobject>
+<imageobject
+><imagedata format="PNG" fileref="unhighlighted.png"/></imageobject>
+<textobject
+><phrase
+>La même fonction Perl, sans coloration syntaxique.</phrase
+></textobject>
+<caption
+><para
+>La même fonction Perl, sans coloration syntaxique.</para
+></caption>
+</mediaobject>
+
+<para
+>De ces deux exemples, lequel est le plus facile à lire ?</para>
+
+<para
+>&kate; offre un système souple, configurable et performant pour prendre en charge la coloration syntaxique. De plus, la distribution standard fournit des définitions pour un large éventail de langages de programmation, de scriptage et de balisage, ainsi que d'autre formats de fichiers texte. En outre, vous pouvez proposer vos propres définitions dans de de simples fichiers &XML;.</para>
+
+<para
+>&kate; détecte automatiquement les règles de coloration syntaxique lorsque vous ouvrez un fichier, en fonction du type &MIME;, déterminé par son extension ou, s'il n'y en a aucune, du contenu. Si vous vous faites un mauvais choix, vous pouvez définir manuellement la syntaxe à utiliser dans le menu <menuchoice
+><guimenu
+>Documents</guimenu
+><guisubmenu
+>Mode de coloration syntaxique</guisubmenu
+></menuchoice
+>.</para>
+
+<para
+>Les styles et couleurs utilisés par chaque définition de coloration syntaxique peuvent être configurés à l'aide de la page <link linkend="config-dialog-editor-appearance"
+>Apparence</link
+> de la boîte de dialogue <link linkend="config-dialog"
+>Configuration</link
+>, alors que les types &MIME; à employer sont pris en charge par la page <link linkend="config-dialog-editor-highlighting"
+>Coloration syntaxique</link
+>.</para>
+
+<note>
+<para
+>La coloration syntaxique est là pour améliorer la lisibilité du texte correct, mais vous ne pouvez pas vous y fier pour valider votre texte. La complexité du marquage syntaxique du texte dépend du format que vous utilisez et, dans certains cas, les auteurs des règles de syntaxe seront fiers si 98 % du texte est correctement rendu, même si la plupart du temps, il vous faut un style rare pour voir les 2 % incorrects.</para>
+</note>
+
+<tip>
+<para
+>Vous pouvez télécharger des définitions de coloration syntaxique actualisées ou additionnelles sur le site web de &kate; en cliquant sur le bouton « <guibutton
+>Télécharger</guibutton
+> » dans la page <link linkend="config-dialog-editor-highlighting"
+>Coloration syntaxique</link
+> de la boîte de dialogue <link linkend="config-dialog"
+>Configuration</link
+>.</para>
+</tip>
+
+</sect1>
+
+<sect1 id="katehighlight-system">
+
+<title
+>Le système de coloration syntaxique de &kate;</title>
+
+<para
+>Cette section aborde le mécanisme de coloration syntaxique de &kate; plus en détail. Elle vous est destinée si vous voulez en faire l'apprentissage, changer ou créer des définitions de syntaxe.</para>
+
+<sect2 id="katehighlight-howitworks">
+
+<title
+>Fonctionnement</title>
+
+<para
+>Chaque fois que vous ouvrez un fichier, une des premières tâches de l'éditeur &kate; est de détecter la définition syntaxique à utiliser pour ce fichier. Lors de la lecture du fichier, et lors de sa saisie, le système de coloration syntaxique analyse le texte à l'aide des règles fixées par la définition syntaxique et y marque les endroits où différents contextes et styles commencent et finissent.</para>
+
+<para
+>Lorsque vous saisissez le document, le nouveau texte est analysé et marqué à la volée, de sorte que si vous supprimez un caractère qui est marqué comme étant le commencement ou la fin d'un contexte, le style du texte environnant change en conséquence.</para>
+
+<para
+>Les définitions syntaxiques que le système de coloration syntaxique de &kate; utilise sont des fichiers &XML; contenant <itemizedlist>
+<listitem
+><para
+>Des règles pour détecter le rôle du texte, organisé en blocs de contexte</para
+></listitem>
+<listitem
+><para
+>Des listes de mots-clés</para
+></listitem>
+<listitem
+><para
+>Des définitions d'éléments de style</para
+></listitem>
+</itemizedlist>
+</para>
+
+<para
+>Lors de l'analyse du texte, les règles de détection sont évaluées dans l'ordre dans lequel elles sont définies et, si le début de la chaîne actuelle correspond à une règle, le contexte apparenté est utilisé. Le point de départ dans le texte est déplacé vers le point final auquel cette règle correspondait et une nouvelle itération des règles commence, en partant du contexte établi par la règle correspondante.</para>
+
+</sect2>
+
+<sect2 id="highlight-system-rules">
+<title
+>Règles</title>
+
+<para
+>Les règles de détection sont le fondement du système de détection de la coloration syntaxique. Une règle est une chaîne, un caractère ou une <link linkend="regular-expressions"
+>expression rationnelle</link
+> par rapport à quoi faire correspondre le texte en cours d'analyse. Elle contient des informations sur le style à utiliser pour la partie correspondante du texte. Elle peut faire basculer le contexte opérationnel du système soit vers un contexte explicitement mentionné, soit vers le précédent contexte utilisé par le texte.</para>
+
+<para
+>Les règles sont organisées en groupes de contexte. Un groupe de contexte est utilisé pour la majorité des concepts textuels au sein du format, par exemple des chaînes de texte entre guillemets ou des blocs de commentaires dans le code source d'un programme. Cela garantit que le système de coloration n'a pas besoin d'itérer sur toutes les règles lorsque ce n'est pas nécessaire et que certaines séquences de caractères dans le texte peuvent être traitées différemment en fonction du contexte actuel. </para>
+
+<para
+>Les contextes peuvent être générés dynamiquement pour permettre l'utilisation de données spécifiques à des instances dans les règles.</para>
+
+</sect2>
+
+<sect2 id="highlight-context-styles-keywords">
+<title
+>Styles de contexte et mots-clés</title>
+
+<para
+>Dans certains langages de programmation, les nombres entiers sont traités différemment des nombres à virgule flottante par le compilateur (le programme qui convertit le code source en exécutable binaire) et on peut trouver des caractères ayant une signification spéciale au sein d'une chaîne entre guillemets. Dans de tels cas, il est judicieux de les rendre différemment de ceux qui sont voisins, pour qu'ils soient faciles à identifier lors de la lecture du texte. Donc, même s'ils ne représentent pas des contextes spéciaux, ils peuvent être considérés comme tels par le système de coloration syntaxique, de façon à pouvoir être marqués pour un rendu différent.</para>
+
+<para
+>Une définition syntaxique peut contenir autant de styles que nécessaire pour couvrir les concepts du format pour lequel elle est utilisée.</para>
+
+<para
+>Dans de nombreux formats, il existe des listes de mots qui représentent un concept spécifique. Par exemple, dans les langages de programmation, les instructions de contrôle sont un concept, les noms de types de données un autre et les fonctions intégrées du langage un troisième. Le système de coloration syntaxique de &kate; peut faire appel à de telles listes pour détecter et marquer des mots dans le texte afin de mettre en exergue les concepts des formats de texte.</para>
+
+</sect2>
+
+<sect2 id="kate-highlight-system-default-styles">
+<title
+>Styles par défaut</title>
+
+<para
+>Si vous ouvrez un fichier source C++, un fichier source &Java; et un document <acronym
+>HTML</acronym
+> dans &kate;, vous constatez que, même si les formats sont différents et, donc, que des mots différents sont choisis pour un traitement spécial, les couleurs utilisées sont les mêmes. C'est parce que &kate; comporte une liste prédéfinie de styles par défaut qui sont employés par les définitions syntaxiques individuelles.</para>
+
+<para
+>Ce comportement facilite la reconnaissance de concepts similaires dansdifférents formats de texte. Par exemple, les commentaires sont présents dans presque tout langage de programmation, de scriptage ou de balisage et, lorsqu'ils sont rendus à l'aide du même style dans tous les langages, vous n'avez pas à vous arrêter et à penser à les identifier au sein du texte.</para>
+
+<tip>
+<para
+>Dans une définition syntaxique, tous les styles utilisent un des styles par défaut. Comme quelques définitions syntaxiques utilisent davantage de styles qu'il n'y en a par défaut, si vous utilisez fréquemment un format, il peut valoir la peine d'ouvrir la boîte de dialogue de configuration pour voir si certains concepts utilisent le même style. Par exemple, il n'y a qu'un style par défaut pour les chaînes, mais comme le langage de programmation Perl fait appel à deux types de chaînes, vous pouvez améliorer la coloration syntaxique en les configurant de manière à les rendre légèrement différentes. Tous les <link linkend="kate-highlight-default-styles"
+>styles par défaut disponibles</link
+> seront décrits plus tard.</para>
+</tip>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="katehighlight-xml-format">
+<title
+>Le format &XML; de définition de la coloration syntaxique</title>
+
+<sect2>
+<title
+>Vue d'ensemble</title>
+
+<para
+>Cette section est une vue d'ensemble du format &XML; de définition de la coloration syntaxique. S'inspirant d'un court exemple, elle décrira les principaux composants, leur signification et leur utilisation. La suivante détaillera les règles de détection de la coloration syntaxique.</para>
+
+<para
+>La définition formelle, autrement dit la <acronym
+>DTD</acronym
+> est mémorisée dans le fichier <filename
+>language.dtd</filename
+> qui, dans votre système, devrait être installé dans le dossier <filename
+>$<envar
+>KDEDIR</envar
+>/share/apps/kate/syntax</filename
+>. </para>
+
+<variablelist>
+<title
+>Principales sections des fichiers de définition de coloration syntaxique de &kate;</title>
+
+<varlistentry>
+<term
+>Un fichier de coloration syntaxique contient un en-tête qui définit la version de XML et type de document :</term>
+<listitem>
+<programlisting
+>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!DOCTYPE language SYSTEM &quot;language.dtd&quot;&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>La racine du fichier de définition est l'élément <userinput
+>language</userinput
+>. Voici les attributs disponibles :</term>
+
+<listitem>
+<para
+>Attributs requis :</para>
+<para
+><userinput
+>name</userinput
+> définit le nom de la langue. Il apparaît dans les menus et les les boîtes de dialogue ensuite.</para>
+<para
+><userinput
+>section</userinput
+> spécifie la catégorie.</para>
+<para
+><userinput
+>extensions</userinput
+> définit les extensions, comme &quot;*.cpp;*.h&quot;</para>
+
+<para
+>Attributs optionnels :</para>
+<para
+><userinput
+>mimetype</userinput
+> associe les fichiers en fonction du type &MIME;.</para>
+<para
+><userinput
+>version</userinput
+> spécifie la version actuelle du fichier de définition.</para>
+<para
+><userinput
+>kateversion</userinput
+> spécifie la dernière version prise en charge de &kate;.</para>
+<para
+><userinput
+>casesensitive</userinput
+> définit si les mots-clés sont sensibles à la casse ou non.</para>
+<para
+><userinput
+>priority</userinput
+> est nécessaire si une autre définition de coloration syntaxique utilise les mêmes extensions. La priorité la plus élevée l'emporte.</para>
+<para
+><userinput
+>author</userinput
+> contient le nom de l'auteur et son adresse électronique.</para>
+<para
+><userinput
+>license</userinput
+> contient la licence, habituellement, LGPL, Artistic, GPL et autres.</para>
+<para
+><userinput
+>hidden</userinput
+> définit su le nom devra apparaître ou non dans les menus de &kate;.</para>
+<para
+>Ainsi, voici à quoi la ligne suivante peut ressembler :</para>
+<programlisting
+>&lt;language name=&quot;C++&quot; version=&quot;1.00&quot; kateversion=&quot;2.4&quot; section=&quot;Sources&quot; extensions=&quot;*.cpp;*.h&quot; /&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Next comes the <userinput
+>highlighting</userinput
+> element, which contains the optional element <userinput
+>list</userinput
+> and the required elements <userinput
+>contexts</userinput
+> and <userinput
+>itemDatas</userinput
+>.</term>
+<listitem>
+<para
+>Les éléments <userinput
+>list</userinput
+> contiennent une liste de mots-clés. Dans ce cas, les mots-clés sont <emphasis
+>class</emphasis
+> et <emphasis
+>const</emphasis
+>. Vous pouvez ajouter autant de listes que nécessaire.</para>
+<para
+>L'élément <userinput
+>contexts</userinput
+> contient tous les contextes. Le premier contexte est par défaut le début de la coloration syntaxique. Il existe deux règles dans le contexte <emphasis
+>Normal Text</emphasis
+>, qui font correspondre la liste de mots-clés avec le nom <emphasis
+>somename</emphasis
+> et une règle qui détecte un guillemet et change de contexte dans <emphasis
+>string</emphasis
+>. Pour en savoir plus sur les règles, lisez le chapitre suivant.</para>
+<para
+>La troisième partie est l'élément <userinput
+>itemDatas</userinput
+>. Il contient tous les styles de couleurs et de polices que nécessitent les contextes et les règles. Dans cet exemple, <userinput
+>itemData</userinput
+> <emphasis
+>Normal Text</emphasis
+>, <emphasis
+>String</emphasis
+> et <emphasis
+>Keyword</emphasis
+> sont utilisés. </para>
+<programlisting
+>&lt;highlighting&gt;
+    &lt;list name=&quot;somename&quot;&gt;
+      &lt;item&gt; class &lt;/item&gt;
+      &lt;item&gt; const &lt;/item&gt;
+    &lt;/list&gt;
+    &lt;contexts&gt;
+      &lt;context attribute=&quot;Normal Text&quot; lineEndContext=&quot;#pop&quot; name=&quot;Normal Text&quot; &gt;
+        &lt;keyword attribute=&quot;Keyword&quot; context=&quot;#stay&quot; String=&quot;somename&quot; /&gt;
+        &lt;DetectChar attribute=&quot;String&quot; context=&quot;string&quot; char=&quot;&amp;quot;&quot; /&gt;
+      &lt;/context&gt;
+      &lt;context attribute=&quot;String&quot; lineEndContext=&quot;#stay&quot; name=&quot;string&quot; &gt;
+        &lt;DetectChar attribute=&quot;String&quot; context=&quot;#pop&quot; char=&quot;&amp;quot;&quot; /&gt;
+      &lt;/context&gt;
+    &lt;/contexts&gt;
+    &lt;itemDatas&gt;
+      &lt;itemData name=&quot;Normal Text&quot; defStyleNum=&quot;dsNormal&quot; /&gt;
+      &lt;itemData name=&quot;Keyword&quot; defStyleNum=&quot;dsKeyword&quot; /&gt;
+      &lt;itemData name=&quot;String&quot; defStyleNum=&quot;dsString&quot; /&gt;
+    &lt;/itemDatas&gt;
+  &lt;/highlighting&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>La dernière partie d'une définition de coloration syntaxique est la section optionnelle <userinput
+>general</userinput
+>. Elle peut contenir des informations sur les mots-clés, le pliage du code, les commentaires et l'indentation.</term>
+
+<listitem>
+<para
+>La section <userinput
+>comment</userinput
+> définit avec quelle chaîne une ligne de commentaire unique est introduite. On peut également définir un commentaire multiligne à l'aide de <emphasis
+>multiLine</emphasis
+> avec l'attribut additionnel <emphasis
+>end</emphasis
+>. Ce dernier est employé si l'utilisateur fait appel au raccourci clavier correspondant pour <emphasis
+>comment/uncomment</emphasis
+>.</para>
+<para
+>La section <userinput
+>keywords</userinput
+> définit si les listes de mots-clés sont ou non sensibles à la casse. D'autres attributs seront décrits ultérieurement.</para>
+<programlisting
+>&lt;general&gt;
+    &lt;comments&gt;
+      &lt;comment name="singleLine" start="#"/&gt;
+    &lt;/comments&gt;
+    &lt;keywords casesensitive="1"/&gt;
+  &lt;/general&gt;
+&lt;/language&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+
+</sect2>
+
+<sect2 id="kate-highlight-sections">
+<title
+>Les sections en détail</title>
+<para
+>Cette partie décrit tous les attributs disponibles pour les contextes, éléments itemDatas, mots-clés, commentaires, le pliage du code et l'indentation.</para>
+
+<variablelist>
+<varlistentry>
+<term
+>L'élement <userinput
+>context</userinput
+> appartient au groupe <userinput
+>contexts</userinput
+>. Un contexte lui-même définit des règles qui lui sont spécifiques comme ce qui devrait se produire si le système de coloration syntaxique atteint la fin d'une ligne. Les attributs disponibles sont les suivants :</term>
+
+
+<listitem>
+<para
+><userinput
+>name</userinput
+> : le nom du contexte. Les règles utiliseront ce nom pour spécifier le contexte dans lequel basculer si la règle correspond.</para>
+<para
+><userinput
+>lineEndContext</userinput
+> : définit le contexte dans lequel le système de coloration syntaxique bascule s'il atteint la fin d'une ligne. Ce peut être soit le nom d'un autre contexte, <userinput
+>#stay</userinput
+> pour ne pas changer de contexte (par exemple, ne rien faire) ou <userinput
+>#pop</userinput
+>, qui amènera à quitter ce contexte. Il est possible d'employer par exemple <userinput
+>#pop#pop#pop</userinput
+> pour obtenir trois pop.</para>
+<para
+><userinput
+>lineBeginContext</userinput
+> : définit le contexte s'il rencontre le début d'une ligne. Par défaut : #stay.</para>
+<para
+><userinput
+>fallthrough</userinput
+> : définit si le système de coloration sy,taxique bascule dans le contexte spécifié dans fallthroughContext si aucune règle ne correspond. Par défaut : <emphasis
+>false</emphasis
+>.</para>
+<para
+><userinput
+>fallthroughContext</userinput
+> : spécifie le contexte suivant si aucune règle ne correspond.</para>
+<para
+><userinput
+>dynamic</userinput
+> : si <emphasis
+>true</emphasis
+>, le contexte mémorise les chaînes / caractères de remplacement enregistrés par les règles dynamiques. Ceci est nécessaire pour les documents HERE par exemple. Par défaut : <emphasis
+>false</emphasis
+>.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>L'élément <userinput
+>itemData</userinput
+> est dans le groupe <userinput
+>itemDatas</userinput
+>. Il définit le style des polices et les couleurs. Ainsi, il est possible de définir vos propres styles et couleurs, cependant nous recommandons de coller aux styles par défaut si possible pour que l'utilisateur voie toujours les mêmes couleurs utilisées dans différents langages. Néanmoins, il n'y a parfois aucun moyen et il est nécessaire de changer les attributs de couleur et de police. Les attributs name et defStyleNum sont requis, l'autre optionnel. Les attributs disponibles sont les suivants :</term>
+
+<listitem>
+<para
+><userinput
+>name</userinput
+> : définit le nom de l'élément itemData. Les contextes et les règles utiliseront ce nom dans leur attribut <emphasis
+>attribute</emphasis
+> pour référencer un élément itemData.</para>
+<para
+><userinput
+>defStyleNum</userinput
+> : définit quel sera le style par défaut à employer. Les styles par défaut disponibles seront décrits en détail ultérieurement.</para>
+<para
+><userinput
+>color</userinput
+> : définit une couleur. Les formats valides sont '#rrggbb' ou '#rgb'.</para>
+<para
+><userinput
+>selColor</userinput
+> : définit la couleur de la sélection.</para>
+<para
+><userinput
+>italic</userinput
+> si <emphasis
+>true</emphasis
+> : le texte sera en italique.</para>
+<para
+><userinput
+>bold</userinput
+> si <emphasis
+>true</emphasis
+> : le texte sera en gras.</para>
+<para
+><userinput
+>underline</userinput
+> si <emphasis
+>true</emphasis
+> : le texte sera souligné.</para>
+<para
+><userinput
+>strikeout</userinput
+> si <emphasis
+>true</emphasis
+> : le texte sera biffé.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>L'élément <userinput
+>keywords</userinput
+> dans le groupe <userinput
+>general</userinput
+> définit les propriétés des mots-clés. Les attributs disponibles sont les suivants :</term>
+
+<listitem>
+<para
+><userinput
+>casesensitive</userinput
+> : peut être <emphasis
+>true</emphasis
+> ou <emphasis
+>false</emphasis
+>. Si <emphasis
+>true</emphasis
+>, tous les mots-clés sont mis en correspondance sensibles à la casse.</para>
+<para
+><userinput
+>weakDeliminator</userinput
+> : est une liste de caractères qui n'agissent pas en tant que délimiteurs de mot. Par exemple, le point <userinput
+>'.'</userinput
+> est un délimiteur de mot. Supposez qu'un mot-clé dans un élément <userinput
+>list</userinput
+> contienne un point, il ne correspondra que si vous spécifiez le point comme un délimiteur faible.</para>
+<para
+><userinput
+>additionalDeliminator</userinput
+> : définit des délimiteurs additionnels.</para>
+<para
+><userinput
+>wordWrapDeliminator</userinput
+> : définit les caractères après lesquels un retour à la ligne peut se produire.</para>
+<para
+>Les délimiteurs par défaut et les délimiteurs de saut de ligne sont les caractères <userinput
+>.():!+,-&lt;=&gt;%&amp;*/;?[]^{|}~\</userinput
+>, l'espace (<userinput
+>' '</userinput
+>) et la tabulation (<userinput
+>'\t'</userinput
+>).</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>L'élément <userinput
+>comment</userinput
+> dans le groupe <userinput
+>comments</userinput
+> définit les propriétés des commentaires qui sont utilisées pour <menuchoice
+> <guimenu
+>Outils</guimenu
+><guimenuitem
+>Commenter</guimenuitem
+></menuchoice
+> et <menuchoice
+><guimenu
+>Outils</guimenu
+><guimenuitem
+>Décommenter</guimenuitem
+></menuchoice
+>. Voici les attributs disponibles :</term>
+
+<listitem>
+<para
+><userinput
+>name</userinput
+> : est soit <emphasis
+>singleLine</emphasis
+> soit <emphasis
+>multiLine</emphasis
+>. Si vous choisissez <emphasis
+>multiLine</emphasis
+>, les attributs <emphasis
+>end</emphasis
+> et <emphasis
+>region</emphasis
+> sont requis.</para>
+<para
+><userinput
+>start</userinput
+> : définit la chaîne utilisée pour démarrer un commentaire. En C++, ce serait &quot;/*&quot;.</para>
+<para
+><userinput
+>end</userinput
+> : définit la chaîne utilisée pour fermer un commentaire. En C++,ce serait &quot;*/&quot;.</para>
+<para
+><userinput
+>region</userinput
+> : devrait être le nom du commentaire multiligne repliable. Supposez que vous ayez <emphasis
+>beginRegion=« Comment »</emphasis
+> ... <emphasis
+>endRegion=« Comment »</emphasis
+> dans vos règles, vous devrez employer <emphasis
+>region=« Comment »</emphasis
+>. De cette manière, la suppression des commentaires fonctionne même si vous ne sélectionnez pas tout le texte du commentaire multiligne. Il suffit que le curseur soit dans le commentaire multiligne.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>L'élément <userinput
+>folding</userinput
+> dans le groupe <userinput
+>general</userinput
+> définit les propriétés de pliage du code. Les attributs disponibles sont les suivants :</term>
+
+<listitem>
+<para
+><userinput
+>indentationsensitive</userinput
+> : si <emphasis
+>true</emphasis
+>, les indicateurs de pliage du code seront ajoutés en fonction de l'indentation, comme dans le langage de scriptage Python. Habituellement, vous n'avez pas besoin de le définir, du fait qu'il est réglé par défaut <emphasis
+>false</emphasis
+>.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>L'élément <userinput
+>indentation</userinput
+> dans le groupe <userinput
+>general</userinput
+> définit quel est l'indenteur à utiliser, cependant nous recommandons vivement d'omettre cet élément, car l'indenteur sera habituellement ajusté soit en définissant un type de fichiers, soit en ajoutant une ligne de mode au fichier texte. Si vous spécifiez un indenteur malgré tout, vous forcerez une indentation spécifique pour l'utilisateur, ce qu'il risque de ne pas apprécier du tout. Les attributs disponibles sont les suivants :</term>
+
+<listitem>
+<para
+><userinput
+>mode</userinput
+> : est le nom de l'indenteur. Les indenteurs actuels sont les suivants : <emphasis
+>normal, cstyle, csands, xml, python</emphasis
+> et <emphasis
+>varindent</emphasis
+>.</para>
+</listitem>
+</varlistentry>
+
+
+</variablelist>
+
+
+</sect2>
+
+<sect2 id="kate-highlight-default-styles">
+<title
+>Styles par défaut disponibles</title>
+<para
+>Les styles par défaut ont <link linkend="kate-highlight-system-default-styles"
+>déjà été décrits</link
+> sous la forme d'un court résumé : les styles par défaut sont les polices et les styles de couleurs prédéfinis.</para>
+<variablelist>
+<varlistentry>
+<term
+>Voici donc la liste des styles par défaut disponibles :</term>
+<listitem>
+<para
+><userinput
+>dsNormal</userinput
+> : utilisé pour le texte normal.</para>
+<para
+><userinput
+>dsKeyword</userinput
+> : utilisé pour les mots-clés.</para>
+<para
+><userinput
+>dsDataType</userinput
+> : utilisé pour les types de données.</para>
+<para
+><userinput
+>dsDecVal</userinput
+> : utilisé pour les valeurs décimales.</para>
+<para
+><userinput
+>dsBaseN</userinput
+> : utilisé pour les valeurs ayant une base autre que 10.</para>
+<para
+><userinput
+>dsFloat</userinput
+> : utilisé pour les valeurs flottantes.</para>
+<para
+><userinput
+>dsChar</userinput
+> : utilisé pour un caractère.</para>
+<para
+><userinput
+>dsString</userinput
+> : utilisé pour les chaînes.</para>
+<para
+><userinput
+>dsComment</userinput
+> : utilisé pour les commentaires.</para>
+<para
+><userinput
+>dsOthers</userinput
+> : utilisé pour les éléments 'autres'.</para>
+<para
+><userinput
+>dsAlert</userinput
+> : utilisé pour les messages d'alerte.</para>
+<para
+><userinput
+>dsFunction</userinput
+> : utilisé pour les appels de fonction.</para>
+<para
+><userinput
+>dsRegionMarker</userinput
+> : utilisé pour les marqueurs de régions.</para>
+<para
+><userinput
+>dsError</userinput
+> : utilisé pour la mise en surbrillance des erreurs et la syntaxe erronée.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="kate-highlight-rules-detailled">
+<title
+>Règles de détection de la coloration syntaxique</title>
+
+<para
+>Cette section décrit les règles de détection syntaxique.</para>
+
+<para
+>Chaque règle peut correspondre à zéro ou plusieurs caractères au début de la chaîne par rapport à laquelle ils sont testés. Si la règle correspond, les caractères concordants sont affectés au style ou à l'<emphasis
+>attribut</emphasis
+> défini par la règle et une règle peut demander que le contexte actuel soit commuté.</para>
+
+<para
+>Voici à quoi une règle ressemble :</para>
+
+<programlisting
+>&lt;RuleName attribute=&quot;(identifier)&quot; context=&quot;(identifier)&quot; [attributs propres à la règle] /&gt;</programlisting>
+
+<para
+>L'<emphasis
+>attribut</emphasis
+> identifie le style à utiliser pour les caractères correspondants par nom, et le <emphasis
+>contexte</emphasis
+> identifie le contexte à utiliser à partir de cet endroit.</para>
+
+<para
+>Le <emphasis
+>contexte</emphasis
+> peut être identifié par :</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Un <emphasis
+>identifiant</emphasis
+>, qui est le nom de l'autre contexte.</para>
+</listitem>
+<listitem>
+<para
+>Un <emphasis
+>ordre</emphasis
+> demandant au moteur de rester dans le contexte actuel (<userinput
+>#stay</userinput
+>) ou de revenir à un contexte précédemment utilisé dans la chaîne (<userinput
+>#pop</userinput
+>).</para>
+<para
+>Pour reculer de plusieurs étapes, le mot-clé #pop peut être répété : <userinput
+>#pop#pop#pop</userinput
+>.</para>
+</listitem>
+</itemizedlist>
+
+<para
+>Certaines règles peuvent avoir des <emphasis
+>sous-règles</emphasis
+> qui ne sont ensuite évaluées que si la règle parent correspondait. La chaîne entière concordante se verra affecter l'attribut défini par la règle parent. Voici à quoi ressemble une règle ayant des sous-règles :</para>
+
+<programlisting
+>&lt;RuleName (attributes)&gt;
+  &lt;ChildRuleName (attributes) /&gt;
+  ...
+&lt;/RuleName&gt;
+</programlisting>
+
+
+<para
+>Les attributs spécifiques à une règle varient et sont décrits dans les sections suivantes.</para>
+
+
+<itemizedlist>
+<title
+>Attributs communs</title>
+<para
+>Toutes les règles ont les attributs suivants en commun et sont disponibles chaque fois que <userinput
+>(common attributes)</userinput
+> apparaît. <emphasis
+>attribute</emphasis
+> et <emphasis
+>context</emphasis
+> sont des attributs requis, tous les autres sont optionnels. </para>
+
+<listitem>
+<para
+><emphasis
+>attribute</emphasis
+> : un attribut établit une correspondance vers un <emphasis
+>itemData</emphasis
+> défini.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>context</emphasis
+> : spécifie le contexte vers lequel le système de coloration syntaxique bascule si la règle correspond.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>beginRegion</emphasis
+> : démarre un bloc de pliage de code. Par défaut : unset.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>endRegion</emphasis
+> : ferme un bloc de pliage de code. Par défaut : unset.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>lookAhead</emphasis
+> : si <emphasis
+>true</emphasis
+>, le système de coloration syntaxique ne traitera pas la longueur des correspondances. Par défaut : <emphasis
+>false</emphasis
+>.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>firstNonSpace</emphasis
+> : s'applique uniquement si la chaîne est le premier espace autre qu'un blanc dans la ligne. Par défaut : <emphasis
+>false</emphasis
+>.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>column</emphasis
+> : concorde uniquement si la colonne correspond. Par défaut : unset.</para>
+</listitem>
+</itemizedlist>
+
+<itemizedlist>
+<title
+>Règles dynamiques</title>
+<para
+>Certaines règles autorisent l'attribut optionnel <userinput
+>dynamic</userinput
+> de type booléen, qui prend par défaut la valeur <emphasis
+>false</emphasis
+>. Si l'attribut dynamic est <emphasis
+>true</emphasis
+>, une règle peut utiliser des caractères de remplacement représentant le texte mis en concordance par une règle d'une <emphasis
+>expression rationnelle</emphasis
+> qui a commuté vers le contexte actuel dans ses attributs <userinput
+>string</userinput
+> ou <userinput
+>char</userinput
+>. Dans un attribut <userinput
+>string</userinput
+>, le caractère générique <replaceable
+>%N</replaceable
+> (où N est un nombre) sera remplacé par la capture correspondante <replaceable
+>N</replaceable
+> à partir de l'expression rationnelle appelante. Dans un <userinput
+>char</userinput
+>, le caractère générique doit être un nombre <replaceable
+>N</replaceable
+> et être remplacé par le premier caractère de la capture correspondante <replaceable
+>N</replaceable
+> à partir de l'expression rationnelle appelante. Chaque fois qu'une règle autorise cet attribut, elle contient un <emphasis
+>(dynamic)</emphasis
+>.</para>
+
+<listitem>
+<para
+><emphasis
+>dynamic</emphasis
+> : peut être <emphasis
+>(true|false)</emphasis
+>.</para>
+</listitem>
+</itemizedlist>
+
+<sect2 id="highlighting-rules-in-detail">
+<title
+>Les règles en détail</title>
+
+<variablelist>
+<varlistentry>
+<term
+>DetectChar</term>
+<listitem>
+<para
+>Détecte un seul caractère spécifique. Cette règle est communément utilisée par exemple pour trouver les extrémités de chaînes entre guillemets.</para>
+<programlisting
+>&lt;DetectChar char=&quot;(character)&quot; (attributs communs) (dynamic) /&gt;</programlisting>
+<para
+>L'attribut <userinput
+>char</userinput
+> définit le caractère à faire correspondre.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Detect2Chars</term>
+<listitem>
+<para
+>Détecte deux caractères spécifiques dans un ordre défini.</para>
+<programlisting
+>&lt;Detect2Chars char=&quot;(character)&quot; char1=&quot;(character)&quot; (attributs communs) (dynamic) /&gt;</programlisting>
+<para
+>L'attribut <userinput
+>char</userinput
+> définit le premier caractère à faire correspondre, <userinput
+>char1</userinput
+> le second.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>AnyChar</term>
+<listitem>
+<para
+>Détecte un caractère d'un jeu de caractères spécifié.</para>
+<programlisting
+>&lt;AnyChar String=&quot;(chaîne)&quot; (attributs communs) /&gt;</programlisting>
+<para
+>L'attribut <userinput
+>string</userinput
+> définit le jeu de caractères.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>StringDetect</term>
+<listitem>
+<para
+>Détecte une chaîne exacte.</para>
+<programlisting
+>&lt;StringDetect String=&quot;(string)&quot; [insensitive=&quot;true|false&quot;] (attributs communs) (dynamic) /&gt;</programlisting>
+<para
+>L'attribut <userinput
+>string</userinput
+> définit la chaîne à faire correspondre. L'attribut <userinput
+>insensitive</userinput
+> prend la valeur par défaut <userinput
+>FALSE</userinput
+> et est passé à la fonction de comparaison de la chaîne. Si la valeur est <userinput
+>TRUE</userinput
+>, une comparaison insensible est utilisée.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>RegExpr</term>
+<listitem>
+<para
+>Concorde par rapport à une expression rationnelle.</para>
+<programlisting
+>&lt;RegExpr String=&quot;(string)&quot; [insensitive=&quot;true|false&quot;] [minimal=&quot;true|false&quot;] (attributs communs) (dynamic) /&gt;</programlisting>
+<para
+>L'attribut <userinput
+>string</userinput
+> définit l'expression rationnelle.</para>
+<para
+><userinput
+>insensitive</userinput
+> prend par défaut la valeur <userinput
+>false</userinput
+> et est passé au moteur d'expressions rationnelles.</para>
+<para
+><userinput
+>minimal</userinput
+> prend par défaut la valeur <userinput
+>false</userinput
+> et est passé au moteur d'expressions rationnelles.</para>
+<para
+>Du fait que les règles sont toujours concordantes par rapport au début de la chaîne actuelle, une expression rationnelle commençant par un caret (<literal
+>^</literal
+>) indique que la règle ne devrait être concordante que par rapport au début d'une ligne.</para>
+<para
+>Reportez-vous à la section <link linkend="regular-expressions"
+>Expressions rationnelles</link
+> pour plus d'informations à ce propos.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>keyword</term>
+<listitem>
+<para
+>Détecte un mot-clé dans une liste donnée.</para>
+<programlisting
+>&lt;keyword String=&quot;(nom de liste)&quot; (attributs communs) /&gt;</programlisting>
+<para
+>L'attribut <userinput
+>string</userinput
+> identifie la liste de mots-clés par nom. Une liste contenant ce nom doit exister.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Int</term>
+<listitem>
+<para
+>Détecte un nombre entier.</para>
+<para
+><programlisting
+>&lt;Int (attributs communs) (dynamic) /&gt;</programlisting
+></para>
+<para
+>Cette règle n'a aucun attribut spécifique. Des sous-règles sont généralement utilisées pour détecter des combinaisons de <userinput
+>L</userinput
+> et de <userinput
+>U</userinput
+> après le nombre, indiquant le type d'entier dans le code du programme. En fait, toutes les règles sont autorisées en tant que sous-règles, cependant, la <acronym
+>DTD</acronym
+> n'autorise que la sous-règle <userinput
+>StringDetect</userinput
+>.</para>
+<para
+>L'exemple suivant fait correspondre les nombres entiers, suivis du caractère 'L'. <programlisting
+>&lt;Int attribute="Decimal" context="#stay" &gt;
+  &lt;StringDetect attribute="Decimal" context="#stay" String="L" insensitive="true"/&gt;
+&lt;/Int&gt;
+</programlisting
+></para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Float</term>
+<listitem>
+<para
+>Détecte un nombre à virgule flottante.</para>
+<para
+><programlisting
+>&lt;Float (attributs communs) /&gt;</programlisting
+></para>
+<para
+>Cette règle n'a aucun attribut spécifique. <userinput
+>AnyChar</userinput
+> est autorisé en tant que sous-règle et généralement utilisé pour détecter des combinaisons. Reportez-vous à la règle <userinput
+>Int</userinput
+> pour référence.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HlCOct</term>
+<listitem>
+<para
+>Détecte une représentation d'un nombre octal.</para>
+<para
+><programlisting
+>&lt;HlCOct (attributs communs) /&gt;</programlisting
+></para>
+<para
+>Cette règle n'a aucun attribut spécifique.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HlCHex</term>
+<listitem>
+<para
+>Détecte une représentation d'un nombre hexadécimal.</para>
+<para
+><programlisting
+>&lt;HlCHex (attributs communs) /&gt;</programlisting
+></para>
+<para
+>Cette règle n'a aucun attribut spécifique.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HlCStringChar</term>
+<listitem>
+<para
+>Détecte un caractère échappé.</para>
+<para
+><programlisting
+>&lt;HlCStringChar (attributs communs) /&gt;</programlisting
+></para>
+<para
+>Cette règle n'a aucun attribut spécifique.</para>
+
+<para
+>Elle fait correspondre les représentations littérales de caractères communément utilisés dans du code de programme, par exemple <userinput
+>\n</userinput
+> (saut de ligne) ou <userinput
+>\t</userinput
+> (tabulation).</para>
+
+<para
+>Les caractères suivants correspondront s'ils suivent une barre oblique inverse (<literal
+>\</literal
+>) : <userinput
+>abefnrtv&quot;'?</userinput
+>. En outre, les nombres hexadécimaux échappés comme par exemple <userinput
+>\xff</userinput
+> et les nombres octaux échappés, par exemple <userinput
+>\033</userinput
+> correspondront.</para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HlCChar</term>
+<listitem>
+<para
+>Détecte un caractère C.</para>
+<para
+><programlisting
+>&lt;HlCChar (attributs communs) /&gt;</programlisting
+></para>
+<para
+>Cette règle n'a aucun attribut spécifique.</para>
+
+<para
+>Cette règle fait correspondre les caractères C entourés d'une coche (par exemple : <userinput
+>'c'</userinput
+>). Ainsi, dans les coches, ce peut être un simple caractère ou un caractère échappé. Voir HlCStringChar pour les séquences de caractères échappés.</para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>RangeDetect</term>
+<listitem>
+<para
+>Détecte une chaîne dont les caractères de début et de fin sont définis.</para>
+<programlisting
+>&lt;RangeDetect char=&quot;(caractère)&quot;  char1=&quot;(caractère)&quot; (attributs communs) /&gt;</programlisting>
+<para
+><userinput
+>car</userinput
+> définit le caractère commençant l'intervalle, <userinput
+>car2</userinput
+> le caractère terminant l'intervalle.</para>
+<para
+>Utile pour détecter par exemple de petites chaînes entre guillemets et similaires. Notez cependant que, puisque le moteur de coloration syntaxique opère sur une ligne à la fois, il ne trouvera pas de chaînes s'étendant au-delà d'un saut de ligne.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>LineContinue</term>
+<listitem>
+<para
+>Correspond à la fin de la ligne.</para>
+<programlisting
+>&lt;LineContinue (attributs communs) /&gt;</programlisting>
+<para
+>Cette règle n'a aucun attribut spécifique.</para>
+<para
+>Cette règle est utile pour changer de contexte à la fin de la ligne, si le dernier caractère est une barre oblique inverse (<userinput
+>'\'</userinput
+>). Nécessaire par exemple en C/C++ pour continuer les macros ou les chaînes.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>IncludeRules</term>
+<listitem>
+<para
+>Inclut des règles provenant d'un autre contexte ou langage/fichier.</para>
+<programlisting
+>&lt;IncludeRules context=&quot;contextlink&quot; [includeAttrib=&quot;true|false&quot;] /&gt;</programlisting>
+
+<para
+>L'attribut <userinput
+>context</userinput
+> définit quel est le contexte à inclure .</para>
+<para
+>S'il s'agit d'une chaîne simple, il inclut toutes les règles définies dans le contexte actuel, par exemple : <programlisting
+>&lt;IncludeRules context=&quot;anotherContext&quot; /&gt;</programlisting
+></para>
+
+<para
+>Si la chaîne commence par <userinput
+>##</userinput
+>, le système de coloration syntaxique cherchera une autre définition de langage avec le nom donné, par exemple : <programlisting
+>&lt;IncludeRules context=&quot;##C++&quot; /&gt;</programlisting
+></para>
+<para
+>Si l'attribut <userinput
+>includeAttrib</userinput
+> prend la valeur <emphasis
+>true</emphasis
+>, changez l'attribut de destination pour celui de la source. Nécessaire pour pouvoir par exemple introduire des commentaires, si le texte mis en correspondance par le contexte inclus est une coloration syntaxique différente du contexte de l'hôte. </para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>DetectSpaces</term>
+<listitem>
+<para
+>Détecte les blancs.</para>
+<programlisting
+>&lt;DetectSpaces (attributs communs) /&gt;</programlisting>
+
+<para
+>Cette règle n'a aucun attribut spécifique.</para>
+<para
+>Utilisez cette règle si vous savez qu'il existe plusieurs blancs à la suite, par exemple au début des lignes indentées. Cette règle ignorera tous les blancs à la fois, au lieu de tester des règles multiples et d'en ignorer une à la fois du fait qu'il n'y a pas de concordance.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>DetectIdentifier</term>
+<listitem>
+<para
+>Détecte les chaînes d'identificateurs (sous la forme d'une expression rationnelle : [a-zA-Z_][a-zA-Z0-9_]*).</para>
+<programlisting
+>&lt;DetectIdentifier (attributs communs) /&gt;</programlisting>
+
+<para
+>Cette règle n'a aucun attribut spécifique.</para>
+<para
+>Utilisez cette règle pour ignorer une chaîne de caractères de mots à la fois, plutôt que de faire des tests avec des règles multiples et d'en ignorer une à la fois du fait qu'il n'y a pas de concordance.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</sect2>
+
+<sect2>
+<title
+>Trucs &amp; astuces</title>
+
+<itemizedlist>
+<para
+>Une fois que vous avez compris comment fonctionne le changement de contexte, il est facile d'écrire des définitions de coloration syntaxique. Cependant, vous devrez vérifier avec soin la règle à choisir dans telle ou telle situation. Les expressions rationnelles sont très efficaces mais elles sont lentes en comparaison des autres règles. Ainsi, vous pouvez prendre en considération les astuces suivantes. </para>
+
+<listitem>
+<para
+>Si vous n'avez que deux caractères concordants, utilisez <userinput
+>Detect2Chars</userinput
+> au lieu de <userinput
+>StringDetect</userinput
+>. Il en va de même pour <userinput
+>DetectChar</userinput
+>.</para>
+</listitem>
+<listitem>
+<para
+>Les expressions rationnelles sont faciles à utiliser, mais souvent il existe un autre moyen beaucoup plus rapide d'obtenir le même résultat. Imaginez que vous vouliez simplement établir une correspondance avec le caractère <userinput
+>'#'</userinput
+> si c'est le premier caractère dans la ligne. Voici à quoi ressemblerait une solution basée sur une expression rationnelle : <programlisting
+>&lt;RegExpr attribute=&quot;Macro&quot; context=&quot;macro&quot; String=&quot;^\s*#&quot; /&gt;</programlisting
+> Vous pouvez arriver au même résultat beaucoup plus rapidement en utilisant : <programlisting
+>&lt;DetectChar attribute=&quot;Macro&quot; context=&quot;macro&quot; char=&quot;#&quot; firstNonSpace=&quot;true&quot; /&gt;</programlisting
+> Si vous voulez faire correspondre l'expression rationnelle <userinput
+>'^#'</userinput
+>, utilisez toujours l'attribut <userinput
+>DetectChar</userinput
+> avec l'attribut <userinput
+>column=&quot;0&quot;</userinput
+>. Comme l'attribut <userinput
+>column</userinput
+> compte en fonction des caractères, une tabulation représente représente encore un caractère. </para>
+</listitem>
+<listitem>
+<para
+>Vous pouvez changer de contexte sans traiter les caractères. Supposez que vous souhaitiez changer de contexte lorsque vous rencontrez la chaîne <userinput
+>*/</userinput
+>, mais que vous deviez traiter cette chaîne dans le contexte suivant. La règle ci-dessous correspondra et l'attribut <userinput
+>lookAhead</userinput
+> veillera à ce que le système de coloration syntaxique conserve la chaîne concordante pour le prochain contexte. <programlisting
+>&lt;Detect2Chars attribute=&quot;Comment&quot; context=&quot;#pop&quot; char=&quot;*&quot; char1=&quot;/&quot; lookAhead=&quot;true&quot; /&gt;</programlisting>
+</para>
+</listitem>
+<listitem>
+<para
+>Utilisez <userinput
+>DetectSpaces</userinput
+> si vous savez qu'il y a de nombreux blancs.</para>
+</listitem>
+<listitem>
+<para
+>Utilisez <userinput
+>DetectIdentifier</userinput
+> au lieu de l'expression rationnelle <userinput
+>'[a-zA-Z_]\w*'</userinput
+>.</para>
+</listitem>
+<listitem>
+<para
+>Utilisez les styles par défaut chaque fois que vous le pouvez. De cette manière, l'utilisateur trouvera un environnement familier.</para>
+</listitem>
+<listitem>
+<para
+>Regardez dans d'autres fichiers XML pour voir comment d'autres utilisateurs mettent en œuvre les règles complexes.</para>
+</listitem>
+<listitem>
+<para
+>Vous pouvez valider chaque fichier XML à l'aide de la commande <command
+>xmllint --dtdvalid language.dtd mySyntax.xml</command
+>.</para>
+</listitem>
+<listitem>
+<para
+>Si vous répétez une expression rationnelle très souvent, vous pouvez employer des entités (<emphasis
+>ENTITIES</emphasis
+>). Exemple :</para>
+<programlisting
+>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE language SYSTEM "language.dtd"
+[
+        &lt;!ENTITY myref    "[A-Za-z_:][\w.:_-]*"&gt;
+]&gt;
+</programlisting>
+<para
+>Maintenant, vous pouvez faire appel à <emphasis
+>&amp;myref;</emphasis
+> au lieu de l'expression rationnelle.</para>
+</listitem>
+</itemizedlist>
+</sect2>
+
+</sect1>
+
+</appendix>

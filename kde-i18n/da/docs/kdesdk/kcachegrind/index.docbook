@@ -1,0 +1,1022 @@
+<?xml version="1.0" ?>
+<!DOCTYPE book PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" "dtd/kdex.dtd" [
+  <!ENTITY kcachegrind '<application
+>KCachegrind</application
+>'>
+  <!ENTITY cachegrind "<application
+>Cachegrind</application
+>">
+  <!ENTITY calltree "<application
+>Calltree</application
+>">
+  <!ENTITY callgrind "<application
+>Callgrind</application
+>">
+  <!ENTITY valgrind "<application
+>Valgrind</application
+>">
+  <!ENTITY oprofile "<application
+>OProfile</application
+>">
+  <!ENTITY kappname "&kcachegrind;">
+  <!ENTITY package "kdesdk">
+  <!ENTITY % addindex "IGNORE">
+  <!ENTITY % Danish "INCLUDE">
+]>
+
+<!-- ................................................................ -->
+
+<book lang="&language;">
+
+<bookinfo>
+<title
+>&kcachegrind;-håndbogen</title>
+
+<authorgroup>
+<author
+><firstname
+>Josef</firstname
+> <surname
+>Weidendorfer</surname
+> <affiliation
+> <address
+><email
+>Josef.Weidendorfer@gmx.de</email
+></address>
+</affiliation>
+</author>
+
+&rune.laursen.role; 
+
+</authorgroup>
+
+<copyright>
+<year
+>2002-2004</year>
+<holder
+>Josef Weidendorfer</holder>
+</copyright>
+<legalnotice
+>&FDLNotice;</legalnotice>
+
+<date
+>2004-07-27</date>
+<releaseinfo
+>0.4.6</releaseinfo>
+
+<abstract>
+<para
+>&kcachegrind; er et værtøj til visualisering af profileringsdata, skrevet til &kde;-miljøet. </para>
+</abstract>
+
+<keywordset>
+<keyword
+>KDE</keyword>
+<keyword
+>kdesdk</keyword>
+<keyword
+>Cachegrind</keyword>
+<keyword
+>Callgrind</keyword>
+<keyword
+>Valgrind</keyword>
+<keyword
+>Profilering</keyword>
+</keywordset>
+
+</bookinfo>
+
+
+<chapter id="introduction">
+<title
+>Indledning</title>
+
+<para
+>&kappname; er en browser til data produceret af profileringsværktøjer. Dette kapitel forklarer hvad profilering er til for, hvordan det gøres og giver nogle eksempler på nogle profileringsværktøjer der er til rådighed. </para>
+
+<sect1 id="introduction-profiling">
+<title
+>Profilering</title>
+
+<para
+>Når du udvikler et program, er et af de sidste skridt, at gøre det så hurtigt som muligt (men stadigvæk rigtigt). Du vil ikke sløse tiden væk på at optimere funktioner som sjældent bruges. Derfor skal du vide i hvilke dele af programmet den største del af tiden bruges. </para>
+
+<para
+>For sekventiel kode er det ofte tilstrækkeligt at samle statistiske data om programmets karakteristika ved kørselstidspunktet, som f.eks. tiden der forbruges i funktioner og kodelinjer. Dette kaldes profilering. Programmet køres under kontrol af et profileringsværktøj, som giver en opsummering i slutningen af programkørslen. I modsætning til dette skyldes ydelsesproblemer i parallel kode, ofte at en processor venter på data fra en anden. Da denne ventetid er svær at henføre til programkode, er det bedre at generere tidsstemplede begivenhedsspor. KCachegrind kan ikke visualisere denne type af data. </para>
+
+<para
+>Efter en analyse af de producerede profileringsdata, er det nemt at finde problemfyldte områder og flaskehalse i koden. F.eks kan antagelser om antallet af kald kontrolleres og de identificerede kodeområder kan optimeres. Efter ændringen bør optimeringens effekt verificeres på ny, med endnu en profileringskørsel. </para>
+</sect1>
+
+<sect1 id="introduction-methods">
+<title
+>Profileringsmetoder</title>
+
+<para
+>For præcist at kunne måle den forbrugte tid eller begivenheder der sker i et kodeområde, f.eks. en funktion, er det nødvendigt at indsætte yderligere målekode før og efter det givne område. Denne kode læser tiden eller en global begivenhedstæller og beregner forskelle. Derfor skal den oprindelige kode ændres før kørslen. Dette kaldes instrumentering. Instrumentering kan udføres af programmøren selv, oversætteren eller af kørselssystemet. Eftersom interessante kodeområder normalt er indlejrede påvirker selve målingen altid måleresultaterne i sig selv. Derfor skal instrumentering altid udføres selektivt og resultaterne skal fortolkes med forsigtighed. Dette gør naturligvis ydelsesanalyse vha. eksakt måling, til en meget vanskelig proces.</para>
+
+<para
+>Præcis måling er mulig fordi hardwaretællere (inklusive tællere der optælles én gang pr. klokpuls), som er til rådighed i moderne processorer, optælles hver gang der sker en begivenhed. Da vi gerne vil henføre begivenheder til kodeområder, ville vi uden tællerne, være nødt til at håndtere hver eneste begivenhed, ved selv at skulle optælle en tæller for kodeområdet. At gøre dette i software er naturligvis ikke muligt. Under antagelsen af at der er en ens fordeling af begivenheder i kildekoden, når man kun ser på hver n'te begivenhed i stedet for hver eneste, har vi konstrueret en målemetode som er mulig at finindstille mht. omkostninger. Dette kaldes at sample. Tidsbaseret sampling benytter en tæller til jævnligt at se på programtælleren til at lave et histogram af programkoden. Begivenhedsbaseret sampling udnytter hardwaretællere i moderne processorer og bruger en tilstand hvor en interrupt håndtering kaldes ved tællerunderløb, hvorved der genereres et histogram af den tilsvarende fordeling f begivenheder. I håndteringen gen-initialiseres begivenhedstælleren altid til samplingmetodens n. Fordelen ved sampling er at koden ikke skal ændres. Det er dog stadig et kompromis. Den ovenstående antagelse bliver mere korrekt når n er et lille tal, men jo mindre værdi af n, jo højere er omkostningerne til interrupthåndteringen.</para>
+
+<para
+>Endnu en målemetode er at simulere det der sker i computersystemet når noget given kildekode eksekveres, dvs. kørselsdrevet simulering. Denne simulering er naturligvis altid afledt af en mere eller mindre præcis model af maskinen. Til meget detaljerede modeller, der kommer meget tæt på virkeligheden, kan simuleringstiden i praksis være uacceptabelt stor. Fordelen er at vilkårligt kompleks målings- og simuleringskildekode kan indsættes i noget given kildekode uden at påvirke resultaterne. At gøre dette lige før kørslen (kaldes, kørselstidsinstrumentering), ved at bruge den oprindelige kørbare, er meget komfortabelt for brugeren. Metoden er brugbar når man kun simulerer dele af en maskine og med en simpel model. Desuden er resultater produceret af en simpel model meget lettere at tolke. Problemet med rigtig hardware, er at resultaterne ofte viser overlappende effekter fra forskellige dele af maskinen.</para>
+</sect1>
+
+<sect1 id="introduction-tools">
+<title
+>Profileringsværktøjer</title>
+
+<para
+>Mest kendt er GCC's profileringsværktøj <application
+>gprof</application
+>.Du skal kompilere programmet med flaget <option
+>-pg</option
+>, køre programmet for at oprette filen <filename
+>gmon.out</filename
+>, som kan oversættes til læsbar form med <command
+>gprof</command
+>. En ulempe er kompileringsskridtet for at forberede det kørbare program, som også skal linkes statisk. Denne metode kaldes oversættergenereret instrumentering. Den måler kaldbuer der sker blandt funktioner og i henhold til kaldtællinger i forbindelse med tidsbaseret sampling, der giver et histogram over tidsfordelingen i koden. Ved at udnytte begge typer oplysninger, er det muligt, heuristisk at beregne iberegnet tid i funktioner, dvs. tiden forbrugt i en funktion inklusive alle funktioner der kaldes fra denne funktion </para>
+
+<para
+>For præcis måling af begivenheder, eksisterer der biblioteker med funktioner, der er i stand til at udlæse hardwareydelsestællere. De mest kendte her er PerfCtr patchen til Linux og de arkitekturuafhængige biblioteker PAPI og PCL. Der er dog stadig behov for præcise målinger som forklaret i det ovenstående. Enten benytter man bibliotekerne for sig selv eller også benytter man automatiserede instrumenteringssystemer som ADAPTOR (til FORTRAN kildekodedokumentation) eller DynaProf (kodeindsættelse via. DynInst).</para>
+
+<para
+>&oprofile; er et profileringsværktøj til Linux. Det benytter sampling.</para>
+
+<para
+>På mange måder er brug af Cachegrind eller Callgrind, en behagelig måde at udføre profilering på. De er begge simulatorer der benytter kørselstidsinstrumenteringsskelettet &valgrind;. Fordi der ikke er noget behov for at tilgå hardwaretællere (ofte vanskeligt med dagens Linux-distributioner) og fordi de binære filer der skal profileres ikke behøver ændringer, er det et godt alternativ til andre profileringsværktøjer.Ulempen ved hastighedstab ved simulering, kan reduceres ved at udføre simuleringen, kun på de interessante steder i programmet og måske kun i et par iterationer af en løkke. Uden målings- eller simuleringsinstrumentering, ses der ved brug af Valgrind kun et hastighedstab i størrelsesordenen 3-5. Når der kun benyttes kaldgrafen og kaldtælling kan cachesimulatoren slås helt fra. </para>
+
+<para
+>Cachesimulering er det første skridt på vejen til ca. realtider, eftersom kørselstiden på moderne systemer, er meget følsom overfor udnyttelsen af cache, små hurtige buffere, som accelererer gentagen tilgang til samme hukommelsesceller. &cachegrind; udfører cachesimulering ved at opfange hukommelsestilgang. De data der produceres, omfatter antallet af instruktioner, adgange til instruktion/datahukommelse og ikke ramt cache i første og andetniveaus cacher og relaterer det til kildekodelinjer og funktioner i programmet som kører. Ved at kombinere disse ikke ramt-tællinger ved brug af typisk ikke ramt-latens, kan den forbrugte tid estimeres. </para>
+
+<para
+>Callgrind er en udvidelse af &cachegrind; der opbygger kaldgrafen for et program uden videre &ie; hvordan funktionerne kalder hinanden og hvor mange begivenheder der sker mens en funktion køres. Desuden kan de profildata der skal indsamles, blive adskilt af tråde og kaldkæde-sammenhænge. Den kan sørge for profilering af data på instruktionsniveau for at tillade annotering af disassembled kode. </para>
+</sect1>
+
+<sect1 id="introduction-visualization">
+<title
+>Visualisering</title>
+
+<para
+>Profileringsværktøjer producerer typisk store mængder af data. Ønsket om nemt at kunne browse op og ned i kaldgrafen, sammen med hurtig skift i sorteringen af funktioner og visning af forskellige begivenhedstyper, tilskynder til et program med en grafisk brugerflade. </para>
+
+<para
+>&kappname; er visualisering af profildata og opfylder dermed disse ønsker. Selvom det er oprindelig er programmeret med browsing af data fra &cachegrind; og &calltree; in mente, er der konvertere til rådighed der kan vise profildata fra andre værktøjer. I appendikset gives der en beskrivelse af Cachegrind/Callgrind filformatet. </para>
+
+<para
+>Udover en liste af funktioner sorteret i henhold til eksklusiv- eller inklusivomkostningsmetrik og efter valg, grupperet efter kildefil, delt bibliotek eller C++-klasser, &kappname; er der også mulighed for forskellige grafvisninger for en valgt funktion. <itemizedlist>
+<listitem
+><para
+>en kaldgrafvisning, som viser en sektion af kaldgrafen omkring den markerede funktion</para>
+</listitem>
+<listitem
+><para
+>en træ-kort-visning som tillader en at visualisere indlejrede kaldrelationer til hinanden, med inklusivomkostningsmetrik til hurtig visuel detektion af problemfyldte funktioner,</para>
+</listitem>
+<listitem
+><para
+>kildekode og disassemblerannotationsvisninger, der giver mulighed for at se detaljer af omkostninger relativt til kildekodelinjer og assemblerinstruktioner.</para>
+</listitem>
+</itemizedlist>
+
+</para>
+</sect1>
+</chapter>
+
+<chapter id="using-kcachegrind">
+<title
+>Brug af &kcachegrind;</title>
+
+<sect1 id="using-profile">
+<title
+>Opret data til visning</title>
+
+<para
+>Først vil man generere ydelsesdata, ved at måle aspekter af et programs karakteristik ved kørsel, ved at bruge et profileringsværktøj. &kcachegrind; indeholder ikke noget profileringsværktøj, men udmærker sig når det bruges i kombination med &callgrind;. Det kan også, ved at anvende en konverter, bruges til at visualisere data produceret af &oprofile;. Selvom dette ikke er denne manuals opgave at dokumentere profilering med disse værktøjer, får næste sektion dig hurtigt i gang med en kort guide. </para>
+
+<sect2>
+<title
+>&callgrind;</title>
+
+<para
+>&callgrind; er til rådighed fra<ulink url="http://kcachegrind.sf.net"
+> http://kcachegrind.sf.net</ulink
+> Læg mærke til at det tidligere hed &calltree; ,men dette navn var misvisende. </para>
+
+<para
+>Normalt bruges <application
+>callgrind</application
+> som præfiks på kommandolinjen når du starter dit program, således:til præfiks kommando linje til start program<application
+></application
+> tommer<blockquote
+><para
+><command
+></command
+></para
+></blockquote
+> program a fil<filename
+></filename
+> Indlæst&kcachegrind;. </para>
+
+<para
+>Mere avanceret brug ville være at dumpe profildata hver gang en given funktion i din applikation bliver kaldt. F.eks. for <command
+> konqueror</command
+> for at se profildata kun for optegning af en netside, kunne man vælge at dumpe data hver gang man vælger vis/genopfrisk. Dette svarer til at kalde <symbol
+>KonqMainWindow::slotReload</symbol
+>. Brug<blockquote
+><para
+><command
+> callgrind --dump-before=KonqMainWindow::slotReload konqueror</command
+></para
+></blockquote
+>. Dette producerer flere profildatafiler med et ekstra sekventielt nummer i slutningen af filnavnet. En fil uden et sådant nummer (som kun ender på proces-PID) produceres også. Ved at indlæse filen i &kcachegrind;, indlæses alle de andre også og kan ses i partoversigten og partlisten. </para>
+
+</sect2>
+
+<sect2>
+<title
+>&oprofile;</title>
+
+<para
+>&oprofile; er tilgængelig fra <ulink url="http://oprofile.sf.net"
+> http://oprofile.sf.net</ulink
+>. Følg installationsinstruktionerne på siden. Kontrollér dog først om ikke din distribution allerede har en pakke til rådighed (som SuSE). </para>
+
+<para
+>Profilering af hele systemet er kun tilladt for root, fordi alle handlinger på systemet kan observeres. Derfor skal man gøre det følgende som root. Først konfigureres profileringsprocessen, vha. GUI <command
+>oprof_start</command
+> eller med kommandolinjeværktøjet  opcontrol. Standardkonfigurationen bør være timertilstand (se introduktionen). For at begynde målingen køres <command
+>opcontrol -s</command
+>. Dernæst køres applikationen du er interesseret i og bagefter udføres <command
+>opcontrol -d</command
+>. Dette udskriver måleresultaterne til filer under kataloget <filename
+>/var/lib/oprofile/samples</filename
+>. For at kunne visualisere dataene i &kcachegrind; udføres dette i et tomt katalog: <blockquote
+><para
+><command
+> opreport -gdf | op2callgrind </command
+></para
+></blockquote
+>. Dette producerer en masse filer, en for hvert program der kørte på systemet. Filerne kan indlæses i &kcachegrind; hver for sig. </para>
+
+</sect2>
+</sect1>
+
+<sect1 id="using-basics">
+<title
+>Grundlæggende om brugergrænseflade</title>
+
+<para
+>Når &kcachegrind; starter med en profildatafil som argument eller efter at have indlæst en med Fil/Åbn, vil du se en sidebar med funktionslisten til venstre og hovedparten, et område med grafer, til højre. Grafområdet kan indstilles arbitrært, så det kan vise flere grafer på én gang. </para>
+
+<para
+>Ved første opstart er dette område opdelt i en top- og en bunddel, hver med forskellige grafer der kan vælges med faneblade. Brug kontekstmenuen i fanebladene for at flytte grafvisninger og justér opdelerne mellem graferne. For hurtigskift mellem de forskellige graflayouter, bruger du Vis/Layout/Duplikér, ændr layout og skift mellem layouter med Vis/Layout/Næste (eller endnu bedre, de respektive tastaturgenveje.) </para>
+
+<para
+>Vigtigt for visualiseringen er den aktive begivenhedstype. For &callgrind; er den f.eks. ikke-ramt cache eller cyklusestimering. For &oprofile; er den "Timer" i den simpleste form. Du kan ændre begivenhedstypen via en kombinationsboks i værktøjslinjen eller i begivenhedstypevisningen. Når du vælger funktionen <symbol
+>main</symbol
+> og ser på kaldgrafen, vises der et overblik over kørselstidskarakteristikken. Der kan du se kald der sker i dit program. Læg mærke til at kaldgrafen kun viser funktioner med et højt antal begivenheder. Ved at dobbeltklikke på funktionen i grafen, ændres den så der vises kaldte funktioner omkring den markerede. </para>
+
+<para
+>For at udforske grænsefladen yderligere, bør du, udover at se i denne håndbog, også se nærmere på dokumentationen på hjemmesiden <ulink url="http://kcachegrind.sf.net"
+> http://kcachegrind.sf.net</ulink
+>. Derudover har hver kontrol i &kcachegrind; <quote
+>Hvad er dette</quote
+> hjælp. </para>
+</sect1>
+
+</chapter>
+
+
+<chapter id="kcachegrind-concepts">
+<title
+>Grundlæggende begreber</title>
+
+<para
+>Dette kapitel forklarer nogle koncepter i &kcachegrind; og introducerer udtryk brugt i grænsefladen. </para>
+
+<sect1 id="concepts-model">
+<title
+>Datamodel til profildata</title>
+
+<sect2>
+<title
+>Omkostningentiteter</title>
+
+<para
+>Omkostningsoptælling af begivenhedstyper (som ikke-ramt L2) skyldes omkostningsentiteter i forbindelse med kildekode eller datastrukturer i et givet program. Omkostningsentiteter kan være ikke blot simpel kode eller datapositioner, men også positionstupler. F.eks. et kald har en kilde og et mål eller en dataadresse kan have en datatype og en kodeposition hvor allokeringen er foregået. </para>
+
+<para
+>Omkostningsentiteterne KCachegrind kender til er givet i det følgende. Simple positioner:<itemizedlist
+> <listitem
+><para
+> Instruktion. En assemblerinstruktion ved en specificeret adresse. </para
+></listitem
+> <listitem
+><para
+> Kildelinje i en funktioner. Alle instruktioner som oversætteren (via fejlsøgningsinformation) kortlægger til en given linje i kildekoden angivet ved kildefilnavn og linjenummer og som eksekveres i sammenhæng med en eller anden funktion. Sidstnævnte er nødvendig fordi en linje i en inlined funktion kan optræde i forbindelse med flere funktioner. Instruktioner uden kortlægning til en egentlig kildelinje, kortlægges til linje nummer 0 en en fil "???". </para
+></listitem
+> <listitem
+><para
+> Funktion. Alle kildelinjer i en given funktion udgør funktionen selv. En funktion er angivet ved sit navn og placering i et binært objekt, hvis et sådant er til rådighed. Sidstnævnte behøves fordi binære objekter i et enkelt program, kan indeholde funktioner med det samme navn (disse kan tilgås f.eks. med dlopen/dlsym, kørselstidslinkeren bestemmer funktioner i en given søgerækkefølge i de benyttede binære objekter). Hvis et profileringsværktøj ikke kan detektere en funktions symbolnavn, f.eks. pga. manglende fejlsøgningsinformation, bruges typisk enten adressen af den første udførte instruktion eller "???". </para
+></listitem
+> <listitem
+><para
+> Binært objekt. Alle funktioner hvis kode er indenfor et binært objekts rækkevidde. Enten den primære eksekverbare eller et delt bibliotek. </para
+></listitem
+> <listitem
+><para
+> Kildefil. Alle funktioner hvis første instruktioner kan kortlægges til en linje i den givne kildefil. </para
+></listitem
+> <listitem
+><para
+> Klasse. Funktioners symbolnavne er typisk ordnet hierakisk i navnerum. F.eks. C++ navnerum eller klasser i objektorienterede sprog. En klasse kan således indholde funktioner fra klassen eller indlejrede klasser. </para
+></listitem
+> <listitem
+><para
+> Profilpart. I en vis tidssektion af en profilering, med en given tråd-ID, proces-ID og kommandoeksekveret. </para
+></listitem
+></itemizedlist
+> Som det ses på listen, definerer én omkostningsentitet ofte en anden. Derfor er der et medregningshieraki af omkostningsentiteter, som burde være indlysende ud fra beskrivelsen herover. </para>
+
+<para
+>Positionstupler: <itemizedlist
+> <listitem
+><para
+> Kald fra instruktionsadresse til målfunktion. </para
+></listitem
+> <listitem
+><para
+> Kald fra kildelinje til målfunktion. </para
+></listitem
+> <listitem
+><para
+> Kald fra kildefunktion til målfunktion. </para
+></listitem
+> <listitem
+><para
+> (U)betinget spring fra kilde til målinstruktion. </para
+></listitem
+> <listitem
+><para
+> (U)betingent spring fra kilde til mållinje. </para
+></listitem
+> </itemizedlist
+> Spring mellem funktioner er ikke tilladte eftersom det ikke giver nogen mening i en kaldgraf. Derfor skal kontruktioner som undtagelseshåndtering og lange hop, oversættes til at poppe på kaldstakken når behovet opstår. </para>
+
+</sect2>
+
+
+
+<sect2>
+<title
+>Begivenhedstyper</title>
+
+<para
+>Tilfældige begivenhedstyper kan angives i profildataen, ved at navngive dem. Deres omkostning relateret til omkostningsentitet er et 64 bit heltal. </para>
+<para
+>Begivenhedstyper hvis omkostninger er angivet i profildatafilen, kaldes ægte begivenheder. Yderligere kan man angive formler for begivenhedstyper beregnet ud fra reelle begivenheder. De kaldes arvede begivenheder. </para>
+</sect2>
+
+</sect1>
+
+<sect1 id="concepts-state">
+<title
+>Graftilstand</title>
+
+<para
+>Visualiseringtilstande i KCachegrind inkluderer: <itemizedlist
+> <listitem
+><para
+> primær og sekundær begivenhedstype valgt til visning,  </para
+></listitem
+> <listitem
+><para
+> funktionsgrupperingen (brugt i funktionsprofillisten og entitetsfarvelægningen), </para
+></listitem
+> <listitem
+><para
+> profilpartene hvis omkostninger skal inkluderes i visningen, </para
+></listitem
+> <listitem
+><para
+> en aktiv omkostningsentitet (f.eks. en funktion markeret i den dokbare funktionsprofil), </para
+></listitem
+> <listitem
+><para
+> en markeret omkostningsentitet. </para
+></listitem
+></itemizedlist
+> Denne tilstand påvirker visningerne. </para>
+<para
+>Visualiseringer vises altid for en, den aktive, omkostningsentitet. Når en given visualisering ikke er giver mening for en omkostningsentitet, deaktiveres den. F.eks. når man vælger et ELF-objekt i gruppelisten ved at dobbeltklikke, giver kildekommentar til et ELF-objekt ingen mening. </para>
+<para
+>F.eks. for en aktiv funktion, viser kalderlisten alle funktionerne der kaldes fra den aktive. Man kan vælge en af disse funktioner uden at gøre den aktiv. Vises kaldgrafen ved siden af, vælges den samme funktion automatisk. </para>
+
+</sect1>
+
+<sect1 id="concepts-guiparts">
+<title
+>Elementer i brugerfladen</title>
+
+<sect2>
+<title
+>Sidedokker</title>
+<para
+>Sidedokker (dokbare) er sidevinduer som kan placeres på en hvilken som helst kant i et KCachegrindvindue. De indeholder altid en liste af omkostningsentiteter, sorteret på en eller anden måde. <itemizedlist>
+<listitem
+><para
+>Funktionsprofil. Funktionsprofilen er en liste af funktioner der viser inklusiv- og eksklusivomkostning, kaldtælling, navn og placering af funktioner. </para
+></listitem>
+<listitem
+><para
+>Partoverblik </para
+></listitem>
+<listitem
+><para
+>Kaldstak </para
+></listitem>
+</itemizedlist>
+</para>
+</sect2>
+
+<sect2>
+<title
+>Grafområde</title>
+<para
+>Visualiseringsområdet, normalt højre side i KCachegrinds hovedvindue, udgøres af en (standard) eller flere fanebladsvisninger, placeret enten horisontalt eller vertikalt. Hver fanebladsvisning har forskellige visualiseringsvisninger af kun en omkostningsentitet ad gangen. Navnet på denne entitet vises øverst i fanebladsvisningen. Er der flere fanebladsvisninger, er det kun den ene som er aktiv. Entitetsnavnet i den aktive fanebladsvisning, vises med fed skrift og afgør den aktive omkostningsentitet i KCachegrindvinduet. </para>
+</sect2>
+
+<sect2>
+<title
+>Områder i en fanebladsvisning</title>
+<para
+>Hver fanebladsvisning kan indeholde op til fire visningsområder, top, højre, venstre og bund. Hvert område kan indeholde flere stakkede visualiseringsvisninger. Den synlige del af området vælges vha. en fanebladsbjælke. Fanebladsbjælker i toppen og i det højre område er øverst og fanebladsbjælker til venstre og i bunden er nederst. Du kan angive hvilken slags visualisering der skal være i hvilket område, ved at bruge fanebladendes kontekstmenuer. </para>
+</sect2>
+
+<sect2>
+<title
+>Synkroniseret graf via markeret entitet i en fanebladsvisning</title>
+<para
+>Udover en aktiv entitet, har hvert faneblad en markeret entitet. Da de fleste visualiseringstyper viser flere entiteter med den aktive centreret, kan du ændre den markerede ved at navigere inde i en visualisering (ved at klikke med musen eller ved at bruge tastaturet). Typisk vises markerede entiteter i en fremhævet tilstand. Ved at ændre den markerede entitet i en af visualiseringerne i en fanebladsvisning, fremhæver alle andre visualiseringer i fanebladsvisningen den nye markerede entitet. </para>
+</sect2>
+
+<sect2>
+<title
+>Synkronisering mellem fanebladsvisninger</title>
+<para
+>Hvis der er flere fanebladsvisninger, fører en ændring i markeringen i en fanebladsvisning til en aktiveringsændring i den næste (til højre/til bund) fanebladsvisning. Denne type sammenkædning giver mulighed for hurtig søgning i kaldgrafer. </para>
+</sect2>
+
+<sect2>
+<title
+>Udseende</title>
+<para
+>Layoutet i alle fanebladsvisninger i et vindue, kan gemmes (se menuindgangen Vis/Layout), Efter at have duplikeret det aktuelle layout (Ctrl+Plus eller menu) og ændret størrelser eller flyttet en visualiseringsvisning til et andet område af en fanebladsvisning, kan du hurtigt skifte mellem det gamle og det nye layout via Ctrl+Venstre/Højre. Layoutet gemmes mellem KCachegrindsessioner med den samme profileringskommando. Du kan gøre det aktuelle layout til standarden for nye sessioner i KCachegrind, eller vende tilbage til standardopsætningen. </para>
+</sect2>
+</sect1>
+
+<sect1 id="concepts-sidedocks">
+<title
+>Sidedokker</title>
+
+<sect2>
+<title
+>Flad profil</title>
+<para
+>Den flade profil indeholder en gruppeliste og en funktionsliste. Gruppelisten indeholder alle grupper hvori der er omkostninger, afhængigt af den valgte gruppetype. Gruppelisten er skjult når gruppering er deaktiveret. </para>
+<para
+>Funktionslisten indeholder den valgte gruppes funktioner (eller alle funktioner, hvis gruppering er deaktiveret), ordnet efter en søjle, f.eks. inklusiv- eller egenomkostninger forbrugt deri. Der er et maksimalt antal funktioner der vises i liste, som kan indstilles i Opsætning/Indstil KCachegrind. </para>
+</sect2>
+
+<sect2>
+<title
+>Partoverblik</title>
+<para
+>I en profileringskørsel kan der produceres flere profildatafiler, der kan indlæses sammen i KCachegrind. Den dokbare partoversigt viser disse, horisontalt ordnet i henhold til oprettelsestidspunktet. Rektanglernes størrelser er proportionale med omkostningerne der forbruges deri. Du kan vælge en part eller flere for at indskrænke omkostningerne vist i andre KCachegrindvisninger til kun disse part. </para>
+<para
+>Part er yderligere underinddelt. Der er partitionering og en inklusivomkostninger i opdelt tilstand: <itemizedlist>
+<listitem
+><para
+>Partitionering: Du ser partitioneringen i grupper for en profildatapart, i henhold til den valgte gruppe. F.eks. hvis der vælges ELF-objektgrupper, ser du farvede rektangler for hvert brugt ELF-objekt (delt bibliotek eller eksekverbar) med en størrelse proportional med omkostningerne forbrugt deri. </para
+></listitem>
+<listitem
+><para
+>Opdelt inklusivomkostning: Der vises et rektangel der afspejler inklusivomkostningen i den aktive funktion i en part. Dette er igen opdelt for at vise inklusivomkostninger for kalderen. </para
+></listitem>
+</itemizedlist>
+</para>
+</sect2>
+
+<sect2>
+<title
+>Kaldstak</title>
+<para
+>Dette er en fuldstændig fiktiv 'mest sandsynlig' kaldstak. Den er opbygget således at der startes ved den aktive funktion og kaldere og kaldere/kaldte med størst omkostning fra toppen og til bunden. </para>
+<para
+>'Omkostning'- og 'kald'-søjlerne viser omkostningerne forbrugt i alle kald fra funktionen i linjen ovenover. </para>
+</sect2>
+</sect1>
+
+<sect1 id="concepts-visualizations">
+<title
+>Grafer</title>
+
+<sect2>
+<title
+>Begivenhedstyper</title>
+<para
+>Denne liste viser alle omkostningstyper der er til rådighed og den tilsvarende egen- og inklusivomkostning af den aktive funktion for netop denne begivenhedstype. </para>
+<para
+>Ved at vælge en begivenhedstype i listen, kan du ændre omkostningstypen der vises generelt i KCachegrind, til at være den valgte. </para>
+</sect2>
+
+<sect2>
+<title
+>Kaldlister</title>
+<para
+>Disse lister viser kald til/fra den aktive funktion. Med 'alle' kaldere/kaldte funktioner, menes hvilke der kan nås i kalder/kaldt-retningen, selv når der er andre funktioner imellem. </para>
+<para
+>Kaldlistevisning inkluderer: <itemizedlist>
+<listitem
+><para
+>Direkte kaldere </para
+></listitem>
+<listitem
+><para
+>Direkte kaldede </para
+></listitem>
+<listitem
+><para
+>Alle kaldere </para
+></listitem>
+<listitem
+><para
+>Alle kaldede </para
+></listitem>
+</itemizedlist>
+</para>
+</sect2>
+
+<sect2>
+<title
+>Kort</title>
+<para
+>En trævisning af den primære begivenhedstype, op eller ned i kaldhierakiet. Hvert farvet rektangel repræsenterer en funktion. Dets størrelse forsøger at være proportionelt med omkostningerne forbrugt deri , mens den aktive funktion kører (der er dog begrænsninger ved optegningen). </para>
+<para
+>For kaldervisningen, viser grafen hierakiet af alle kaldere af den aktuelle aktiverede funktion. For for kaldtvisningen vises hierakiet af alle kaldte fra den aktuelle aktiverede funktion. </para>
+<para
+>Indstillinger for udseende findes i kontekstmenuen. For eksakte størrelsesproportioner vælges 'Skjul ukorrekte kanter'. Da denne tilstand kan være meget ressourcekrævende, vil du sikkert begrænse det maksimale antal optegnede niveauer først. 'Bedst' fastsætter opdelingsretningen for indre funktioner ud fra de ydres synsvinkel. 'Altid bedst' beslutter sig udfra tilbageværende plads til hver funktion på samme niveau. 'Ignorér proportioner' bruger plads til at optegne funktionsnavnet før indre funktioner optegnes. Bid mærke i at størrelsesforholdene kan være særdeles fejlagtige. </para>
+<para
+>Tastaturnvigering er mulig med venstre/højre piletaster, til at vandre gennem objekter på samme niveau og op/ned piletasterne for at vandre op og ned i niveau. 'Retur' aktiverer det aktuelle objekt. </para>
+</sect2>
+
+<sect2>
+<title
+>Kaldgraf</title>
+<para
+>Denne visning viser kldgrafen omkring den aktive funktion. De viste omkostninger er omkostninger kun der forbruges mens den aktive funktion stadig kører. Dvs. omkostningerne der vises for main(), hvis den kan vises, skulle være det samme som omkostningerne for den aktive funktion, eftersom den er en del af inklusivomkostning forbrugt af main(), mens den aktive funktion kørte. </para>
+<para
+>For cykler, indikerer blå pile at dette er et kunstigt kald, tilføjet for at kunne optegne korrekt, som aldrig har foregået. </para>
+<para
+>Er grafen større en kontrolarealet, vises en oversigtsrude i fugleperspektiv i den ene kant. Der er lignende visualiseringsindstillinger til som for kaldtrævisningen. Den valgte funktion fremhæves. </para>
+</sect2>
+
+<sect2>
+<title
+>Kommentarer</title>
+<para
+>Listen over assemblykode med kommentarer, viser maskinkodeinstruktionerne for den aktive funktion, sammen med egenomkostninger forbrugt når en kodeinstruktion udføres. Hvis der skete et kald, indsættes linjer med detaljer om kaldet i kildekoden: inklusivomkostning forbrugt i kaldet, antallet af kald og kaldmålet. </para>
+<para
+>Vælg sådan en kaldinformationslinje for at aktivere kalddestinationen. </para>
+</sect2>
+</sect1>
+
+</chapter>
+
+
+<chapter id="commands">
+<title
+>Kommandoreference</title>
+
+<sect1 id="kcachegrind-mainwindow">
+<title
+>&kcachegrind;s hovedvindue</title>
+<para
+></para>
+
+<sect2>
+<title
+><guimenu
+>Fil</guimenu
+>-menuen</title>
+<para>
+<variablelist>
+
+<varlistentry>
+<term
+><menuchoice
+><shortcut
+> <keycombo
+>&Ctrl;<keycap
+>N</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Fil</guimenu
+> <guimenuitem
+>Ny</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+>Åbner et tomt vindue i topniveau, hvori du kan indlæse profildata</action
+>  Dette er ikke rigtig nødvendigt eftersom Fil/Åbn giver dig et nyt vindue i topniveau, når det aktuelle allerede viser nogle data. </para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><menuchoice
+><shortcut
+> <keycombo
+>&Ctrl;<keycap
+>B</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Fil</guimenu
+> <guimenuitem
+>Åbn</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+> Åbner Fil/Åbn-dialogen så der kan vælges data der skal indlæses.</action
+> Vises der allerede data i det aktuelle topniveauvindue, åbnes der et nyt vinduen. Hvis du vil åbne yderligere profildata i det aktuelle vindue skal du vælge Fil/Tilføj. </para>
+<para
+>Navnet på profildatafilen ender normalt på ..-, hvor og er valgfri og bruges til flere profildatafiler der hører til samme programkørsel. Ved at indlæse en fil der ender på ., indlæses også eksisterende datafiler, med andre filnavne, der hører til denne kørsel.  </para>
+<para
+>Eksempel: Hvis profildatafilerne cachegrind.out.123 og cachegrind.out.123.1 eksisterer, bliver den anden indlæst automatisk når man indlæser den første. </para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><menuchoice
+><guimenu
+>Fil</guimenu
+> <guimenuitem
+>Tilføj</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+> Tilføjer profildatafiler til det aktuelle vindue. </action
+> På denne måde kan du tvinge flere datafiler til at indlæses i samme topniveauvindue, selvom de ikke er fra samme kørsel, som ellers angivet af profildatafilernes navngivningskonvention. Brug det f.eks. til side om side-sammenligning. </para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><menuchoice
+><guimenu
+>Fil</guimenu
+> <guimenuitem
+>Genopfrisk</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+> Genindlæs profildata. </action
+> Dette er mest interessant efter endnu en profildatafil blev genereret for en i forvejen indlæst programkørsel. </para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><menuchoice
+><shortcut
+> <keycombo
+>&Ctrl;<keycap
+>Q</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Fil</guimenu
+> <guimenuitem
+>Afslut</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+>Afslutter</action
+> &kappname;</para
+></listitem>
+</varlistentry>
+</variablelist>
+</para>
+
+</sect2>
+
+<sect2>
+<title
+><guimenu
+>Vis</guimenu
+>-menuen</title>
+<para>
+<variablelist>
+
+<varlistentry>
+<term
+><menuchoice
+><guimenu
+> Vis</guimenu
+> <guimenuitem
+>Primær begivenhedstype</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+>(Gøremål)</action
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><menuchoice
+><guimenu
+>Vis</guimenu
+> <guimenuitem
+>Sekundær begivenhedstype</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+>(Gøremål)</action
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><menuchoice
+><guimenu
+>Vis</guimenu
+> <guimenuitem
+>Gruppering</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+>(Gøremål)</action
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><menuchoice
+><guimenu
+>Vis</guimenu
+> <guimenuitem
+>Udseende</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+>(Gøremål)</action
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><menuchoice
+><guimenu
+>Vis</guimenu
+> <guimenuitem
+>Opdelt</guimenuitem
+> </menuchoice
+></term>
+<listitem
+><para
+><action
+>(Gøremål)</action
+></para
+></listitem>
+</varlistentry>
+
+</variablelist>
+</para>
+
+</sect2>
+
+
+</sect1>
+</chapter>
+
+<chapter id="faq">
+<title
+>Spørgsmål og svar</title>
+&reporting.bugs; &updating.documentation; <qandaset id="faqlist">
+
+
+<qandaentry>
+<question>
+<para
+>Hvad kan &kcachegrind; bruges til? Det aner jeg nemlig ikke. </para>
+</question>
+<answer>
+<para
+>&kcachegrind; er til hjælp på et sent skridt i programudvikling som kaldes profilering. Hvis du ikke udvikler programmer, har du ikke noget at bruge &kcachegrind; til. </para>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Hvad er forskellen på 'inklusiv' og 'egen' ? </para>
+</question>
+<answer>
+<para
+>Disse er omkostningsegenskaber for funktioner angående en eller anden begivenhedstype.Da funktioner kan kalde hinanden, giver det ingen mening at skelne mellem omkostningerne for funktionen selv ('egenomkostningen') og omkostninger der inkluderer alle kaldte funktioner ('inklusivomkostning'). 'Egen' refereres somme tider som 'eksklusivomkostning'. </para>
+<para
+>Så f.eks. for main(), vil du altid have en inklusivomkostning på næsten 100%, hvorimod egenomkostningen er ubetydelig lille når arbejdet udføres i en anden funktion. </para>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Min værktøjs-og menulinje i KCachegrind ser så spartansk ud. Er det normalt?</para>
+</question>
+<answer>
+<para
+>KCachegrind er tilsyneladende ikke korrekt installeret på dit system. Det anbefales at kompilere det med installationspræfikset sat til dit KDE-basiskatalog: <command
+>configure --prefix=/opt/kde3; make install</command
+> Hvis du vælger et andet katalog som $HOME/kde, skal du indstille miljøvariablen KDEDIR til dette katalog før du kører KCachegrind. </para>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Når jeg dobbeltklikker på en funktion et stykke nede i visningen af kaldgrafen, viser det for funktionen main(), den samme omkostning som den valgte funktion. Skal den ikke konstant være 100%? </para>
+</question>
+<answer>
+<para
+>Du har aktiveret en funktioner under main() med en omkostning mindre end main(). For enhver funktion, vises kun en del af den totalt omkostning for funktionen, nemlig den forbruges når den aktive funktion køres. Dvs. omkostningerne der vises for enhver funktion kan aldrig være højere end omkostningen af den aktive funktion. </para>
+</answer>
+</qandaentry>
+
+
+</qandaset>
+</chapter>
+
+<chapter id="glossary">
+<title
+>Ordliste</title>
+
+<para
+>Det følgende er en blandet liste af udtryk. <itemizedlist>
+<listitem
+><para
+>Profilering: Den proces hvormed der indsamles statistisk information om et programs karakteristik ved kørselstid. </para
+></listitem>
+<listitem
+><para
+>Spor: Processen i hvilken man overvåger en programkørsel og gemmer de begivenheder der sker, sorteret ud fra et tidsstempel i en uddatafil, sporet. </para
+></listitem>
+<listitem
+><para
+>Spor: En sekvens af tidsstemplede begivenheder der sker under sporingen af en programkørsel. Dens størrelse er normalt lineær i forhold tilprogramkørslens udførselstid. </para
+></listitem>
+<listitem
+><para
+>Profildatafil: En fil der indeholder data målt i et profileringseksperiment (eller en del af dette) eller produceret af efterbehandling af et spor. Størrelsen er typisk lineær i fht. programmets kodestørrelse. </para
+></listitem>
+<listitem
+><para
+>Profileringsdata-part (forkert anvendt, også: Sporpart): Data fra en profildatafil </para
+></listitem>
+<listitem
+><para
+>Profileringseksperiment: En programkørsel overvåget af et profileringsværktøj, der laver muligvis flere profildatafiler fra part og/eller tråde i kørslen. </para
+></listitem>
+<listitem
+><para
+>Profilprojekt: En indstilling til profileringseksperimenter benyttet til ét program der skal profileres, måske i flere versioner. Sammenligninger af profildata giver typisk kun mening mellem profildata produceret i eksperimenter af et profilprojekt. </para
+></listitem>
+<listitem
+><para
+>Omkostningsentitet: Et abstrakt begreb der relaterer til kildekode til hvilken begivenhedstælling kan henføres. Dimensioner for omkostningsentiteter er kodeplacering (f.eks. kildelinje eller funktion), dataplacering (f.eks. tilgået datatype, dataobjekt), placering af den eksekverbare (f.eks. tråde, processer) og tupler eller tripler af de førnævnte placeringer (f.eks. kald, objekttilgangen fra udtryk, data fjernet fra cache). </para
+></listitem>
+<listitem
+><para
+>Begivenhedstype: En begivenhed til hvilken en omkostning kan tilskrives en omkostningsentitet. Der findes flere reelle begivenhedstyper og arvede begivenhedstyper. </para
+></listitem>
+<listitem
+><para
+>Reel begivenhedstype: En begivenhedstype der kan måles med et værktøj. Det forudsætter eksistensen af en sensor til den givne begivenhedstype. </para
+></listitem>
+<listitem
+><para
+>Arvet begivenhedstype: En virtuel begivenhedstype der kun er synlig i visualiseringen som er defineret ved en formel der beregnes ud fra reelle begivenhedstyper. </para
+></listitem>
+<listitem
+><para
+>Begivenhedsomkostninger: Summen af begivenheder af en eller anden begivenhedstype der sker, mens eksekveringen relateres til en omkostningsentitet. Omkostningen tillægges entiteten </para
+></listitem>
+</itemizedlist>
+</para>
+</chapter>
+
+<chapter id="credits">
+
+
+<title
+>Medvirkende og licens</title>
+
+<para
+>&kappname; </para>
+<para
+>Tak til Julian Seward for hans udmærkede værktøj &valgrind;, og Nicholas Nethercote for tilføjelsen &cachegrind;. Uden disse programmer, ville<application
+>KCachegrind</application
+> ikke eksistere. Mange af ideerne til denne &GUI; kommer også fra dem. </para>
+<para
+>Og tak for alle fejlrapporter og forslag fra forskellige brugere. </para>
+&underFDL; </chapter>
+
+<appendix id="installation">
+<title
+>Installation</title>
+
+<sect1 id="getting-kcachegrind">
+<title
+>Hvordan får jeg fat i &kcachegrind;</title>
+
+<para
+>&kcachegrind; er en del af KDE's kdesdk-pakke. For ikke-supporterede deludgivelser, &callgrind; og yderligere dokumentation, se hjemmesiden på <ulink url="http://kcachegrind.sf.net"
+> http://kcachegrind.sf.net</ulink
+>. Kig der for at finde yderligere installations- og kompileringsinstruktioner. </para>
+</sect1>
+
+<sect1 id="requirements">
+<title
+>Krav</title>
+
+<para
+>For at bruge &kcachegrind; med succes, har du brug for &kde; 3.x. For at oprette profildata, anbefales &cachegrind; eller ;&callgrind;. </para>
+</sect1>
+
+<sect1 id="compilation">
+<title
+>Kompilering og installation</title>
+&install.compile.documentation; </sect1>
+
+<sect1 id="configuration">
+<title
+>Indstilling</title>
+
+<para
+>Alle indstillingsmuligheder findes enten i indstillingsdialogen eller i de sammenhængsafhængige popopmenuer i graferne. </para>
+
+</sect1>
+
+</appendix>
+
+&documentation.index;
+</book>
+<!--
+Local Variables:
+mode: sgml
+sgml-minimize-attributes:nil
+sgml-general-insert-case:lower
+sgml-indent-step:0
+sgml-indent-data:nil
+End:
+-->
+
+
+
+
+
+
+
+
+
+
+
+
+

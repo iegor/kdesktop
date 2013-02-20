@@ -1,0 +1,140 @@
+<chapter id="security">
+<title
+>&kppp; e la sicurezza</title>
+
+<para
+>Questa sezione si rivolge principalmente a superutenti (<systemitem
+>root</systemitem
+>) con alte richieste di sicurezza, o semplicemente a persone interessate nella parte tecnica. Non è necessario leggere questa sezione se usi &Linux; a casa, sebbene potresti in ogni caso imparare qualcosa.</para>
+
+<sect1 id="security-restricting-access">
+<title
+>Restringere l'accesso a &kppp;</title>
+
+<para
+>Un amministratore di sistema potrebbe voler restringere l'accesso a chi dovrebbe poter usare &kppp;. Ci sono due modi per far ciò.</para>
+
+<sect2 id="security-group-permissions">
+<title
+>Restringere l'accesso con i permessi del gruppo</title>
+
+<para
+>Crea un nuovo gruppo (puoi chiamarlo &eg; <systemitem
+>dialout</systemitem
+> o qualcosa di simile), e inserisci nel gruppo ogni utente che dovrebbe poter usare &kppp;. Digita quindi al prompt:</para>
+
+<screen
+><prompt
+>#</prompt
+> <userinput
+><command
+>chown</command
+> <option
+>root.dialout</option
+> <filename
+>/opt/kde/bin/kppp</filename
+></userinput>
+<prompt
+>#</prompt
+> <userinput
+><command
+>chmod</command
+> <option
+>4750</option
+> <filename
+>/opt/kde/bin/kppp</filename
+></userinput
+>
+</screen>
+
+<para
+>Ciò assume che &kde; è stato installato in <filename class="directory"
+> /opt/kde/</filename
+> e che il nuovo gruppo è chiamato <systemitem
+>dialout</systemitem
+>.</para>
+
+</sect2>
+
+<sect2 id="security-kppps-way">
+<title
+>Restringere l'accesso nel modo di &kppp;</title>
+
+<para
+>Prima di tutto, &kppp; controlla se esiste un file chiamato <filename
+>/etc/kppp.allow</filename
+>. Se questo file esiste, solo gli utenti nominati in questo file possono effettuare connessioni. Questo file deve essere leggibile da tutti (ma ovviamente <emphasis
+>NON</emphasis
+> scrivibile). Solo i nomi di utenti sono riconosciuti, così non puoi usare <acronym
+>UID</acronym
+> in questo file. Qui vi è un breve esempio:</para>
+
+<screen
+># /etc/kppp.allow
+# le linee di commento come questa sono ignorate
+# così come le linee vuote
+
+federico
+carlo
+daisy
+</screen>
+
+<para
+>Nell'esempio sopra, solo gli utenti <systemitem
+>federico</systemitem
+>, <systemitem
+>carlo</systemitem
+> e <systemitem
+>daisy</systemitem
+> possono effettuare connessioni, così come gli utenti con un <acronym
+>UID</acronym
+> uguale a 0 (così non devi elencare <quote
+>root</quote
+> esplicitamente nel file).</para>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="security-why-suid">
+<title
+>&kppp; ha il bit <acronym
+>SUID</acronym
+> attivo? E la sicurezza?</title>
+
+<para
+>È virtualmente impossibile scrivere un programma per la connessione senza il bit <acronym
+>SUID</acronym
+> che sia allo stesso tempo sicuro e facile da usare da parte di utenti inesperti. &kppp; cerca di risolvere i problemi di sicurezza con la seguente strategia.</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Subito dopo l'avvio del programma, &kppp; effettua un fork.</para>
+</listitem>
+<listitem>
+<para
+>Il processo master, che gestisce tutte le operazioni dell'interfaccia grafica (come l'interazione con l'utente), perde lo stato <acronym
+>SUID</acronym
+> dopo il fork, e viene così eseguito con i normali privilegi dell'utente.</para>
+</listitem>
+<listitem>
+<para
+>Il processo slave mantiene i suoi privilegi, ed è responsabile di tutte le azioni che richiedono i privilegi di <systemitem
+>root</systemitem
+>. Per mantenere sicura questa parte, non sono usate chiamate a librerie &kde; o &Qt;, ma solo chiamate di libreria semplici. Il codice sorgente di questo processo è corto (circa 500 linee) e ben documentato, così è semplice da controllare in cerca di falle di sicurezza.</para>
+</listitem>
+<listitem>
+<para
+>I processi master e slave comunicano l'un l'altro con le procedure <acronym
+>IPC</acronym
+> (Inter-Process Communication, o comunicazione interprocesso N.d.T.) standard di &UNIX;.</para>
+</listitem>
+</itemizedlist>
+
+<para
+>Particolari ringraziamenti ad Harri Porten per aver scritto in modo eccellente questa parte di codice. Si pensava che fosse impossibile, ma è riuscito a scriverla in una settimana.</para>
+
+</sect1>
+
+</chapter>

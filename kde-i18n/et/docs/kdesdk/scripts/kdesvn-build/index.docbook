@@ -1,0 +1,1725 @@
+<?xml version="1.0" ?>
+<!DOCTYPE book PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" "dtd/kdex.dtd" [
+  <!ENTITY kappname "kdesvn-build">
+  <!ENTITY package "kdesdk">
+  <!ENTITY % addindex "IGNORE">
+  <!ENTITY % Estonian  "INCLUDE"
+> <!-- Change language only here -->
+  <!ENTITY svn "<application
+>Subversion</application
+>">
+  <!ENTITY kdesvn-build "<application
+>kdesvn-build</application
+>">
+]>
+
+<book lang="&language;">
+
+<bookinfo>
+<title
+>Skripti &kdesvn-build; käsiraamat</title>
+
+<authorgroup id="authors">
+<author
+><firstname
+>Michael</firstname
+><surname
+>Pyne</surname
+> <affiliation
+><address
+><email
+>michael.pyne@kdemail.net</email
+></address
+></affiliation>
+</author
+> 
+<author
+><firstname
+>Carlos</firstname
+><surname
+>Woelz</surname
+> <affiliation
+><address
+><email
+>carloswoelz@imap-mail.com</email
+></address
+></affiliation>
+</author
+> 
+
+
+<othercredit role="translator"
+><firstname
+>Marek</firstname
+><surname
+>Laane</surname
+><affiliation
+><address
+><email
+>bald@starman.ee</email
+></address
+></affiliation
+><contrib
+>Tõlge eesti keelde</contrib
+></othercredit
+> 
+
+</authorgroup>
+
+<copyright>
+<year
+>2005</year>
+<holder
+>Michael Pyne</holder>
+</copyright>
+
+<copyright>
+<year
+>2005</year>
+<holder
+>Carlos Woelz</holder>
+</copyright>
+
+
+<legalnotice
+>&FDLNotice;</legalnotice>
+
+<date
+>2005-06-18</date>
+<releaseinfo
+>0.98</releaseinfo>
+
+<abstract>
+<para
+>&kdesvn-build; on Perli skript, mis ehitab ja paigaldab &kde; otse &kde; &svn;i hoidlast leiduvast lähtetekstist.</para>
+</abstract>
+
+<keywordset>
+<keyword
+>KDE</keyword>
+<keyword
+>kdesdk</keyword>
+<keyword
+>SVN</keyword>
+<keyword
+>Subversion</keyword>
+<keyword
+>KDE arendus</keyword>
+</keywordset>
+
+</bookinfo>
+
+
+<chapter id="introduction">
+<title
+>Sissejuhatus</title>
+
+<para
+>&kdesvn-build; on Perli skript, mis aitab kasutajatel paigaldada <ulink url="http://www.kde.org/"
+>&kde;</ulink
+> otse <ulink url="http://subversion.tigris.org/"
+>&svn;i</ulink
+> hoidlast. Sellega sarnaneb skript kde-build, mille leiab &kde; moodulist kdesdk. </para>
+
+<para
+>Alljärgnevalt tuleb juttu &kdesvn-build;'i konfiguratsioonifaili süntaksist ja võtmetest, käsureavõtmetest, omadustest ja sammudest, mida on vaja ette võtta &kde; ehitamiseks lähtekoodist, kaasa arvatud sammudest, mida tuleb sooritada muude tööriistadega, see tähendab, sammudest, mida skript &kdesvn-build; ei tee ise automaatselt. </para>
+
+</chapter>
+
+<chapter id="getting-started">
+<title
+>Alustamine</title>
+
+<para
+>Käesolevas peatükis selgitame, kuidas kasutada &kdesvn-build;'i moodulite väljavõtmiseks &kde; hoidlast ja nende ehitamiseks. Me selgitame ka &kde; &svn;i põhimõttelist struktuuri ning samme, mida on vaja ette võtta enne skripti käivitamist. </para>
+
+<para
+>Kõiki peatükis vaadeldavaid teemasid käsitleb veelgi põhjalikumalt dokument <ulink url="http://quality.kde.org/develop/cvsguide/buildstep.php"
+> Building &kde; from Source Step by Step Guide</ulink
+>, mille leiab <ulink url="http://quality.kde.org"
+>&kde; kvaliteedimeeskonna veebileheküljelt</ulink
+>. Kui kompileerid KDE-d esimest korda, tasuks seda lugeda kas või põgusalt. Sealt leiab põhjaliku info pakendamistööriistade ja nõuete kohta, levinud kompileerimisprobleemide ja -strateegiate kirjelduse ning juhiseid oma uue &kde; paigalduse kasutamiseks. </para>
+
+<sect1 id="before-building">
+<title
+>Süsteemi ettevalmistamine &kde; ehitamiseks</title>
+
+<para
+>Soovitatav on &kde; alla laadida ja ehitada kasutajakontot tarvitades. Kui sul on juba &kde; tarkvarapaketid paigaldatud, on kõige mõistlikum luua uus spetsiaalne kasutaja oma uue &kde; ehitamiseks ja kasutamiseks. &kde; kasutamine spetsiaalse kasutajakontoga tagab selle, et sa ei riku oma põhisüsteemi ja saad alati kuhugi tagasi pöörduda, kui midagi peaks viltu minema. </para>
+
+<para
+>Hiljem võid muidugi soovi korral paigaldada ka administraatori õigustes. Käesolevas käsiraamatus me seda siiski ei puuduta. Kui paigaldad süsteemselt, siis arvatavasti tead juba nagunii, mida ja kuidas teha. </para>
+
+<para
+>Enne skripti &kdesvn-build; (või muude ehitamisstrateegiate) kasutamist tuleb paigaldada arendustööriistad ja teegid, mida &kde; vajab. Vajalikud on Qt teek versiooniga 3.3.0 või uuem, Automake 1.8, Autoconf 2.5X (parem oleks 
+>=2.57, sest väiksemate versioonidega on teada mõned vead), Subversioni (svn) klient, C++ toetusega gcc kompilaator, libxml2, openssl, libbz2 ja veel terve rida asju (täieliku nimekirja toob ära sait <ulink url="http://www.kde.org/info/requirements/3.4.php"
+>KDE Compilation Requirements</ulink
+>). Üldiselt peaks neid juba eelnevalt kompileerituna tarkvarapakettidena jagama sinu distributsiooni looja. </para>
+
+<para
+>Osa neist tarkvarapakettidest on jagatud teekide, programmide või utiliitide ja arenduspakettideks. Sul läheb vaja vähemalt programmi- või teegi- ja arenduspaketti. Kahtluse korral paigalda kõik. Vajalikud teegid sõltuvad moodulitest, mida kavatsed ehitada, sest igal moodulil on oma nõuded. Täpsemalt kõneleb paigaldamiseks vajalikest tööriistadest ja võtetest ning nõutud tarkvarast dokument <ulink url="http://quality.kde.org/develop/cvsguide/buildstep.php#step1"
+> Building &kde; from Source Step by Step Guide</ulink
+>. </para>
+
+<para
+>Tõenäoliselt on skript &kdesvn-build; juba sinu süsteemi paigaldatud, kui sa käesolevat käsiraamatut loed. &kdesvn-build; nõuab, et looksid konfiguratsioonifaili nimega <filename
+>.kdesvn-buildrc</filename
+>. See peab asuma kodukataloogis (~/) ja sisaldama kõiki konfiguratsiooniandmeid, mida skript tööks vajab, näiteks konfiguratsioonivõtmeid, kompileerimisvõtmeid, lähtetekstide asukohti, paigalduse sihtkohta (prefiksit), ehitatavate moodulite nimekirja &etc; Vaikimisi konfiguratsiooniandmeid pakub fail <filename
+>kdesvn-buildrc-sample</filename
+>. Rohkem infot konfiguratsioonifaili süntaksi kohta annavad <xref linkend="configure-data"/> ja <xref linkend="kdesvn-buildrc"/>. </para>
+
+<para
+>Värskeima versiooni hankimiseks uuri veebisaidil <ulink url="http://websvn.kde.org/trunk/KDE"
+>websvn.kde.org</ulink
+> kataloogi kdesdk/scripts. Seal näed kõiki faile, mida pakub &kde; &svn;i hoidla alljaotus kdesdk/scripts. Klõpsa &kdesvn-build;'i lingil ja tõmba skripti värskeim versioon. Võta samasugune operatsioon ette failiga <filename
+>kdesvn-buildrc-sample</filename
+>. Muuda skript käivitatavaks ja kontrolli, et see asuks sinu otsinguteel (PATH). </para>
+
+</sect1>
+
+<sect1 id="configure-data">
+<title
+>Konfiguratsiooniandmete määramine</title>
+
+<para
+>Skripti kasutamiseks peab sinu kodukataloogis asuma fail nimega <filename
+>.kdesvn-buildrc</filename
+>, mis määrab üldised võtmed ning moodulid, mida soovid alla laadida ja ehitada. </para>
+
+<para
+>Kasuta globaalsete võtmete ja ehitatavate moodulite määramisel eeskujuna faili <filename
+>kdesvn-buildrc-sample</filename
+>. </para>
+
+<para
+>Vali globaalset võtit svn-server määrates server, kust soovid &svn;i väljavõtte teha. Vaikimisi on see anonüümne &svn;i hoidla <emphasis
+>svn://anonsvn.kde.org/</emphasis
+>, kuid seda võib mõistagi muuta, kui sul on <ulink url="http://developer.kde.org/documentation/misc/firststepsaccount"
+>&kde; &svn;i konto</ulink
+> või kui on mõni <ulink url="http://developer.kde.org/source/anonsvn.html"
+> sulle lähedasem peegelsait</ulink
+>. </para>
+
+<para
+>Pööra tähelepanu globaalsetele muutujatele kdedir ja qtdir, kuna esimene neist määrab, kuhu sinu ehitatav &kde; paigaldatakse (vaikimisi <filename
+>~/kde</filename
+>), ning teine, kus (kui üldse) ehitatakse ja kuhu paigaldatakse sinu Qt teek (vaikimisi <filename
+>~/kdesvn/build/qt-copy</filename
+>). Muutujaid kdedir ja qtdir pead teadma ka hiljem, et määrata keskkonnamuutujad, mida läheb tarvis uue paigalduse tööks. Kontrolli, kas kirjasolevad moodulid on ikka need, mida soovid ehitada. Faili <filename
+>kdesvn-buildrc-sample</filename
+> vaikevõtmed peaksid sobima üsna hästi korraliku &kde; paigalduse tekitamisesks. Salvesta lõplik <filename
+>.kdesvn-buildrc</filename
+> oma kodukataloogi. </para>
+
+<para
+>Kui soovid faili <filename
+>.kdesvn-buildrc</filename
+> väga täpselt oma vajadustele kohandada, räägib konfiguratsioonivõtmetest lähemalt <xref linkend="kdesvn-buildrc"/>. </para>
+
+</sect1>
+
+<sect1 id="building-and-troubleshooting">
+<title
+>Skripti &kdesvn-build; kasutamine</title>
+
+<para
+>Nüüd oled valmis skripti käivitama. Logi terminaliaknas sisse selle kasutaja õigustega, kelle lõid &kde; kompileerimiseks, ning käivita skript: <screen
+><prompt
+>&percnt;</prompt
+><command
+>su</command
+> <option
+>-</option
+> <replaceable
+>kasutajanimi</replaceable>
+<prompt
+>&percnt;</prompt
+><command
+>kdesvn-build</command
+>
+</screen>
+</para>
+
+<para
+>Nüüd peaks skript hakkama lähteteksti alla laadima ja seda kompileerima. Pole väga usutav, et sul õnnestub kohe esimese korraga &kde; igati edukalt kompileerida. Kuid ära heida meelt! Kontrolli logifaile, kust peaks selguma, kas sul puudusid mingid tööriistad või arenduspaketid (logifailide asukoha määrab konfiguratsioonifailis võti log-dir). Mõnikord on arendusharu üsna ebastabiilne ega taha lasta kuidagi ennast ehitada, eriti siis, kui arenduse külmutamispunkt peaks lähedal olema. Nii et ole kannatlik. Rohkem näiteid asjade kohta, mis saavad valesti minna, ja võimaluste kohta neid probleeme lahendada, samuti üldisi &kde; ehitamise nippe ja strateegiaid pakub dokument <ulink url="http://quality.kde.org/develop/cvsguide/buildstep.php#step1"
+> Building &kde; from Source Step by Step Guide</ulink
+>. </para>
+
+</sect1>
+
+<sect1 id="environment">
+<title
+>Värske &kde; töökeskkonna määramine</title>
+
+<para
+>Eeldusel, et lõid &kde; ehitamiseks spetsiaalse kasutaja ja sul on juba paigaldatud &kde; versioon, on oma uue &kde; töölepanek mõnevõrra keerulisem, sest vana asemel peab ju käivituma uus &kde;. Selleks tuleb muuta keskkonnamuutujaid. </para>
+
+<para
+>Ava kodukataloogis lemmikredaktoriga fail <filename
+>.bash_profile</filename
+> ja lisa selle lõppu: <programlisting>
+KDEDIR=(kdedir'i asukoht)
+KDEDIRS=$KDEDIR
+PATH=$KDEDIR/bin:$QTDIR/bin:$PATH
+LD_LIBRARY_PATH=$KDEDIR/lib:$LD_LIBRARY_PATH
+export KDEDIRS PATH LD_LIBRARY_PATH
+</programlisting
+> Kui aga ehitad qt-copy moodulit, lisa: <programlisting
+>QTDIR=(qtdir'i asukoht)
+KDEDIR=(kdedir'i asukoht)
+KDEDIRS=$KDEDIR
+PATH=$KDEDIR/bin:$QTDIR/bin:$PATH
+MANPATH=$QTDIR/doc/man:$MANPATH
+LD_LIBRARY_PATH=$KDEDIR/lib:$QTDIR/lib:$LD_LIBRARY_PATH
+export QTDIR KDEDIRS PATH MANPATH LD_LIBRARY_PATH
+</programlisting>
+</para>
+
+<para
+>Kui sa ei tarvita spetsiaalset kasutajat, määra oma failis <filename
+>.bash_profile</filename
+> uuele keskkonnale teistsugune <envar
+>$KDEHOME</envar
+>: <programlisting
+>export KDEHOME="${HOME}/.kde-svn"
+
+# Vajaduse korral loo
+[ ! -e ~/.kde-svn ] &amp;&amp; mkdir ~/.kde-svn
+</programlisting>
+</para>
+
+<note>
+<para
+>Kui hiljem peaks menüü tühi olema või hoopis liiga täis, võib olla vajalik failis <filename
+>.bash_profile</filename
+> kindlaks määrata ka xdg keskkonnamuutuja: <programlisting
+>XDG_CONFIG_DIRS="/etc/xdg"
+XDG_DATA_DIRS="${KDEDIR}/share:/usr/share"
+export XDG_CONFIG_DIRS XDG_DATA_DIRS
+</programlisting>
+
+</para>
+</note>
+
+<para
+>Nüüd, kus see on tehtud, kontrolli, et kasutataks ikka õiget skripti <application
+>startkde</application
+>: </para>
+
+<para
+>Ava kodukataloogis tekstifail <filename
+>.xinitrc</filename
+> (sõltuvalt distributsioonist võib see olla ka <filename
+>.xsession</filename
+>) või loo see vajaduse korral. Lisa rida: <programlisting
+>exec ${KDEDIR}/bin/startkde
+</programlisting>
+</para>
+
+<para
+>Nüüd käivita oma uus &kde;: virtuaalsete terminalide toetusega BSD ja Linuxi süsteemides kasutatakse klahvikombinatsioone Ctrl+Alt+F1...F12 lülitumiseks vastavalt virtuaalsele konsoolile 1 kuni 12. See võimaldab korraga panna tööle enam kui ühe töökeskkonna. Esimesed kuus on tekstiterminalid, viimased kuus graafilised kuvad. </para>
+
+<para
+>Kui sinu ette ilmub pärast arvuti käivitamist graafiline kuvahaldur, võid uue KDE töökeskkonna käivitada ka siis, kui seda valikute seas ei leidu. Selleks vajuta lihtsalt Crtl + Alt + F2 ning sinu ette ilmub tekstiterminal. Logi sisse spetsiaalse kasutajana ja anna käsk: </para>
+
+<screen
+>startx -- :1
+</screen>
+
+<tip>
+<para
+>Lähtekoodist paigaldatud ja vana KDE võivad isegi korraga töötada! Logi sisse tavalise kasutajana ja käivita stabiilne KDE töölaud. Vajuta Crtl + Alt + F2 (või F1, F3 jne.) ning sinu ette ilmub tekstiterminal. Logi sisse spetsiaalse kasutajana ja anna käsk "startx -- :1". Tavalise kasutaja töölauale saad tagasi liikuda klahvikombinatsiooniga Crtl + Alt + F6 (või F7, F8 jne. - proovi, milline on see õige!). Lähtekoodist paigaldatud KDE juurde pääsed uuesti klahvikombinatsiooniga Crtl + Alt + F7 (või F6, F8 jne.). Nüüd võid lülituda erinevate KDE seansside vahel ja testida uut keskkonda teadmises, et saad alati turvaliselt naasta stabiilsele KDE töölauale. </para>
+</tip>
+
+
+</sect1>
+
+</chapter>
+
+<chapter id="features">
+<title
+>Skripti omadused</title>
+
+<para
+>&kdesvn-build;'i peamised omadused on järgmised: </para>
+
+
+<itemizedlist>
+
+<listitem
+><para
+>Moodulite automaatne väljavõtmine või uuendamine &svn;ist (kui vaja). </para
+></listitem>
+
+<listitem
+><para
+>Mõõdab moodulite ehitamise aega. </para
+></listitem>
+
+<listitem
+><para
+>Püüab automaatselt ümber ehitada mooduelid, mis kasutavad kasvavat make'i (tõsi, see ei pruugi alati õnnestuda). </para
+></listitem>
+
+<listitem
+><para
+>Võib jätkata kohast, kus eelmine skript pooleli jäi, või alustada ehitamist konkreetsest moodulist. </para
+></listitem>
+
+<listitem
+><para
+>Pakub omalt poolt välja mõistliku valiku vaikevõtmeid &kde; elementaarse ühekasutajapaigalduse tekitamiseks anonüümse &svn;i hoidla lähtekoodi põhjal. </para
+></listitem>
+
+<listitem
+><para
+>Toetab <ulink url="http://www.kde.me.uk/index.php?page=unsermake"
+>Unsermake</ulink
+>'i kasutamist. </para
+></listitem>
+
+<listitem
+><para
+>Võimaldab tildega konfiguratsioonivõtmeid laiendada. Nii võib näiteks määrata: <programlisting
+>qtdir ~/kdesvn/build/qt-copy</programlisting>
+</para
+></listitem>
+
+<listitem
+><para
+>Seadistatavad ehitamis-, lähtekoodi- ja logikataloogid </para
+></listitem>
+
+<listitem
+><para
+>Automaatne ehitussüsteemi loomine, milles lähtekoodikataloog erineb ehitamiskataloogist, et tagada lähtekoodikataloogi rikkumatus. Erandiks on <application
+>qt-copy</application
+>, mille ehitamine ei olegi nii mõeldud (kui sa ei soovi just testida <link linkend="conf-use-qt-builddir-hack"
+><quote
+>qt'd eraldi ehituskataloogi võttega</quote
+></link
+>). </para
+></listitem>
+
+<listitem
+><para
+>Saab määrata globaalsed võtmed kõigile väljavõetavale moodulile, samuti võtmed igale moodulile eraldi. </para
+></listitem>
+
+<listitem
+><para
+>Kuna auto-tööriistad ei suuda mõnikord käia kaasas lähtekoodipuu muudatustega, saab mooduli ümberehitamise peale sundida, luues vajaliku mooduli ehituskataloogis faili .refresh-me või käivitates &kdesvn-build;'i võtmega <option
+>--refresh-build</option
+>. </para
+></listitem>
+
+<listitem
+><para
+>Saab määrata mitmesuguseid ehitamise ajal kasutatavaid keskkonnamuutujaid, sealhulgas <envar
+>KDEDIR</envar
+>, <envar
+>QTDIR</envar
+>, <envar
+>DO_NOT_COMPILE</envar
+> ja <envar
+>CXXFLAGS</envar
+>. </para
+></listitem>
+
+<listitem
+><para
+>Käskude logimine. Logid dateeritakse ja nummerdatakse, nii et iga skripti käivitamise kohta on alati omaette logi. Samuti osutab spetsiaalne link nimega latest alati logikataloogi kõige uuemale logile. </para
+></listitem>
+
+<listitem
+><para
+>Kui ehitad &kde; kasutajale, mitte süsteemsena (viimaseks peab olema administraator), saab lasta skriptil enda eest paigaldamine ära teha. See kood ei ole küll saanud vajalikku tähelepanu ning kasutab ohtralt funktsiooni <function
+>system()</function
+> väljakutseid, mistõttu hetkel ei ole ilmselt soovitatav seda administraatorina tarvitada. </para
+></listitem>
+
+<listitem
+><para
+><link linkend="conf-make-install-prefix"
+>make-install-prefix</link
+> võimaldab anda käsule make install prefiksi omaette käsuna, mis on kasulik näiteks sudo pruukimisel. </para
+></listitem>
+
+<listitem
+><para
+>Võtmega <link linkend="conf-apidox"
+>apidox</link
+> saab lastada automaatselt ehitada ja paigaldada mõne mooduli API dokumentatsiooni. </para
+></listitem>
+
+<listitem
+><para
+>Välja võib võtta ainult osa &kde; &svn;i moodulist. Näiteks võib välja võtta ainult <application
+>taglib</application
+> moodulist <application
+>kdesupport</application
+> või ainult <application
+>K3B</application
+> moodulist <application
+>extragear/multimedia</application
+>. Skript võtab automaatselt välja <application
+>kde-common</application
+>, kui seda on ehitamiseks vaja </para
+></listitem>
+
+<listitem
+><para
+>Võimalik on <quote
+>teeselda</quote
+> millegi tegemist. Käsureal võtit <option
+>--pretend</option
+> või <option
+>-p</option
+> andes pakub skript väga põhjaliku käivitatavate käskude kirjelduse ilma neid tegelikult käivitatamata. </para
+></listitem>
+
+<listitem
+><para
+>Välja võib võtta &svn;i moodulite konkreetseid harusid. See võimalus ei ole veel küll veatu, kuid igatahes saab valida ehitamiseks vajaliku haru, kasutades <link linkend="conf-module-base-path"
+>konfiguratsioonivõtit module-base-path</link
+>. </para
+></listitem>
+
+</itemizedlist>
+
+<para
+>Mida &kdesvn-build; EI TEE: </para>
+
+<itemizedlist>
+
+<listitem
+><para
+>Kiireima &kde; &svn;i peegli leidmine. Skriptiga pole praegu kaasas isegi nende nimekirja, ehkki vaikimisi server peaks ka edukalt töötama. </para
+></listitem>
+
+<listitem
+><para
+>Hammaste pesemine. Seda pead igal hommikul ja õhtul ikka ise tegema. </para
+></listitem>
+
+<listitem
+><para
+>Skriptis võib esineda mõningaid vigu. Vabandame juba ette. </para
+></listitem>
+
+</itemizedlist>
+
+</chapter>
+
+<chapter id="kdesvn-buildrc">
+<title
+>Faili .kdesvn-buildrc vorming</title>
+
+<para
+>Skripti kasutamiseks peab sul kodukataloogis olema fail <filename
+>.kdesvn-buildrc</filename
+>, mis kirjeldab mooduleid, mida soovid alla laadida ja ehitada. </para>
+
+
+
+<para
+>See algab globaalsete võtmetega umbes nii: </para>
+
+<programlisting
+>global
+<replaceable
+>võtme-nimi võtme-väärtus</replaceable>
+<replaceable
+>[...]</replaceable>
+end global
+</programlisting>
+
+<para
+>Sellele järgneb üks või enam moodulisektsiooni, mis näeb välja umbes nii: </para>
+
+<programlisting
+>module <replaceable
+>mooduli-nimi</replaceable>
+<replaceable
+>võtme-nimi võtme-väärtus</replaceable>
+<replaceable
+>[...]</replaceable>
+end module
+</programlisting>
+
+<para
+><replaceable
+>mooduli-nimi</replaceable
+> peab olema &kde; &svn;i hoidlas leiduva mooduli nimi (näiteks kdelibs või kdebase). Mõned võtmed tühistavad globaalsed võtmed, mõned täiendavad globaalseid võtmeid, mõningaid globaalseid võtmeid aga ei saagi millegagi tühistada. </para>
+
+<para
+>Järgnevalt toome tähestiku järjekorras ära kasutatavate võtmete nimekirja. Klõpsuga võtme nimele näeb selle kohta rohkem infot. Kui mõni võti pole dokumenteeritud, saada palun autoritele e-kiri, kasutades aadressi, mille leiad <link linkend="authors"
+>eestpoolt</link
+>. </para>
+
+<itemizedlist>
+<listitem
+><para
+><link linkend="conf-apidox"
+>apidox</link
+> ehitab API dokumentatsiooni.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-apply-qt-patches"
+>apply-qt-patches</link
+> võimaldab kasutada qt-copy parandusi.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-binpath"
+>binpath</link
+> määrab muutuja <envar
+>PATH</envar
+>.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-branch"
+>branch</link
+> teeb väljavõtte harust, mitte aga tüvest (trunk).</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-build-dir"
+>build-dir</link
+> määrab ehitamiskataloogi.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-checkout-only"
+>checkout-only</link
+> teeb väljavõtte ainult osast moodulist.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-colorful-output"
+>colorful-output</link
+> muudab skripti väljundi värviliseks.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-configure-flags"
+>configure-flags</link
+> määrab, milliste lippudega moodulit konfigureerida.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-cxxflags"
+>cxxflags</link
+> määrab muutuja <envar
+>CXXFLAGS</envar
+>.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-dest-dir"
+>dest-dir</link
+> muudab mooduli kataloogi nime.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-disable-agent-check"
+>disable-agent-check</link
+> takistab kdesvn-build'il kontrollimast ssh-agent'i olekut.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-do-not-compile"
+>do-not-compile</link
+> määrab ehitamisest väljajäetavad kataloogid.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-inst-apps"
+>inst-apps</link
+> määrab täpselt, millised kataloogid ehitada ja paigaldada.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-install-after-build"
+>install-after-build</link
+> väldib paigaldamist pärast ehitamist.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-kdedir"
+>kdedir</link
+> määrab kataloogi, kuhu KDE paigaldada.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-libpath"
+>libpath</link
+> määrab muutuja <envar
+>LD_LIBRARY_PATH</envar
+>.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-make-install-prefix"
+>make-install-prefix</link
+> paneb paigaldamise ajal tööle abiprogrammi (näiteks sudo).</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-make-options"
+>make-options</link
+> edastab võtmed programmile make.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-manual-build"
+>manual-build</link
+> takistab mooduli automaatset ehitamist.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-manual-update"
+>manual-update</link
+> takistab mooduli juures igasugust automaatset tegevust.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-module-base-path"
+>module-base-path</link
+> muudab asukohta, kuhu moodul alla laadida (kasulik harude ja siltide puhul).</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-niceness"
+>niceness</link
+> muudab protsessori prioriteeti.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-no-rebuild-on-fail"
+>no-rebuild-on-fail</link
+> takistab programmi make taaskäivitamist, kui see ebaõnnestub.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-qtdir"
+>qtdir</link
+> määrab Qt asukoha.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-set-env"
+>set-env</link
+> määrab keskkonnamuutuja.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-source-dir"
+>source-dir</link
+> muudab asukohta, kuhu laaditakse alla lähtekood.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-stop-on-failure"
+>stop-on-failure</link
+> sunnib kdesvn-build'i peatuma kohe vea tekkimisel.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-svn-server"
+>svn-server</link
+> muudab serverit, kust lähtekood alla laaditakse.</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-use-qt-builddir-hack"
+>use-qt-builddir-hack</link
+> võimaldab Qt korral kasutada lähtekoodikataloogist erinevat ehitamiskataloogi (nagu KDE puhul).</para
+></listitem>
+<listitem
+><para
+><link linkend="conf-use-unsermake"
+>use-unsermake</link
+> võimaldab kasutada täiustatud unsermake'i ehitamissüsteemi.</para
+></listitem>
+</itemizedlist>
+
+
+<para
+>Toome siin ära erinevate võtmete tabeli, kus neid on ka kommenteeritud. Kõik võtmed, mis tühistavad globaalse võtme, tühistavad ka käsureamääratluse. </para>
+
+<table id="option-table">
+<title
+>Võtmete tabel</title>
+<tgroup cols="3">
+
+<thead>
+<row>
+<entry
+>Võtme nimi</entry>
+<entry
+>Mooduli ja globaalse võtme suhe</entry>
+<entry
+>Märkused</entry>
+</row>
+</thead>
+
+<tbody>
+
+<row id="conf-apidox">
+<entry
+>apidox</entry>
+<entry
+>Tühistab globaalse väärtuse</entry>
+<entry
+>Anna võtmele väärtuseks <quote
+>true</quote
+>, et &kdesvn-build; ehitaks ja paigaldaks mooduli API dokumentatsiooni automaatselt pärast tavalist ehitamist/paigaldamist. See toimib ainult moodulite korral, kus käsk <command
+>make apidox</command
+> tõesti midagi teeb, näiteks kdelibs, kdebase ja koffice. </entry>
+</row>
+
+<row id="conf-apply-qt-patches">
+<entry
+>apply-qt-patches</entry>
+<entry
+>Tühistab globaalse väärtuse</entry>
+<entry
+>See võti käib ainult qt-copy kohta. Kui väärtuseks on midagi muud kui null, siis käivitatakse enne ehitamist qt-copy kataloogis skript apply-patches, millega qt-copy'le lisatakse mitteametlikud paigad. Kuna need paigad ongi enamasti põhjuseks, miks kasutada qt-copy't, mitte aga tavalist Qt'd, siis ei tohiks üldiselt mingit kahju sündida. Vaikimisi on paikade kasutamine sisse lülitatud.</entry>
+</row>
+
+<row id="conf-binpath">
+<entry
+>binpath</entry>
+<entry
+>Ei ole tühistatav</entry>
+<entry
+><para
+>Selle võtmega saab ehitamiseks määrata keskkonnamuutuja PATH. Seda ei saa moodulivõtmega tühistada. Vaikimisi on väärtuseks <filename class="directory"
+>/bin:/usr/bin:/usr/local/bin:/usr/X11R6/bin</filename
+>. Keskkonnamuutuja peab koolonitega eraldatult sisaldama sinu arendustööriistade asukohti. Asukohad <filename class="directory"
+>$KDEDIR/bin</filename
+> ja <filename class="directory"
+>$QTDIR/bin</filename
+> lisatakse automaatselt. Selle võtme juures võib iga asukoha määramisel tarvitada ka tildet (~).</para>
+</entry>
+</row>
+
+<row id="conf-branch">
+<entry
+>branch</entry>
+<entry
+>Tühistab globaalse väärtuse</entry>
+<entry
+><para
+>Selle võtmega saab määrata KDE haru väljavõtmise, mitte aga vaikimisi väljavõetava tüve ("trunk"), kus üldiselt käib põhiline arendustegevus. Näiteks KDE 3.4 haru väljavõtmiseks määra võtme väärtuseks "3.4".</para>
+<para
+>Pane tähele, et mõned moodulid kasutavad teistsugust harunime. Eriti paistab selles mõttes silma nõutav moodul arts. KDE 3.4 korral on õigeks versiooniks 1.4.</para>
+<para
+>Kui kdesvn-build ei suuda antud võtmega haru korralikult alla laadida, võib olla vajalik käsitsi määrata allalaadimiskoha URL võtmega <link linkend="conf-override-url"
+>override-url</link
+>.</para>
+</entry>
+</row>
+
+<row id="conf-build-dir">
+<entry
+>build-dir</entry>
+<entry
+>Tühistab globaalse väärtuse</entry>
+<entry
+>Selle võtmega saab muuta ehitamiseks kasutatava lähtekoodikataloogi asukohta. Seda saab määrata kolmel viisil: <itemizedlist
+> <listitem
+><para
+>Suhteline &kde; &svn;i lähtekoodikataloogi suhtes (vaata <link linkend="conf-source-dir"
+>the source-dir option</link
+>). See on vaikevalik, mida skript kasutas versiooni 0.61. See valitakse juhul, kui annad kataloogi nime, mille alguses ei seisa tilde (~) või kaldkriips (/).</para
+> <para
+>Vaikeväärtus on <filename class="directory"
+>build</filename
+>.</para
+></listitem
+> <listitem
+><para
+>Absoluutne asukoht. Kui määrad asukoha, mille alguses seisab kaldkriips (/), kasutatakse täpselt määratud asukohta. Näide: <filename class="directory"
+>/tmp/kde-obj-dir/</filename
+>.</para
+></listitem
+> <listitem
+><para
+>Suhteline kodukataloogi suhtes. Kui määrad asukoha, mille alguses seisab tilde (~), arvestatakse seda asukohta sinu kodukataloogist lähtudes. Näide: <filename class="directory"
+>~/builddir</filename
+> määrab ehitamiskataloogiks <filename class="directory"
+>/home/user-name/builddir</filename
+>.</para
+></listitem
+> </itemizedlist
+> Mõnevõrra üllatuslikult saab seda võtit muuta ka igas moodulis eraldi. </entry>
+</row>
+
+<row id="conf-checkout-only">
+<entry
+>checkout-only</entry>
+<entry
+>Tühistab globaalse väärtuse</entry>
+<entry
+>Selle võtmega saab määrata &svn;i lähtekoodi väljavõtmise jupphaaval. Võtme väärtus kujutab endast tühikutega eraldatud väljavõetavate kataloogide nimekirja. Kui kataloog admin andmata jätta, lisatakse see automaatselt (vajaduse korral muidugi). Jupphaaval välja võttes hangitakse kataloog admin moodulist kde-common, kus see &svn;i serveris vaikimisi paiknebki. Ehkki see võti tühistab globaalse võtme, pane tähele, et selle määramine globaalse võtmena pole just eriti mõttekas. </entry>
+</row>
+
+<row id="conf-configure-flags">
+<entry
+>configure-flags</entry>
+<entry
+>Täiendab globaalset võtit (v.a. qt-copy korral)</entry>
+<entry
+>Selle võtmega saab määrata, millised lipud edastada käsule ./configure mooduli ehitamissüsteemi loomisel. Kasutamisel globaalse võtmena rakendatakse seda kõigile moodulitele, mida skriptiga ehitatakse. qt-copy kasutab märksa teistsugust konfiguratsioonivõtmete valikut kui ülejäänud &kde;. mis tähendab, et see võti <emphasis
+>tühistab</emphasis
+> globaalsed seadistused, kui seda rakendatakse ka qt-copy jaoks.</entry>
+</row>
+
+<row id="conf-colorful-output">
+<entry
+>colorful-output</entry>
+<entry
+>Ei ole tühistatav</entry>
+<entry
+>Määra väärtuseks 'false', kui soovid keelata &kdesvn-build;'i värvilise väljundi. Vaikimisi on väärtuseks <quote
+>true</quote
+>. Pane tähele, et &kdesvn-build; saadab värvikoodid ainult terminali (näiteks xterm, &konsole; või tavaline Linuxi konsool). </entry>
+</row>
+
+<row id="conf-cxxflags">
+<entry
+>cxxflags</entry>
+<entry
+>Täiendab globaalset võtit</entry>
+<entry
+>Selle võtmega saab määrata, millised lipud edastada käsule <command
+>./configure</command
+> kui <envar
+>CXXFLAGS</envar
+> mooduli ehitamissüsteemi loomisel. See võti on siin võtme <link linkend="conf-configure-flags"
+>configure-flags</link
+> asemel, sest see määrab ka ehitamise ajal keskkonnamuutuja <envar
+>CXXFLAGS</envar
+>. </entry>
+</row>
+
+<row id="conf-dest-dir">
+<entry
+>dest-dir</entry>
+<entry
+>Tühistab globaalse väärtuse</entry>
+<entry
+>Selle vätmega saab määrata moodulile kettal antava nime. Kui näiteks moodul on extragear/network, saab selle võtmega anda sellele nimeks extragear-network. </entry>
+</row>
+
+<row id="conf-disable-agent-check">
+<entry
+>disable-agent-check</entry>
+<entry
+>Ei ole tühistatav</entry>
+<entry
+>Kui kasutad Subversion-lähtekoodi allalaadimiseks SSH-d (näiteks protokolli svn+ssh puhul), siis kdesvn-build püüab tavaliselt kontrollida, et ssh-agent haldaks tõepoolest mingeid SSH-identiteete. Nii saab vältida seda, et SSH päriks iga mooduli korral paroolifraasi. Soovi korral võib selle kontrolli välja lülitada, andes võtmele väärtuseks 'true'. </entry>
+</row>
+
+<row id="conf-do-not-compile">
+<entry
+>do-not-compile</entry>
+<entry
+>Tühistab globaalse väärtuse</entry>
+<entry
+><para
+>Selle võtmega saab määrata enne konfigureerimisskripti käivitamist keskkonnamuutuja <envar
+>DO_NOT_COMPILE</envar
+>. Vastavalt dokumendile <ulink url="http://developer.kde.org/documentation/other/developer-faq.html"
+>&kde; Developer FAQ</ulink
+> ei ehitata selle korral ühtegi määratud tipptaseme kataloogi. Kataloogid tuleb eraldada tühikuga.</para>
+
+<para
+>Pane tähele, et programmide lähtekood laaditakse sellele vaatamata alla. Määramaks, milliseid katalooge alla laaditakse, kasuta võtit <link linkend="conf-checkout-only"
+>checkout-only</link
+>.</para>
+</entry>
+</row>
+
+<row id="conf-email-address">
+<entry
+>email-address</entry>
+<entry
+>Ei ole tühistatav</entry>
+<entry>
+<para
+>Selle võtmega saab määrata e-posti aadressi, mida kdesvn-build kasutab, kui tal peaks tekkima vajadus e-kirja saata. Selle üle ei peaks muret tundma, kui sa ei kasuta mõnda e-posti võimalusega omadust (vaikimisi on need välja lülitatud). </para>
+
+<para
+>Praegu vajab seda võtit ainult võti <link linkend="conf-email-on-compile-error"
+>email-on-compile-error</link
+>. </para>
+</entry>
+</row>
+
+<row id="conf-email-on-compile-error">
+<entry
+>email-on-compile-error</entry>
+<entry
+>Ei ole tühistatav</entry>
+<entry>
+<para
+>Selle võtmega võib määrata e-posti aadressi, kuhu saata kiri, kui mooduli ehitamine ebaõnnestub. kdesvn-build ootab, kuni kõigi moodulite ehitamine on lõppenud ja koondab siis kõik tulemused rapordisse. Raport saadetakse ainult siis, kui mooduli ehitamine ebaõnnestus. </para>
+
+<para
+>Võtmega <link linkend="conf-email-address"
+>email-address</link
+> saab määrata aadressi, mida kdesvn-build saatmisel kasutab. Kontrolli seda, sest vaikimisi ei ole see arvatavasti sugugi selline, nagu vaja. </para>
+</entry>
+</row>
+
+<row id="conf-inst-apps">
+<entry
+>inst-apps</entry>
+<entry
+>Tühistab globaalse väärtuse</entry>
+<entry
+><para
+>See on vastupidine võtmele <link linkend="conf-do-not-compile"
+>do-not-compile</link
+>. Sellega saab määrata, et ehitatakse ainult kindlad tipptaseme kataloogid. Kataloogid tuleb eraldada tühikuga.</para>
+
+<para
+>Muudatused jõustuvad alles siis, kui käsk <command
+>make <option
+>-f</option
+> Makefile.cvs</command
+> uuesti käivitatakse - kas automaatselt skripti poolt või käsitsi võtmega <link linkend="cmdline-refresh-build"
+><option
+>--refresh-build</option
+></link
+> või <link linkend="cmdline-recreate-configure"
+><option
+>--recreate-configure</option
+></link
+>. </para>
+
+<para
+>Pane tähele, et programmide lähtekood laaditakse sellele vaatamata alla. Määramaks, milliseid katalooge alla laaditakse, kasuta võtit <link linkend="conf-checkout-only"
+>checkout-only</link
+>.</para>
+</entry>
+</row>
+
+<row id="conf-install-after-build">
+<entry
+>install-after-build</entry>
+<entry
+>Tühistab globaalse väärtuse</entry>
+<entry
+>Selle võtmega saab paketi paigaldada pärast edukat ehitamist. Vaikimisi on see sisse lülitatud. Kui soovid seda keelata, määra selle võtme väärtuseks konfiguratsioonifailis 0. Samuti võib tarvitada käsurealippu <link linkend="cmdline-no-install"
+><option
+>--no-install</option
+></link
+>. </entry>
+</row>
+
+<row id="conf-kdedir">
+<entry
+>kdedir</entry>
+<entry
+>Ei ole tühistatav</entry>
+<entry
+>Selle võtmega määratakse kataloog, kuhu &kde; pärast ehitamist paigaldatakse. Vaikimisi on selleks <filename class="directory"
+>~/kde</filename
+>. Kui määrad siin kataloogi, mille ligipääs nõuab administraatori õigusi, tasuks tutvuda ka võtme <link linkend="conf-make-install-prefix"
+>make-install-prefix</link
+> kirjeldusega.</entry>
+</row>
+
+<row id="conf-libpath">
+<entry
+>libpath</entry>
+<entry
+>Ei ole tühistatav</entry>
+<entry
+>Selle võtmega saab määrata ehitamise ajal kasutatava keskkonnamuutuja LD_LIBRARY_PATH. Seda ei saa moodulivõtmega tühistada. Vaikimisi on see tühi, kuid asukohad <filename class="directory"
+>$KDEDIR/lib</filename
+> ja <filename class="directory"
+>$QTDIR/lib</filename
+> lisatakse automaatselt. Võtme juures võib iga asukoha määramisel kasutada tildet (~). </entry>
+</row>
+
+<row id="conf-log-dir">
+<entry
+>log-dir</entry>
+<entry
+>Tühistab globaalse väärtuse</entry>
+<entry
+>Selle võtmega saab muuta kataloogi, kus hoitakse skripti tekitatud logifaile. Alates skripti versioonist 0.64 saab seda määrata igale moodulile eraldi. </entry>
+</row>
+
+<row id="conf-make-install-prefix">
+<entry
+>make-install-prefix</entry>
+<entry
+>Tühistab globaalse väärtuse</entry>
+<entry
+>Selle võtmega saab tühikutega eraldatult määrata nimekirja, mida tõlgendatakse käsu ja selle võtmetena, mis lisatakse moodulite paigaldamiseks kasutatava käsu make install ette. See on kasulik näiteks pakettide paigaldamisel sudo'ga, kuid palun ole ettevaatlik, kui tegemist on administraatori õigustega.</entry>
+</row>
+
+<row id="conf-make-options">
+<entry
+>make-options</entry>
+<entry
+>Tühistab globaalse väärtuse</entry>
+<entry
+>Selle muutujaga saab edastada käsule make käsureavõtmeid. See on kasulik sellistele programmidele nagu <ulink url="http://distcc.samba.org/"
+><application
+>distcc</application
+></ulink
+>. <application
+>distcc</application
+> võimaldab jagada kompileerimise tulemust enam kui ühele arvutile. Selle kasutamiseks tuleb edastada käsule make võti <option
+>-j</option
+>. Vastavalt dokumentatsioonile on soovitatav lisada sellele arv kujul 2 * võrguprotsessorite_arv. Kui sul on kokku ainult üks protsessor, siis peaks see olema <option
+>-j2</option
+>.</entry>
+</row>
+
+<row id="conf-manual-build">
+<entry
+>manual-build</entry>
+<entry
+>Tühistab globaalse väärtuse</entry>
+<entry
+>Määra võtme väärtuseks <quote
+>true</quote
+>, kui soovid, et ehitamisel ei ehitataks antud moodulit. &svn;ist uuendamisel seda siiski uuendatakse. See on samaväärne käsureavõtmega <link linkend="cmdline-no-build"
+><option
+>--no-build</option
+></link
+>. </entry>
+</row>
+
+<row id="conf-manual-update">
+<entry
+>manual-update</entry>
+<entry
+>Tühistab globaalse väärtuse</entry>
+<entry
+>Määra võtme väärtuseks <quote
+>true</quote
+>, kui soovid, et ehitamisel ei üritataks moodulit uuendada (ja seeläbi ka ehitada ega paigaldada). Kui määrad selle võtme moodulile, siis tähendab see sisuliselt selle kõrvalejätmist ehitamisest. </entry>
+</row>
+
+<row id="conf-module-base-path">
+<entry
+>module-base-path</entry>
+<entry
+>Tühistab globaalse väärtuse</entry>
+<entry
+><para
+>Selle võtmega saab tühistada &kdesvn-build;'i vaikimisi kataloogiasukoha antud moodulile. Seda saab kasutada näiteks konkreetse haru või sildi väljavõtmiseks. Õige asukoha määratlemisel on kindlasti hindamatuks abiks <ulink url="http://websvn.kde.org/"
+>&kde; lähtekoodi hoidla veebis</ulink
+>.</para>
+<para
+>Pane tähele, et &kdesvn-build; loob lõpliku asukohta järgmise malli põhjal: <varname
+>$svn-server</varname
+>/home/kde/<varname
+>$module-base-path</varname
+>/<varname
+>$module-name</varname
+>. </para>
+<para
+>Vaikeväärtus on sõltuvalt moodulinimest <quote
+>trunk</quote
+> või <quote
+>trunk/KDE</quote
+>.</para>
+</entry>
+</row>
+
+<row id="conf-niceness">
+<entry
+>niceness</entry>
+<entry
+>Ei ole tühistatav</entry>
+<entry
+>Selle võtme väärtus on arv vahemikus 20 kuni 0. Mida suurem arv, seda väiksem on prioriteet, mida &kdesvn-build; endale omistab. Vaikeväärtus on 10. </entry>
+</row>
+
+<row id="conf-no-rebuild-on-fail">
+<entry
+>no-rebuild-on-fail</entry>
+<entry
+>Tühistab globaalse väärtuse</entry>
+<entry
+>Määra selle võtme väärtuseks <quote
+>true</quote
+>, kui soovid vältida, et &kdesvn-build; hakkaks moodulit ümberehitama, kui inkrementehitamine ei õnnestu. Tavaliselt püüab &kdesvn-build; mooduli algusest peale ümber ehitada, et takistada &svn;i uuendamise halba mõju ehitamissüsteemile.</entry>
+</row>
+
+<row id="conf-override-url">
+<entry
+>override-url</entry>
+<entry
+>Tühistab globaalse väärtuse</entry>
+<entry
+>Selle võtme kasutamisel tarvitab kdesvn-build selle väärtust URL-ina, mis edastatakse Subversionile <emphasis
+>täiesti muutmatult</emphasis
+>. Üldiselt tuleks seda kasutada siis, kui soovid alla laadida konkreetset väljalaset, kuid kdesvn-build ei suuda sinu soovides võtme <link linkend="conf-branch"
+>branch</link
+> põhjal aru saada. </entry>
+</row>
+
+<row id="conf-qtdir">
+<entry
+>qtdir</entry>
+<entry
+>Ei ole tühistatav</entry>
+<entry
+>Selle võtmega saab määrata ehitamisel kasutatava keskkonnamuutuja QTDIR. Seda ei saa moodulivõtmega tühistada. Kui see pole määratud, kasutatakse vaikimisi asukohta <filename class="directory"
+><varname
+>$(source-dir)</varname
+>/build/qt-copy</filename
+>, mis kasutab &kde; lähtekoodihoidlas leiduvat qt-copy moodulit. Kodukataloogi tähistamiseks võib kasutada tildet (~). </entry>
+</row>
+
+<row id="conf-remove-after-install">
+<entry
+>remove-after-install</entry>
+<entry
+>Tühistab globaalse väärtuse</entry>
+<entry
+><para
+>Kui sul napib kõvakettal ruumi, võib selle võtmega lasta automaatselt kustutada ehitamiskataloogi (või ka korraga nii lähtekoodi- kui ka ehitamiskataloogi) pärast mooduli edukat paigaldamist. </para>
+<para
+>Võtme võimalikud väärtused on järgmised: <itemizedlist>
+<listitem
+><para
+>none - midagi ei kustutata (vaikimisi).</para
+></listitem>
+<listitem
+><para
+>builddir - kustutatakse ehitamiskataloog, aga mitte lähtekoodikataloog.</para
+></listitem>
+<listitem
+><para
+>all - kustutatakse nii lähtekoodi- kui ehitamiskataloog.</para
+></listitem>
+</itemizedlist>
+</para>
+
+<para
+>Pane tähele, et selle võtme kasutamine mõjutab päris negatiivselt nii sinu tekitatavat võrgukoormust (kui kasutad väärtust 'all') kui ka KDE kompileerimiseks kuluvat aega, sest kdesvn-build ei saa sel juhul kasutada inkrementehitamist.</para>
+</entry>
+</row>
+
+<row id="conf-set-env">
+<entry
+>set-env</entry>
+<entry
+>Tühistab globaalse väärtuse</entry>
+<entry
+><para
+>Selle võtme juures saab anda tühikuga eraldatult väärtuste nimekirja, mille esimene väärtus on määratav keskkonnamuutuja ja ülejäänud selle muutuja väärtused. Näiteks muutujale RONALD väärtuse McDonald andmine käib nii:</para>
+<screen
+><command
+>set-env</command
+> <envar
+>RONALD</envar
+> <userinput
+>McDonald</userinput
+></screen>
+<para
+>See võti on eriline selle poolest, et seda võib korrata ilma varasemaid set-env määratlusi konfiguratsioonifaili samas sektsioonis tühistamata. Sel moel võid moodulis (või ka globaalselt) määrata mitu keskkonnamuutujat.</para>
+</entry>
+</row>
+
+<row id="conf-source-dir">
+<entry
+>source-dir</entry>
+<entry
+>Ei ole tühistatav</entry>
+<entry
+>Selle võtmega saab määrata kataloogi oma arvutis, kuhu salvestatakse &kde; &svn;i lähtekood. Kui see pole määratud, kasutatakse vaikeväärtusena <filename class="directory"
+>~/kdesvn</filename
+>. Väärtuse määramisel tuleks kasutada absoluutset asukohta. </entry>
+</row>
+
+<row id="conf-svn-server">
+<entry
+>svn-server</entry>
+<entry
+>Ei ole tühistatav</entry>
+<entry
+>Selle võtmega saab määrata serveri, kust &svn; välja võetakse. Vaikimisi on see anonüümne &svn;i hoidla <emphasis
+>svn://anonsvn.kde.org/</emphasis
+>.</entry>
+</row>
+
+<row id="conf-stop-on-failure">
+<entry
+>stop-on-failure</entry>
+<entry
+>Tühistab globaalse väärtuse</entry>
+<entry
+>Määra selle võtme väärtuseks <quote
+>true</quote
+>, kui soovid, et skript peataks töö pärast vea tekkimist ehitamisel või paigaldamisel. Vaikimisi on see välja lülitatud. </entry>
+</row>
+
+<row id="conf-tag">
+<entry
+>tag</entry>
+<entry
+>Tühistab globaalse väärtuse</entry>
+<entry
+><para
+>Selle võtmega saab alla laadida mooduli konkreetse väljalaske.</para>
+<para
+><emphasis
+>MÄRKUS:</emphasis
+> on üsna usutav, et SA EI SOOVI seda võtit kasutada. KDE väljalasked asuvad tar-failidena <ulink url="ftp://ftp.kde.org/"
+>KDE FTP-saidil</ulink
+> ning selle <ulink url="http://download.kde.org/download.php"
+>peegelsaitidel</ulink
+>.</para>
+<para
+>Kui kasutad kdesvn-build'i sellepärast, et sul on probleeme sinu distributsioonile mõeldud KDE väljalasetega, võiks kaaluda mõte pruukida <ulink url="http://developer.kde.org/build/konstruct/"
+>ehitamistööriista Konstruct</ulink
+>, mis kasutab väljalasete tar-faile.</para>
+</entry>
+</row>
+
+<row id="conf-use-qt-builddir-hack">
+<entry
+>use-qt-builddir-hack</entry>
+<entry
+>Tühistab globaalse väärtuse</entry>
+<entry
+>Kuigi see võti tühistab globaalse võtme, on sel mõtet ainult qt-copy korral. Määra võtme väärtuseks <quote
+>true</quote
+>, kui soovid lubada skriptil tarvitada <emphasis
+>eksperimentaalset</emphasis
+> srcdir != builddir režiimi. Sisselülitamise korral kopeerib &kdesvn-build; qt-copy lähtemooduli ehitamiskataloogi ja sooritab ehitamise seal. See tähendab, et keskkonnamuutuja QTDIR väärtuseks tuleb määrata <filename class="directory"
+>$(qt-copy-build-dir)/qt-copy/lib</filename
+>. Samuti tuleb vastavalt muuta võtit <link linkend="conf-qtdir"
+>qtdir</link
+>. Selles režiimis saab kasutada ka inkrement-make'i, sest kopeerimise järel säilitatakse ajatemplid. Kui tarvitad võtit <link linkend="conf-apply-qt-patches"
+>apply-qt-patches</link
+>, rakendatakse paigad ehitamis-, mitte lähtekoodikataloogis. Vaikimisi on võtme väärtuseks <quote
+>true</quote
+>. </entry>
+</row>
+
+<row id="conf-use-unsermake">
+<entry
+>use-unsermake</entry>
+<entry
+>Tühistab globaalse väärtuse</entry>
+<entry
+><para
+>Määra võtme väärtuseks <quote
+>true</quote
+>, kui soovid konfigureerimisskripti käivitamisel kasutada atuomake'i asemel eksperimentaalset unsermake'i. See võib mõnikord suurendada tublisti ehitamisaega, eriti <ulink url="http://www.csh.rit.edu/slashdot/distcc.html"
+>jagatud ehitamissüsteemi</ulink
+> korral. Vaikimisi on väärtuseks enamiku moodulite korral <quote
+>true</quote
+>. </para>
+
+<para
+>Tavaliselt püüab kdesvn-build selle võtme kasutamisel hoida unsermake'i alati värskena. See võib muutuda tülikaks, eriti kui soovid unsermake'i ise hallata. Sel juhul anna võtmele väärtuseks <quote
+>self</quote
+> ja kuigi kdesvn-build kasutab sel juhul endiselt unsermake'i, ei üritata seda värskena hoida. </para>
+</entry>
+</row>
+
+</tbody>
+
+</tgroup>
+</table>
+
+</chapter>
+
+<chapter id="cmdline">
+<title
+>Käsureavõtmed ja keskkonnamuutujad</title>
+
+<para
+>Skript ei kasuta keskkonnamuutujaid. Kui sul on vaja ehitamiseks või paigaldamiseks määrata keskkonnamuutujaid, uuri võtme <link linkend="conf-set-env"
+>set-env</link
+> kirjeldust. </para>
+
+<para
+>Skript tunnistab järgmisi käsureavõtmeid: </para>
+
+<variablelist>
+
+<varlistentry id="cmdline-help">
+<term
+><option
+>--help</option
+></term>
+<listitem
+><para
+>Näitab lihtsat abiinfot skripti kohta. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-version">
+<term
+><option
+>--version</option
+></term>
+<listitem
+><para
+>Näitab programmi versiooni. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-author">
+<term
+><option
+>--author</option
+></term>
+<listitem
+><para
+>Näitab autori kontaktinfot. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-color">
+<term
+><option
+>--color</option
+></term>
+<listitem
+><para
+>Lubab värvilise väljundi. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-no-color">
+<term
+><option
+>--no-color</option
+></term>
+<listitem
+><para
+>Keelab värvilise väljundi. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-pretend">
+<term
+><option
+>--pretend</option
+> (või <option
+>-p</option
+>)</term>
+<listitem
+><para
+>Tegelikult EI VÕETA midagi ette, vaid ainult teeseldakse. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-quiet">
+<term
+><option
+>--quiet</option
+> (või <option
+>-q</option
+>)</term>
+<listitem
+><para
+>Väljund on väheminformatiivsem, näidatakse ainult kõige olulisemaid teateid. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-really-quiet">
+<term
+><option
+>--really-quiet</option
+></term>
+<listitem
+><para
+>Väljund näitab ainult hoiatusi ja veateateid. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-verbose">
+<term
+><option
+>--verbose</option
+></term>
+<listitem
+><para
+>Väljund näitab põhjalikult kõike, mis toimub. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-svn-only">
+<term
+><option
+>--svn-only</option
+></term>
+<listitem
+><para
+>Võetakse ette ainult lähtekoodi uuendamine. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-build-only">
+<term
+><option
+>--build-only</option
+></term>
+<listitem
+><para
+>Võetakse ette ainult ehitamine. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-ignore-modules">
+<term
+><option
+>--ignore-modules</option
+></term>
+<listitem
+><para
+>Uuendamisse/ehitamisse ei kaasata ülejäänud käsureal antud mooduleid. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-no-svn">
+<term
+><option
+>--no-svn</option
+></term>
+<listitem
+><para
+>Ei looda ühendust &svn;i serveriga. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-no-build">
+<term
+><option
+>--no-build</option
+></term>
+<listitem
+><para
+>Ehitamine jäetakse vahele. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-no-install">
+<term
+><option
+>--no-install</option
+></term>
+<listitem
+><para
+>Pakette ei paigaldata pärast ehitamist automaatselt. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-debug">
+<term
+><option
+>--debug</option
+></term>
+<listitem
+><para
+>Lülitab sisse silumisrežiimi. Praegu tähendab see seda, et lisaks logimisele logikataloogi saadetakse kogu väljund ka standardväljundisse (STDOUT). Samuti annavad paljud funktsioonid silumisrežiimis märksa enam infot oma tegevuse kohta. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-no-rebuild-on-fail">
+<term
+><option
+>--no-rebuild-on-fail</option
+></term>
+<listitem
+><para
+>Ei üritata algusest peale ümber ehitada mooduleid, mille ehitamine ebaõnnestus. &kdesvn-build; ei ürita seda kunagi mooduli korral, mida on juba püütud algusest peale ehitada. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-refresh-build">
+<term
+><option
+>--refresh-build</option
+></term>
+<listitem
+><para
+>Taasluuakse ehitamissüsteem ja alustatakse algusest peale. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-reconfigure">
+<term
+><option
+>--reconfigure</option
+></term>
+<listitem
+><para
+>Käivitatakse uuesti konfigureerimisskript ilma ehitamiskataloogi puhastamata. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-recreate-configure">
+<term
+><option
+>--recreate-configure</option
+></term>
+<listitem
+><para
+>Antakse uuesti käsk <command
+>make <option
+>-f</option
+> Makefile.cvs</command
+>, et luua konfigureerimisskript ja jätkata ehitamist normaalselt. See eeldab võtit <option
+><link linkend="cmdline-reconfigure"
+>--reconfigure</link
+></option
+>. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-resume">
+<term
+><option
+>--resume</option
+></term>
+<listitem
+><para
+>See üritab jätkata ehitamist sealt, kus skript eelmisel korral pooleli jäi. Skript hakkab ehitama moodulit, mis järgneb moodulile, mida kompoleeriti skripti viimasel töökorral (sõltumata sellest, kas ehitamine oli edukas või mitte). See eeldab võtit <link linkend="cmdline-no-svn"
+><option
+>--no-svn</option
+></link
+>. Käsureal ei tohi määrata teisi moodulinimesid. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-resume-from">
+<term
+><option
+>--resume-from</option
+></term>
+<listitem
+><para
+>Sarnaneb võtmega <link linkend="cmdline-resume"
+><option
+>--resume</option
+></link
+>, ainult et sul tuleb anda käsureal parameetrina moodul, millest ehitamist alustada. See eeldab võtit <link linkend="cmdline-no-svn"
+><option
+>--no-svn</option
+></link
+>. Käsureal ei tohi määrata teisi moodulinimesid. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-rc-file">
+<term
+><option
+>--rc-file</option
+></term>
+<listitem
+><para
+>Järgmist käsureal antud parameetrit tõlgendatakse failina, millest lugeda konfiguratsioonivõtmed. Vaikeväärtus on ~/.kdesvn-buildrc. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-prefix">
+<term
+><option
+>--prefix=&lt;/kde/asukoht&gt;</option
+></term>
+<listitem
+><para
+>Võimaldab muuta kataloogi, kuhu &kde; paigaldatakse. See eeldab võtit <link linkend="cmdline-reconfigure"
+><option
+>--reconfigure</option
+></link
+>. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-build-system-only">
+<term
+><option
+>--build-system-only</option
+></term>
+<listitem
+><para
+>Peatab skripti töö pärast käsu <command
+>make <option
+>-f</option
+> Makefile.cvs</command
+> täitmist. Konfiguratsiooniskripti paneb &kdesvn-build; tööle siis alles järgmisel käivitamisel. See võimaldab kõik konfiguratsiooniskriptid korraga ette valmistada, nii et saad vaadata igas moodulis <command
+>./configure <option
+>--help</option
+></command
+> ja muuta vastavalt konfigureerimislippe. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-install"
+><term
+><option
+>--install</option
+></term>
+<listitem
+><para
+>Kui see on ainus käsureavõti, üritatakse paigaldada kõik edukalt ehitatud moodulid, välja arvatud qt-copy, mis ei vaja paigaldamist. Kui pärast võtit <option
+>--install</option
+> esineb veel käsureavõtmeid, tõlgendatakse neid paigaldatavate moodulitena. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-global-option">
+<term
+><option
+>--&lt;võtme-nimi&gt;=</option
+></term>
+<listitem
+><para
+>Selle võtmega saab kõigi mooduli jaoks tühistada konfiguratsioonifailis leiduva võtme. Kui näiteks soovid tühistada võtit <link linkend="conf-log-dir"
+>log-dir</link
+>, siis see käib nii: <option
+>--log-dir=/kataloogi/asukoht</option
+>. </para
+></listitem>
+</varlistentry>
+
+<varlistentry id="cmdline-module-option">
+<term
+><option
+>--&lt;mooduli-nimi&gt;,&lt;võtme-nimi&gt;=</option
+></term>
+<listitem
+><para
+>Selle võtmega saab iga mooduli jaoks tühistada konfiguratsioonifailis leiduva võtme. Kui näiteks soovid tühistada võtit <link linkend="conf-use-unsermake"
+>use-unsermake</link
+> moodulis kdemultimedia, siis see käib nii: <option
+>--kdemultimedia,use-unsermake=false</option
+>. </para
+></listitem>
+</varlistentry>
+
+</variablelist>
+
+<para
+>Kõiki muid käsureavõtmeid tõlgendatakse uuendatavate ja ehitatavate moodulitena. Palun ära aja ehitamist segamini paigaldamisega. </para>
+
+</chapter>
+
+<chapter id="credits-and-licenses">
+<title
+>Autorid ja litsents</title>
+&underFDL; </chapter>
+
+</book>

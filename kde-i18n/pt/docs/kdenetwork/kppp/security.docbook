@@ -1,0 +1,140 @@
+<chapter id="security">
+<title
+>O &kppp; e os problemas de segurança</title>
+
+<para
+>Esta secção é principalmente para os super-utilizadores (o <systemitem
+>root</systemitem
+>) com grandes necessidades de segurança, ou simplesmente para as pessoas interessadas tecnicamente. Não é necessário ler isto se você usa o &Linux; em casa para si, ainda que possa aprender uma ou duas coisas, de qualquer forma.</para>
+
+<sect1 id="security-restricting-access">
+<title
+>Restringir o acesso ao &kppp;</title>
+
+<para
+>Um administrador de sistemas poderá querer restringir o acesso às pessoas que têm permissão para usar o &kppp;. Existem duas formas de o conseguir.</para>
+
+<sect2 id="security-group-permissions">
+<title
+>Restringir o acesso com as permissões do grupo</title>
+
+<para
+>Crie um novo grupo (você poderá querer chamar-lhe <systemitem
+>ligacao</systemitem
+> ou algo do género), e colocar todos os utilizadores que poderão usar o &kppp; nesse grupo. A partir daí, escreva na linha de comandos:</para>
+
+<screen
+><prompt
+>#</prompt
+> <userinput
+><command
+>chown</command
+> <option
+>root.ligacao</option
+> <filename
+>/opt/kde/bin/kppp</filename
+></userinput>
+<prompt
+>#</prompt
+> <userinput
+><command
+>chmod</command
+> <option
+>4750</option
+> <filename
+>/opt/kde/bin/kppp</filename
+></userinput
+>
+</screen>
+
+<para
+>Isto irá assumir que o &kde; foi instalado em <filename class="directory"
+> /opt/kde/</filename
+> e que o seu grupo se chama <systemitem
+>ligacao</systemitem
+>.</para>
+
+</sect2>
+
+<sect2 id="security-kppps-way">
+<title
+>Restringir a forma de acesso do &kppp;</title>
+
+<para
+>Antes de fazer algo, o &kppp; verifica se existe um ficheiro chamado <filename
+>/etc/kppp.allow</filename
+>. Se existir, só os utilizadores indicados neste ficheiro poderão estabelecer a ligação. Este ficheiro deverá ser legível por todos (mas obviamente <emphasis
+>NÃO</emphasis
+> poderá ter permissões de escrita.) Só os nomes dos utilizadores serão reconhecidos, por isso você não poderá usar os <acronym
+>UID</acronym
+>'s neste ficheiro. Aqui está um pequeno exemplo:</para>
+
+<screen
+># /etc/kppp.allow
+# as linhas de comentário semelhantes a esta
+# são ignoradas, assim como as linhas em branco
+
+ze
+pedro
+manel
+</screen>
+
+<para
+>No exemplo acima, só os utilizadores <systemitem
+>ze</systemitem
+>, <systemitem
+>pedro</systemitem
+> e <systemitem
+>manel</systemitem
+> é que têm permissões para estabelecer a ligação, assim como todos os utilizadores com um <acronym
+>UID</acronym
+> igual a 0 (por isso, você não terá de pôr explicitamente o 'root' nesse ficheiro).</para>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="security-why-suid">
+<title
+>O &kppp; tem o bit <acronym
+>SUID</acronym
+> activo? E a segurança?</title>
+
+<para
+>É virtualmente possível criar um activador de ligações sem o 'bit' <acronym
+>SUID</acronym
+> activo e que seja tanto seguro como simples de usar por utilizadores pouco experientes. O &kppp; trata das questões de segurança com a seguinte estratégia.</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Logo a seguir ao início do programa, o &kppp; faz um 'fork'.</para>
+</listitem>
+<listitem>
+<para
+>O processo-pai, que trata de todas as operações de <acronym
+>GUI</acronym
+> (como a interacção com o utilizador), descarta o estado <acronym
+>SUID</acronym
+> a seguir ao 'fork', e corre com permissões de utilizador normal.</para>
+</listitem>
+<listitem>
+<para
+>O processo-filho mantém os seus privilégios e é responsável por todas as acções que necessitem de privilégios do <systemitem
+>root</systemitem
+>. Para manter esta parte segura, não são usadas chamadas de bibliotecas do &kde; ou do &Qt; aqui, somente chamadas de bibliotecas simples. O código-fonte para este processo é pequeno (à volta de 500 linhas) e está bem documentado, por isso é fácil detectar nele falhas de segurança.</para>
+</listitem>
+<listitem>
+<para
+>Os processos-pai e filho comunicam com o <acronym
+>IPC</acronym
+> normal do &UNIX;.</para>
+</listitem>
+</itemizedlist>
+
+<para
+>Muito obrigado ao Harri Porten por ter escrito este pedaço excelente de código. Pensou-se que seria impossível, mas ele conseguiu fazê-lo numa semana.</para>
+
+</sect1>
+
+</chapter>

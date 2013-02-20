@@ -1,0 +1,582 @@
+<?xml version="1.0" ?>
+<!DOCTYPE book PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" "dtd/kdex.dtd" [
+ <!ENTITY kappname "kompmgr">
+ <!ENTITY package "kwin">
+ <!ENTITY % Spanish "INCLUDE">
+ <!ENTITY % addindex "IGNORE">
+]>
+
+<book lang="&language;">
+<bookinfo>
+<title
+>Información sobre &kappname;</title>
+
+<authorgroup>
+<author
+><personname
+><firstname
+>Thomas</firstname
+><surname
+>Luebking</surname
+></personname
+> <email
+>thomas.luebking@web.de</email
+> </author>
+
+<othercredit role="translator"
+><firstname
+>Marcos</firstname
+><surname
+>Fouces Lago</surname
+><affiliation
+><address
+><email
+>mfouces@yahoo.es</email
+></address
+></affiliation
+><contrib
+>Traductor</contrib
+></othercredit
+> <othercredit role="translator"
+><firstname
+>Santiago</firstname
+><surname
+>Fernández Sancho</surname
+><affiliation
+><address
+><email
+>santi@kde-es.org</email
+></address
+></affiliation
+><contrib
+>Traductor</contrib
+></othercredit
+> 
+</authorgroup>
+
+<copyright>
+<year
+>2005</year>
+<holder
+>Thomas Luebking</holder>
+</copyright>
+
+<legalnotice
+>&FDLNotice;</legalnotice>
+
+<date
+>2005-01-15</date>
+<releaseinfo
+>2.0.1</releaseinfo>
+
+<abstract>
+<para
+>&kappname; es el motor de presentación de composite utilizado por &kwin;.</para>
+<para
+>Este documento es más una explicación de lo que es, de cómo trabaja y qué restricciones tiene que de cómo usarlo (puesto que trabaja en segundo plano automáticamente).</para
+> 
+</abstract>
+
+<keywordset>
+<keyword
+>KDE</keyword>
+<keyword
+>kwin</keyword>
+<keyword
+>motor de presentación</keyword>
+</keywordset>
+</bookinfo>
+
+<chapter id="introduction">
+<title
+>Introducción</title>
+
+<para
+>&kappname; se basa en <application
+>xcompmgr</application
+>, la implementación de Keith Packards para el uso de las nuevas características de X.</para>
+
+<para
+>Un administrador de composite toma la salida de las ventanas X y la presente en un solo dibujo que se muestra en la pantalla. La ventaja de hacer esto es que puede hacer básicamente cualquier cosa con los contenidos de las ventanas, incluyendo combinaciones (transparencia) o asociación de sombras. Puede colorearlas, añadir anuncios horribles en cualquier ventana, apretarlas, separarlas, añadir líneas de barrido, o cualquier otra cosa que pueda imaginar, limitado por su hardware.</para>
+
+</chapter>
+
+<chapter id="xorg">
+<title
+>Xorg</title>
+
+<para
+>Necesariamente precisará <emphasis
+>X.org 6.8 o posterior</emphasis
+> para que &kappname; funcione. X.org 6.7 o anterior o XFree86 no funcionarán.</para>
+
+<sect1 id="xsetup">
+<title
+>Configuración</title>
+<para
+>Necesita activar de forma explícita la extensión Composite. Añada una nueva sección a su archivo de configuración de X.org:</para>
+
+<programlisting
+>Section "Extensions"
+    Option "Composite" "Enable"
+EndSection
+</programlisting>
+
+<para
+>Si lo soporta su <acronym
+>GPU</acronym
+> (el complejo chip que utiliza una tarjeta gráfica moderna), active la aceleración gráfica. Está mejor soportado por <trademark
+>NVIDIA</trademark
+> y no completamente por las tarjetas ATI.</para>
+
+<programlisting
+>Section "Device"
+....
+....
+    Option     "RenderAccel" "true"
+....
+....
+EndSection</programlisting>
+
+<para
+>&kappname; debería estar disponible ahora. Para obtener más información, por favor, vea las <link linkend="problems"
+>PFs</link
+>.</para>
+
+</sect1>
+
+</chapter>
+
+<chapter id="settings">
+<title
+>Preferencias</title>
+
+<para
+>Este capítulo describe qué parámetros se pueden tocar, su resultado visual y su influencia en el rendimiento.</para>
+
+<sect1 id="translucency">
+<title
+>Transparencia</title>
+
+<para
+>Un objeto transparente es aquel que permite pasar la luz a través de él. En términos de ventanas de su escritorio, esto significa que el contenido de las ventanas puede verse a través de una sobre ellas.</para>
+
+<para
+>La transparencia le permite resaltar ventanas especiales, tener un vista tridimensional de su escritorio, seguir el rastro a las ventanas cubiertas y una apariencia bonita. El precio de esto, es que la mezcla de todas estos elementos tiene un coste en cuanto a la capacidad del sistema.</para>
+
+<para
+>Puede configurar la transparencia independientemente para los siguientes elementos:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Ventanas activas</guilabel
+></term>
+<listitem
+><para
+>Le sugerimos desactivar la transparencia de las ventanas para la ventana activa. La principal razón de esto es el rendimiento, y la segunda es que explorar el contenido de una ventana transparente significa que su cerebro tendría que separar la información, lo que es agotador.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Ventanas inactivas</guilabel
+></term>
+<listitem
+><para
+>Si selecciona la transparencia para las ventanas inactivas, las ventanas activas aparecerán resaltadas y será más fácil enfocarlas. Sin embargo, si selecciona un valor bajo, puede tener problemas para encontrar una ventana inactiva. Si selecciona valores muy bajos (&lt;20&percnt;) puede que no sea capaz de distinguir las ventanas en su pila, por ello, puede que accidentalmente pulse el botón <guibutton
+>Aceptar</guibutton
+> en un diálogo cuando solo desee activar una ventana. Los valores óptimos están situados entre el 60&percnt; y el 80&percnt;.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Mover ventanas</guilabel
+></term>
+<listitem
+><para
+>Aunque es un bonito efecto tener una transparencia fuerte (opacidad &lt; 20&percnt;) en el movimiento de las ventanas, se paga un alto precio en rendimiento, especialmente si no desactiva las sombras (ver a continuación). Inténtelo y si su sistema es demasiado lento, mantenga el movimiento de ventanas opacas. Este valor también se aplica a las ventanas cuando se redimensionan.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Acoplamiento de ventanas</guilabel
+></term>
+<listitem
+><para
+>El acoplamiento al estilo de kicker, no suele presentar movimiento y normalmente tiene un tamaño limitado, siendo por tanto púramente visual y no reduce el rendimiento de su sistema.</para
+>  
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Intentar «mantener sobre el resto» las ventanas como si estuvieran activas</guilabel
+></term>
+<listitem
+><para
+>Si configura una ventana para que permanezca sobre las otras, como norma general deseará que el foco permanezca sobre ellas, por tanto tendrá la sensación de que tienen la misma importancia.</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Desactivar ventanas ARGB</guilabel
+></term>
+<listitem
+><para
+>XRender soporta ventanas con máscaras alfa, &ie;, secciones transparentes. En estos momentos no hay aplicaciones, o hay muy pocas, que hagan uso de esta característica, que no tendría sentido sin el uso del administrador de composite. Esto cambiará en el futuro.</para>
+<para
+>Por otra parte, la mayor parte de las aplicaciones gtk 1.x (&eg;, <application
+>xmms</application
+>) se configuran como una máscara alfa, el resultado puede ser ventanas que pueden no ser utilizables (mientras las ventanas hijas estén en negro), por tanto, podrá desactivar el soporte para ventanas ARGB para hacer uso de aplicaciones gtk. Se espera que haya un parche que lo solucione para gtk en la siguiente versión.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</sect1>
+
+<sect1 id="shadows">
+<title
+>Sombras</title>
+<para
+>¿Por qué querría alguien sombrear sus ventanas? Bueno, quizá solo para que tenga un aspecto más bonito, o porque permite una mejor separación de las ventanas, o... ¡porque es bonito!</para
+> 
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Usar sombras</guilabel
+></term>
+<listitem
+><para
+>Como las sombras suponen un coste en términos de cpu/gpu, pueden desactivarse, manteniendo un canal alfa general.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Tamaño de la ventana activa</guilabel
+></term>
+<term
+><guilabel
+>Tamaño de la ventana inactiva</guilabel
+></term>
+<term
+><guilabel
+>Tamaño de la ventana acoplada</guilabel
+></term>
+<listitem
+><para
+>Puede seleccionar tamaños de sombras diferentes para los diferentes tipos/estados de la ventana. Los valores no son absolutos, se aplicarán en función de la resolución de su pantalla.</para>
+<para
+>En principio, puede aplicar cualquier valor que desee (si edita el archivo de configuración con un editor de texto, no utilice un valor superior a «32»), porque las sombras grandes tienen un coste en términos de potencia de cpu/gpu.</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Desplazamiento vertical</guilabel
+></term>
+<term
+><guilabel
+>Desplazamiento horizontal</guilabel
+></term>
+<listitem
+><para
+>De forma predeterminada, la ventana tendrá una sombra con el valor «igual alrededor», lo que implica una fuente de luz frontal. Los usuarios familiarizados con &MacOS; pueden preferir un desplazamiento vertical, los usuarios de &Windows; pueden preferir un desplazamiento suave hacia el sudeste. Experimente con los valores hasta que esté a gusto con ellos.</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Color de la sombra</guilabel
+></term>
+<listitem
+><para
+>Normalmente las sombras, como ausencia de luz, aparecen como sombras grises (por tanto el máximo valor de la sombra es negro, o sin ninguna iluminación). Pero, como este es un mundo virtual, puede decidir incluso tener sombras rosas ¿por qué no?</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Eliminar las sombras durante el movimiento</guilabel
+></term>
+<listitem
+><para
+>Compruebe si necesita más rendimiento (especialmente cuando utilice transparencia al mover las ventanas).</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Eliminar las sombras al redimensionar</guilabel
+></term>
+<listitem
+><para
+>Es una buena idea comprobar si este elemento utiliza la transparencia de las ventanas al redimensionarlas (moverlas), o no. La ventana sombra pixmap tiene que ser recreada permanentemente durante el redimensionamiento lo que influye notablemente en el rendimiento del sistema.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</sect1>
+
+<sect1 id="effects">
+<title
+>Efectos</title>
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Fundido de entrada de ventanas</guilabel
+></term>
+<term
+><guilabel
+>Fundido en los cambios de opacidad</guilabel
+></term>
+<listitem
+><para
+>En lugar de hacer aparecer una nueva ventana de repente, puede que desee que aparezca como un fundido. Aunque esto parece impresionante, también tendrá un coste impresionante en velocidad de rendimiento, y dificultará la interacción con las ventanas de modo significativo durante el proceso de fundido. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><guilabel
+>Velocidad de fundido de entrada</guilabel
+></term>
+<term
+><guilabel
+>Velocidad de fundido de salida</guilabel
+></term>
+<listitem
+><para
+>Por las razones de usabilidad mencionadas en <guilabel
+>Fundido de las ventanas</guilabel
+>, es más práctico utilizar un fundido de entrada de velocidad rápida (para una mejor visualización) y un fundido de salida lento. Esto le proporcionará bonitos efectos y un comportamiento suave del sistema con una espera baja antes de que aparezca la información.</para
+> 
+</listitem>
+</varlistentry>
+</variablelist>
+</sect1>
+
+</chapter>
+
+<chapter id="problems">
+<title
+>Problemas</title>
+
+<para
+>La extensión entera de Composite es bastante nueva. Puede provocar algunos problemas e incluso colgar las X, por tanto, <emphasis
+>le recomendamos encarecidamente que no active la extensión de Composite en Xorg.conf en sistemas de producción crítica</emphasis
+>. Sin embargo, si quiere arriesgar ligeramente la estabilidad del sistema, podrá tener una bonita visualización.</para>
+
+<para
+>En este caso puede tener algunos fallos del sistema. Veamos algunos problemas comunes (y sus soluciones): </para>
+
+<qandaset>
+<qandaentry>
+<question>
+<para
+>Tengo X.org 6.8.x, pero &kappname; falla al iniciarse.</para>
+</question>
+<answer>
+<para
+>Necesitará activar explícitamente la extensión Composite, añada una nueva sección a /etc/X11/XorgConfig:</para>
+<programlisting
+>Section "Extensions"
+   Option "Composite" "Enable"
+EndSection</programlisting>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Perfecto, &kappname; funciona, pero tiene un aspecto horrible.</para>
+</question>
+<answer>
+<para
+>Si está soportado por su <acronym
+>GPU</acronym
+> (principalmente <trademark
+>NVIDIA</trademark
+> y algunas tarjetas ATI), primero asegúrese de activar la aceleración de presentación.</para>
+<programlisting
+>Section "Device"
+....
+....
+Option     "RenderAccel" "true"
+....
+....
+EndSection
+</programlisting>
+
+<para
+>Si continúa siendo lento, puede intentar ajustar el uso de su memoria. Decremente su profundidad de pantalla (&eg;, de 24 a 16) o baje su resolución (&eg;, de 1280x1024 a 1024x768).</para
+> 
+
+<para
+>Por favor, tenga en cuenta las limitaciones actuales para la extensión Composite parecen deberse al tamaño de caché de la CPU.</para>
+
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Después de activar la extensión Composite, no puedo ejecutar ninguna aplicación <acronym
+>GLX</acronym
+>. Tengo una tarjeta <trademark
+>NVIDIA</trademark
+>.</para>
+</question>
+<answer>
+<para
+>Por evitar algún problema, <trademark
+>NVIDIA</trademark
+> desactiva el soporte GLX cuando Composite está activo. Reactívelo si es posible, pero puede provocar problemas en algunas combinaciones de núcleo/controlador/GPU.</para
+> 
+<programlisting
+>Section "Device"
+....
+....
+Option  "AllowGLXWithComposite" "true"
+....
+....
+EndSection
+</programlisting>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Quiero jugar a un juego utilizando <acronym
+>SDL</acronym
+> (pero no <acronym
+>GL</acronym
+>) llamado <application
+>scummvm</application
+>, pero cuando está activado compmgr, ¡todo lo que puedo ver es una sombra!</para>
+</question>
+<answer>
+<para
+>Existe un problema con PictType informado por SDL.</para>
+
+<para
+>Solución provisional:</para>
+<screen
+>En lugar de llamar a <command
+>scummvm</command
+> directamente, utilice
+<command
+>SDL_VIDEO_X11_VISUALID=0x24 summvm</command
+>. Esto le dirá a SDL
+que utilice un formato soportado y podrá jugar como siempre. </screen>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>La aplicación XXX no puede iniciarse después de activar la extensión Composite.</para>
+<para
+>La aplicación YYY cuelga X después de activar la extensión Composite.</para>
+<para
+>La aplicación ZZZ hace cosas raras después de activar el administrador de composite.</para>
+</question>
+<answer>
+<para
+>La extensión Composite es todavía experimental.</para>
+<para
+>Solución provisional:</para>
+<para
+>En lugar de llamar a <command
+>nombreAplicación</command
+> directamente, utilice <command
+>XLIB_SKIP_ARGB_VISUALS=1 nombreAplicación</command
+>.</para>
+<para
+>Aplicaciones que se sabe que causan problemas:</para>
+<itemizedlist>
+<listitem
+><para
+>Todas las aplicaciones gtk1 (&eg;, <application
+>gmplayer</application
+>, <application
+>xmms</application
+>, <application
+>gaim</application
+>) - pueden fallar en el inicio o volverse inusables e incluso colgar las X.</para
+></listitem>
+<listitem
+><para
+>&kuickshow; - muestra únicamente un marco negro.</para
+></listitem>
+<listitem
+><para
+>&Qt; <application
+>Designer</application
+> - cuelga las X.</para
+></listitem>
+<listitem
+><para
+>&kopete; - cuelga las X.</para
+></listitem>
+<listitem
+><para
+>&kolf; - cuelga las X.</para
+></listitem>
+</itemizedlist>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>He intentado ver un vídeo, pero solo veo artefactos en la ventana de vídeo.</para>
+</question>
+<answer>
+<para
+>Ha intentado utilizar «xv» como motor de vídeo. Éste es el modo de recubrimiento, donde el contenido del vídeo se escribe directamente en la memoria de la tarjeta de vídeo, saltándose las X. Sin embargo, la ventana parece estática (fondo coloreado) y no se actualiza por parte de la extensión dañada.</para>
+<para
+>Esperamos que se arregle en el futuro. Actualmente he obtenido mejores resultados utilizando <application
+>Xine</application
+> pero mostrar vídeos transparentes no es rápido.</para>
+</answer>
+</qandaentry>
+
+</qandaset>
+</chapter>
+
+<chapter id="credits-and-licenses">
+<title
+>Créditos y licencias</title>
+
+<sect1 id="authors">
+<title
+>Autores</title>
+<para
+>Thomas Luebking <email
+>baghira-style@gmx.net</email
+> - Editor.</para>
+&underFDL; &underGPL; </sect1>
+
+
+</chapter>
+
+</book>
+<!--
+Local Variables:
+mode: sgml
+sgml-omittag: nil
+sgml-shorttag: t
+End:
+-->
+

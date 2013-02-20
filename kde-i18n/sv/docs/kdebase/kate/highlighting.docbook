@@ -1,0 +1,1380 @@
+<appendix id="highlight">
+<appendixinfo>
+<authorgroup>
+<author
+><personname
+><firstname
+></firstname
+></personname
+></author>
+<othercredit role="translator"
+> <firstname
+>Johan</firstname
+> <surname
+>Thelmén</surname
+> <affiliation
+><address
+><email
+>jth@home.se</email
+></address
+></affiliation
+> <contrib
+>Översättare</contrib
+></othercredit
+> 
+</authorgroup>
+</appendixinfo>
+<title
+>Arbeta med syntaxfärgläggning</title>
+
+<sect1 id="highlight-overview">
+
+<title
+>Översikt</title>
+
+<para
+>Syntaxfärgläggning är det som gör att editorn automatiskt visar text med olika stilar/färger, beroende på strängens funktion i relation till filens syfte. Till exempel i programkällkod, så kan kontrollsatser visas i fetstil, medan datatyper och kommentarer får annorlunda färg än resten av texten. Det här ökar textens läsbarhet väsentligt, och hjälper på så sätt författaren att vara effektivare och mer produktiv.</para>
+
+<mediaobject>
+<imageobject
+><imagedata format="PNG" fileref="highlighted.png"/></imageobject>
+<textobject
+><phrase
+>En funktion i Perl, som visas med syntaxfärgläggning.</phrase
+></textobject>
+<caption
+><para
+>En funktion i Perl, som visas med syntaxfärgläggning.</para>
+</caption>
+</mediaobject>
+
+<mediaobject>
+<imageobject
+><imagedata format="PNG" fileref="unhighlighted.png"/></imageobject>
+<textobject
+><phrase
+>Samma kod utan syntaxfärgläggning.</phrase
+></textobject>
+<caption
+><para
+>Samma kod utan syntaxfärgläggning.</para
+></caption>
+</mediaobject>
+
+<para
+>Av de två exemplen, vilket är lättast att läsa?</para>
+
+<para
+>&kate; levereras med ett flexibelt, anpassningsbart och avancerat system för att göra syntaxfärgläggning, och standarddistributionen tillhandahåller definitioner för ett brett område av programspråk, formaterings- och skriptspråk samt andra textfilformat. Dessutom kan du tillhandahålla dina egna definitioner med enkla &XML;-filer.</para>
+
+<para
+>&kate; detekterar automatiskt de riktiga syntaxreglerna när du öppnar en fil, baserat på filens &MIME;-typ, som avgörs av dess filändelse, eller om den inte har någon, dess innehåll. Skulle du råka ut för ett dåligt val, kan du ställa in syntaxen som används för hand med menyn <menuchoice
+><guimenu
+>Dokument</guimenu
+> <guisubmenu
+>Färgläggningsläge</guisubmenu
+></menuchoice
+>.</para>
+
+<para
+>Stilarna och färgerna som används av varje syntaxfärgläggningsläge kan anpassas på sidan <link linkend="config-dialog-editor-appearance"
+>Utseende</link
+> i <link linkend="config-dialog"
+>inställningsdialogrutan</link
+>, medan &MIME;-typerna det ska användas för hanteras på sidan <link linkend="config-dialog-editor-highlighting"
+>Färgläggning</link
+>.</para>
+
+<note>
+<para
+>Syntaxfärgläggning finns för att förbättra läsbarheten för riktig text, men du kan inte lita på att den validerar din text. Att markera text för syntax kan vara svårt, beroende på formatet som du använder, och i vissa fall är upphovsmännen till syntaxreglerna stolta om 98 procent av texten visas korrekt, även om du behöver en ovanlig stil för att se de felaktiga 2 procenten.</para>
+</note>
+
+<tip>
+<para
+>Du kan ladda ner uppdaterade eller nya definitioner av syntaxfärgläggning från &kate;s webbplats genom att klicka på knappen <guibutton
+>Ladda ner</guibutton
+>på sidan <link linkend="config-dialog-editor-highlighting"
+>Färgläggning </link
+> i <link linkend="config-dialog"
+>inställningsdialogrutan</link
+>.</para>
+</tip>
+
+</sect1>
+
+<sect1 id="katehighlight-system">
+
+<title
+>&kate;s syntaxfärgläggningssystem</title>
+
+<para
+>Det här avsnittet beskriver &kate;s syntaxfärgläggningsmekanism i mer detalj. Det är avsett för dig, om du vill veta mer om den, eller om du vill skapa och ändra syntaxdefinitioner.</para>
+
+<sect2 id="katehighlight-howitworks">
+
+<title
+>Hur det fungerar</title>
+
+<para
+>Så fort du öppnar en fil, är en av de första sakerna som &kate;-editorn gör att avgöra vilken syntaxdefinition som ska användas för filen. När filens text läses in, och medan du skriver i den, så analyserar syntaxfärgläggningssystemet texten enligt reglerna som definieras i syntaxdefinitionen och markerar var i den som olika sammanhang och stilar börjar och slutar.</para>
+
+<para
+>När du skriver in text i dokumentet, så analyseras och markeras den nya texten i farten, så att om du tar bort ett tecken som markeras som början eller slutet på ett sammanhang, så ändras stilen på den omgivande texten i enlighet med detta.</para>
+
+<para
+>Syntaxdefinitioner som används av &kate;s syntaxfärgläggningssystem är &XML;-filer, som innehåller <itemizedlist>
+<listitem
+><para
+>Regler för att detektera funktionen hos text, organiserade i sammanhangsblock</para
+></listitem>
+<listitem
+><para
+>Listor med nyckelord</para
+></listitem>
+<listitem
+><para
+>Definitioner av stilobjekt</para
+></listitem>
+</itemizedlist>
+</para>
+
+<para
+>När texten analyseras utvärderas detekteringsreglerna i den ordning som de definierades, och om början på den nuvarande strängen matchar en regel, så används motsvarande sammanhang. Startpunkten i texten flyttas till den sista punkten där regeln matchade, och en ny genomgång av reglerna sker, med början i sammanhanget som anges av den matchande regeln.</para>
+
+</sect2>
+
+<sect2 id="highlight-system-rules">
+<title
+>Regler</title>
+
+<para
+>Detekteringsreglerna är centrala för färgläggningsdetekteringssystemet. En regel är en sträng, ett tecken eller ett reguljärt uttryck som texten som ska analyseras matchas mot. Den innehåller information om vilken stil som ska användas för den delen av texten som matchar. Den kan byta arbetssammanhanget för systemet, antingen till ett sammanhang som anges explicit, eller till det föregående sammanhanget som användes av texten.</para>
+
+<para
+>Reglerna organiseras i sammanhangsgrupper. En sammanhangsgrupp används för de huvudsakliga koncepten i formatets text, till exempel textsträngar inom citationstecken eller kommentarblock i programkällkod. Det här försäkrar att färgläggningssystemet inte behöver gå igenom alla regler när det inte är nödvändigt, och att vissa teckensekvenser i texten kan hanteras annorlunda beroende på det nuvarande sammanhanget. </para>
+
+<para
+>Sammanhang kan skapas dynamiskt för att till exempel tillåta användning av instansspecifik data i regler.</para>
+
+</sect2>
+
+<sect2 id="highlight-context-styles-keywords">
+<title
+>Sammanhangsstilar och nyckelord</title>
+
+<para
+>I vissa programspråk, hanteras heltal annorlunda än flyttal av kompilatorn (programmet som översätter källkoden till körbart binärformat), och det kan finnas tecken som har en särskild mening i en sträng med citationstecken. I sådana fall är det vettigt att visa dem på ett annat sätt än omgivningen så att de är lätta att identifiera när texten läses. Så även om de inte representerar speciella sammanhang, så kan de betraktas som sådana av syntaxfärgläggningssystemet, så att de kan markeras för att visas på ett annorlunda sätt.</para>
+
+<para
+>En syntaxdefinition kan innehålla så många stilar som krävs för att täcka koncepten i det format den används för.</para>
+
+<para
+>I många format finns det en lista på ord som representerar ett speciellt koncept. Till exempel i programspråk, så är kontrollsatserna ett koncept, namn på datatyper ett annat, och inbyggda funktioner i språket ett tredje. &kate;s syntaxfärgläggningssystem kan använda sådana listor för att detektera och markera ord i texten för att visa koncepten för textformaten.</para>
+
+</sect2>
+
+<sect2 id="kate-highlight-system-default-styles">
+<title
+>Standardstilar</title>
+
+<para
+>Om du öppnar en C++ källkodsfil, en Java källkodsfil och ett HTML-dokument i &kate;, så ser du att även om formaten är olika, och olika ord därför väljs för särskild behandling, så är färgerna som används samma. Det här beror på att &kate; har en fördefinierad lista med standardstilar, som används av varje individuell syntaxdefinition.</para>
+
+<para
+>Det här gör det lätt att känna igen liknande koncept i olika textformat. Kommentarer finns till exempel i nästa alla program-, skript- eller formateringsspråk, och när de visas med samma stil i alla språk, behöver du inte stanna och tänka efter för att identifiera dem i texten.</para>
+
+<tip>
+<para
+>Alla stilar i en syntaxdefinition använder en av standardstilarna. Några få syntaxdefinitioner använder fler stilar än det finns som standard, så om du ofta använder ett format, kan det vara värt att titta i inställningsdialogrutan för att se om några koncept använder samma stil. Det finns till exempel bara en standardstil för strängar, men eftersom programspråket Perl hanterar två sorters strängar, kan du utöka färgläggningen genom att ställa in dessa så att de skiljer sig något. Alla <link linkend="kate-highlight-default-styles"
+>tillgängliga standardstilar</link
+> förklaras senare.</para>
+</tip>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="katehighlight-xml-format">
+<title
+>&XML; formatet för syntaxfärgläggningsdefinitioner</title>
+
+<sect2>
+<title
+>Översikt</title>
+
+<para
+>Det här avsnittet är en översikt av färgläggningsdefinitionernas &XML;-format. Det beskriver huvudkomponenterna och deras betydelse och användning, och går djupare in i detaljerna för detekteringsreglerna.</para>
+
+<para
+>Den formella definitionen, också kallad en <acronym
+>DTD</acronym
+>, lagras i filen <filename
+>language.dtd</filename
+> som ska finnas installerad på ditt system i katalogen <filename
+>$<envar
+>KDEDIR</envar
+>/share/apps/kate/syntax</filename
+>. </para>
+
+<variablelist>
+<title
+>Huvudkomponenter i &kate;s färgläggningsdefinitioner</title>
+
+<varlistentry>
+<term
+>En syntaxfärgläggningsfil innehåller ett huvud som anger XML-versionen och dokumenttypen:</term>
+<listitem>
+<programlisting
+>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!DOCTYPE language SYSTEM &quot;language.dtd&quot;&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Definitionsfilens rot är elementet <userinput
+>language</userinput
+>. Följande egenskaper är tillgängliga:</term>
+
+<listitem>
+<para
+>Egenskaper som krävs:</para>
+<para
+><userinput
+>name</userinput
+> anger språkets namn. Det visas senare i menyer och dialogrutor.</para>
+<para
+><userinput
+>section</userinput
+> anger kategorin.</para>
+<para
+><userinput
+>extensions</userinput
+> definierar filändelser, som &quot;*.cpp;*.h&quot;.</para>
+
+<para
+>Valfria egenskaper:</para>
+<para
+><userinput
+>mimetype</userinput
+> kopplar filer baserat på &MIME;-typ.</para>
+<para
+><userinput
+>version</userinput
+> anger definitionsfilens aktuella version.</para>
+<para
+><userinput
+>kateversion</userinput
+> anger senaste version av &kate; som stöds.</para>
+<para
+><userinput
+>casesensitive</userinput
+> definierar om nyckelord är skiftlägeskänsliga eller inte.</para>
+<para
+><userinput
+>priority</userinput
+> krävs om en annan syntaxfärgläggningsfil använder samma filändelse. Den högsta prioriteten vinner.</para>
+<para
+><userinput
+>author</userinput
+> innehåller författarens namn och e-postadress.</para>
+<para
+><userinput
+>license</userinput
+> innehåller licensen, oftast LGPL, Artistic, GPL och andra.</para>
+<para
+><userinput
+>hidden</userinput
+> definierar om namnet ska visas i &kate;s menyer.</para>
+<para
+>Nästa rad kan alltså se ut så här:</para>
+<programlisting
+>&lt;language name=&quot;C++&quot; version=&quot;1.00&quot; kateversion=&quot;2.4&quot; section=&quot;Sources&quot; extensions=&quot;*.cpp;*.h&quot; /&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Därefter kommer elementet <userinput
+>highlighting</userinput
+> som innehåller det valfria elementet <userinput
+>list</userinput
+> och det nödvändiga elementen <userinput
+>contexts</userinput
+> och <userinput
+>itemDatas</userinput
+>.</term>
+<listitem>
+<para
+><userinput
+>list</userinput
+> element innehåller en lista med nyckelord. I det här fallet är nyckelorden <emphasis
+>class</emphasis
+> och <emphasis
+>const</emphasis
+>. Du kan lägga till så många listor som du behöver.</para>
+<para
+>Elementet <userinput
+>contexts</userinput
+> innehåller alla sammanhang. Det första sammanhanget är förvalt som start för färgläggningen. Det finns två regler i sammanhanget <emphasis
+>Normal Text</emphasis
+> som matchar listan av nyckelord med namnet <emphasis
+>något-namn</emphasis
+> och en regel som detekterar ett citationstecken och byter sammanhang till <emphasis
+>string</emphasis
+>. För att lära dig mer om regler, läs nästa kapitel.</para>
+<para
+>Den tredje delen är elementet <userinput
+>itemDatas</userinput
+>. Det innehåller alla färger och teckenstilar som behövs av sammanhangen och reglerna. I det här exemplet används <userinput
+>itemData</userinput
+> <emphasis
+>Normal Text</emphasis
+>, <emphasis
+>String</emphasis
+> och <emphasis
+>Keyword</emphasis
+>. </para>
+<programlisting
+>&lt;highlighting&gt;
+    &lt;list name=&quot;något-namn&quot;&gt;
+      &lt;item&gt; class &lt;/item&gt;
+      &lt;item&gt; const &lt;/item&gt;
+    &lt;/list&gt;
+    &lt;contexts&gt;
+      &lt;context attribute=&quot;Normal Text&quot; lineEndContext=&quot;#pop&quot; name=&quot;Normal Text&quot; &gt;
+        &lt;keyword attribute=&quot;Keyword&quot; context=&quot;#stay&quot; String=&quot;något-namn&quot; /&gt;
+        &lt;DetectChar attribute=&quot;String&quot; context=&quot;string&quot; char=&quot;&amp;quot;&quot; /&gt;
+      &lt;/context&gt;
+      &lt;context attribute=&quot;String&quot; lineEndContext=&quot;#stay&quot; name=&quot;string&quot; &gt;
+        &lt;DetectChar attribute=&quot;String&quot; context=&quot;#pop&quot; char=&quot;&amp;quot;&quot; /&gt;
+      &lt;/context&gt;
+    &lt;/contexts&gt;
+    &lt;itemDatas&gt;
+      &lt;itemData name=&quot;Normal Text&quot; defStyleNum=&quot;dsNormal&quot; /&gt;
+      &lt;itemData name=&quot;Keyword&quot; defStyleNum=&quot;dsKeyword&quot; /&gt;
+      &lt;itemData name=&quot;String&quot; defStyleNum=&quot;dsString&quot; /&gt;
+    &lt;/itemDatas&gt;
+  &lt;/highlighting&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Den sista delen av färgläggningsdefinitionen är den valfria sektionen <userinput
+>general</userinput
+>. Den kan innehålla information om nyckelord, kodvikning, kommentarer och indentering.</term>
+
+<listitem>
+<para
+>Sektionen <userinput
+>comment</userinput
+> definierar den sträng som enradskommentarer inleds med. Du kan också definiera flerradskommentarer med <emphasis
+>multiLine</emphasis
+> och den ytterligare egenskapen <emphasis
+>end</emphasis
+>. Det är användbart när användaren trycker på snabbtangenten som motsvarar <emphasis
+>kommentera/avkommentera</emphasis
+>.</para>
+<para
+>Sektionen <userinput
+>keywords</userinput
+> definierar om listor med nyckelord är skiftlägeskänsliga eller inte. Andra egenskaper förklaras senare.</para>
+<programlisting
+>&lt;general&gt;
+    &lt;comments&gt;
+      &lt;comment name="singleLine" start="#"/&gt;
+    &lt;/comments&gt;
+    &lt;keywords casesensitive="1"/&gt;
+  &lt;/general&gt;
+&lt;/language&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+
+</sect2>
+
+<sect2 id="kate-highlight-sections">
+<title
+>Sektionerna i detalj</title>
+<para
+>Den här delen beskriver alla tillgängliga egenskaper för sammanhang, itemData, nyckelord, kommentarer, kodvikning och indentering.</para>
+
+<variablelist>
+<varlistentry>
+<term
+>Elementet <userinput
+>context</userinput
+> hör till gruppen <userinput
+>contexts</userinput
+>. Själva sammanhanget definierar sammanhangsspecifika regler, som vad som ska ske om färgläggningssystemet når slutet på en rad. Tillgängliga egenskaper är:</term>
+
+
+<listitem>
+<para
+><userinput
+>name</userinput
+> är sammanhangets namn. Regler använder namnet för att ange sammanhanget att byta till om regeln matchar.</para>
+<para
+><userinput
+>lineEndContext</userinput
+> definierar sammanhanget som färgläggningssystemet byter till om det når ett radslut. Det kan antingen vara namnet på ett annat sammanhang, <userinput
+>#stay</userinput
+> för att inte byta sammanhang (dvs. göra ingenting) eller <userinput
+>#pop</userinput
+> som gör att sammanhanget lämnas. Det är till exempel möjligt att använda <userinput
+>#pop#pop#pop</userinput
+> för att återgå tre steg.</para>
+<para
+><userinput
+>lineBeginContext</userinput
+> definierar sammanhanget om början på en rad påträffas. Förval: #stay.</para>
+<para
+><userinput
+>fallthrough</userinput
+>definierar om färgläggningssystemet byter till sammanhanget som anges i fallthroughContext om ingen regel matchar. Förval: <emphasis
+>false</emphasis
+>.</para>
+<para
+><userinput
+>fallthroughContext</userinput
+> anger nästa sammanhang om ingen regel matchar.</para>
+<para
+><userinput
+>dynamic</userinput
+> om <emphasis
+>true</emphasis
+> kommer sammanhanget ihåg strängar/platsmarkörer som sparats av dynamiska regler. Det behövs till exempel för HERE-dokument. Förval: <emphasis
+>false</emphasis
+>.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Elementet <userinput
+>itemData</userinput
+> är i gruppen <userinput
+>itemDatas</userinput
+>. Det definierar teckenstilen och färgerna. Det är alltså möjligt att definiera egna stilar och färger, men vi rekommenderar dock att du håller dig till standardstilarna om möjligt, så att användaren alltid ser samma färger använda i olika språk. Ibland finns det dock inget annat sätt, och det är nödvändigt att ändra färg- och teckenegenskaper. Egenskapens namn och defStyleNum krävs, övriga är valfria. Tillgängliga egenskaper är:</term>
+
+<listitem>
+<para
+><userinput
+>name</userinput
+> anger namnet på itemData. Sammanhang och regler använder namnet i egenskapen <emphasis
+>attribute</emphasis
+> för att referera till itemData.</para>
+<para
+><userinput
+>defStyleNum</userinput
+> definierar vilken standardstil som ska användas. Tillgängliga standardstilar förklaras i detalj senare.</para>
+<para
+><userinput
+>color</userinput
+> definierar en färg. Giltiga format är '#rrggbb' eller '#rgb'.</para>
+<para
+><userinput
+>selColor</userinput
+> definierar markeringens färg.</para>
+<para
+><userinput
+>italic</userinput
+> om <emphasis
+>true</emphasis
+>, är texten kursiv.</para>
+<para
+><userinput
+>bold</userinput
+> om <emphasis
+>true</emphasis
+>, är texten i fetstil.</para>
+<para
+><userinput
+>underline</userinput
+> om <emphasis
+>true</emphasis
+>, är texten understruken.</para>
+<para
+><userinput
+>strikeout</userinput
+> om <emphasis
+>true</emphasis
+>, är texten överstruken.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Elementet <userinput
+>keywords</userinput
+> i gruppen <userinput
+>general</userinput
+> definierar nyckelordens egenskaper. Tillgängliga egenskaper är:</term>
+
+<listitem>
+<para
+><userinput
+>casesensitive</userinput
+> kan vara <emphasis
+>true</emphasis
+> eller <emphasis
+>false</emphasis
+>. Om det är <emphasis
+>true</emphasis
+>, matchas alla nyckelord skiftlägeskänsligt.</para>
+<para
+><userinput
+>weakDeliminator</userinput
+> är en lista med tecken som inte fungerar som ordavgränsare. Punkt <userinput
+>'.'</userinput
+> är till exempel en ordavgränsare. Med antagandet att ett nyckelord i en <userinput
+>list</userinput
+> innehåller en punkt, matchar det bara om du anger att punkten är en svag avgränsare.</para>
+<para
+><userinput
+>additionalDeliminator</userinput
+> definierar ytterligare avgränsare.</para>
+<para
+><userinput
+>wordWrapDeliminator</userinput
+> definierar tecken som en radbrytning kan ske efter.</para>
+<para
+>Standardavgränsare och radbrytningsavgränsare är tecknen <userinput
+>.():!+,-&lt;=&gt;%&amp;*/;?[]^{|}~\</userinput
+>, mellanslag (<userinput
+>' '</userinput
+>) och tabulator (<userinput
+>'\t'</userinput
+>).</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Elementet <userinput
+>comment</userinput
+> i gruppen <userinput
+>comments</userinput
+> definierar kommentaregenskaper som används för <menuchoice
+><guimenu
+>Verktyg</guimenu
+> <guimenuitem
+>Kommentera</guimenuitem
+></menuchoice
+> och <menuchoice
+><guimenu
+>Verktyg</guimenu
+> <guimenuitem
+>Avkommentera</guimenuitem
+></menuchoice
+>. Tillgängliga egenskaper är:</term>
+
+<listitem>
+<para
+><userinput
+>name</userinput
+> är antingen <emphasis
+>singleLine</emphasis
+> eller <emphasis
+>multiLine</emphasis
+>. Om du väljer <emphasis
+>multiLine</emphasis
+> krävs egenskaperna <emphasis
+>end</emphasis
+> och <emphasis
+>region</emphasis
+>.</para>
+<para
+><userinput
+>start</userinput
+> definierar strängen som används för att inleda en kommentar. I C++ skulle det vara &quot;/*&quot;.</para>
+<para
+><userinput
+>end</userinput
+> definierar strängen som används för att avslutar en kommentar. I C++ skulle det vara &quot;*/&quot;.</para>
+<para
+><userinput
+>region</userinput
+> ska vara namnet på den vikbara flerraderskommentaren. Med antagandet att du har <emphasis
+>beginRegion="Comment"</emphasis
+> ... <emphasis
+>endRegion="Comment"</emphasis
+> i dina regler, ska du använda <emphasis
+>region="Comment"</emphasis
+>. På så sätt fungerar avkommentering även om du inte markerar all text i en flerraderskommentar. Markören måste bara vara inne i flerraderskommentaren.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Elementet <userinput
+>folding</userinput
+> i gruppen <userinput
+>general</userinput
+> definierar kodvikningsegenskaper. Tillgängliga egenskaper är:</term>
+
+<listitem>
+<para
+><userinput
+>indentationsensitive</userinput
+> om <emphasis
+>true</emphasis
+> läggs kodvikningsmarkörerna till baserat på indentering, som i skriptspråket Python. Oftast behöver du inte ange det, eftersom det har det förvalda värdet <emphasis
+>false</emphasis
+>.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Elementet <userinput
+>indentation</userinput
+> i gruppen <userinput
+>general</userinput
+> definierar vilken identerare som ska användas, även om vi starkt rekommenderar att utelämna elementet, eftersom intenteraren oftast anges genom att definiera en filtyp eller genom att lägga till lägesrader i textfilen. Om du dock anger en indenterare, tvingar du användaren att använda en viss indentering, vilket kanske inte alls uppskattas. Tillgängliga egenskaper är:</term>
+
+<listitem>
+<para
+><userinput
+>mode</userinput
+> är namnet på indenteraren. Indenterare som för närvarande är tillgängliga är:<emphasis
+>normal, cstyle, csands, xml, python</emphasis
+> och <emphasis
+>varindent</emphasis
+>.</para>
+</listitem>
+</varlistentry>
+
+
+</variablelist>
+
+
+</sect2>
+
+<sect2 id="kate-highlight-default-styles">
+<title
+>Tillgängliga standardstilar</title>
+<para
+>Standardstilar har <link linkend="kate-highlight-system-default-styles"
+>redan förklarats</link
+>. En kort sammanfattning: Standardstilar är fördefinierade stilar för teckensnitt och färger.</para>
+<variablelist>
+<varlistentry>
+<term
+>Här är alltså bara listan med tillgängliga standardstilar:</term>
+<listitem>
+<para
+><userinput
+>dsNormal</userinput
+>, används för normal text.</para>
+<para
+><userinput
+>dsKeyword</userinput
+>, används för nyckelord.</para>
+<para
+><userinput
+>dsDataType</userinput
+>, används för datatyper.</para>
+<para
+><userinput
+>dsDecVal</userinput
+>, används för decimala värden.</para>
+<para
+><userinput
+>dsBaseN</userinput
+>, används för värden med en bas skild från 10.</para>
+<para
+><userinput
+>dsFloat</userinput
+>, används för flyttal.</para>
+<para
+><userinput
+>dsChar</userinput
+>, används för ett tecken.</para>
+<para
+><userinput
+>dsString</userinput
+>, används för strängar.</para>
+<para
+><userinput
+>dsComment</userinput
+>, används för kommentarer.</para>
+<para
+><userinput
+>dsOthers</userinput
+>, används för 'andra' saker.</para>
+<para
+><userinput
+>dsAlert</userinput
+>, används för varningsmeddelanden.</para>
+<para
+><userinput
+>dsFunction</userinput
+>, används för funktionsanrop.</para>
+<para
+><userinput
+>dsRegionMarker</userinput
+>, används för områdesmarkeringar.</para>
+<para
+><userinput
+>dsError</userinput
+>, används för färgläggning av fel och felaktig syntax.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="kate-highlight-rules-detailled">
+<title
+>Regler för syntaxdetektering</title>
+
+<para
+>Den här sektionen beskriver reglerna för syntaxdetektering.</para>
+
+<para
+>Varje regel kan matcha noll eller flera tecken i början av strängen som de ska testa. Om regeln matchar, så tilldelas de matchande tecknen stilen eller <emphasis
+>egenskapen</emphasis
+> som definieras av regeln. En regel kan också begära att det nuvarande sammanhanget byts.</para>
+
+<para
+>En regel ser ut så här:</para>
+
+<programlisting
+>&lt;Regelnamn attribute=&quot;(identifierare)&quot; context=&quot;(identifierare)&quot; [regelspecifika egenskaper] /&gt;</programlisting>
+
+<para
+>Ordet <emphasis
+>attribute</emphasis
+> identifierar stilen som ska användas för tecken som matchar med namn eller index, och <emphasis
+>context</emphasis
+> identifierar sammanhanget som ska användas i fortsättningen.</para>
+
+<para
+><emphasis
+>Sammanhanget</emphasis
+> kan identifieras av:</para>
+
+<itemizedlist>
+<listitem>
+<para
+>En <emphasis
+>identifierare</emphasis
+>, som är namnet på det andra sammanhanget.</para>
+</listitem>
+<listitem>
+<para
+>En <emphasis
+>ordning</emphasis
+> som talar om att färgläggningen ska stanna kvar i det nuvarande sammanhanget (<userinput
+>#stay</userinput
+>), eller gå tillbaka till det föregående sammanhanget som använts i strängen (<userinput
+>#pop</userinput
+>).</para>
+<para
+>För att gå tillbaka flera steg, kan nyckelordet #pop upprepas: <userinput
+>#pop#pop#pop</userinput
+></para>
+</listitem>
+</itemizedlist>
+
+<para
+>Vissa regler kan ha <emphasis
+>delregler</emphasis
+>, bara utvärderas om huvudregeln matchar. Hela den matchande strängen kommer att få egenskapen som definieras av huvudregeln. En regel med en delregel ser ut så här:</para>
+
+<programlisting
+>&lt;Regelnamn (egenskaper)&gt;
+  &lt;Delregelnamn (egenskaper) /&gt;
+  ...
+&lt;/Regelnamn&gt;
+</programlisting>
+
+
+<para
+>Regelspecifika egenskaper varierar och beskrivs i följande avsnitt.</para>
+
+
+<itemizedlist>
+<title
+>Gemensamma egenskaper</title>
+<para
+>Alla regler har följande egenskaper gemensamma och är tillgängliga på alla ställen <userinput
+>(gemensamma egenskaper)</userinput
+> visas. Egenskaperna <emphasis
+>attribute</emphasis
+> och <emphasis
+>context</emphasis
+> är nödvändiga, alla övriga är valfria. </para>
+
+<listitem>
+<para
+><emphasis
+>attribute</emphasis
+>: En egenskap avbildas på en definierad <emphasis
+>itemData</emphasis
+>.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>context</emphasis
+>: Anger sammanhanget som färgläggningssystemet byter till om regeln matchar.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>beginRegion</emphasis
+>: Inled ett kodvikningsblock. Förval: unset.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>endRegion</emphasis
+>: Avsluta ett kodvikningsblock. Förval: unset.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>lookAhead</emphasis
+>: Om <emphasis
+>true</emphasis
+> behandlar inte färgläggningssystemet matchningens längd. Förval: <emphasis
+>false</emphasis
+>.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>firstNonSpace</emphasis
+>: Matcha bara om strängen är den första förutom blanktecken på raden. Förval: <emphasis
+>false</emphasis
+>.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>column</emphasis
+>: Matcha bara om kolumnen matchar. Förval: unset.</para>
+</listitem>
+</itemizedlist>
+
+<itemizedlist>
+<title
+>Dynamiska regler</title>
+<para
+>Vissa regler tillåter den valfria egenskapen <userinput
+>dynamic</userinput
+> med Boolesk typ, som har förvalt värde <emphasis
+>false</emphasis
+>. Om dynamic är <emphasis
+>true</emphasis
+>, kan en regel använda platsmarkörer som representerar texten som matchas av en regel med ett <emphasis
+>reguljärt uttryck</emphasis
+> som byter till nuvarande sammanhang med sin egenskap <userinput
+>string</userinput
+> eller <userinput
+>char</userinput
+>. I en <userinput
+>string</userinput
+> ersätts platsmarkören <replaceable
+>%N</replaceable
+> (där N är ett tal) med motsvarande <replaceable
+>N</replaceable
+> i det anropande reguljära uttrycket. I en <userinput
+>char</userinput
+> måste platsmarkören vara ett tal <replaceable
+>N</replaceable
+> och det ersätts med första tecknet i motsvarande <replaceable
+>N</replaceable
+> i det anropande reguljära uttrycket. Närhelst en regel tillåter den här egenskapen, innehåller den <emphasis
+>(dynamic)</emphasis
+>.</para>
+
+<listitem>
+<para
+><emphasis
+>dynamic</emphasis
+>: kan vara <emphasis
+>(true | false)</emphasis
+>.</para>
+</listitem>
+</itemizedlist>
+
+<sect2 id="highlighting-rules-in-detail">
+<title
+>Reglerna i detalj</title>
+
+<variablelist>
+<varlistentry>
+<term
+>DetectChar</term>
+<listitem>
+<para
+>Detektera ett enda specifikt tecken. Används ofta för att till exempel hitta slutet på strängar inom citationstecken.</para>
+<programlisting
+>&lt;DetectChar char=&quot;(tecken)&quot; (gemensamma egenskaper) (dynamisk) /&gt;</programlisting>
+<para
+>Egenskapen <userinput
+>char</userinput
+> definierar tecknet som ska matchas.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Detect2Chars</term>
+<listitem>
+<para
+>Detektera två angivna tecken i en definierad ordning.</para>
+<programlisting
+>&lt;Detect2Chars char=&quot;(tecken)&quot; char1=&quot;(tecken)&quot; (gemensamma egenskaper) (dynamisk) /&gt;</programlisting>
+<para
+>Egenskapen <userinput
+>char</userinput
+> definierar det första tecknet som ska matcha, <userinput
+>char1</userinput
+> det andra.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>AnyChar</term>
+<listitem>
+<para
+>Detektera ett tecken i en angiven teckenmängd.</para>
+<programlisting
+>&lt;AnyChar String=&quot;(sträng)&quot; (gemensamma egenskaper) /&gt;</programlisting>
+<para
+>Egenskapen <userinput
+>String</userinput
+> definierar teckenmängden.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>StringDetect</term>
+<listitem>
+<para
+>Detektera en sträng exakt.</para>
+<programlisting
+>&lt;StringDetect String=&quot;(sträng)&quot; [insensitive=&quot;TRUE|FALSE;&quot;] (gemensamma egenskaper) (dynamisk) /&gt;</programlisting>
+<para
+>Egenskapen <userinput
+>String</userinput
+> definierar strängen som ska matcha. Egenskapen <userinput
+>insensitive</userinput
+> (okänslig) är normalt <userinput
+>FALSE</userinput
+> (FALSK) och skickas med till strängjämförelsefunktionen. Om värdet är <userinput
+>TRUE</userinput
+> (SANT) så används en jämförelse som inte bryr sig om skiftläge.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>RegExpr</term>
+<listitem>
+<para
+>Matchar med ett reguljärt uttryck.</para>
+<programlisting
+>&lt;RegExpr String=&quot;(sträng)&quot; [insensitive=&quot;TRUE|FALSE;&quot;] [minimal=&quot;TRUE| FALSE&quot;] (gemensamma egenskaper) (dynamisk) /&gt;</programlisting>
+<para
+>Egenskapen <userinput
+>String</userinput
+> definierar det reguljära uttrycket.</para>
+<para
+>Egenskapen <userinput
+>insensitive</userinput
+> (okänslig) är normalt <userinput
+>FALSE</userinput
+> (FALSK) och skickas med det reguljära uttrycket.</para>
+<para
+>Egenskapen <userinput
+>minimal</userinput
+> är normalt <userinput
+>FALSE</userinput
+> (FALSK) och skickas med det reguljära uttrycket.</para>
+<para
+>Eftersom reglerna alltid matchas mot början av den nuvarande strängen, så anger ett reguljärt uttryck som börjar med en hatt (<literal
+>^</literal
+>) att regeln bara ska matchas mot radens början.</para>
+<para
+>Se <link linkend="regular-expressions"
+>Reguljära uttryck</link
+> för mer information om dem.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>keyword</term>
+<listitem>
+<para
+>Detektera ett nyckelord från en angiven lista.</para>
+<programlisting
+>&lt;keyword String=&quot;(listnamn)&quot; (gemensamma egenskaper) /&gt;</programlisting>
+<para
+>Egenskapen <userinput
+>String</userinput
+> identifierar en lista på nyckelord med namn. En lista med det namnet måste finnas.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Int</term>
+<listitem>
+<para
+>Detektera ett  heltal.</para>
+<para
+><programlisting
+>&lt;Int (gemensamma egenskaper) (dynamisk) /&gt;</programlisting
+></para>
+<para
+>Den här regeln har inga specifika egenskaper. Delregler används typiskt för att detektera kombinationer av <userinput
+>L</userinput
+> och <userinput
+>U</userinput
+> efter talet, som anger heltalstypen i programkod. I själva verket tillåts alla regler som delregler, även om <userinput
+>DTD</userinput
+>:n bara tillåter delregeln <userinput
+>StringDetect</userinput
+>.</para>
+<para
+>Följande exempel matchar heltal som följs av tecknet 'L'. <programlisting
+>&lt;Int attribute="Decimal" context="#stay" &gt;
+  &lt;StringDetect attribute="Decimal" context="#stay" String="L" insensitive="true"/&gt;
+&lt;/Int&gt;
+</programlisting
+></para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Float</term>
+<listitem>
+<para
+>Detektera ett  flyttal.</para>
+<para
+><programlisting
+>&lt;Float (gemensamma egenskaper) /&gt;</programlisting
+></para>
+<para
+>Den här regeln har inga specifika egenskaper. <userinput
+>AnyChar</userinput
+> tillåts som en delregel, och används typiskt för att detektera kombinationer, se regeln <userinput
+>Int</userinput
+> för en referens.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HlCOct</term>
+<listitem>
+<para
+>Detektera en oktal talrepresentation.</para>
+<para
+><programlisting
+>&lt;HlCOct (gemensamma egenskaper) /&gt;</programlisting
+></para>
+<para
+>Den här regeln har inga specifika egenskaper.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HlCHex</term>
+<listitem>
+<para
+>Detektera en hexadecimal talrepresentation.</para>
+<para
+><programlisting
+>&lt;HlCHex (gemensamma egenskaper) /&gt;</programlisting
+></para>
+<para
+>Den här regeln har inga specifika egenskaper.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HlCStringChar</term>
+<listitem>
+<para
+>Detektera ett undantaget tecken.</para>
+<para
+><programlisting
+>&lt;HlCStringChar (gemensamma egenskaper) /&gt;</programlisting
+></para>
+<para
+>Den här regeln har inga specifika egenskaper.</para>
+
+<para
+>Det matchar bokstavsrepresentationer av osynliga tecken som ofta används i programkod, till exempel <userinput
+>\n</userinput
+> (nyrad) eller <userinput
+>\t</userinput
+> (tabulator).</para>
+
+<para
+>Följande tecken matchar om de följer ett bakstreck (<literal
+>\</literal
+>): <userinput
+>abefnrtv&quot;'?</userinput
+>. Dessutom matchar undantagna hexadecimala tal, som till exempel <userinput
+>\xff</userinput
+> och undantagna oktala tal, till exempel <userinput
+>\033</userinput
+>.</para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HlCChar</term>
+<listitem>
+<para
+>Detektera ett C-tecken.</para>
+<para
+><programlisting
+>&lt;HlCChar (gemensamma egenskaper) /&gt;</programlisting
+></para>
+<para
+>Den här regeln har inga specifika egenskaper.</para>
+
+<para
+>Det matchar C-tecken omgivna av apostrofer (till exempel <userinput
+>'c'</userinput
+>). Det kan finnas ett enkelt tecken eller en teckenföljd inom apostroferna. Se HlCStringChar för matchade teckenföljder.</para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>RangeDetect</term>
+<listitem>
+<para
+>Detektera en sträng med definierade start- och sluttecken.</para>
+<programlisting
+>&lt;RangeDetect char=&quot;(tecken)&quot;  char1=&quot;(tecken)&quot; (gemensamma egenskaper) /&gt;</programlisting>
+<para
+><userinput
+>char</userinput
+> definierar tecknet som inleder intervallet, och <userinput
+>char1</userinput
+> tecknet som avslutar intervallet.</para>
+<para
+>Användbar för att till exempel detektera små strängar inom citationstecken och liknande, men observera att eftersom färgläggningen arbetar med en rad i taget, så hittar det här inte strängar som fortsätter på nästa rad.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>LineContinue</term>
+<listitem>
+<para
+>Matchar vid radens slut.</para>
+<programlisting
+>&lt;LineContinue (gemensamma egenskaper) /&gt;</programlisting>
+<para
+>Den här regeln har inga specifika egenskaper.</para>
+<para
+>Den här regeln är användbar för att byta sammanhang vid radslut, om det sista tecknet är ett bakstreck (<userinput
+>'\'</userinput
+>). Det behövs till exempel i C/C++ för att fortsätta makron eller strängar.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>IncludeRules</term>
+<listitem>
+<para
+>Inkludera regler från ett annat sammanhang eller språk/fil.</para>
+<programlisting
+>&lt;IncludeRules context=&quot;sammanhangslänk&quot; [includeAttrib=&quot;true|false&quot;] /&gt;</programlisting>
+
+<para
+>Egenskapen <userinput
+>context</userinput
+> definierar vilket sammanhang som ska inkluderas.</para>
+<para
+>Om den är en enkelt sträng innehåller den alla definierade regler i det nuvarande sammanhanget, till exempel: <programlisting
+>&lt;IncludeRules context=&quot;annat-sammanhang&quot; /&gt;</programlisting
+></para>
+
+<para
+>Om strängen börjar med <userinput
+>##</userinput
+> letar syntaxfärgläggningssystemet efter en annan språkdefinition med det givna namnet, till exempel: <programlisting
+>&lt;IncludeRules context=&quot;##C++&quot; /&gt;</programlisting
+></para>
+<para
+>Om egenskapen <userinput
+>includeAttrib</userinput
+> är <emphasis
+>true</emphasis
+>, ändras målegenskapen till källans egenskap. Det krävs till exempel för att kommentarer ska fungera om text som matchas av det inkluderade sammanhanget har en annan färgläggning än värdsammanhanget. </para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>DetectSpaces</term>
+<listitem>
+<para
+>Detektera blanktecken.</para>
+<programlisting
+>&lt;DetectSpaces (gemensamma egenskaper) /&gt;</programlisting>
+
+<para
+>Den här regeln har inga specifika egenskaper.</para>
+<para
+>Använd den här regeln om du vet att det kan finnas flera blanktecken framför, till exempel i början av indenterade rader. Regeln hoppar över alla blanktecken på en gång, istället för att prova flera regler och hoppa över en åt gången eftersom den inte matchar.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>DetectIdentifier</term>
+<listitem>
+<para
+>Detektera strängar för identifierare (som ett reguljärt uttryck: [a-zA-Z_][a-zA-Z0-9_]*).</para>
+<programlisting
+>&lt;DetectIdentifier (gemensamma egenskaper) /&gt;</programlisting>
+
+<para
+>Den här regeln har inga specifika egenskaper.</para>
+<para
+>Använd den här regeln för att hoppa över en sträng med ordtecken på en gång, istället för att testa den med flera regler och hoppa ett steg i taget beroende på att ingenting matchar.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</sect2>
+
+<sect2>
+<title
+>Tips och trick</title>
+
+<itemizedlist>
+<para
+>När du väl har förstått hur sammanhangsbyte fungerar blir det enkelt att skriva färgläggningsdefinitioner. Du bör ändå kontrollera noggrant vilken regel du väljer i vilken situation. Reguljära uttryck är mycket kraftfulla, men de är långsamma jämfört med andra regler. Du bör därför ta hänsyn till följande tips. </para>
+
+<listitem>
+<para
+>Om du bara matchar två tecken, använd <userinput
+>Detect2Chars</userinput
+> istället för <userinput
+>StringDetect</userinput
+>. Samma sak gäller för <userinput
+>DetectChar</userinput
+>.</para>
+</listitem>
+<listitem>
+<para
+>Reguljära uttryck är enkla att använda, men oftast finns det ett annat mycket snabbare sätt att uppnå samma resultat. Antag att du bara vill matcha tecknet <userinput
+>'#'</userinput
+> om det är det första tecknet på en rad. En lösning baserad på reguljära uttryck skulle se ut så här: <programlisting
+>&lt;RegExpr attribute=&quot;Macro&quot; context=&quot;macro&quot; String=&quot;^\s*#&quot; /&gt;</programlisting
+> Du kan uppnå samma sak mycket snabbare med: <programlisting
+>&lt;DetectChar attribute=&quot;Macro&quot; context=&quot;macro&quot; char=&quot;#&quot; firstNonSpace=&quot;true&quot; /&gt;</programlisting
+> Om du vill matcha det reguljära uttrycket <userinput
+>'^#'</userinput
+> kan du fortfarande använda <userinput
+>DetectChar</userinput
+> med egenskapen <userinput
+>column=&quot;0&quot;</userinput
+>. Egenskapen <userinput
+>column</userinput
+> räknar baserat på tecken, så en tabulator är fortfarande bara ett tecken. </para>
+</listitem>
+<listitem>
+<para
+>Du kan byta sammanhang utan att behandla tecken. Antag att du vill byta sammanhang när du stöter på strängen <userinput
+>*/</userinput
+>, men måste behandla denna sträng i nästa sammanhang. Regeln nedan matchar, och egenskapen <userinput
+>lookAhead</userinput
+> gör att färgläggningen behåller den matchade strängen för nästa sammanhang. <programlisting
+>&lt;Detect2Chars attribute=&quot;Comment&quot; context=&quot;#pop&quot; char=&quot;*&quot; char1=&quot;/&quot; lookAhead=&quot;true&quot; /&gt;</programlisting>
+</para>
+</listitem>
+<listitem>
+<para
+>Använd <userinput
+>DetectSpaces</userinput
+> om du vet att många blanktecken förekommer.</para>
+</listitem>
+<listitem>
+<para
+>Använd <userinput
+>DetectIdentifier</userinput
+> instället för ett reguljärt uttryck <userinput
+>'[a-zA-Z_]\w*'</userinput
+>.</para>
+</listitem>
+<listitem>
+<para
+>Använd standardstilar överallt du kan. På så sätt finner användaren en bekant miljö.</para>
+</listitem>
+<listitem>
+<para
+>Titta i andra XML-filer för att se hur andra implementerade knepiga regler.</para>
+</listitem>
+<listitem>
+<para
+>Du kan validera alla XML-filer genom att använda kommandot <command
+>xmllint --dtdvalid language.dtd min-syntax.xml</command
+>.</para>
+</listitem>
+<listitem>
+<para
+>Om du mycket ofta upprepar komplexa reguljära uttryck kan du använda <emphasis
+>ENTITETER</emphasis
+>. Till exempel:</para>
+<programlisting
+>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE language SYSTEM "language.dtd"
+[
+        &lt;!ENTITY minref    "[A-Za-z_:][\w.:_-]*"&gt;
+]&gt;
+</programlisting>
+<para
+>Nu kan du använda <emphasis
+>&amp;myref;</emphasis
+> istället för det reguljära uttrycket.</para>
+</listitem>
+</itemizedlist>
+</sect2>
+
+</sect1>
+
+</appendix>

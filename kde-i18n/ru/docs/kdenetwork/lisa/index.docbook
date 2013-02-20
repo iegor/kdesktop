@@ -1,0 +1,900 @@
+<?xml version="1.0" ?>
+<!DOCTYPE book PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" "dtd/kdex.dtd" [
+  <!ENTITY lisa "<application
+>LISa</application
+>">
+  <!ENTITY package "kdenetwork">
+  <!ENTITY reslisa "<application
+>resLISa</application
+>">
+  <!ENTITY kappname "&lisa;"
+><!-- replace kapp here -->
+  <!ENTITY % addindex "IGNORE">
+  <!ENTITY % Russian "INCLUDE"
+><!-- change language only here -->
+]>
+
+<book lang="&language;">
+
+<bookinfo>
+
+<title
+>Руководство &lisa;</title>
+
+<authorgroup>
+<author
+><firstname
+>Alexander</firstname
+> <surname
+>Neundorf</surname
+> <affiliation
+> <address
+><email
+>neundorf@kde.org</email
+></address>
+</affiliation>
+</author>
+
+<othercredit role="translator"
+><firstname
+>Олег</firstname
+> <surname
+>Баталов</surname
+> <affiliation
+><address
+><email
+>batalov@twiga.kz</email
+></address
+></affiliation
+><contrib
+>Перевод на русский</contrib
+></othercredit
+> 
+
+</authorgroup>
+
+<copyright>
+<year
+>2001</year>
+<holder
+>Alexander Neundorf</holder>
+</copyright>
+
+<date
+>2001-07-07</date>
+<releaseinfo
+>0.01.00</releaseinfo>
+
+<abstract>
+<para
+>&lisa; предназначена для показа <quote
+>сетевого окружения</quote
+>, работает только поверх протокола TCP/IP и не зависит от <acronym
+>SMB</acronym
+> и других служб.</para>
+
+<para
+>Это руководство описывает Информационный сервер <acronym
+>LAN</acronym
+> (&lisa;) и Ограниченный информационный сервер (&reslisa;)</para>
+
+</abstract>
+
+<keywordset>
+<keyword
+>KDE</keyword>
+<keyword
+>kdenetwork</keyword>
+<keyword
+>LAN</keyword>
+<keyword
+>network</keyword>
+<keyword
+>network neighborhood</keyword>
+</keywordset>
+
+</bookinfo>
+
+<chapter id="introduction">
+<title
+>Введение</title>
+
+<para
+>&lisa; предназначена для показа <quote
+>сетевого окружения</quote
+>, работает только поверх протокола TCP/IP и не зависит от <acronym
+>SMB</acronym
+> и других служб.</para>
+
+<para
+>Она полностью независима от &kde;/&Qt;.</para>
+
+<para
+>Список работающих серверов предоставляется через порт 7741 протокола <acronym
+>TCP</acronym
+>.</para>
+
+<para
+>&lisa; поддерживает два способа поиска компьютеров в сети:</para>
+
+<orderedlist>
+<listitem>
+<para
+>Вы указываете &lisa; диапазон адресов <acronym
+>IP</acronym
+>, тогда &lisa; посылает эхо-запрос <acronym
+>ICMP</acronym
+> по всем указанным адресам <acronym
+>IP</acronym
+>, и ожидает ответов.</para>
+</listitem>
+<listitem>
+<para
+>Вы можете указать &lisa; выполнить команду <command
+>nmblookup</command
+> с опцией <option
+>"*"</option
+>. Это утилита командной строки, поставляемая вместе с пакетом Samba. <command
+>nmblookup</command
+> <option
+>"*"</option
+> посылает широковещательные запросы в доступные сети, и все компьютеры, на которых работает  сервер <acronym
+>SMB</acronym
+>, отвечают на этот запрос.</para>
+</listitem>
+
+</orderedlist>
+
+</chapter>
+
+<chapter id="how-it-works">
+<title
+>Как это работает</title>
+
+<para
+>В конфигурационном файле вы указываете диапазон IP-адресов, которые сервис &lisa; должен проверять на работоспособность.</para>
+
+<para
+>В самом простом случае это может быть адрес/маска вашей сети, тогда &lisa; будет сканировать каждый возможный адрес в вашей сети, чтобы проверить его работоспособность.</para>
+
+<para
+>Сервера проверяются с использованием эхо-запросов <acronym
+>ICMP</acronym
+>. Чтобы иметь возможность посылать и принимать эхо-запросы <acronym
+>ICMP</acronym
+> программа должны открыть так называемый <quote
+>raw-сокет</quote
+>. Для этого необходимы привилегии пользователя <systemitem class="username"
+>root</systemitem
+>. Этот сокет открывается при запуске программы, после успешного открытия сокета привилегии root будут немедленно понижены (смотрите файлы <filename
+>main.cpp</filename
+> и <filename
+>strictmain.cpp</filename
+>).</para>
+
+<para
+>Если вы настроили &lisa; на использование команды <command
+>nmblookup</command
+>, будет выполнен <literal
+>popen("nmblookup \"*\"")</literal
+> и проанализированы его результаты.</para>
+
+<para
+>Так как запросы <acronym
+>ICMP</acronym
+> и широковещательные запросы генерируют некоторый сетевой трафик, существует возможность завести более одного работающего сервера а сети и они будут сотрудничать друг с другом. Перед отправкой запросов (либо использованием команды <command
+>nmblookup</command
+>), посылается  широковещательный запрос на порт 7741.</para>
+
+<para
+>Если кто-то ответил на этот широковещательный запрос, список работающих серверов будет получен через порт 7741 протокола <acronym
+>TCP</acronym
+> с этого сервера и эхо-запросы (либо команда <command
+>nmblookup</command
+>) выполнятся не будет.</para>
+
+<para
+>Если никто не ответил, сервер, который послал широковещательный запрос, начинает посылать эхо-запросы (либо выполнить программу <command
+>nmblookup</command
+>) и откроет сокет, который принимает широковещательные запросы. Если сервер получил ответ на свой широковещательный запрос, он не открывает сокет. Так что обычно только один сервер открывает сокет и только он фактически проверяет доступность других серверов (либо выполняет <command
+>nmblookup</command
+>). </para>
+
+<para
+>Другими словами, сервера ленивы, они действуют по принципу: <quote
+>Я сделаю что-то только если никто этого ещё не сделал</quote
+>.</para>
+
+<para
+>Есть и другая возможность уменьшения сетевого трафика.</para>
+
+<para
+>Если вы настроили интервал обновления &lisa; каждые 10 минут, то вы не обращаетесь к серверу слишком часто. Если никто не обращался к серверу за предыдущий период обновления, сервер обновит (самостоятельно или от того, что кто-то выполнит обновление вручную) и удвоит свой интервал обновления. &ie; следующее обновление произойдёт через 20 минут.</para>
+
+<para
+>Такое происходит 4 раза, так что если никто долго не обращался к серверу с периодом обновления 10 минут, его интервал обновления увеличится до 160 минут (три часа). Теперь, если кто-либо обращается к серверу, он получит устаревший список (обновлённый 160 минут назад). При запросе к серверу он восстановит значение интервала в первоначальные &ie; 10 минут и немедленно начнёт обновление, если последнее обновление было раньше 10 минут назад. Это означает, что вы получаете устаревший список и можете попробовать через несколько секунд получить последние данные.</para>
+
+<para
+>Это приведёт к повышению частоты обновления для серверов, которые не пингуют (либо используют nmblookup) другие сервера, поскольку к ним обычно обращается только один пользователь. И меньший эффект будет достигнут на серверах, которые выполняют пинги (либо используют nmblookup), так как к ним обращаются все другие. </para>
+
+<para
+>При этом варианте возможна ситуация, когда в сети работают множество серверов и в ней сохраняется небольшой трафик.  Для пользователя не важно, какие сервера работают в сети (&ie; сервер имён, файловый сервер либо другой), в которой используется &lisa;. Он всегда может запустить &lisa; локально и &lisa; определит, что он один, совершенно прозрачно для пользователя.</para>
+
+<para
+>Первый клиент &lisa; входил в  ioslave для &kde; 2, так что пользователь может ввести <userinput
+>lan://localhost/</userinput
+> либо <userinput
+>lan:/</userinput
+> для использования результатов &lisa; на своём компьютере.</para>
+
+<para
+>Если есть компьютер, работающий постоянно, и пользователь знает, что на нём выполняется &lisa;, он может воспользоваться им явно (через ioslave <userinput
+>lan://the_server_name/</userinput
+>).</para>
+
+<para
+>Если вы не хотите, чтобы ваш сервис &lisa; принимал участие в широковещательных рассылках, но всегда выполнял пингование непосредственно, укажите ему опцией командной строки <option
+>--port</option
+> либо <option
+>-p</option
+> использовать другой порт. Это не рекомендуется!</para>
+
+<para
+>Если вы пошлёте сервису &lisa; сигнал <command
+>SIGHUP</command
+>, он перезагрузит свои параметры из файла конфигурации. Если вы пошлёте сервису &lisa; сигнал <command
+>SIGUSR1</command
+>, он выведет некоторую информацию о статусе на стандартный вывод.</para>
+
+<para
+>Данные, предоставляемые через сокет, имею простой формат:<computeroutput
+>&lt;десятичный адрес ip в сетевом порядке следования байтов&gt;&lt; один пробел 0x20&gt;&lt;полное имя компьютера&gt;&lt;завершающий '\0'&gt;&lt;новая строка '\n'&lt;</computeroutput
+> и последняя строка<computeroutput
+>0 succeeded&lt;'\n'&gt;</computeroutput
+> </para>
+
+<para
+>Например,</para>
+
+<screen
+><computeroutput
+>17302538 some_host.whatever.de
+18285834 linux.whatever.de
+17827082 nameserver.whatever.de
+0 succeeded</computeroutput
+></screen>
+
+<para
+>Это должно обеспечить лёгкость разбора.</para>
+
+<para
+>Если в вашей сети существуют строгие правила по защите информации, некоторые люди могут посчитать пинги потенциальной атакой. Если столкнётесь с этим, используйте ограниченную версию сервиса, &reslisa;.</para
+> 
+
+</chapter>
+
+<chapter id="reslisa">
+<title
+>&reslisa;</title>
+
+<para
+>Если в вашей сети очень строгие правила безопасности, вы не хотите иметь открытый порт, или по другой причине вы можете использовать &reslisa;.</para>
+
+<para
+>При использовании &reslisa; вы не можете проверять сети целиком и диапазоны  адресов, вы можете указать в файле конфигурации до 64 компьютеров с их именами. Они будут проверены. Вы всё ещё можете использовать <command
+>nmblookup</command
+>.</para>
+
+<para
+>&reslisa; предоставляет информацию только через unix-сокет, &ie; не через сеть. Имя сокета будет <filename
+>/tmp/resLisa-ВашеИмяПользователя</filename
+>, так что &reslisa; может безопасно выполняться на компьютере с большим количеством пользователей.</para>
+
+<para
+>Установка прав <systemitem class="username"
+>root</systemitem
+> на &reslisa; не должно вызвать проблем безопасности, так как они будут сразу понижены после запуска (смотрите файл <filename
+>strictmain.cpp</filename
+>). Эти права необходимы только при создания низкоуровневого сокета для отправки эхо-запросов <acronym
+>ICMP</acronym
+>.</para>
+
+<para
+>Сервис также не будет посылать и принимать широковещательные пакеты. Первый клиент этого сервиса - ioslave для  &kde; 2 (например, введите  <userinput
+>rlan:/</userinput
+> в &konqueror;).</para>
+
+</chapter>
+
+<chapter id="config-file-format">
+<title
+>Файл конфигурации</title>
+
+<para
+>Теперь пример файла конфигурации:</para>
+
+<screen
+>PingAddresses = 192.168.100.0/255.255.255.0;192.168.100.10-192.168.199.19;192.168.200.1;192-192.168-168.100-199.0-9;
+PingNames = bb_mail;
+AllowedAddresses = 192.168.0.0/255.255.0.0
+BroadcastNetwork = 192.168.100.0/255.255.255.0
+SearchUsingNmblookup = 1                # использовать nmblookup
+FirstWait = 30                          # 30 сотых секунды
+SecondWait = -1                         # только одна попытка
+#SecondWait = 60                        # пробовать дважды, и ожидать во второй раз 0.6 секунды
+UpdatePeriod = 300                      # период обновления, секунд
+DeliverUnnamedHosts = 0                 # не показывать компьютеры без имени
+MaxPingsAtOnce = 256                    # посылать до 256 эхо-запросов ICMP за один раз
+</screen>
+
+<sect1 id="pingaddresses">
+<title
+><option
+>PingAddresses</option
+></title>
+
+<para
+>Это вероятно самый важный параметр.</para>
+
+<para
+>Здесь вы указываете, какие адреса будут пинговаться. Вы можете указать несколько диапазонов, разделив их точкой с запятой.</para>
+
+<para
+>Есть четыре возможных способа указания адресов:</para>
+
+<variablelist>
+<varlistentry>
+<term
+>адрес сети/маска сети</term>
+<listitem>
+<para
+>192.168.100.0/255.255.255.0, &ie; адрес <acronym
+>IP</acronym
+> и назначенная маска сети.</para>
+
+<para
+>Это не должно быть адресом сети и маской сети вашей машины. Например, если ваш адрес 10.0.0.0/255.0.0.0, вы могли бы указать 10.1.2.0/255.255.255.0, если вы интересуетесь этими адресами. Комбинация адрес <acronym
+>IP</acronym
+> и сетевая маска должны быть разделены косой чертой <quote
+>/</quote
+> и это не должен быть реальный адрес. Он может быть адресом компьютера в сети, &ie; 10.12.34.67/255.0.0.0 тоже самое что и 10.0.0.0/255.0.0.0 .</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>диапазон адресов <acronym
+>IP</acronym
+></term>
+<listitem>
+<para
+>Например: 192.168.100.10-192.168.199.19</para>
+
+<para
+>Начальный адрес <acronym
+>IP</acronym
+> и конечный адрес <acronym
+>IP</acronym
+>.</para>
+
+<para
+>Адреса должны быть разделены <quote
+>-</quote
+>.</para>
+
+<para
+>В этом примере мы указываем 199-100+1=100, 100*256=25.600, 25.600+(19-10+1)=25.590 адресов</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Адрес <acronym
+>IP</acronym
+>, представленный диапазоном в каждом четырёх десятичных номеров</term>
+<listitem>
+<para
+>Адрес <acronym
+>IP</acronym
+>, представленный четырьмя десятичными числами, и вы можете указать диапазон для каждого из них: 192-192.169-171.100-199.0-9 </para>
+
+<para
+>В этом примере будут проверены все адреса <acronym
+>IP</acronym
+> с первым номером 192, вторым в диапазоне от 168 до 168, третьим от 100 до 199, и последним от 0 до 9. Это -- 1*1*100*10=1.000 адресов.</para>
+
+<para
+>Такое указание диапазона используется в очень редких случаях. Здесь мы указали диапазоны для каждого из четырёх чисел, всегда разделяемые символом <quote
+>-</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Одиночные адреса <acronym
+>IP</acronym
+> или имена компьютеров</term>
+<listitem>
+<para
+>Адреса <acronym
+>IP</acronym
+> либо имена компьютеров, которыми вы наиболее часто интересуетесь.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+<para
+>Оставить этот параметр пустым тоже будет корректным.</para>
+
+</sect1>
+
+<sect1 id="pingnames">
+<title
+><option
+>PingNames</option
+></title>
+
+<para
+>Здесь вы можете дополнительно указать компьютеры для проверки по их именам. Имена должны быть разделены точкой с запятой.</para>
+
+<para
+>Оставить этот параметр пустым тоже будет корректным.</para>
+
+</sect1>
+
+<sect1 id="allowedaddresses">
+<title
+><option
+>AllowedAddresses</option
+></title>
+
+<para
+>Это очень важный параметр. &lisa; будет пинговать адреса, принимать запросы и отвечать на широковещательные пакеты с адресов, которые указаны в этой строке. Вы можете добавить до 32 адресов/масок сетей либо одиночные адреса. Разделяйте их ; и не помещайте пробелы между адресами!</para>
+
+<para
+>Например, 192.168.0.0/255.255.0.0;192.169.0.0</para>
+
+<para
+>Корректными являются и полная сеть и отдельный адрес. Всегда указывайте как можно более точнее, обычно ваш адрес и сетевая маска наиболее хороший вариант.</para>
+
+</sect1>
+
+<sect1 id="broadcastnetwork">
+<title
+><option
+>BroadcastNetwork</option
+></title>
+
+<para
+>Этот параметр содержит только один адрес/маску сети. По нему будут посылаться широковещательные запросы. Обычно это должно быть вашим адресом/маской, например,  192.168.0.0/255.255.0.0</para>
+
+</sect1>
+
+<sect1 id="searchusingnmblookup">
+<title
+><option
+>SearchUsingNmblookup</option
+></title>
+
+<para
+>Здесь вы можете указать <parameter
+>0</parameter
+> или <parameter
+>1</parameter
+>. При использовании <parameter
+>1</parameter
+> &lisa; выполнит программу <command
+>nmblookup</command
+> <option
+>"*"</option
+> и проанализирует её вывод. Это создаёт меньше трафика, чем при использовании пингов, но вы получите только список компьютеров, на который выполняется сервис <acronym
+>SMB</acronym
+>  (компьютеры с &Windows; или с запущенным сервисом samba).</para>
+
+<para
+>Если вы установите этот параметр и укажите адреса <acronym
+>IP</acronym
+> для пингов, сперва будет выполнена команда <command
+>nmblookup</command
+>, затем пинги. При этом будут пропингованы адреса, которые не проверила программа <command
+>nmblookup</command
+>. Это немного уменьшает сетевой трафик.</para>
+
+</sect1>
+
+<sect1 id="firstwait">
+<title
+><option
+>FirstWait</option
+></title>
+
+<para
+>Когда &lisa; выполняет пинг, &ie; когда посылаются эхо-запросы <acronym
+>ICMP</acronym
+>, отправляется сразу пакет запросов, и ответы будут ожидаться в течении указанного количества сотых секунды. Обычно значение от 5 до 50 должны быть оптимальными, максимальное - 99 (0.99 секунды, очень длительный интервал). Попробуйте сделать это значение как можно более маленьким, при котором все компьютеры в сети определяются.</para>
+
+</sect1>
+
+<sect1 id="secondwait">
+<title
+><option
+>SecondWait</option
+></title>
+
+<para
+>После того, как &lisa; пошлёт эхо-запрос в первый раз, может случиться, что некоторые компьютеры не были найдены. Улучшить результаты &lisa; может,  пропинговав их второй раз. Будут проверены только те компьютеры, которые не ответили при первом опросе. Если первый опрос даёт хорошие результаты, вы можете отключить повторную проверку установкой значения SecondWait в <userinput
+>-1</userinput
+>.</para>
+
+<para
+>Хорошая идея -- сделать это значение немного большим, чем для <option
+>FirstWait</option
+>. Компьютеры, которые не были найдены в первый раз, вероятно, используют медленные линии связи или расположены дальше, и им необходимо больше времени для ответа. Обычно значения от 5 до 50 должны быть оптимальными, либо установите -1 для отмены повторного сканирования. Максимальное значение - 99 (0.99 секунды, очень продолжительный интервал).</para>
+
+</sect1>
+
+<sect1 id="updateperiod">
+<title
+><option
+>UpdatePeriod</option
+></title>
+
+<para
+>Интервал, через который &lisa; будет производить обновление. По истечению этого времени &lisa; снова пошлёт пинги, использует <command
+>nmblookup</command
+> либо запросить список у другого сервера &lisa;, который фактически выполняет пинги.</para>
+
+<para
+>Допустимое значение в диапазоне от 20 до 1800 секунд (полчаса). Если ваша сеть велика, не устанавливайте небольшой интервал (чтобы сохранить невысокую загрузку сети). Значения от 300 до 900 секунд (5 и 15 минут) -- наиболее хороший вариант.</para>
+
+<para
+>Имейте ввиду, что период обновления удваивается до 4 раз, если никто не обращается к серверу, пока не достигнет 16-кратного значения. Он будет сброшен до  указанного здесь значения, если кто-то обратиться к серверу.</para>
+
+</sect1>
+
+<sect1 id="deliver-unnamed-hosts">
+<title
+><option
+>DeliverUnnamedHosts</option
+></title>
+
+<para
+>Если был получен ответ на эхо-запрос с адреса IP, для которого &lisa; не смог определить имя, он будет послан через порт, если вы установите этот параметр в 1.</para>
+
+<para
+>Я действительно не уверен, является ли это полезной возможностью, но в вашей сети возможно существуют устройства без назначенного имени и они не должны быть  показаны. Если вы хотите оставить их в секрете, установите значение этого параметра в 0 ;-) Если не уверены, также используйте 0.</para>
+
+</sect1>
+
+<sect1 id="max-pings-at-once">
+<title
+>MaxPingsAtOnce</title>
+
+<para
+>При отправке пингов (эхо-запросов) &lisa; посылает несколько пакетов как один и ожидает ответов. По умолчанию это 256 пингов за раз, обычно вам не нужно изменять это значение. Если вы установите его значение слишком большим, внутренний буфер ответов на эхо-запросы может отказаться слишком мал. Если вы сделаете его небольшим, обновление будет происходить медленней.</para>
+
+</sect1>
+
+<sect1 id="examples">
+<title
+>Ещё три примера файлов</title>
+
+<example>
+<title
+>FIXME</title>
+
+<para
+>Вы член небольшой сети с сетевой маской в 24 бита, &ie; до 256 компьютеров:</para>
+
+<screen
+>PingAddresses = 192.168.100.0/255.255.255.0
+AllowedAddresses = 192.168.100.0/255.255.255.0
+BroadcastNetwork = 192.168.100.0/255.255.255.0
+SearchUsingNmblookup = 0                         # не использовать nmblookup
+FirstWait = 20                                   # 20 сотых секунды
+SecondWait = 30                                  # 30 сотых секунды при второй попытке
+UpdatePeriod = 300                               # период обновления 300 секунд
+DeliverUnnamedHosts = 0                          # не публиковать компьютеры без имени
+</screen>
+
+</example>
+
+<example>
+<title
+>Файл конфигурации для компьютера, на котором выполняется только <acronym
+>SMB</acronym
+></title>
+
+<para
+>Вы интересуетесь только компьютерами с работающим сервисом <acronym
+>SMB</acronym
+> и в вашей сети нет маршрутизации:</para>
+
+<screen
+>AllowedAddresses = 192.168.100.0/255.255.255.0
+BroadcastNetwork = 192.168.100.0/255.255.255.0
+SearchUsingNmblookup = 1                # использовать nmblookup
+UpdatePeriod = 300                      # период обновления 300 секунд
+DeliverUnnamedHosts = 0                 # не публиковать компьютеры без имени
+</screen>
+</example>
+
+<example>
+<title
+>Файл конфигурации, использующий <command
+>nmblookup</command
+> и пинги</title>
+
+<para
+>Та же самая сеть, но в ней используются пинги и nmblookup.</para>
+
+<screen
+>PingAddresses = 192.168.100.0/255.255.255.0
+PingNames = bb_mail
+AllowedAddresses = 192.168.0.0/255.255.0.0
+BroadcastNetwork = 192.168.100.0/255.255.255.0
+SearchUsingNmblookup = 1                # сначала использовать nmblookup
+FirstWait = 30                          # 30 сотых секунды
+SecondWait = -1                         # только одна попытка
+#SecondWait = 60                        # пробовать дважды, и второй раз ожидать 0.6 секунды
+UpdatePeriod = 300                      # период обновления 300 секунд
+DeliverUnnamedHosts = 0                 # не публиковать компьютеры без имени
+MaxPingsAtOnce = 256                    # посылать до 256 эхо-запросов ICMP за один раз
+</screen>
+
+</example>
+
+<example>
+<title
+>Файл конфигурации для &reslisa;</title>
+
+<para
+>И теперь файл конфигурации для &reslisa;. В &reslisa; PingAddresses и BroadcastNetwork не используется.</para>
+
+<screen
+>PingNames = bb_mail;some_host;some_other_host
+AllowedAddresses = 192.168.0.0/255.255.0.0
+SearchUsingNmblookup = 1                # использовать nmblookup
+FirstWait = 30                          # 30 сотых секунды
+SecondWait = -1                         # только одна попыткаn#SecondWait = 60                        # пробовать дважды, и второй раз ожидать 0.6 секунды
+UpdatePeriod = 300                      # период обновления 300 секунд
+DeliverUnnamedHosts = 1                 # публиковать компьютеры без имени
+MaxPingsAtOnce = 256                    # посылать до 256 эхо-запросов ICMP за один раз
+</screen>
+
+</example>
+</sect1>
+</chapter>
+
+<chapter id="command-line-options">
+<title
+>Опции командной строки и дополнительные параметры</title>
+
+<para
+>Поддерживаются следующие опции командной строки:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><option
+>-v</option
+>, <option
+>--version</option
+> </term>
+<listitem>
+<para
+>Показать номер версии</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-h</option
+>, <option
+>--help</option
+> </term>
+<listitem>
+<para
+>Показать описание всех опций командной строки</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-u</option
+>, <option
+>--unix</option
+> </term>
+<listitem>
+<para
+>Сначала искать настройки в <filename
+>$<envar
+>HOME</envar
+>/.lisarc</filename
+>, затем в <filename
+>/etc/lisarc</filename
+>. Это поведение по умолчанию.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-k</option
+>, <option
+>--kde1</option
+> </term>
+<listitem>
+<para
+>Сначала искать настройки в <filename
+>$<envar
+>HOME</envar
+>/.kde/share/config/lisarc</filename
+>, затем  <filename
+>$<envar
+>KDEDIR</envar
+>/share/config/lisarc</filename
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-K</option
+>, <option
+>--kde2</option
+></term>
+<listitem>
+<para
+>Искать файл настроек <filename
+>lisarc</filename
+> в каждом каталоге, возвращённом программой <userinput
+><command
+>kde-config</command
+> <option
+>--path</option
+> <parameter
+>config</parameter
+></userinput
+></para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-c</option
+>, <option
+>--config=</option
+><parameter
+>ФАЙЛ</parameter
+></term>
+<listitem>
+<para
+>Использовать <parameter
+>ФАЙЛ</parameter
+>, а не другой файл конфигурации.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-p</option
+>, <option
+>--port</option
+> <parameter
+>НОМЕР_ПОРТА</parameter
+></term>
+<listitem>
+<para
+>Запустить сервер на указанном порту. Если вы это используете, сервис &lisa; не сможет сотрудничать с другими серверами &lisa; в сети. Эта опция для &reslisa; недоступна.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+     
+<para
+>Если вы пошлёте &lisa; или &reslisa; сигнал Hangup, они заново загрузят свои файлы конфигурации  (<userinput
+><command
+>killall</command
+> <option
+>-HUP lisa</option
+></userinput
+>).</para>
+
+<para
+>Если вы посылаете &lisa; или &reslisa; сигнал User1, они выводят на стандартный вывод терминала некоторую информацию о состоянии  (<userinput
+><command
+>killall</command
+> <option
+>-USR1 lisa</option
+></userinput
+>). Вы ничего не увидите, если закрыли консоль, с который была запущена &lisa;/&reslisa;.</para>
+
+
+
+</chapter>
+
+<chapter id="credits-and-license">
+<title
+>Авторы и лицензия</title>
+
+<para
+>Авторское право на &lisa; и &reslisa; 2000, 2001, Alexander Neundorf</para>
+
+
+
+<para
+>Перевод на русский: Олег Баталов<email
+>batalov@twiga.kz</email
+></para
+> 
+
+<para
+>Alexander Neundorf <email
+>neundorf@kde.org</email
+></para>
+&underFDL; &underGPL; </chapter>
+
+<appendix id="installation">
+<title
+>Установка</title>
+
+<para
+>Для &lisa; и &reslisa; необходима библиотека libstdc++ (используется только string-class), они <emphasis
+>не</emphasis
+> требуют ни установленного &Qt; ни &kde;.</para>
+
+&install.compile.documentation;
+
+<sect1 id="other-requirements">
+<title
+>Другие зависимости</title>
+
+<para
+>И &reslisa; и &lisa; открывает так называемый <quote
+>низкоуровневый (raw)  сокет</quote
+> для отправки и приёма эхо-запросов <acronym
+>ICMP</acronym
+>. Для этого необходимы привилегии пользователя <systemitem class="username"
+>root</systemitem
+>.</para>
+
+
+<para
+>&lisa; запускает сервис на порту 7741 протокола <acronym
+>TCP</acronym
+> и должна запускаться с правами пользователя <systemitem class="username"
+>root</systemitem
+> при старте системы. Как достичь этого,  зависит от вашей &OS;.</para>
+
+<para
+>Сервис &reslisa; предназначен для выполнения под правами любого пользователя и не требует активного использования сети. У сервиса должен быть установлен флаг setuid <systemitem class="username"
+>root</systemitem
+>.</para>
+
+<para
+>Если вы используете ioslave <userinput
+>rlan</userinput
+> в &kde; 2, сервис  &reslisa; будет запущен автоматически.</para>
+
+<para
+>&lisa; использует файл настроек <filename
+>lisarc</filename
+>, &reslisa; - <filename
+>reslisarc</filename
+>. Если вы хотите настроить их с помощью &kcontrol;, вы должны использовать опцию командной строки <option
+>-K</option
+>.</para>
+
+<para
+>Более подробную информацию о расположении файлов конфигурации читайте в главе <xref linkend="command-line-options"/>.</para>
+
+</sect1>
+</appendix>
+</book>

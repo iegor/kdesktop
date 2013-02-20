@@ -1,0 +1,1383 @@
+<!-- <?xml version="1.0" ?>
+<!DOCTYPE chapter PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" "dtd/kdex.dtd">
+To validate or process this file as a standalone document, uncomment
+this prolog. Be sure to comment it out again when you are done -->
+
+<chapter id="arts-in-detail">
+<title
+>&arts; i detalje</title>
+
+<sect1 id="architecture">
+<title
+>Arkitektur</title>
+
+<mediaobject>
+<imageobject>
+<imagedata fileref="arts-structure.png" format="PNG"/>
+</imageobject>
+<textobject
+><phrase
+>&arts;-strukturer.</phrase
+></textobject>
+</mediaobject>
+</sect1>
+
+<sect1 id="modules-ports">
+<title
+>Moduler &amp; porte</title>
+
+<para
+>Idéen med &arts; er at syntese kan gøres med små moduler, som kun gør en eneste ting, og derefter kombinere dem i komplekse strukturer. De små moduler har normalt indgange, hvor de kan modtage nogle signaler eller parametre, og udgange hvor de producerer nogle signaler. </para>
+
+<para
+>Et modul (Synth&lowbar;ADD) tager for eksempel kun de to signaler på sine indgange og lægger dem sammen. Resultatet er tilgængeligt som  et uddatasignal. De steder hvor moduler sørger for deres ind- eller udsignaler kaldes porte. </para>
+
+</sect1>
+
+<sect1 id="structures">
+<title
+>Strukturer</title>
+
+<para
+>En struktur er en kombination af sammenkoblede moduler, hvor nogen kan have parametre som er kodet direkte på deres inddataporte, andre kan være sammenkoblede, og en del kan være slet ikke forbundet. </para>
+
+<para
+>Det du kan gøre med &arts-builder; er at beskrive strukturer. Du beskriver hvilke moduler du vil skal kobles sammen med hvilke andre moduler. Når du er klar, kan du gemme strukturbeskrivelsen i en fil, eller bede &arts; om at oprette (køre) den struktur som du har beskrevet. </para>
+
+<para
+>Derefter hører du formodlig noget lyd, hvis du har gjort alt på den rigtige måde. </para>
+</sect1>
+
+<!-- TODO
+
+<sect1 id="streams">
+<title
+>Streams</title>
+ 
+</sect1>
+
+-->
+
+<sect1 id="latency">
+<title
+>Latens</title>
+
+<sect2 id="what-islatency">
+<title
+>Hvad er latens?</title>
+
+<para
+>Antag at du har et program som hedder <quote
+>musepling</quote
+> (som skal afgive en <quote
+>pling</quote
+>-lyd hvis du klikker på en museknap). Latensen er tiden mellem din finger trykker på museknappen til du hører plinget. Latensen for dette scenario består af flere forskellige latenstider, som har forskellige årsager. </para>
+
+</sect2>
+
+<sect2 id="latenbcy-simple">
+<title
+>Latens i enkle programmer</title>
+
+<para
+>I dette enkle program opstår latensen på følgende steder: </para>
+
+<itemizedlist>
+
+<listitem>
+<para
+>Tiden til kernen har meddelt X11-serveren at museknappen er trykket ned. </para>
+</listitem>
+
+<listitem>
+<para
+>Tiden til X11-serveren har meddelt dit program at museknappen er trykket ned. </para>
+</listitem>
+
+<listitem>
+<para
+>Tiden til musepling-programmet har bestemt at denne knap var værd at få et pling afspillet. </para>
+</listitem>
+
+<listitem>
+<para
+>Tiden det tager for musepling-programmet at fortælle lydserveren at den skal afspille et pling. </para>
+</listitem>
+
+<listitem>
+<para
+>Tiden det tager for plinget (som lydserveren begynder at mikse med øvrig uddata med det samme) at gå gennem bufferet data, til det virkelig når stedet hvor lydkortet spiller. </para>
+</listitem>
+
+<listitem>
+<para
+>Tiden det tager for pling-lyden at gå fra højtalerne til dine ører. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>De første tre punkter er latensen udenfor &arts;. De er interessante, men udenfor dette dokuments rækkevidde. Ikke desto mindre skal du vide at de findes, så selvom du har optimeret alt andet til virkelig små værdier, så får du måske ikke nødvendigvis nøjagtigt det resultat du forventer dig. </para>
+
+<para
+>At bede serveren om at spille noget indebærer oftest kun et enkelt &MCOP;-kald. Der er målinger som bekræfter at det kan lade sig gøre at bede serveren at spille noget 9000 gange pr sekund med den nuværende implementering, på samme værtsmaskine med Unix domæne-sokler. Jeg antager at det meste af dette er kernens omkostning, for at skifte fra en proces til en anden. Naturligvis ændres denne værdi med den nøjagtige type af parametrene. Hvis man overfører et helt billede med et kald, bliver det langsommere end hvis man kun overfører en "long" værdi. Det samme er sandt for returværdien. For almindelige strenge (som filnavnet på <literal role="extension"
+>wav</literal
+>-filen som skal afspilles) skulle dette ikke være et problem. </para>
+
+<para
+>Dette betyder at vi kan tilnærme denne tid med 1/9000 sekund, det vil sige under 0,15 ms. Vi vil se at dette ikke er relevant. </para>
+
+<para
+>Derefter kommer tiden efter serveren begynder at spille og lydkortet tager imod noget. Serveren skal buffre data, så ingen pauser høres når andre programmer, såsom din X11-server eller <quote
+>musepling</quote
+>-programmet,  kører. Den måde dette håndteres på &Linux; er at der er et antal fragmenter af en vis størrelse. Serveren genopfylder fragmenter, og lydkortet afspiller fragmenter. </para>
+
+<para
+>Så antag at der er tre fragmenter. Serveren genopfylder det første og lydkortet begynder at afspille det. Serveren genopfylder det andet. Serveren genopfylder det tredje. Serveren er klar og andre programmer kan nu gøre noget. </para>
+
+<para
+>Når lydkortet har afspillet det første fragment, begynder det at afspille det andet og serveren begynder at genopfylde det første, og så videre. </para>
+
+<para
+>Den maksimale latenstiden du får med alt dette er (antal fragmenter) * (størrelse på hvert fragment) / (samplingsfrekvens * (størrelse på hver sampling)). Hvis vi antager 44 kHz stereo, og syv fragmenter på 1024 byte (de nuværende standardindstillinger i aRts), så får vi 40 ms. </para>
+
+<para
+>Disse værdier kan indstilles efter dine behov. <acronym
+>CPU</acronym
+>-brugen øges dog med mindre latenstider, eftersom lydserveren skal genopfylde bufferne oftere, og med mindre dele. Det er også oftest umuligt at nå bedre værdier uden at give lydserveren realtidsprioritet, eftersom man ellers ofte får pauser. </para>
+
+<para
+>Det er imidlertid realistisk at lave noget i stil med 3 fragmenter med 256 byte hver, som ville ændre denne værdi til 4,4 ms. Med 4,4 ms forsinkelse ville &arts; <acronym
+>CPU</acronym
+>-forbrug være cirka 7,5 %. Med en 40 ms forsinkelse, ville den være cirka 3 % (for en PII-350, og værdien kan afhænge af dit lydkort, version af kernen og andet). </para>
+
+<para
+>Så er der tiden som det tager for pling-lyden at gå fra højtalerne til dine ører. Antag at din afstand fra højtalerne er 2 meter. Lyden bevæger sig med hastigheden 330 meter pr sekund. Så vi kan ansætte denne tid til 6 ms. </para>
+
+</sect2>
+
+<sect2 id="latency-streaming">
+<title
+>Latenstid i programmer med lydstrømme</title>
+
+<para
+>Programmer med lydstrømme er dem som laver deres lyd selv. Tænk dig til et spil som sender en konstant strøm med samplinger, og nu skal tilpasses til at afspille lyd via &arts;. Som et eksempel: når jeg trykker på en tast så hopper figuren som jeg bruger, og en bang-lyd afspilles. </para>
+
+<para
+>Først så skal du vide hvordan &arts; håndterer strømme. Det er meget lignende I/O med lydkortet. Spillet sender nogle pakker med samplinger til lydserveren, lad os antage tre styk. Så snart lydserveren er klar med den første pakke, sender den en bekræftelse tilbage til spillet om at denne pakke er færdig. </para>
+
+<para
+>Spillet laver yderligere en lydpakke og sender den til serveren. I mellemtiden begynder serveren at konsumere den anden lydpakke, og så videre. Latenstiderne ligner dem i det enklere tilfælde: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Tiden til kernen har meddelt X11-serveren at en knap er trykket ned. </para>
+</listitem>
+
+<listitem>
+<para
+>Tiden til X11-serveren har meddelt spillet at en knap er trykket ned. </para>
+</listitem>
+
+<listitem>
+<para
+>Tiden til spillet har bestemt at denne knap var værd at få et bang afspillet. </para>
+</listitem>
+
+<listitem>
+<para
+>Tiden til lydpakken som afspilles er begyndt at putte bang-lyden ind når lydserveren. </para>
+</listitem>
+
+<listitem>
+<para
+>Tiden det tager for banget (som lydserveren begynder at mikse med øvrig uddata med det samme) at gå gennem bufferdata, til det virkelig når stedet hvor lydkortet spiller. </para>
+</listitem>
+
+<listitem>
+<para
+>Tiden det tager for bang-lyden fra højtalerne at nå dine ører. </para>
+</listitem>
+
+</itemizedlist>
+
+<para
+>De eksterne latenstider er, som ovenfor, udenfor dette dokuments rækkevidde. </para>
+
+<para
+>Det er åbenbart at latenstiden for strømme afhænger af tiden det tager for alle pakker som bruges at afspilles en gang. Så den er (antal pakker) * (størrelse på hver pakke) / (samplingsfrekvensen * (størrelse på hver sampling)). </para>
+
+<para
+>Som du ser er dette samme formel som gælder for fragmenterne. For spil er der dog ingen grund til at have så korte forsinkelser som ovenfor. Jeg vil sige at et realistisk eksempel for et spil kunne være 2048 byte pr pakke, når der bruges 3 pakker. Latenstidsresultatet ville så være 35 ms. </para>
+
+<para
+>Dette er baseret på følgende: antag at et spil viser 25 billeder pr sekund (for skærmen). Det er antageligt helt sikkert at antage at en forskel på et billede for lydudskriften ikke vil kunne mærkes. Derfor er 1/25 sekunds forsinkelse for lydstrømmen acceptabelt, hvilket på sin side betyder at 40 ms skulle være o.k. </para>
+
+<para
+>De fleste personer kører heller ikke deres spil med realtidsprioritet, og faren for pauser i lyden kan ikke negligeres. Strømme med 3 pakker på 256 byte er mulige (jeg prøvede det) - men forårsager meget <acronym
+>CPU</acronym
+>-forbrug til strømning. </para>
+
+<para
+>Latenstider på serversiden kan du beregne præcis som ovenfor. </para>
+
+</sect2>
+
+<sect2 id="cpu-usage">
+<title
+>Nogle <acronym
+>CPU</acronym
+>-forbrugshensyn</title>
+
+<para
+>Der er mange faktorer som påvirker <acronym
+>CPU</acronym
+>-forbrug i et komplekst scenario, med nogle programmer med lydstrømme og nogle andre programmer, nogle plugin i serveren, osv. For at angive nogle få: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Rå <acronym
+>CPU</acronym
+>-forbrug for de nødvendige beregninger. </para>
+</listitem>
+
+<listitem>
+<para
+>&arts; interne skemalægningsomkostning - hvordan &arts; bestemmer hvornår hvilket modul skal beregne hvad. </para>
+</listitem>
+
+<listitem>
+<para
+>Omkostning til konvertering af heltal til decimaltal. </para>
+</listitem>
+
+<listitem>
+<para
+>&MCOP; protokolomkostning. </para>
+</listitem>
+
+<listitem>
+<para
+>Kernens proces/sammenhængsskift. </para>
+</listitem>
+
+<listitem>
+<para
+>Kernens kommunikationsomkostning. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>For beregning af rå <acronym
+>CPU</acronym
+>-forbrug, hvis du afspiller to strømme samtidigt skal du gøre additioner. Hvis du anvender et filter, er visse beregninger indblandede. For at tage et forenklet eksempel, at addere to strømme kræver måske fire <acronym
+>CPU</acronym
+>-cykler pr addition, på en 350 MHz processor er dette 44100 * 2 * 4 / 350000000 = 0,1 % <acronym
+>CPU</acronym
+>-forbrug. </para>
+
+<para
+>&arts; interne skemalægning: &arts; skal bestemme hvilket plugin som skal beregne hvad hvornår. Dette tager tid. Brug et profileringsværktøj hvis du er interesseret i det. Hvad som kan siges i almindelighed er at jo mindre realtid som bruges (dvs. jo større blokke som kan beregnes af gangen) desto mindre skemalægningsomkostning fås. Udover beregning af blokke med 128 samplinger af gangen (altså med brug af fragmentstørrelser på 512 byte) er skemalægningsomkostningen formodentlig ikke værd at bryde sig om. </para>
+
+<para
+>Konvertering fra heltal til decimaltal: &arts; bruger decimaltal som internt dataformat. De er enkle at håndtere, og på moderne processorer er de ikke meget langsommere end heltalsoperationer. Hvis der er  klienter som afspiller data som ikke er decimaltal (såsom et spil som skal lave sin lydudskrift via &arts;), behøves konvertering. Det samme gælder hvis du vil afspille lyd på dit lydkort. Lydkortet behøver heltal, så du skal konvertere. </para>
+
+<para
+>Her er værdier for en Celeron, cirka klokcykler pr sampling, med -O2 og egcs 2.91.66 (målt af Eugene Smith <email
+>hamster@null.ru</email
+>). Dette er naturligvis yderst processorafhængigt: </para>
+
+<programlisting
+>convert_mono_8_float: 14
+convert_stereo_i8_2float: 28
+convert_mono_16le_float: 40
+interpolate_mono_16le_float: 200
+convert_stereo_i16le_2float: 80
+convert_mono_float_16le: 80
+</programlisting>
+
+<para
+>Så dette betyder 1 % <acronym
+>CPU</acronym
+>-forbrug for konvertering og 5 % for interpolation på denne 350 MHz processor. </para>
+
+<para
+>&MCOP; protokollomkostning: &MCOP; klarer, som en tommelfingerregel, 9000 kald pr sekund. En stor del af dette er ikke &MCOP;'s fejl, men hører sammen med de to grunde for kernen som nævnes nedenfor. Dette giver i alle tilfælde en basis for at udføre beregninger af hvad omkostningen er for strømning. </para>
+
+<para
+>Hver datapakke som sendes med en strøm kan anses for at være et &MCOP;-kald. Store pakker er naturligvis langsommere end 9000 pakker/s, men det giver en god idé. </para>
+
+<para
+>Antag at du bruger pakkestørrelser på 1024 byte. På denne måde, for at overføre en strøm med  44 kHz stereo, behøver du at overføre 44100 * 4 / 1024 = 172 pakker pr sekund. Antag at du kunne overføre 9000 pakker med 100 % CPU-forbrug, så får du (172 *100) / 9000 = 2 % <acronym
+>CPU</acronym
+>-forbrug på grund af strømningen med 1024 byte pakker. </para>
+
+<para
+>Dette er en approksimation. Det viser i alle tilfælde at du ville klare dig meget bedre (hvis du har råd for latenstiden), med for eksempel at bruge pakker på 4096 byte. Her kan vi oprette en kompakt formel, ved at beregne pakkestørrelsen som forårsager 100 % <acronym
+>CPU</acronym
+>-forbrug som 44100 * 4 / 9000 = 19,6 samplinger, og på den måde få hurtigformlen: </para>
+
+<para
+><acronym
+>CPU</acronym
+>-forbrug for en strøm i procent = 1960 / (din pakkestørrelse) </para>
+
+<para
+>som giver os 0,5 % <acronym
+>CPU</acronym
+>-forbrug med en strøm af 4096 byte pakker. </para>
+
+<para
+>Kernens proces/sammenhængsskift: Dette er en del af &MCOP;-protokollens omkostning. At skifte mellem to processer tager tid. Der er en ny hukommelsesafbildning, cacher er ugyldige, og en del andet (hvis en ekspert på kernen læser dette - fortæl mig om de nøjagtige grunde). Dette betyder: det tager tid. </para>
+
+<para
+>Jeg er ikke sikker på hvor mange procesbyte &Linux; kan lave pr sekund, men værdien er ikke uendelig. Så af &MCOP;-protokollens omkostning, antager jeg at en hel del afhænger af processkift.  &MCOP; først påbegyndtes prøvede jeg samme kommunikation inde i en proces, og det var meget hurtigere (cirka fire gange hurtigere). </para>
+
+<para
+>Kernens kommunikationsomkostning: Dette er en del af &MCOP;-protokollens omkostning. At overføre data mellem processer gøres for øjeblikket via et udtag (sokkel). Dette er bekvemt, eftersom den almindelige select() metode kan bruges til at afgøre hvornår en meddelelse er ankommet. Det kan også kombineres med andre I/O-kilder såsom lyd-I/O, X11-server eller hvad som helst andet. </para>
+
+<para
+>Disse læse- og skrivekald koster definitivt processorcykler. For små kald (som at overføre en midi-begivenhed) er det formodentlig ikke så farligt, men for store kald (som at overføre et videobillede på flere Mbyte) er det helt klart et problem. </para>
+
+<para
+>At tilføje brug af delt hukommelse til &MCOP; hvor det er passende er formodentlig den bedste løsning. Det skal dog gøres transparent for anvendelsesprogrammerne. </para>
+
+<para
+>Tag et profileringsværktøj og udfør andre test for at finde ud af nøjagtigt hvordan nuværende lydstrømme påvirkes af ikke at bruge delt hukommelse. Det er dog ikke så dårligt, eftersom lydstrømme (afspilning af mp3) kan gøres med totalt 6 % <acronym
+>CPU</acronym
+>-forbrug for &artsd; og <application
+>artscat</application
+> (og 5 % for mp3-afkoderen). Dette omfatter alting fra nødvendige beregninger til omkostning for udtaget, så jeg vil bedømme at man måske ville vinde cirka 1 % på at bruge delt hukommelse. </para>
+
+</sect2>
+
+<sect2 id="hard-numbers">
+<title
+>Nogle hårde værdier</title>
+
+<para
+>Disse er lavet med den nuværende udviklingsversion. Jeg ville også forsøge med rigtigt svære tilfælde, så dette er ikke hvad programmer til daglig brug ville gøre. </para>
+
+<para
+>Jeg skrev et program som hedder streamsound som sender datastrømmen til &arts;. Her køres det med realtidsprioritet (uden problemer), og et lille plugin på serversiden (lydstyrkeskalning og klipning): </para>
+
+<programlisting
+>4974 stefan    20   0  2360 2360  1784 S       0 17.7  1.8   0:21 artsd
+ 5016 stefan    20   0  2208 2208  1684 S       0  7.2  1.7   0:02 streamsound
+ 5002 stefan    20   0  2208 2208  1684 S       0  6.8  1.7   0:07 streamsound
+ 4997 stefan    20   0  2208 2208  1684 S       0  6.6  1.7   0:07 streamsound
+</programlisting>
+
+<para
+>Hvert af programmerne sender en strøm med 3 fragmenter på 1024 byte (18 ms). Der er tre sådanne klienter som kører samtidigt. Jeg ved at det synes at være lidt vel meget, men som jeg sagde: tag et profileringsværktøj og find ud af hvad som koster tid, og hvis du vil, forbedr det. </para>
+
+<para
+>Jeg tror i alt fald ikke at bruge strømning sådan her er realistisk eller giver mening. For at gøre det hele endnu mere ekstremt, forsøgte jeg med den mindst mulige latenstid. Resultat: man kan bruge strømme uden afbrud med et klientprogram, hvis man tager 2 fragmenter med 128 byte mellem aRts og lydkortet, og mellem klientprogrammet og aRts. Dette betyder at man har en total maksimal latenstid på 128 * 4 / 44100 * 4 = 3 ms, hvor 1,5 ms genereres på grund af I/O til lydkortet og 1,5 ms genereres af kommunikation med &arts;. Begge programmer skal køre med realtidsprioritet. </para>
+
+<para
+>Men dette koster en enorm mængde <acronym
+>CPU</acronym
+>. Dette eksempel koster cirka 45 % på min P-II/350. Det begynder også at klikke hvis man starter top, flytter vinduer på X11-skærmen eller laver disk-I/O. Alt dette har med kernen at gøre. Problemet er at skemalægge to eller flere processer med realtidsprioritet også koster en enorm anstrengelse, endnu mere end kommunikation og meddelelse til hinanden, &etc;. </para>
+
+<para
+>Tilsidst, et mere hverdagsagtigt eksempel: Dette er &arts; med artsd og en artscat (en klient med datastrøm) som kører 16 fragmenter på 4096 byte: </para>
+
+<programlisting
+>5548 stefan    12   0  2364 2364  1752 R       0  4.9  1.8   0:03 artsd
+ 5554 stefan     3   0   752  752   572 R       0  0.7  0.5   0:00 top
+ 5550 stefan     2   0  2280 2280  1696 S       0  0.5  1.7   0:00 artscat
+</programlisting>
+
+</sect2>
+</sect1>
+
+<!-- TODO
+
+<sect1 id="dynamic-instantiation">
+<title
+>Dynamic Instantiation</title>
+ 
+</sect1>
+
+-->
+
+<sect1 id="busses">
+<title
+>Busser</title>
+
+<para
+>Busser er forbindelser som bygges dynamisk for at overføre lyd. Der er et antal oplink og nedlink. Alle signaler fra oplinkene adderes og sendes til nedlinkene. </para>
+
+<para
+>Busser er for øjeblikket implementerede til at virke med stereo, så du kan kun overføre stereodata via busser. Hvis du vil have monodata, ja, overfør det kun på en kanal og sæt den anden til nul eller noget vilkårligt. Hvad du skal gøre er at oprette en eller flere Synth&lowbar;BUS&lowbar;UPLINK-objekter og give dem et busnavn, som de skal tale med (f.eks. <quote
+>lyd</quote
+> eller <quote
+>trommer</quote
+>). Send derefter helt enkelt data derind. </para>
+
+<para
+>Derefter skal du oprette et eller flere Synth&lowbar;BUS&lowbar;DOWNLINK-objekter, og fortælle dem om busnavnet (<quote
+>lyd</quote
+> eller <quote
+>trommer</quote
+>... hvis det passer sammen, kommer data igennem), og den blandede lyd kommer ud igen. </para>
+
+<para
+>Oplinkene og nedlinkene kan være i forskellige strukturer, du kan til og med have forskellige aRts-byggere som kører og starte et oplink i en og tage imod data i den anden med et nedlink. </para>
+
+<para
+>Det der er rart ved busser er at de er fuldstændigt dynamiske. Klienter kan kobles ind eller ud i farten. Det skal ikke kunne høres noget klik eller støj når dette sker. </para>
+
+<para
+>Du skal naturligvis ikke tilkoble eller frakoble en klient mens den spiller et signal, eftersom den formodentlig ikke er nul når den kobles ud, og der så opstår et klik. </para>
+</sect1>
+
+<!-- TODO
+<sect1 id="network-ransparency">
+<title
+>Network Transparency</title>
+ 
+</sect1>
+
+<sect1 id="security">
+<title
+>Security</title>
+ 
+</sect1>
+
+
+<sect1 id="effects">
+<title
+>Effects and Effect Stacks</title>
+ 
+</sect1>
+
+-->
+<sect1 id="trader">
+<title
+>Handleren</title>
+
+<para
+>&arts;/&MCOP; afhænger helt af at opdele objekter i små komponenter. Dette gør alt meget fleksibelt, eftersom man let kan udvide systemet ved at tilføje nye komponenter, som implementerer nye effekter, filformater, oscillatorer, grafiske elementer, ... Eftersom næsten alt er komponenter, kan næsten alt let udvides uden at ændre eksisterende kildekode. Nye komponenter kan enkelt indlæses dynamisk for at forbedre programmer som allerede eksisterer. </para>
+
+<para
+>For at dette skal virke, kræves der dog to ting: </para>
+
+<itemizedlist>
+
+<listitem>
+<para
+>Komponenter skal fortælle at de findes - de skal beskrive hvilke storartede ting de tilbyder, så programmerne kan bruge dem. </para>
+</listitem>
+
+<listitem>
+<para
+>Programmer skal aktivt lede efter komponenter som de ville kunne bruge, i stedet for altid at bruge samme komponenter til en vis opgave. </para>
+</listitem>
+
+</itemizedlist>
+
+<para
+>Kombinationen af dette: komponenter som siger <quote
+>her er jeg, jeg er smart, brug mig</quote
+>, og programmer (eller om man vil, andre komponenter) som går ud og leder efter hvilken komponenter de kan bruge for at få noget gjort, kaldes at handle. </para>
+
+<para
+>I &arts; beskriver komponenter sig selv ved at angive værdier som de <quote
+>understøtter</quote
+> som egenskaber. En typisk egenskab for en filindlæsningkomponent kan være filendelsen for filerne som den kan behandle. Typiske værdier kan være <literal role="extension"
+>wav</literal
+>, <literal role="extension"
+>aiff</literal
+> eller <literal role="extension"
+>mp3</literal
+>. </para>
+
+<para
+>I virkeligheden kan hver komponent vælge at tilbyde mange forskellige værdier for en egenskab. Så en enkelt komponent ville kunne tilbyde at læse både <literal role="extension"
+>wav</literal
+> og <literal role="extension"
+>aiff</literal
+>-filer, ved at angive at den understøtter disse værdier for egenskaben <quote
+>Endelse</quote
+>. </para>
+
+<para
+>For at gøre dette, skal en komponent placere en <literal role="extension"
+>.mcopclass</literal
+>-fil som indeholder egenskaberne den understøtter på et passende sted. For vort eksempel, kan den se sådan her ud (og ville være installeret i <filename
+><replaceable
+>komponentmappen</replaceable
+>/Arts/WavPlayObject.mcopclass</filename
+>): </para>
+
+<programlisting
+>Interface=Arts::WavPlayObject,Arts::PlayObject,Arts::SynthModule,Arts::Object
+Author="Stefan Westerfeld &lt;stefan@space.twc.de&gt;"
+URL="http://www.arts-project.org"
+Extension=wav,aiff
+MimeType=audio/x-wav,audio/x-aiff
+</programlisting>
+
+<para
+>Det er vigtigt at filnavnet på <literal role="extension"
+>.mcopclass</literal
+>-filen også angiver hvad komponentens grænseflade hedder. Handleren kigger ikke på indholdet overhovedet, hvis filen (som her) hedder <filename
+>Arts/WavPlayObject.mcopclass</filename
+>, og komponentgrænsefladen hedder <interfacename
+>Arts::WavPlayObject</interfacename
+> (moduler hører sammen med mapper). </para>
+
+<para
+>For at lede efter komponenter er der to grænseflader (som er definerede i <filename
+>core.idl</filename
+>, så de er tilgængelige i hvert program), som hedder <interfacename
+>Arts::TraderQuery</interfacename
+> og <interfacename
+>Arts::TraderOffer</interfacename
+>. Du går på en <quote
+>indkøbsrunde</quote
+> efter komponenter sådan her: </para>
+
+<orderedlist>
+<listitem>
+<para
+>Opret et forespørgselsobjekt: </para>
+<programlisting
+>Arts::TraderQuery query;
+</programlisting>
+</listitem>
+
+<listitem>
+<para
+>Angiv hvad du vil have. Som du så ovenfor, beskriver komponenter sig selv med egenskaber, som de sætter til visse værdier. Så at specificere hvad du vil have gøres ved at vælge komponenter som understøtter en vis værdi for en egenskab. Dette sker med metoden supports i TraderQuery: </para>
+
+<programlisting
+>query.supports("Interface","Arts::PlayObject");
+    query.supports("Extension","wav");
+</programlisting>
+</listitem>
+
+<listitem>
+<para
+>Tilsidst udføres forespørgslen med metoden query. Derefter får du (forhåbentlig) nogle tilbud: </para>
+
+<programlisting
+>vector&lt;Arts::TraderOffer&gt; *offers = query.query();
+</programlisting>
+</listitem>
+
+<listitem>
+<para
+>Nu kan du undersøge hvad du fandt. Det vigtige er metoden interfaceName i TraderOffer, som giver dig navnene på komponenterne som svarede på spørgsmålet. Du kan også finde ud af yderligere egenskaber med getProperty. Følgende kode løber helt enkelt gennem alle komponenterne, udskriver deres grænsefladenavn (som ville kunne bruges til at oprette dem), og fjerner resultaterne af forespørgslen igen: </para>
+<programlisting
+>vector&lt;Arts::TraderOffer&gt;::iterator i;
+    for(i = offers-&gt;begin(); i != offers-&gt;end(); i++)
+        cout &lt;&lt; i-&gt;interfaceName() &lt;&lt; endl;
+    delete offers;
+</programlisting>
+</listitem>
+</orderedlist>
+
+<para
+>For at denne slags handelsservice skal være nyttig, er det vigtigt på en eller anden måde at blive enig om hvilke egenskaber som komponenter normalt skal definere. Det er væsentligt at mere eller mindre alle komponenter indenfor et vist område bruger samme sæt egenskaber til at beskrive sig selv (og samme sæt værdier når det behøves), så programmer (eller andre komponenter) kan finde dem. </para>
+
+<para
+>Author (type streng, valgfri): Forfatter. Dette kan bruges til endelig at lade verden finde ud af at du har skrevet noget. Du kan skrive hvad du vil her, en e-mail-adresse er naturligvis en god hjælp. </para>
+
+<para
+>Buildable (type boolean, anbefales): Bygbar. Dette angiver om komponenten er brugbar med <acronym
+>RAD</acronym
+>-værktøj (såsom &arts-builder;) som bruger komponenter ved at tildele egenskaber og forbinde porte. Det anbefales at denne værdi sættes til true for næsten alle signalbehandlingskomponenter (såsom filer, lydeffekter, oscillatorer, ...), og for alle andre objekter som kan bruges på en <acronym
+>RAD</acronym
+>-lignende måde, men ikke for interne objekter som for eksempel <interfacename
+>Arts::InterfaceRepo</interfacename
+>. </para>
+
+<para
+>Extension (type streng, brugt hvor det passer): Filendelse. Alle moduler som håndterer filer bør overveje at bruge dette. Du angiver filendelsen med små bogstaver uden <quote
+>.</quote
+> her, så noget som  <userinput
+>wav</userinput
+> skulle virke udmærket. </para>
+
+<para
+>Interface (type streng, kræves): Grænseflade. Dette skal omfatte hele listen af (nyttige) grænseflader som din komponent understøtter, formodentlig inklusive <interfacename
+>Arts::Object</interfacename
+> og hvis anvendeligt <interfacename
+>Arts::SynthModule</interfacename
+>. </para>
+
+<para
+>Language (type streng, anbefales): Sprog. Hvis du ønsker at din komponent skal indlæses dynamisk, skal du angive sproget her. For øjeblikket er den eneste tilladte værdi <userinput
+>C++</userinput
+>, som betyder at komponenten er skrevet med den normale C++ programmeringsgrænseflade. Hvis du angiver dette, skal du også angive egenskaben <quote
+>Library</quote
+> nedenfor. </para>
+
+<para
+>Library (type streng, brugt hvor det passer): Bibliotek. Komponenter som er skrevet i C++ kan indlæses dynamisk. For at gøre dette skal du kompilere dem i et dynamisk indlæseligt libtool (<literal role="extension"
+>.la</literal
+>) modul. Her kan du angive navnet på <literal role="extension"
+>.la</literal
+>-filen som indeholder din komponent. Husk at bruge REGISTER_IMPLEMENTATION (som altid). </para>
+
+<para
+>MimeType (type streng, brug hvor det passer): Mimetype. Alle som håndterer filer bør overveje at bruge dette. Du skal angive standard-mimetypen med små bogstaver her, for eksempel <userinput
+>audio/x-wav</userinput
+>. </para>
+
+<para
+>&URL; (type streng, valgfri): Hvis du vil fortælle hvor man kan finde en ny version af komponenten (eller en netside eller noget andet), kan du gøre dette. Dette skal være en standard &HTTP;- eller &FTP;-netadresse. </para>
+
+</sect1>
+
+<!-- TODO
+<sect1 id="midi-synthesis">
+<title
+><acronym
+>MIDI</acronym
+> Synthesis</title>
+ 
+</sect1>
+
+<sect1 id="instruments">
+<title
+>Instruments</title>
+ 
+</sect1>
+
+<sect1 id="session-management">
+<title
+>Session Management</title>
+ 
+</sect1>
+
+<sect1 id="full-duplex">
+<title
+>Full duplex Audio</title>
+ 
+</sect1>
+-->
+
+<sect1 id="namespaces">
+<title
+>Navnerum i &arts;</title>
+
+<sect2 id="namespaces-intro">
+<title
+>Indledning</title>
+
+<para
+>Hver navnerumsdeklaration hører sammen med en deklaration af en <quote
+>modul</quote
+> i &MCOP; &IDL;. </para>
+
+<programlisting
+>// mcop idl
+
+module M {
+    interface A
+    {
+    }
+};
+
+interface B;
+</programlisting>
+
+<para
+>I dette tilfælde ville den genererede C++ kode for &IDL;-fragmentet se sådan her ud: </para>
+
+<programlisting
+>// C++ deklaration
+
+namespace M {
+    /* deklaration af A_base/A_skel/A_stub og lignende */
+    class A {        // Smartwrap referenceklasse
+        /* [...] */
+    };
+}
+
+/* deklaration af B_base/B_skel/B_stub og lignende */
+class B {
+    /* [...] */
+};
+</programlisting>
+
+<para
+>Så når du henviser til klasserne fra eksemplet ovenfor i din C++ kode, skal du skrive <classname
+>M::A</classname
+>, men kun B. Du kan imidlertid bruge <quote
+>using M</quote
+> et sted, som med alle navnerum i C++. </para>
+
+</sect2>
+
+<sect2 id="namespaces-how">
+<title
+>Hvordan &arts; bruger navnerum</title>
+
+<para
+>Der er et globalt navnerum som kaldes <quote
+>Arts</quote
+>, som alle programmer og biblioteker som hører til &arts; selv bruger til at lægge deres deklarationer i. Dette betyder at når du skriver C++ kode som afhænger af &arts;, skal du normalt bruge præfikset <classname
+>Arts::</classname
+> for hver klasse du bruger, sådan her: </para>
+
+<programlisting
+>int main(int argc, char **argv)
+{
+    Arts::Dispatcher dispatcher;
+    Arts::SimpleSoundServer server(Arts::Reference("global:Arts_SimpleSoundServer"));
+
+    server.play("/var/foo/nogen_fil.wav");
+</programlisting>
+
+<para
+>Det andet alternativ er at skrive "using" en gang, sådan her: </para>
+
+<programlisting
+>using namespace Arts;
+
+int main(int argc, char **argv)
+{
+    Dispatcher dispatcher;
+    SimpleSoundServer server(Reference("global:Arts_SimpleSoundServer"));
+
+    server.play("/var/foo/nogen_fil.wav");
+    [...]
+</programlisting>
+
+<para
+>I &IDL;-filer, har du egentlig ikke  noget valg. Hvis du skriver kode som tilhører &arts; selv, skal du putte den i modulet &arts;. </para>
+
+<programlisting
+>// IDL-fil for aRts-kode:
+#include &lt;artsflow.idl&gt;
+module Arts {        // put den i Arts-navnerum
+    interface Synth_TWEAK : SynthModule
+    {
+        in audio stream invalue;
+        out audio stream outvalue;
+        attribute float tweakFactor;
+    };
+};
+</programlisting>
+
+<para
+>Hvis du skriver kode som ikke hører til selve &arts;, skal du ikke putte den i navnerummet <quote
+>Arts</quote
+>. Du kan dog oprette et eget navnerum hvis du vil. Under alle omstændigheder, skal du bruge præfiks for klasser fra &arts; som du bruger. </para>
+
+<programlisting
+>// IDL-fil for kode som ikke hører til aRts:
+#include &lt;artsflow.idl&gt;
+
+// skriv enten med eller uden moduldeklaration, og de genererede klasser
+// kommer ikke til at bruge et navnerum:
+interface Synth_TWEAK2 : Arts::SynthModule
+{
+    in audio stream invalue;
+    out audio stream outvalue;
+    attribute float tweakFactor;
+};
+
+// du kan dog vælge et eget navnerum hvis du vil, så hvis du
+// skriver programmet "PowerRadio", ville du kunne gøre sådan her:
+module PowerRadio {
+    struct Station {
+        string name;
+        float frequency;
+    };
+
+    interface Tuner : Arts::SynthModule {
+        attribute Station station;     // intet præfiks for Station, samme modul
+        out audio stream left, right;
+    };
+};
+</programlisting>
+
+</sect2>
+
+<sect2 id="namespaces-implementation">
+<title
+>Interne funktioner: hvordan implementeringen virker</title>
+
+<para
+>&MCOP; har ofte brug for at henvise til navne på typer og grænseflader for typekonverteringer, grænseflader og metodesignaturer. Disse repræsenteres af strenge i de almindelige &MCOP;-datastrukturer, mens navnerummet altid er fuldstændigt repræsenteret i C++ stilen. Dette betyder at strengene skal indeholde <quote
+>M::A</quote
+> og <quote
+>B</quote
+>, ifølge eksemplerne ovenfor. </para>
+
+<para
+>Bemærk at dette til og med gælder hvis navnerumskvalifikatorerne ikke blev givet inde i &IDL;-teksten, eftersom sammenhængen klargør hvilket navnerum grænsefladen <interfacename
+>A</interfacename
+> var beregnet til at bruge. </para>
+
+</sect2>
+</sect1>
+
+<sect1 id="threads">
+<title
+>Tråde i &arts;</title>
+
+<sect2 id="threads-basics">
+<title
+>Det basale</title>
+
+<para
+>At bruge tråde er ikke muligt på alle platforme. Dette er grunden til at &arts; oprindeligt blev skrevet uden at bruge tråde overhovedet. For næsten alle problemer, findes der en løsning uden tråde som gør det samme  som hvert løsning med tråde. </para>
+
+<para
+>For eksempel, i stedet for at placere lyduddata i en separat tråd, og gøre den blokerende, bruger &arts; lyduddata som ikke blokerer, og regner ud hvornår næste del af uddata skal skrives med <function
+>select()</function
+>. </para>
+
+<para
+>&arts; understøtter i det mindste (i de nyeste versioner) støtte for dem som vil implementere deres objekter med tråde. Hvis du for eksempel allerede har kode for en <literal role="extension"
+>mp3</literal
+>-afspiller, og koden forventer at <literal role="extension"
+>mp3</literal
+>-afkoderen skal køres i en separat tråd, er det oftest lettest at beholde denne konstruktion. </para>
+
+<para
+>Implementeringen af &arts;/&MCOP; er opbygget ved at dele tilstanden mellem forskellige objekter på tydelige og mindre tydlige måder. En kort liste af delte tilstande omfatter: </para>
+
+<itemizedlist>
+<listitem
+><para
+>Afsenderobjektet som laver &MCOP;-kommunikation </para>
+</listitem>
+
+<listitem>
+<para
+>Referenceregningen (Smartwrappers). </para>
+</listitem>
+
+<listitem>
+<para
+>I/O-håndteringen som håndterer tidsgrænser og fd-tidsmåling. </para>
+</listitem>
+
+<listitem>
+<para
+>Objekthåndteringen som laver objekter og indlæser plugin dynamisk. </para>
+</listitem>
+
+<listitem>
+<para
+>Flydesystemet som kalder calculateBlock i passende tilfælde. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Ingen af de ovenstående objekter forventer at blive brugt samtidigt (dvs. at blive kaldt fra forskellige tråde samtidigt). I almindelighed er der to måder at løse dette: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Kræv at den som kalder hvilken som helst funktion i objektet skaffer sig en lås inden den bruges. </para>
+</listitem>
+
+<listitem>
+<para
+>Gør objekterne virkeligt trådsikre og/eller opret instanser af dem for hver tråd. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>&arts; bruger den første måde. Du behøver en lås hver gang du skal have adgang til et af disse objekter. Den anden måde er sværere at gøre. Et hurtigt fiks som forsøger at opnå dette findes på <ulink url="http://space.twc.de/~stefan/kde/download/arts-mt.tar.gz"
+> http://space.twc.de/~stefan/kde/download/arts-mt.tar.gz</ulink
+>, men for øjeblikket virker en minimal måde formodentlig bedre, og forårsager mindre problemer med eksisterende programmer. </para>
+
+</sect2>
+<sect2 id="threads-locking">
+<title
+>Hvornår/hvordan skal låsning ske?</title>
+
+<para
+>Du kan få/slippe låsen med de to funktioner: </para>
+
+<itemizedlist>
+<listitem>
+<para>
+<ulink
+url="http://space.twc.de/~stefan/kde/arts-mcop-doc/arts-reference/headers/Arts__Dispatcher.html#lock"
+><function
+>Arts::Dispatcher::lock()</function
+></ulink>
+</para>
+</listitem>
+<listitem>
+<para>
+<ulink
+url="http://space.twc.de/~stefan/kde/arts-mcop-doc/arts-reference/headers/Arts__Dispatcher.html#unlock"
+><function
+>Arts::Dispatcher::unlock()</function
+></ulink>
+</para>
+</listitem>
+</itemizedlist>
+
+<para
+>Generelt behøver du ikke at skaffe en lås (og du skal ikke forsøge at gøre det), hvis den allerede holdes. En liste over betingelser når dette er tilfældet er: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Du tager imod et tilbagekald fra I/O-håndteringen (tidsgrænse eller fd). </para>
+</listitem>
+
+<listitem>
+<para
+>Du kaldes på grund af nogle &MCOP;-forespørgsler. </para>
+</listitem>
+
+<listitem>
+<para
+>Du kaldes fra NotificationManager. </para>
+</listitem>
+
+<listitem>
+<para
+>Du kaldes fra flydesystemet (calculateBlock) </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Der er også nogle undtagelse for funktioner som du kun kan kalde i hovedtråden, og af den grund aldrig behøver et låse for at kalde dem: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Opret og fjern afsenderen eller I/O-håndteringen. </para>
+</listitem>
+
+<listitem>
+<para
+><methodname
+>Dispatcher::run()</methodname
+> / <methodname
+>IOManager::run()</methodname
+> </para>
+</listitem>
+
+<listitem>
+<para
+><methodname
+>IOManager::processOneEvent()</methodname
+></para>
+</listitem>
+</itemizedlist>
+
+<para
+>Men det er alt. For alt andet som på nogen måde hører sammen med &arts;, skal du skaffe låsen, og slippe den igen når du er klar. Her er et enkelt eksempel: </para>
+
+<programlisting
+>class SuspendTimeThread : Arts::Thread {
+public:
+    void run() {
+        /*
+         * du behøver denne lås fordi:
+         *  - oprettelse af en reference behøver en lås (eftersom global: går til
+         *    objekthåndteringen, som derefter kunne have brug for GlobalComm
+         *    objektet for at slå hver forbindelse der skal gøres op)
+         *  - tildeling af en smartwrapper behøver en lås
+         *  - oprettelse af et objekt fra en reference behøver en lås (eftersom
+         *    den kan få brug for at forbinde til en server)
+         */
+        Arts::Dispatcher::lock();
+        Arts::SoundServer server = Arts::Reference("global:Arts_SoundServer");
+        Arts::Dispatcher::unlock();
+
+        for(;;) {            /*
+             * du behøver en lås her, eftersom
+             *  - følge en reference for en smartwrapper behøver en lås
+             *    (eftersom den kan oprette objektet når den bruges)
+             *  - at gøre et MCOP-kald behøver en lås
+             */
+            Arts::Dispatcher::lock();
+            long seconds = server.secondsUntilSuspend();
+            Arts::Dispatcher::unlock();
+
+            printf("sekunder til ventetilstand = %d",seconds);
+            sleep(1);
+        }
+    }
+}
+</programlisting>
+
+
+</sect2>
+
+<sect2 id="threads-classes">
+<title
+>Trådrelaterede klasser</title>
+
+<para
+>Følgende trådrelaterede klasser er tilgængelige for øjeblikket: </para>
+
+<itemizedlist>
+<listitem>
+<para
+><ulink url="http://www.arts-project.org/doc/headers/Arts__Thread.html"
+><classname
+> Arts::Thread</classname
+></ulink
+> - som indkapsler en tråd. </para>
+</listitem>
+
+<listitem>
+<para
+><ulink url="http://www.arts-project.org/doc/headers/Arts__Mutex.html"
+> <classname
+>Arts::Mutex</classname
+></ulink
+> - som indkapsler en mutex. </para>
+</listitem>
+
+<listitem>
+<para
+><ulink url="http://www.arts-project.org/doc/headers/Arts__ThreadCondition.html"
+> <classname
+>Arts::ThreadCondition</classname
+></ulink
+> - som giver støtte for at vække tråde som venter på at en vis betingelse skal blive sand. </para>
+</listitem>
+
+<listitem>
+<para
+><ulink url="http://www.arts-project.org/doc/headers/Arts__SystemThreads.html"
+><classname
+>Arts::SystemThreads</classname
+></ulink
+> - som indkapsler operativsystemets trådningslager (og giver nogle hjælpefunktioner for anvendelsesprogrammører). </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Se linkene for dokumentationen. </para>
+
+</sect2>
+</sect1>
+
+<sect1 id="references-errors">
+<title
+>Referencer og fejlhåndtering</title>
+
+<para
+>&MCOP;-referencer er et af de mest centrale begreber i &MCOP; programmering. Dette afsnit forsøger at beskrive nøjagtigt hvordan referencer bruges, og behandler især fejltilfælde (server bryder sammen). </para>
+
+<sect2 id="references-properties">
+<title
+>Grundlæggende egenskaber for referencer</title>
+
+<itemizedlist>
+<listitem>
+<para
+>En &MCOP; reference er ikke et objekt, men en reference til et objekt: Selv om følgende deklaration <programlisting>
+   Arts::Synth_PLAY p;
+</programlisting
+> ser ud som en definition af et objekt, så deklarerer den kun en reference til et objekt. Som C++ programmør, kan du også se den som Synth_PLAY *, en slags peger til et Synth_PLAY-objekt. Det betyder specielt at p kan være det samme som en NULL-peger. </para>
+</listitem>
+
+<listitem>
+<para
+>Du kan oprette en NULL-reference ved eksplicit at tildele den. </para>
+<programlisting
+>Arts::Synth_PLAY p = Arts::Synth_PLAY::null();
+</programlisting>
+</listitem>
+
+<listitem>
+<para
+>At kalde objekter med en NULL-reference forårsager et hukommelsesdump </para>
+<programlisting
+>Arts::Synth_PLAY p = Arts::Synth_PLAY::null();
+   string s = p.toString();
+</programlisting>
+<para
+>forårsager et hukommelsesdump. Hvis man sammenligner dette med en peger, er det stort set det samme som <programlisting>
+   QWindow* w = 0;
+   w-&gt;show();
+</programlisting
+> hvilket enhver C++ programmør ved at man skal undgå. </para>
+</listitem>
+
+<listitem>
+<para
+>Uinitierede objekter forsøger at oprette sig selv når de først bruges </para>
+
+<programlisting
+>Arts::Synth_PLAY p;
+   string s = p.toString();
+</programlisting>
+<para
+>er noget anderledes end at følge en NULL-peger. Du fortalte slet ikke objektet hvad det er, og nu forsøger du at bruge det. Gætværket her er at du vil have en ny lokal instans af et Arts::Synth_PLAY-objekt. Du kan naturligvis have villet gøre noget andet (såsom at oprette objektet et andet sted, eller bruge et eksisterende fjernobjekt). Det er i alle tilfælde en bekvem genvej til at oprette objekter. At oprette et objekt når det først bruges virker ikke når du allerede har tildelt det til noget andet (som en null-reference). </para>
+
+<para
+>Den tilsvarende C++ terminologi ville være <programlisting>
+   QWidget* w;
+   w-&gt;show();
+</programlisting
+> som naturligvis helt enkelt giver en segmenteringsfejl i C++. Så dette er anderledes her. Denne måde at oprette objekt er tricket, eftersom det ikke er nødvendigt at der findes en implementering for din grænseflade. </para>
+
+<para
+>Betragt for eksempel et abstrakt objekt såsom et Arts::PlayObject. Der er naturligvis konkrete PlayObjects, såsom de til for at afspille mp3-filer eller wav-filer, men <programlisting>
+   Arts::PlayObject po;
+   po.play();
+</programlisting
+> mislykkes helt sikkert. Problemet er at selvom et PlayObject forsøges at blive lavet, så mislykkes det eftersom der kun er objekter såsom Arts::WavPlayObject og lignende. Brug derfor kun denne måde at oprette objekter hvis du er sikker på at der er en implementering. </para>
+</listitem>
+
+<listitem>
+<para
+>Referencer kan pege på samme objekt </para>
+
+<programlisting
+>Arts::SimpleSoundServer s = Arts::Reference("global:Arts_SimpleSoundServer");
+   Arts::SimpleSoundServer s2 = s;
+</programlisting>
+
+<para
+>laver to referencer som angiver samme objekt. Det kopierer ikke nogen værdi, og laver ikke to objekter. </para>
+</listitem>
+
+<listitem>
+<para
+>Alle objekter referenceregnes. Så snart et objekt ikke har nogen referencer længere, slettes det. Der er ingen måde udtrykkeligt at fjerne et objekt, men du kan dog bruge noget sådant her <programlisting>
+   Arts::Synth_PLAY p;
+   p.start();
+   [...]
+   p = Arts::Synth_PLAY::null();
+</programlisting
+> for at få Synth_PLAY-objektet til at forsvinde til slut. Specielt er det aldrig nødvendigt at bruge new og delete i sammenhæng med referencer. </para>
+</listitem>
+</itemizedlist>
+
+</sect2>
+
+<sect2 id="references-failure">
+<title
+>Tilfældet hvor det mislykkes</title>
+
+<para
+>Eftersom referencer kan pege på fjernobjekter, kan serverne som indeholder disse objekter bryde sammen. Hvad sker så? </para>
+
+<itemizedlist>
+
+<listitem>
+<para
+>Et sammenbrud ændrer ikke om en reference er en null-reference. Dette betyder at hvis <function
+>foo.isNull()</function
+> var <returnvalue
+>true</returnvalue
+> inden et serversammenbrud er den også <returnvalue
+>true</returnvalue
+> efter et serversammenbrud (hvilket er indlysende). Det betyder også at hvis <function
+>foo.isNull()</function
+> var <returnvalue
+>false</returnvalue
+> inden et serversammenbrud (foo angav et objekt) er den også <returnvalue
+>false</returnvalue
+> efter serversammenbruddet. </para>
+</listitem>
+
+<listitem>
+<para
+>At kalde metoder med en gyldig reference forbliver sikkert. Antag at serveren som indeholder objektet calc brød sammen. Kald til objekter såsom <programlisting>
+   int k = calc.subtract(i,j)
+</programlisting
+> er stadigvæk sikre. Det er åbenbart at subtract skal returnere noget, hvilket den ikke kan eftersom fjernobjektet ikke længere findes. I dette tilfælde ville (k == 0) være sand. I almindelighed forsøger operationer at returnere noget <quote
+>neutralt</quote
+> som resultat, såsom 0.0, en null-reference for objekter eller tomme strenge, når objektet ikke længere findes. </para>
+</listitem>
+
+<listitem>
+<para
+>Kontrol med <function
+>error()</function
+> afslører om noget virkede. </para>
+
+<para
+>I ovenstående tilfælde, ville <programlisting>
+   int k = calc.subtract(i,j)
+   if(k.error()) {
+      printf("k er ikke i-j!\n");
+   }
+</programlisting
+> udskrive <computeroutput
+>k er ikke i-j</computeroutput
+> når fjernkaldet ikke virkede. Ellers er <varname
+>k</varname
+> virkelig resultatet af subtraktionsoperationen som udføres af fjernobjektet (intet serversammenbrud). For metoder som gør ting såsom at fjerne en fil, kan du ikke vide med sikkerhed om det virkelig er sket. Naturligvis skete det hvis <function
+>.error()</function
+> er <returnvalue
+>false</returnvalue
+>. Men hvis <function
+>.error()</function
+> er <returnvalue
+>true</returnvalue
+>, er der to muligheder: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Filen blev slettet, og serveren brød sammen præcis efter den blev slette, men inden resultatet overførtes. </para>
+</listitem>
+
+<listitem>
+<para
+>Serveren brød sammen inden den kunne fjerne filen. </para>
+</listitem>
+</itemizedlist>
+</listitem>
+
+<listitem>
+<para
+>Brug af indlejrede kald er farligt i et program som skal være sikkert mod sammenbrud. </para>
+
+<para
+>Brug af noget i retning af <programlisting>
+   window.titlebar().setTitle("foo");
+</programlisting
+> er ikke en god idé. Antag at du ved at vinduet indeholder en gyldig vinduesreference. Antag at du ved at <function
+>window.titlebar()</function
+> returnerer en reference til navnelisten eftersom vinduesobjektet er rigtigt implementeret. Sætningen ovenfor er imidlertid alligevel ikke sikker. </para>
+
+<para
+>Hvad kan ske hvis serveren som indeholder vinduesobjektet er brudt sammen. Så vil du, uafhængig af hvor god implementeringen af Window er,  få en null-reference som resultat af operationen window.titlebar(). Og derefter vil kaldet til setTitle med denne null-reference naturligvis også føre til et sammenbrud. </para>
+
+<para
+>Så en sikker variant af dette ville være <programlisting>
+   Titlebar titlebar = window.titlebar();
+   if(!window.error())
+      titlebar.setTitle("foo");
+</programlisting
+> og tilføj den rigtige fejlhåndtering hvis du vil. Hvis du ikke stoler på implementeringen af Window, kan du lige så godt bruge <programlisting>
+   Titlebar titlebar = window.titlebar();
+   if(!titlebar.isNull())
+      titlebar.setTitle("foo");
+</programlisting
+> som begge er sikre. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Der er andre fejlbetingelser, såsom nedkobling af netværket (antag at du tager kablet mellem din server og klient væk mens dit program kører). Deres effekt er imidlertid den samme som et serversammenbrud. </para>
+
+<para
+>Totalt set er det naturligvis et policy-spørgsmål hvor strengt du forsøger at håndtere kommunikationsfejl i hele dit program. Du kan følge metoden <quote
+>hvis serveren bryder sammen, skal vi fejlsøge den til den aldrig bryder sammen igen</quote
+>, som ville betyde at du ikke behøver bryde dig om alle disse problemer. </para>
+
+</sect2>
+
+<sect2 id="references-internals">
+<title
+>Interne funktioner: distribueret referenceregning</title>
+
+<para
+>Et objekt skal ejes af nogen for at eksistere. Hvis det ikke gør det, vil det ophøre med at eksistere (mere eller mindre) med det samme. Internt angives en ejer ved at kalde <function
+>_copy()</function
+>, som forøger en reference tæller, og en ejer fjernes ved at kalde <function
+>_release()</function
+>. Så snart referencetælleren når nul, så slettes objektet. </para>
+
+<para
+>Som en variation på temaet, angives fjernbrug med <function
+>_useRemote()</function
+>, og opløses med  <function
+>_releaseRemote()</function
+>. Disse funktioner har en liste over hvilken server som har kaldt dem (og derfor ejer objektet). Dette bruges hvis serveren kobler ned (dvs. sammenbrud, netværksfejl), for at fjerne referencer som stadigvæk findes til objektet. Dette gøres i <function
+>_disconnectRemote()</function
+>. </para>
+
+<para
+>Nu er der et problem. Betragt en returværdi. I almindelige tilfælde ejes returværdiobjektet ikke af funktionen som kaldes længere. Det ejes heller ikke af den som kalder, førend meddelelsen som indeholder objektet er modtaget. Så der er en tid med objekter som <quote
+>mangler ejere</quote
+>. </para>
+
+<para
+>Når vi nu sender et objekt kan man være rimeligt sikker på at så snart det modtages, ejes det af nogen igen, med mindre, igen, modtageren bryder sammen. Dette betyder i alle tilfælde at specielle hensyn skal tages for objekter i det mindste mens der sendes, og formodentlig også mens der modtages, så de ikke fjernes med det samme. </para>
+
+<para
+>Måden som &MCOP; gør dette er ved at <quote
+>mærke</quote
+> objekter som er ved at blive kopieret over netværket. Inden en sådan kopiering begynder, kaldes <function
+>_copyRemote</function
+>. Dette forhindrer at objektet fjernes et stykke tid (5 sekunder). Så snart modtageren kalder <function
+>_useRemote()</function
+>, fjernes mærket igen. Så alle objekter som sendes over netværket, mærkes inden overførslen. </para>
+
+<para
+>Hvis modtageren modtager et objekt som findes på samme server, så bruges <function
+>_useRemote()</function
+> naturligvis ikke.  I dette specialtilfælde, findes funktionen <function
+>_cancelCopyRemote()</function
+> til at fjerne mærket manuelt. Foruden dette, er der også en tidsbaseret fjernelse af mærker, hvis mærkning udførtes, men modtageren ikke virkelig fik objektet (på grund af sammenbrud, netværksfejl). Dette gøres med klassen <classname
+>ReferenceClean</classname
+>. </para>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="detail-gui-elements">
+<title
+>&GUI;-elementer</title>
+
+<para
+>&GUI;-elementer er for øjeblikket på det eksperimentelle stadium. Dette afsnit beskriver hvad det er meningen der skal ske med dem, så hvis du er  udvikler, kan du forstå hvordan &arts; vil håndtere grafiske grænseflader i fremtiden. Der er også allerede en del kode på plads. </para>
+
+<para
+>&GUI;-elementer skal bruges til at lade syntesestrukturer vekselvirke med brugeren. I det enkleste tilfælde skal brugeren kunne ændre nogle parametre for en struktur direkte (som en forstærkningsfaktor som bruges inden det endelige afspilningsmodul). </para>
+
+<para
+>I mere komplekse tilfælde, kan man tænke sig at brugeren ændrer parametre for grupper af strukturer og/eller strukturer som ikke kører endnu, såsom at ændre <acronym
+>ADSR</acronym
+> enveloppen for det aktive  &MIDI;-instrument. Noget andet ville kunne være at angive filnavnet for et samplingsbaseret instrument. </para
+> 
+
+<para
+>På den anden side, kunne brugeren ville overvåge hvad syntheziseren gør. Der kunne være oscilloskoper, spektrumanalysatorer, lydstyrkemålere og <quote
+>eksperimenter</quote
+> som for eksempel regner frekvensoverførselskurven ud for et given filtermodul. </para>
+
+<para
+>Til sidst, skal &GUI;-elementer kunne kontrollere hele strukturen af alt som kører inden i &arts;, og på hvilken måde. Brugeren skal kunne tildele instrumenter til midi-kanaler, starte nye effektbehandlingsskridt, indstille sit hovedmikserpanel (som selv er opbygget af &arts;-strukturer) for at få yderligere en kanal eller bruge en anden strategi for tonekontrol. </para>
+
+<para
+>Som du ser, skal &GUI;-elementer give alle mulighederne i et virtuelt studie som &arts; simulerer for brugeren. Naturligvis skal de også vekselvirke med midi-indgange (såsom skydere som også flyttes hvis de får &MIDI;-inddata som ændrer tilsvarende parametre), og formodentlig til og med oprette begivenheder selv, for at vekselvirkning med brugeren skal kunne indspilles via en sequencer. </para>
+
+<para
+>Teknisk set er idéen at have en &IDL;-basisklasse for alle grafiske komponenter (<classname
+>Arts::Widget</classname
+>), og aflede et antal almindelige komponenter fra den (såsom <classname
+>Arts::Poti</classname
+>, <classname
+>Arts::Panel</classname
+>, <classname
+>Arts::Window</classname
+>, ...). </para>
+
+<para
+>Derefter kan man implementere disse grafiske komponenter med en værktøjskasse, for eksempel &Qt; eller Gtk. Til slut, bør effekter bygge deres grafiske grænseflader fra eksisterende komponenter. En efterklangseffekt ville for eksempel kunne bygge sin grafiske grænseflade fra fem <classname
+>Arts::Poti</classname
+>-tingester og et <classname
+>Arts::Window</classname
+>. Så HVIS der findes en &Qt; implementering for disse grundkomponenter, kan effekten vises med &Qt;. Hvis der findes en Gtk implementering, virker det også med Gtk (og ser mere eller mindre ud på samme måde). </para>
+
+<para
+>Til sidst, eftersom vi bruger &IDL; her, kan &arts-builder; (eller andre værktøjer) sætte grafiske grænseflader sammen visuelt, eller generere grafiske grænseflader automatisk, med tips for parameterværdier, kun baseret på grænsefladen. Det burde være ganske ligetil at skrive en klasse til at <quote
+>oprette grafisk grænseflader fra en beskrivelse</quote
+>, som tager en beskrivelse af en grafisk grænseflade (som indeholder de forskellige parametre og grafiske komponenter), og laver et levende objekt for en grafisk grænseflade ud fra den. </para>
+
+<para
+>Baseret på &IDL; og &arts;/&MCOP;-komponentmodellen, bør det være let at udvide de mulige objekter som kan bruges til den grafiske grænseflade præcis lige så let som det er at tilføje et plugin til &arts; som for eksempel implementerer et nyt filter. </para>
+
+</sect1>
+
+</chapter>

@@ -1,0 +1,4 @@
+KDE_LANG = et
+SUBDIRS = $(AUTODIRS)
+KDE_DOCS = kcontrol/energy
+KDE_MANS = AUTO

@@ -1,0 +1,4354 @@
+<part id="kde-for-administrators">
+<partinfo>
+<authorgroup>
+<author
+><personname
+> <firstname
+>Waldo</firstname
+> <surname
+>Bastian</surname
+> </personname
+> <email
+>bastian@kde.org</email
+> </author>
+<othercredit role="reviewer"
+>&Philip.Rodrigues; &Philip.Rodrigues.mail; </othercredit>
+</authorgroup>
+</partinfo>
+
+<title
+>&kde; dla administratorów</title>
+
+<chapter id="kde-internals">
+<title
+>Wnętrze &kde;</title>
+
+<sect1 id="kde-for-admins-overview">
+<title
+>Przegląd</title>
+<para
+>do napisania</para>
+</sect1>
+
+<sect1 id="directory-layout">
+<title
+>Rozmieszczenie katalogów</title>
+
+<para
+>&kde; definiuje hierarchię systemu plików, która jest używana zarówno przez samo środowisko &kde;, jak i przez programy &kde;. Ogólnie rzecz biorąc, &kde; przechowuje wszystkie swoje pliki w drzewie katalogów o ustalonej strukturze. </para>
+
+<para
+>Domyślnie, &kde; używa dwóch drzew katalogów:</para>
+
+<itemizedlist>
+<listitem
+><para
+>Jednego na poziomie systemowym (na przykład <filename class="directory"
+>/opt/kde3</filename
+>).</para
+></listitem>
+<listitem
+><para
+>Drugiego na poziomie użytkownika, w katalogu domowym użytkownika (zwykle <filename class="directory"
+> ~/.kde</filename
+>)</para
+></listitem>
+</itemizedlist>
+
+<para
+>Jako administrator możesz tworzyć dodatkowe drzewa. Takie dodatkowe drzewa mogą być używane do tworzenia <link linkend="user-profiles"
+>profiles</link
+></para>
+
+<informalexample
+><para
+>Na przykład &Linux; &SuSE; używa:</para>
+
+<itemizedlist>
+<listitem
+><para
+><filename
+class="directory"
+>$<envar
+>HOME</envar
+>/.kde</filename
+></para
+></listitem>
+<listitem
+><para
+><filename class="directory"
+>/opt/kde3</filename
+>. (Specyficzne dla &SuSE;, inne dystrybucje mogą używać <filename class="directory"
+>/usr</filename
+> lub <filename class="directory"
+>/usr/kde3</filename
+>)</para
+></listitem>
+<listitem
+><para
+><filename class="directory"
+>/etc/opt/kde3</filename
+>. (Zostało to dodane przez &SuSE;).</para
+></listitem>
+</itemizedlist>
+
+<para
+>Jeśli posiadasz zainstalowane narzędzie KIOSK Admin w wersji 0.7, lub późniejszej, możesz sprawdzić, które drzewa katalogów są wykorzystywane, komendą: <userinput
+><command
+>kiosktool-kdedirs</command
+> <option
+>--check</option
+></userinput
+></para>
+</informalexample>
+
+<para
+>&kde; oraz programy &kde; szukają plików przeszukując wszystkie drzewa katalogów &kde;. Sprawdzanie następuje w kolejności według pierwszeństwa. Jeśli plik znajduje się w wielu drzewach, pierwszeństwo ma ostatnie drzewo. Zwykle drzewo położone w katalogu domowym użytkownika posiada najwyższe pierwszeństwo. Jest to także drzewo, do którego są zapisywane zmiany.</para>
+
+<informalexample>
+<para
+>Aby uzyskać informacje o typie &MIME; <literal
+>text/plain</literal
+>, przeszukiwane są następujące pliki:</para>
+
+<itemizedlist>
+<listitem
+><para
+><filename
+class="directory"
+>$<envar
+>HOME</envar
+>/.kde/share/mimelnk/text/plain.desktop</filename
+></para
+></listitem>
+<listitem
+><para
+><filename
+class="directory"
+>/opt/kde3/share/mimelnk/text/plain.desktop</filename
+></para
+></listitem>
+<listitem
+><para
+><filename
+class="directory"
+>/etc/opt/kde3/share/mimelnk/text/plain.desktop</filename
+></para
+></listitem>
+</itemizedlist>
+
+<para
+>Kiedy użytkownik dokonuje zmiany, jest ona zapisywana do <filename class="directory"
+>$<envar
+>HOME</envar
+>/.kde/share/mimelnk/text/plain.desktop</filename
+></para>
+</informalexample>
+
+<para
+>Sytuacja wygląda nieco inaczej, jeśli chodzi o pliki konfiguracyjne. W momencie wystąpienia wielu plików konfiguracyjnych o tej samej nazwie w drzewach, ich zawartość zostaje połączona. Pierwszeństwo drzewa odgrywa tu rolę. Kiedy dwa pliki definiują ten sam klucz konfiguracji, plik o wyższym pierwszeństwie określa użytą dla niego wartość.</para>
+
+<informalexample
+><para
+>Na przykład, jeśli istnieją następujące dwa pliki, z tą zawartością:</para>
+<variablelist>
+<varlistentry
+><term
+><filename
+>$<envar
+>HOME</envar
+>/.kde/share/config/foobar</filename
+></term>
+<listitem
+><programlisting
+>Color=red
+Shape=circle
+</programlisting>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename
+>/etc/opt/kde3/share/config/foobar</filename
+></term>
+<listitem
+><programlisting
+>Color=blue
+Position=10,10
+</programlisting>
+</listitem>
+</varlistentry>
+</variablelist>
+
+<para
+>Pliki zostaną połączone i wynikiem będzie:</para>
+
+<programlisting
+>Color=red
+Shape=circle
+Position=10,10
+</programlisting>
+
+</informalexample>
+</sect1>
+
+<sect1 id="specifying-directories">
+<title
+>Określanie katalogów</title>
+
+<para>
+
+<segmentedlist>
+<segtitle
+>Zmienna środowiskowa</segtitle>
+<segtitle
+>Przykładowe ustawienie(a)</segtitle>
+<segtitle
+>Komentarz</segtitle>
+
+<seglistitem>
+<seg
+><envar
+>KDEHOME</envar
+></seg>
+<seg
+><filename class="directory"
+>~/.kde</filename
+></seg>
+<seg
+></seg>
+</seglistitem>
+
+<seglistitem>
+<seg
+><envar
+>KDEROOTHOME</envar
+></seg>
+<seg
+><filename class="directory"
+>/root/.kde</filename
+></seg>
+<seg
+>Inna zmienna zabezpieczająca użytkownika root przed zapisaniem do $KDEHOME użytkownika po wykonaniu komendy <command
+>su</command
+>.</seg>
+</seglistitem>
+
+<seglistitem>
+<seg
+><envar
+>KDEDIR</envar
+></seg>
+<seg
+><filename class="directory"
+>/opt/kde3</filename
+>, <filename class="directory"
+>/usr</filename
+>, <filename class="directory"
+>/usr/kde3</filename
+></seg>
+<seg
+>Zależne od dystrybutora. Używane przez &kde; 2. Jeśli nie określone, wraca do domyślnych ustawień określonych podczas kompilacji.</seg>
+</seglistitem>
+
+<seglistitem>
+<seg
+><envar
+>KDEDIRS</envar
+></seg>
+<seg
+><filename class="directory"
+>/opt/kde3</filename
+>, <filename class="directory"
+>/usr</filename
+>, <filename class="directory"
+>/usr/kde3</filename
+></seg>
+<seg
+>Nowość w &kde;3. Może określać wiele miejsc położenia, oddzielonych dwukropkiem. Kiedy nie jest ustawiona, wraca do wartości $<envar
+>KDEDIR</envar
+></seg>
+</seglistitem>
+
+</segmentedlist>
+</para>
+<para
+><emphasis
+>Nie trzeba</emphasis
+> ustawiać, domyślna wartość świetnie działa.</para>
+<para
+>Uruchamiasz &kde;2 zamiennie z &kde;3? Ustaw $<envar
+>KDEDIR</envar
+> na &kde; 2, a $<envar
+>KDEDIRS</envar
+> na &kde; 3.</para>
+
+<informalexample>
+<para
+>Osoba z personelu uczelnianego mogłaby mieć następujące ustawienia:</para>
+<programlisting
+>KDEHOME='~/.kde3'
+KDEROOTHOME='/root/.kde3'
+KDEDIRS='/opt/kde_staff:/opt/kde3'
+</programlisting>
+
+</informalexample>
+
+</sect1>
+
+<sect1 id="user-profiles">
+<title
+>Profile użytkownika</title>
+
+<para
+>W poprzednim przykładzie <filename class="directory"
+>/opt/kde_staff</filename
+> zawierało dodatkowe ustawienia i programy dla osób z personelu. <quote
+>Profile użytkownika</quote
+> pozwalają na dodanie tego katalogu tylko i wyłącznie dla określonych użytkowników. Dodaj do <filename
+>/etc/kderc</filename
+>:</para>
+
+<programlisting
+>[Directories-staff]
+prefixes=/opt/kde_staff
+</programlisting>
+
+<para
+>Tworzy to profil o nazwie <quote
+>staff</quote
+>, co dodaje drzewo katalogów <filename class="directory"
+>/opt/kde_staff</filename
+>. (Zwróć uwagę, że &Linux; &SuSE; używa nazwy pliku <filename
+>/etc/kde3rc</filename
+> zamiast <filename
+>/etc/kderc</filename
+>. Kiedy już mamy nazwany profil, może on zostać przypisany do użytkowników.</para>
+
+<para
+>Aby przypisać profile do użytkowników, w pliku <filename
+>/etc/kderc</filename
+> powinien być określony plik przypisania:</para>
+
+<programlisting
+>[Directories]
+userProfileMapFile=/etc/kde-user-profile
+</programlisting>
+
+<para
+>Teraz mamy możliwość przypisania profilu na podstawie nazwy użytkownika, lub grupy uniksowej, do której on należy.</para
+> 
+
+<para
+>Aby przypisać profil staff do wszystkich użytkowników, którzy są członkami uniksowej grupy staff_members, dodarj do <filename
+>/etc/kde-user-profile</filename
+>:</para>
+
+<programlisting
+>[General]
+groups=staff_members
+[Groups]
+staff_members=staff
+</programlisting>
+
+<para
+>Można również przypisać profil pojedynczemu użytkownikowi:</para>
+
+<programlisting
+>[Users]
+bastian=staff
+</programlisting>
+
+</sect1>
+
+<sect1 id="directory-layout-revisited">
+<title
+>Rozmieszczenie katalogów - powtórka</title>
+
+<para
+>Każde drzewo katalogów wykorzystywane przez &kde; posiada ustaloną strukturę katalogów. Jednakże katalogi nieistotne z punktu widzenia danego drzewa, lub po prostu niewykorzystywane, mogą nie zostać dołączone. Na przykład katalogi używane dla plików tymczasowych można zwykle znaleźć w <filename class="directory"
+>$<envar
+>KDEHOME</envar
+></filename
+>, ale nie w żadnym innym drzewie.</para>
+
+</sect1>
+
+<sect1 id="architecture-specific-directories">
+<title
+>Katalogi zależne od architektury</title>
+
+<para
+>Katalogi zależne od architektury (system operacyjny i typ procesora):</para>
+
+<variablelist>
+<varlistentry>
+<term
+><filename class="directory"
+>bin</filename
+></term>
+<listitem
+><para
+>Używane dla plików wykonywalnych &kde;.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename class="directory"
+>lib</filename
+></term>
+<listitem
+><para
+>Używane dla bibliotek &kde;.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename class="directory"
+>lib/kde3</filename
+></term>
+<listitem
+><para
+>Katalog zawierający składniki, wtyczki i inne wczytywalne obiekty czasu wykonania używane przez programy &kde;3.<replaceable
+>x</replaceable
+>.</para
+></listitem
+> 
+</varlistentry>
+</variablelist>
+
+</sect1>
+
+<sect1 id="shared-directories">
+<title
+>Katalogi współdzielone</title>
+
+<para
+>Współdzielone: niezależne od architektury, mogą być wspólnie wykorzystywane przez różne architektury.</para>
+
+<variablelist>
+<varlistentry>
+<term
+><filename class="directory"
+>share/applnk</filename
+></term>
+<listitem
+><para
+><literal role="extension"
+>.desktop</literal
+> pliki dla menu &kde; (przestarzałe)</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename class="directory"
+>share/applications</filename
+></term>
+<listitem
+><para
+><literal role="extension"
+>.desktop</literal
+> pliki dla menu &kde; (od &kde; 3.2)</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename class="directory"
+>share/apps</filename
+></term>
+<listitem
+><para
+>Zawiera pliki danych specyficzne dla programów. Każdy program posiada tutaj swój podkatalog do przechowywania dodatkowych plików danych.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename class="directory"
+>share/config</filename
+></term>
+<listitem
+><para
+>Pliki konfiguracyjne. Zwykle posiadają nazwy pochodzące od programów, do których należą, z dodanymi literami <quote
+>rc</quote
+>. Wyjątkowym przypadkiem jest <filename
+>kdeglobals</filename
+>. Ten plik jest czytany przez wszystkie programy &kde;.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename
+class="directory"
+>share/config/session</filename
+></term>
+<listitem
+><para
+>Katalog używany przy zarządzaniu sesjami i zwykle dostępny tylko pod <filename class="directory"
+>$<envar
+>KDEHOME</envar
+></filename
+>. Pod koniec sesji programy &kde; zapisują tu swój stan. Nazwy plików składają się z nazwy programu z dołożonym numerem. <command
+>ksmserver</command
+> zarządzający sesjami przechowuje odniesienia do tych numerów podczas zapisywania sesji w <filename
+>ksmserverrc</filename
+>.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename class="directory"
+>share/doc/HTML</filename
+></term>
+<listitem
+><para
+>Katalog zawierający dokumentację dla programów &kde;. Dokumentacja jest sklasyfikowana zgodnie z językiem i programem, do którego należy. Zwykle mogą tu być znalezione co najmniej dwa pliki: <filename
+>index.docbook</filename
+>, który zawiera dokumentację w niesformatowanym formacie DocBook i  <filename
+>index.cache.bz2</filename
+>, który zawiera tą samą dokumentację sformatowaną jako &HTML; spakowany <command
+>bzip2</command
+>. Wersja &HTML; jest wykorzystywana przez &khelpcenter-biernik;. W przypadku braku wersji &HTML; zostanie ona wygenerowana przez &khelpcenter-biernik; z wersji DocBook, ale jest to czasochłonny proces.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename class="directory"
+>share/icons</filename
+></term>
+<listitem
+><para
+>W tym katalogu są przechowywane ikony. Są one poklasyfikowane wg motywu, wymiarów i kategorii użycia.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename class="directory"
+>share/mimelnk</filename
+></term>
+<listitem
+><para
+>W tym katalogu,<literal role="extension"
+>.desktop</literal
+> są przechowywane pliki opisujące typy &MIME;. &kde; używa typów &MIME; do zidentyfikowania typu pliku.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename class="directory"
+>share/services</filename
+></term>
+<listitem
+><para
+>Ten katalog zawiera pliki <literal role="extension"
+>.desktop</literal
+> określające usługi. Usługi są jak programy, ale zwykle są uruchamiane przez inne programy zamiast przez użytkownika. Nie pojawiają się one w menu &kde;.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename class="directory"
+>share/servicetypes</filename
+></term>
+<listitem
+><para
+>Ten katalog zawiera pliki <literal role="extension"
+>.desktop</literal
+> określające typy usług. Typy usług zwykle reprezentują pewien interfejs programistyczny. Programy i serwisy zawierają w w swoich plikach <literal role="extension"
+>
+>.desktop</literal
+> typy serwisów, które udostępniają.</para
+> </listitem
+></varlistentry>
+
+<varlistentry>
+<term
+><filename class="directory"
+>share/sounds</filename
+></term>
+<listitem
+><para
+>Katalog zawierający pliki dźwiękowe.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename class="directory"
+>share/templates</filename
+></term>
+<listitem
+><para
+>Ten katalog zawiera szablony do tworzenia plików różnych typów. Szablon składa się z pliku <literal role="extension"
+>.desktop</literal
+>, który opisuje plik i zawiera odniesienie do pliku w podkatalogu <filename class="directory"
+>.source</filename
+>. Szablony w tym katalogu pojawiają się w menu <guimenu
+>Create New</guimenu
+>, dostępnym na pulpicie i w przeglądarce. Kiedy użytkownik wybiera szablon z menu, jego źródło jest kopiowane.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename class="directory"
+>share/wallpapers</filename
+></term>
+<listitem
+><para
+>Ten katalog zawiera obrazki mogące zostać użyte jako obrazki tła.</para
+></listitem>
+</varlistentry>
+
+</variablelist>
+
+</sect1>
+
+<sect1 id="host-specific-directories">
+<title
+>Katalogi specyficzne dla komputera</title
+> 
+
+<para
+>Istnieją trzy katalogi specyficzne dla komputera; są one zwykle dowiązane symbolicznie do innych lokalizacji. Jeżeli katalogi jeszcze nie istnieją, następujące dowiązania symboliczne i katalogi zostaną utworzone z użyciem narzędzia <command
+>lnusertemp</command
+>:</para>
+
+<variablelist>
+
+<varlistentry>
+<term
+><filename
+>$<envar
+>KDEHOME</envar
+>/socket-$<envar
+>HOSTNAME</envar
+></filename
+></term>
+<listitem
+><para
+>Zwykle <filename class="directory"
+>/tmp/ksocket-$<envar
+>USER</envar
+>/</filename
+>, jest to używane przez różnorodne gniazda uniksowe.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename
+>$<envar
+>KDEHOME</envar
+>/tmp-$<envar
+>HOSTNAME</envar
+></filename
+></term>
+<listitem
+><para
+>Zwykle <filename class="directory"
+>/tmp/kde-$<envar
+>USER</envar
+>/</filename
+>, używane dla plików tymczasowych.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename
+>$<envar
+>KDEHOME</envar
+>/cache-$<envar
+>HOSTNAME</envar
+></filename
+></term>
+<listitem
+><para
+>Zwykle <filename class="directory"
+>/var/tmp/kdecache-$<envar
+>USER</envar
+>/</filename
+>, używane dla plików pamięci podręcznej.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+<para
+>Ponieważ zarówno <filename class="directory"
+>/tmp</filename
+> jak i <filename class="directory"
+>/var/tmp</filename
+> są zapisywalne przez wszystkich użytkowników, istnieje możliwość, że jeden z powyższych katalogów już istnieje, ale jego właścicielem jest inny użytkownik. W takim wypadku narzędzie <command
+>lnusertemp</command
+> stworzy nowy katalog z alternatywną nazwą i utworzy dowiązanie właśnie do niego.</para>
+
+</sect1>
+
+<sect1 id="configuration-files">
+<title
+>Pliki konfiguracyjne</title
+> <para
+>&kde; używa prostego, tekstowo-zorientowanego formatu plików dla wszystkich swoich plików konfiguracyjnych. Składa się on z par klucz-wartość, które są umieszczone w grupach. Wszystkie pliki konfiguracyjne &kde; używają kodowania <acronym
+>UTF</acronym
+>-8 dla tekstu spoza zakresu <acronym
+>ASCII</acronym
+>.</para>
+
+<para
+>Początek grupy jest oznaczony nazwą grupy umieszczoną w nawiasach kwadratowych. Wszystkie kolejne wpisy klucz-wartość należą do tej grupy. Koniec grupy ma miejsce po napotkaniu początku innej grupy, lub po osiągnięciu końca pliku. Wpisy na początku pliku, nie poprzedzone nazwą grupy, należą do grupy domyślnej.</para>
+
+<informalexample
+><para
+>Następujący przykład pokazuje plik konfiguracyjny składający się z dwóch grup. Pierwsza grupa zawiera klucze <varname
+>LargeCursor</varname
+> i <varname
+>SingleClick</varname
+>, a druga grupa <varname
+>Pokazuj ukryte pliki</varname
+> i <varname
+>Sortuj wg</varname
+>:</para>
+
+<programlisting
+>[KDE]
+LargeCursor=false
+SingleClick=true
+</programlisting>
+
+<programlisting
+>[KFileDialog Settings]
+Pokazuj ukryte pliki=false
+Sortuj wg=Name
+</programlisting>
+</informalexample>
+
+<para
+>Na wpisy (pozycje) w grupie składają się klucze i wartości oddzielone znakiem równości. Klucz może zawierać spacje i mogą za nim być umieszczone opcje w nawiasach kwadratowych. Część wpisu po znaku równości jest wartością wpisu. Wszystkie białe znaki otaczające znak równości są ignorowane, tak jak kończące wpis białe znaki. Bardziej treściwie, format ma postać:</para>
+
+<programlisting
+><replaceable
+>pozycja</replaceable
+>=<replaceable
+>wartość</replaceable
+>
+</programlisting>
+
+<para
+>Jeśli oczekuje się, że wartość będzie zawierać na początku, lub na końcu spację, może to zostać osiągnięte przez użycie znaku odwrotnego ukośnika (backslash) z następującą po nim literą <quote
+>s</quote
+>.</para>
+
+<para
+>Istnieje wiele innych kodów z odwróconym ukośnikiem, oto kompletna lista: <itemizedlist>
+<listitem
+><para
+><token
+>\s</token
+> może być użyty jako spacja</para>
+</listitem>
+<listitem
+><para
+><token
+>\t</token
+> może być użyty do dołączenia znaku tabulacji</para>
+</listitem>
+<listitem
+><para
+><token
+>\r</token
+> dla znaku powrotu karetki</para>
+</listitem>
+<listitem
+><para
+><token
+>\n</token
+> dla znaku wysunięcia linii (nowa linia)</para>
+</listitem>
+<listitem
+><para
+><token
+>\\</token
+> do dołączenia samego znaku odwróconego ukośnika</para>
+</listitem>
+</itemizedlist
+></para>
+
+<informalexample
+><para
+>W następującym przykładzie wartość wpisu <varname
+>Nagłówek</varname
+> rozpoczyna się dwoma spacjami, podczas gdy wpis <varname
+>Opis</varname
+> zawiera trzy linie tekstu. Znaki nowej linii w notacji z odwrotnym ukośnikiem są używane do oddzielenia odrębnych linii.</para>
+
+<programlisting
+>[Preview Image]
+Nagłówek=\s My Caption
+Opis=This is\na very long\ndescription.
+</programlisting>
+</informalexample>
+
+<para
+>Puste linie w plikach konfiguracyjnych są ignorowane, podobnie jak linie rozpoczynające się znakiem <quote
+>#</quote
+>. Znak ten może być używany dla dodania komentarzy do plików konfiguracyjnych. Trzeba zauważyć, że podczas uaktualniania przez program &kde; plików konfiguracyjnych komentarze <emphasis
+>nie są</emphasis
+> zachowywane.</para>
+
+<para
+>W podkatalogach <filename class="directory"
+>share/config</filename
+> różnych drzew katalogów &kde; może istnieć wiele plików konfiguracyjnych o tej samej nazwie. W takim wypadku informacja z nich wszystkich jest łączona klucz po kluczu. Jeśli taki sam klucz w pewnej grupie jest zdefiniowany w więcej, niż jednym miejscu, to zostanie użyta wartość przeczytana z drzewa katalogów z najwyższym pierwszeństwem. Pliki konfiguracyjne spod <filename class="directory"
+>$<envar
+>KDEHOME</envar
+></filename
+> zawsze są nadrzędne w stosunku do innych. Kiedy klucz zdefiniowano wiele razy w pojedynczym pliku, użyta zostanie wartość ostatniego wpisu.</para>
+
+<informalexample>
+<para
+>Jeśli <filename
+>$<envar
+>HOME</envar
+>/.kde/share/config/foobar</filename
+> zawiera: <programlisting>
+[MyGroup]
+Color=red
+Shape=circle
+</programlisting
+>, a <filename
+>/etc/opt/kde3/share/config/foobar</filename
+> zawiera <programlisting>
+[MyGroup]
+Color=blue
+Position=10,10
+</programlisting
+> wynikiem połączenia będzie: <programlisting
+>[MyGroup]
+Color=red
+Shape=circle
+Position=10,10
+</programlisting>
+</para>
+</informalexample>
+
+<informalexample>
+<para
+>Jeśli <filename
+>$<envar
+>HOME</envar
+>/.kde/share/config/foobar</filename
+> zawiera <programlisting>
+[MyGroup]
+Color=red
+Shape=circle
+[MyGroup]
+Color=green
+</programlisting
+>, <filename
+>/opt/kde_staff/share/config/foobar</filename
+> zawiera <programlisting>
+[MyGroup]
+Color=purple
+Position=20,20
+</programlisting
+>, a <filename
+>/etc/opt/kde3/share/config/foobar</filename
+> zawiera <programlisting>
+[MyGroup]
+Color=blue
+Position=10,10
+</programlisting
+> rezultatem połączenia będzie: <programlisting
+>[MyGroup]
+Color=green
+Shape=circle
+Position=20,20
+</programlisting>
+</para>
+</informalexample>
+
+<para
+>Aby zabezpieczyć użytkowników przed nadpisaniem domyślnych ustawień, mogą one zostać oznaczone jako niezmienne. Może to być określone indywidualnie, dla grupy, lub dla pliku. Pojedynczy wpis może zostać zablokowany przez dodanie <userinput
+>[$i]</userinput
+> za kluczem, np.: <programlisting
+>Color[$i]=blue
+</programlisting>
+</para>
+<para
+>Grupa wpisów może zostać zablokowana przez umieszczenie <userinput
+>[$i]</userinput
+> za nazwą grupy, np.: <programlisting
+>[MyGroup][$i]
+</programlisting>
+</para>
+<para
+>Aby zabezpieczyć cały plik, powinien on rozpoczynać się <userinput
+>[$i]</userinput
+> w pojedynczej linii, np.: <programlisting
+>[$i]
+</programlisting>
+</para>
+
+<informalexample>
+<para
+>Jeśli <filename
+>$<envar
+>HOME</envar
+>/.kde/share/config/foobar</filename
+> zawiera: <programlisting>
+[MyGroup]
+Color=red
+Shape=circle
+</programlisting
+>, a <filename
+>/etc/opt/kde3/share/config/foobar</filename
+> zawiera: <programlisting>
+[MyGroup][$i]
+Color=blue
+Position=10,10
+</programlisting
+> w wyniku otrzyma się: <programlisting
+>[MyGroup]
+Color=blue
+Position=10,10
+</programlisting>
+</para>
+</informalexample>
+
+<informalexample
+><para
+>Jeśli <filename
+>$<envar
+>HOME</envar
+>/.kde/share/config/foobar</filename
+> zawiera: <programlisting>
+[MyGroup]
+Color=red
+Shape=circle
+</programlisting
+>, <filename
+>/opt/kde_staff/share/config/foobar</filename
+> zawiera <programlisting>
+[MyGroup]
+Color=purple
+Shape=rectangle
+</programlisting
+>, a <filename
+>/etc/opt/kde3/share/config/foobar</filename
+> zawiera <programlisting>
+[MyGroup][$i]
+Color=blue
+Position=10,10
+</programlisting
+> rezultatem będzie <programlisting
+>[MyGroup]
+Color=purple
+Shape=rectangle
+Position=10,10
+</programlisting>
+</para>
+</informalexample>
+
+
+<para
+>Tak zwane <quote
+>rozszerzanie w powłoce</quote
+> może zostać użyte dla zapewnienia bardziej dynamicznych wartości domyślnych. Z rozszerzaniem wartość klucza konfiguracyjnego może być skonstruowana z wartości zmiennej środowiskowej, lub z wyjścia polecenia powłoki. Dla włączenia rozszerzania w powłoce dla wpisu w konfiguracji, po kluczu musi wystąpić <token
+>[$e]</token
+>. Normalnie rozszerzona forma zostaje zapisana do pliku konfiguracji użytkownika po pierwszym użyciu. Aby tego uniknąć, zaleca się zablokować wpis konfiguracji używając <token
+>[$ie]</token
+>. Użytkownik naturalnie nie ma później możliwości jego zmiany.</para>
+
+<informalexample>
+<para
+>W następującym przykładzie wartość wpisu <varname
+>Host</varname
+> jest określona przez wynik działania programu <command
+>hostname</command
+>. Ustawienie to zostało również zablokowane, żeby upewnić się, że zawsze jest określane dynamicznie.</para>
+
+<para
+>Wartość wpisu <varname
+>Email</varname
+> jest określona przez wypełnienie wartości zmiennych środowiskowych $<envar
+>USER</envar
+> i $<envar
+>HOST</envar
+>. Kiedy <systemitem class="username"
+>joe</systemitem
+> jest zalogowany do <systemitem class="systemname"
+>joes_host</systemitem
+>, da to w sumie wartość <literal
+>joe@joes_host</literal
+>. Ustawienie nie zostało zablokowane.</para>
+
+<programlisting
+>[Mail Settings] 
+Host[$ie]=$(hostname)
+Email[$e]=${USER}@${HOST}
+</programlisting>
+</informalexample>
+
+<para
+>Większość wpisów konfiguracyjnych może być indeksowana kodem języka. W takim wypadku język, który został wybrany przez użytkownika do użycia na pulpicie, będzie również użyty do odnalezienia wartości klucza. W wypadku wybrania domyślnego języka (angloamerykański), lub kiedy nie ma indeksu odpowiadającego wybranemu językowi, zostanie użyty wpis bez indeksu.</para>
+
+<informalexample>
+<para
+>W następującym przykładzie wartość wpisu <varname
+>Caption</varname
+> zależy od języka. Kiedy użytkownik wybierze jako język francuski (kod języka <literal
+>fr</literal
+>) wartość wpisu będzie równa <quote
+>Ma L&eacute;gende</quote
+>. W każdym innym wypadku zostanie użyta wartość <quote
+>My Caption</quote
+>.</para>
+
+<programlisting
+>[Preview Image]
+Caption=My Caption
+Caption[fr]=Ma L&eacute;gende
+</programlisting>
+</informalexample>
+
+<informalexample>
+<para
+>W tym przykładzie wartość wpisu <varname
+>Caption</varname
+> zależy od języka. Kiedy użytkownik wybierze jako język francuski (kod języka <literal
+>fr</literal
+>) wartość wpisu będzie równa <quote
+>Ma L&eacute;gende</quote
+>. W każdym innym wypadku zostanie użyta wartość <quote
+>My Caption</quote
+>.</para>
+
+<programlisting
+>[Preview Image]
+Caption=My Caption
+Caption[fr]=Ma L&eacute;gende
+</programlisting>
+</informalexample>
+
+<para
+>Ogólnie rzecz biorąc wpisy, które mogą się pojawić w pliku konfiguracyjnym, nie są udokumentowane. Od &kde; 3.2 rozpoczął się proces mający na celu zmianę tego. W In <filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/share/config.kcfg</filename
+> można znaleźć pliki, które zapewniają formalny opis możliwych wpisów w pliku konfiguracyjnym. Są one używane przez nowy Edytor konfiguracji &kde; kiedy jest to możliwe.</para>
+
+<informalexample>
+<para
+>Oto przykładowy plik konfiguracyjny &XML;: <programlisting
+><markup>
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE kcfg SYSTEM "http://www.kde.org/standards/kcfg/1.0/kcfg.dtd"&gt;
+&lt;kcfg&gt;
+    &lt;kcfgfile name="korganizerrc"/&gt;
+    &lt;group name="General"&gt;
+         &lt;entry type="Bool" key="Auto Save"&gt;
+             &lt;label&gt;Enable automatic saving of calendar&lt;/label&gt;
+             &lt;default&gt;true&lt;/default&gt;
+         &lt;/entry&gt;
+         &lt;entry type="Int" key="Auto Save Interval"&gt;
+             &lt;default&gt;10&lt;/default&gt;
+         &lt;/entry&gt;
+    &lt;/group&gt;
+&lt;/kcfg&gt;
+</markup
+>
+</programlisting>
+</para>
+<para
+>Ma to taki sam efekt, jak: <programlisting
+>[General]
+Auto Save=false
+Auto Save Interval=25
+</programlisting>
+</para>
+</informalexample>
+
+</sect1>
+
+<sect1 id="kde-startup-sequence">
+<title
+>Sekwencja startowa &kde;</title>
+
+<sect2 id="kdm">
+<title
+>&kdm;</title>
+
+<para
+>Zawsze działa jako użytkownik <systemitem class="username"
+>root</systemitem
+>! Używa <filename
+>$<envar
+>KDEDIR</envar
+>/share/config/kdmrc</filename
+> i <filename
+>/etc/X11/xdm/Xservers</filename
+>. Ten drugi plik zawiera wpisy takie jak:</para>
+
+<programlisting
+>:0 local /usr/X11R6/bin/X :0 vt07
+</programlisting>
+
+<para
+>Istotne pliki startowe to również: </para>
+<simplelist>
+<member
+>Sekcja [X-*-Core] w <filename
+>kdmrc</filename
+> </member>
+<member
+>Ustawienia - <filename
+>/etc/X11/xdm/Xsetup</filename
+> </member>
+<member
+>Użytkownik wpisuje nazwę użytkownika i hasło </member>
+<member
+>Przy starcie - <filename
+>/etc/X11/xdm/Xstartup</filename
+> - przygotowanie jako root </member>
+<member
+>Sesja - <filename
+>/etc/X11/xdm/Xsession</filename
+> - uruchamia sesję jako użytkownik </member>
+<member
+>= dla sesji KDE: <command
+>kde</command
+>, lub <command
+>startkde</command
+> </member>
+<member
+>= Jeśli obecne <filename
+>~/.xsession</filename
+>, lub <filename
+>~/.xinitrc</filename
+> </member>
+<member
+>Kasowanie - <filename
+>/etc/X11/xdm/Xreset</filename
+> - po zakończeniu sesji </member>
+</simplelist>
+
+</sect2>
+
+<sect2 id="startkde">
+<title
+>Skrypt uruchamiający &kde;: <command
+>startkde</command
+></title>
+
+<para
+>Sekwencja startowa &kde; rozpoczyna się skryptem <filename
+>startkde</filename
+>. W większości wypadków skrypt ten zostaje uruchomiony z menedżera wyświetlania (&kdm;) po potwierdzeniu tożsamości użytkownika. W skrypcie <filename
+>startkde</filename
+> znajdują się dwie bardzo ważne linie:</para>
+
+<programlisting
+>LD_BIND_NOW=true kdeinit +kcminit +knotify and kwrapper
+ksmserver $KDEWM
+</programlisting>
+
+<para
+>Pierwsza linia uruchamia proces nadrzędny <command
+>kdeinit</command
+>. Jest on używany do uruchamiania wszystkich innych procesów &kde;. Można go obejrzeć w wyniku działania polecenia <command
+>ps <option
+>aux</option
+></command
+> jako <computeroutput
+>kdeinit: Running...</computeroutput
+>. Argumenty po <command
+>kdeinit</command
+> to nazwy dodatkowych procesów do uruchomienia. <token
+>+</token
+> oznacza, że <command
+>kdeinit</command
+> ma poczekać aż proces zostanie zakończony. <command
+>kdeinit</command
+> uruchamia również <command
+>dcopserver</command
+>, <command
+>klauncher</command
+> i <command
+>kded</command
+>.</para>
+
+<para
+>Druga z linii prosi <command
+>kdeinit</command
+> o wystartowanie procesu menedżera sesji <command
+>ksmserver</command
+>. Menedżer sesji określa czas jej życia. W momencie zakończenia tego procesu użytkownik zostaje wylogowany.</para>
+
+</sect2>
+</sect1>
+
+<sect1 id="background-processes">
+<title
+>Procesy drugoplanowe</title>
+
+<para
+>Wszystkie procesy drugoplanowe &kde; są uruchamiane dla danego użytkownika - w przeciwieństwie do demonów systemowych nie są współdzielone pomiędzy użytkownikami. Oprócz tego, że są unikalne dla użytkownika, są również unikalne dla danego ekranu X-serwera. Procesami tymi są:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><command
+>dcopserver</command
+></term>
+<listitem
+><para
+>Komunikacja pulpitu</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><command
+>kded</command
+></term>
+<listitem
+><para
+>Generyczny demon usług.</para>
+<para
+>Uruchamia uaktualnianie bazy danych <link linkend="ksycoca"
+>Sycoca</link
+>, jeśli jest taka potrzeba</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><command
+>kcminit</command
+></term>
+<listitem
+><para
+>Usługa inicjalizacji</para>
+<para
+>Więcej informacji w <xref linkend="kcminit"/>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><command
+>klauncher</command
+></term>
+<listitem
+><para
+>Uruchamianie programu (to <emphasis
+>nie jest</emphasis
+> okienko <keycombo action="simul"
+>&Alt;<keycap
+>F2</keycap
+> </keycombo
+>!)</para>
+<para
+>Więcej informacji w <xref linkend="klauncher"/>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><command
+>knotify</command
+></term>
+<listitem
+><para
+>Powiadamianie użytkownika.</para>
+<para
+>Więcej informacji w <xref linkend="knotify"/>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><command
+>ksmserver</command
+></term>
+<listitem
+><para
+>Zarządzanie sesją</para>
+<para
+>Więcej informacji w <xref linkend="ksmserver"/>.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+<sect2 id="kdeinit">
+<title
+><command
+>kdeinit</command
+></title>
+<para
+><command
+>kdeinit</command
+> jest używany do uruchomienia wszystkich innych programów &kde;.<command
+>kdeinit</command
+> może uruchamiać normalne programy binarne, jak również wczytywalne moduły <command
+>kdeinit</command
+> (<acronym
+>KLM</acronym
+>-y). <acronym
+>KLM</acronym
+>-y pracują tak jak zwykłe programy binarne, ale mogą być uruchomione w bardziej efektywny sposób. <acronym
+>KLM</acronym
+>-y żyją w <filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/lib/kde3</filename
+></para>
+
+<para
+>Ale minusem jest to, że programy uruchomione w ten sposób pojawiają się na wyjściu programów <command
+>top</command
+> i <command
+>ps</command
+> jako <computeroutput
+><command
+>kdeinit</command
+></computeroutput
+>. Należy użyć <command
+>top <option
+>-c</option
+></command
+>, lub <command
+>ps <option
+>aux</option
+></command
+>, żeby zobaczyć właściwą nazwę programu:</para>
+
+<screen
+><prompt
+>%</prompt
+><userinput
+><command
+>ps <option
+>aux</option
+></command
+></userinput>
+<computeroutput>
+waba     23184  0.2  2.1 23428 11124 ?        S    21:41   0:00 kdeinit: Running...
+waba     23187  0.1  2.1 23200 11124 ?        S    21:41   0:00 kdeinit: dcopserver --nosid
+waba     23189  0.2  2.4 25136 12496 ?        S    21:41   0:00 kdeinit: klauncher
+waba     23192  0.7  2.8 25596 14772 ?        S    21:41   0:00 kdeinit: kded
+waba     23203  0.8  3.4 31516 17892 ?        S    21:41   0:00 kdeinit:
+knotify
+</computeroutput
+>
+</screen>
+
+<para
+><computeroutput
+>kdeinit: Running...</computeroutput
+> oznacza nadrzędny proces <command
+>kdeinit</command
+>. Inne wyświetlone procesy to programy uruchomione jako <acronym
+>KLM</acronym
+>-y.</para>
+
+<para
+>Kiedy <command
+>kdeinit</command
+> uruchamia się po raz pierwszy, uruchamia również <command
+>dcopserver</command
+>, <command
+>klauncher</command
+>, <command
+>kded</command
+>, jak również jakiekolwiek dodatkowe programy określone w linii poleceń w skrypcie <command
+>startkde</command
+>, zwykle <command
+>kcminit</command
+> i <command
+>knotify</command
+>.</para>
+
+</sect2>
+
+<sect2 id="dcopserver">
+<title
+><command
+>dcopserver</command
+></title>
+
+<para
+><command
+>dcopserver</command
+> to demon, który dostarcza ułatwienia dla komunikacji międzyprocesowej (&DCOP;) dla wszystkich programów &kde;. Ułatwienia te są dostępne z powłoki poprzez narzędzie linii poleceń <command
+>dcop</command
+>. &DCOP; jest istotny dla wszystkich programów &kde;.</para>
+
+<para
+>Kilka powiązanych plików:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><filename
+>$<envar
+>HOME</envar
+>/.DCOPserver_$<envar
+>HOSTNAME</envar
+>_$<envar
+>DISPLAY</envar
+></filename
+></term>
+<listitem
+><para
+>np. <filename
+>.DCOPserver_linux__0</filename
+>. Kontrolowany przez $<envar
+>DCOPAUTHORITY</envar
+></para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename
+>/tmp/.ICE-unix/dcop<replaceable
+>pid</replaceable
+>-<replaceable
+>number</replaceable
+></filename
+></term>
+<listitem
+><para
+>Np. <filename
+>dcop7634-1069677856</filename
+>. Plik, na który wskazuje powyższy plik <filename
+>DCOPserver</filename
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><filename
+>$<envar
+>HOME</envar
+>/.ICEauthority</filename
+></term>
+<listitem
+><para
+>Informacje na temat autoryzacji kontrolowane przez $<envar
+>ICEAUTHORITY</envar
+></para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</sect2>
+
+<sect2 id="kcminit">
+<title
+>kcminit</title>
+
+<para
+><command
+>kcminit</command
+> wywołuje usługi inicjalizacyjne podczas startu. Usługi inicjalizacyjne są określone w plikach .desktop programów lub usług przez linię <varname
+>X-KDE-Init</varname
+>:</para>
+
+<programlisting
+>[Desktop Entry]
+Encoding=UTF-8
+Exec=kcmshell energy
+Icon=energy_star
+Type=Application
+X-KDE-Library=energy
+X-KDE-Init=energy
+</programlisting>
+
+<para
+>Usługi inicjalizacyjne są zwykle używane dla inicjalizacji sprzętu opartej o ustawienia określone dla użytkownika.</para>
+
+<para
+><userinput
+><command
+>kcminit <option
+>--list</option
+></command
+></userinput
+> może być użyty dla pokazania wszystkich usług inicjalizacyjnych, <userinput
+><command
+>kcminit <replaceable
+>service</replaceable
+></command
+></userinput
+> może zostać wykorzystany do wykonania określonego serwisu. Może to być użyteczne podczas namierzania problemów ze startem.</para>
+
+</sect2>
+
+<sect2 id="klauncher">
+<title
+><command
+>klauncher</command
+></title>
+
+<para
+><command
+>klauncher</command
+> jest demonem odpowiedzialnym za aktywację usług w obrębie &kde;. Działa w ścisłym powiązaniu z procesem nadrzędnym <command
+>kdeinit</command
+>, żeby wystartować nowe procesy. Programy &kde;, żeby uruchomić nowe programy lub usługi, komunikują się poprzez &DCOP; z demonem <command
+>klauncher</command
+>.</para>
+
+<para
+>Najlepiej znany dzięki komunikatowi błędu: <computeroutput
+><errortext
+> KLauncher nie jest osiągalny z poziomu DCOP </errortext
+></computeroutput
+>, który albo oznacza poważny problem z <command
+>dcopserver</command
+>, albo że <command
+>klauncher</command
+> uległ awarii.</para>
+
+<para
+><command
+>klauncher</command
+> może być ponownie uruchomiony przez uruchomienie <command
+>kdeinit</command
+> z okna konsoli. Upewnij się, że $<envar
+>HOME</envar
+>, $<envar
+>DISPLAY</envar
+> i różne $<envar
+>KDEDIR(S)</envar
+> są ustawione poprawnie, kiedy coś takiego robisz!</para>
+
+</sect2>
+
+<sect2 id="knotify">
+<title
+><command
+>knotify</command
+></title>
+
+<para
+>Podstawowym zadaniem <command
+>knotify</command
+> jest przekazywanie powiadomień dźwiękowych do serwera dźwięku, zapewnia on również alternatywne metody powiadomień.</para>
+
+</sect2>
+
+
+</sect1>
+
+<sect1 id="ksmserver">
+<title
+>KSMServer</title>
+
+<para
+><command
+>ksmserver</command
+> jest menedżerem sesji &kde;. Podczas startu menedżer sesji uruchamia programy samostartujące i przywraca programy z poprzedniej sesji. Samostartujące programy są określone przez pliki <literal role="extension"
+>.desktop</literal
+> w katalogu <filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/share/autostart</filename
+>. Ich automatyczne wystartowanie (lub nie) może zostać określone warunkowo na podstawie wpisu konfiguracyjnego określonego przez wpis <varname
+>X-KDE-autostart-condition</varname
+> w pliku <literal role="extension"
+>.desktop</literal
+>.</para>
+
+<informalexample>
+<para
+>Na przykład plik <filename
+>ktip.desktop</filename
+> zawiera:</para>
+
+<programlisting
+>X-KDE-autostart-condition=ktiprc:TipOfDay:RunOnStart:true
+</programlisting>
+
+<para
+>Oznacza to, że plik konfiguracyjny <filename
+>ktiprc</filename
+> jest sprawdzany pod kątem wystąpienia wpisu <varname
+>RunOnStart</varname
+> w sekcji <varname
+>[TipOfDay]</varname
+>. W wypadku nie znalezienia takiego wpisu, zostaje przyjęta wartość wartość <literal
+>true</literal
+> (prawda), która oznacza, że <application
+>ktip</application
+> jest jednym z programów przeznaczonych do automatycznego uruchomienia.</para>
+</informalexample>
+
+<para
+>Niektóre z programów uruchamianych automatycznie przez <command
+>ksmserver</command
+> to:</para>
+
+<variablelist>
+
+<varlistentry>
+<term
+><command
+>kdesktop</command
+></term>
+<listitem
+><para
+>Pulpit &kde;</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><command
+>&kicker;</command
+></term>
+<listitem
+><para
+>Panel &kde;</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><command
+>ktip</command
+></term>
+<listitem
+><para
+>Program porad dnia</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><command
+>kwrited</command
+></term>
+<listitem
+><para
+>Narzędzie do otrzymywania wiadomości systemowych przesyłanych do użytkownika</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>&klipper;</term>
+<listitem
+><para
+>Narzędzie schowka dokujące się na panelu</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><command
+>kalarm</command
+></term>
+<listitem
+><para
+>Narzędzie przypominające o nadchodzących zdarzeniach i spotkaniach</para>
+</listitem>
+
+</varlistentry>
+</variablelist>
+
+<para
+><command
+>kdesktop</command
+> kolejno automatycznie uruchamia programy umieszczone w <filename class="directory"
+>$<envar
+>KDEHOME</envar
+>/Autostart</filename
+>. <command
+>kdesktop</command
+> automatycznie otworzy dowolne pliki znajdujące się w tym katalogu, włączając dokumenty, pliki binarne, lub programy w formie plików <literal role="extension"
+>.desktop</literal
+>.</para>
+
+<para
+>Menedżer sesji &kde; przywraca również jedną z poprzednich sesji. Sesja zawiera zbiór programów, jak również określone dla programu dane, które odzwierciedlają stan programu występujący w momencie zapisu sesji. Sesje przechowywane są pliku konfiguracyjnym <filename
+>ksmserverrc</filename
+>, który zawiera odniesienia do informacji na temat stanu specyficznego dla programu. Stan ten jest zapisywany w <filename class="directory"
+>$<envar
+>KDEHOME</envar
+>/share/config/session</filename
+>. Informacja o stanie &kwin; zawiera położenie okien programu wszystkich innych programów w sesji. </para>
+
+</sect1>
+
+<sect1 id="environment-variables">
+<title
+>Zmienne środowiskowe</title>
+
+<para
+>Kilka przykładowych zmiennych środowiskowych wykorzystywanych przez &kde;:</para>
+
+<variablelist>
+
+<varlistentry>
+<term
+>$<envar
+>KDEDIR</envar
+></term>
+<listitem
+><para
+>Musi być ustawiony, jeśli nie ustawiono <envar
+>KDEDIRS</envar
+> i powinien wskazywać na katalog główny drzewa instalacyjnego &kde;. Umożliwia &kde; odnalezienie swoich danych, takich jak ikony, menu i biblioteki.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDEDIRS</envar
+></term>
+<listitem
+><para
+>Nadpisuje <envar
+>KDEDIR</envar
+> i umożliwia określenie wielu katalogów, w których &kde; szuka swoich danych. Użyteczne, jeśli chce, lub musi się mieć zainstalowane niektóre programy w innym prefiksie, niż reszta &kde;.</para
+> 
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+><envar
+>$KDEHOME</envar
+></term
+><listitem
+><para
+>Jeśli nie ustawione, &kde; używa <filename class="directory"
+>~/.kde</filename
+> jako katalogu, w którym przechowywane są prywatne dane.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDEROOTHOME</envar
+></term
+><listitem
+><para
+>Jeśli nie ustawione, &kde; używa <filename class="directory"
+>~root/.kde</filename
+> jako katalogu dla danych prywatnych użytkownika <systemitem class="username"
+>root</systemitem
+>. Zostało wprowadzone, żeby zabezpieczyć &kde; przed przypadkowym nadpisaniem danych użytkownika z prawami roota, kiedy użytkownik uruchamia program &kde; po przełączeniu się poleceniem <command
+>su</command
+> na użytkownika <systemitem class="username"
+>root</systemitem
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDEWM</envar
+></term
+><listitem
+><para
+>Jeśli zmienna środowiskowa <envar
+>KDEWM</envar
+> została ustawiona, wtedy jej wartość będzie użyta jako menedżer sesji &kde; wewnątrz skryptu <command
+>startkde</command
+> zamiast &kwin;.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDE_LANG</envar
+></term
+><listitem
+><para
+>Nadpisuje konfigurację językową &kde;, np. <userinput
+>KDE_LANG=fr kprogram &amp;</userinput
+> uruchamia program z francuskim tłumaczeniem, jeśli niezbędne pliki są zainstalowane.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDE_MULTIHEAD</envar
+></term
+><listitem
+><para
+>Ustaw tą wartość na <literal
+>true</literal
+>, aby zaznaczyć, że &kde; działa na komputerze wieloekranowym.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDE_FORK_SLAVES</envar
+></term>
+<listitem
+><para
+>(Od &kde; 3.2.3) Ustaw tą zmienną, żeby utworzyć procesy podrzędne <acronym
+>KIO</acronym
+> bezpośrednio z procesu programu. Domyślnie procesy podrzędne <acronym
+>KIO</acronym
+> są uruchamiane za pomocą <command
+>klauncher</command
+>/<command
+>kdeinit</command
+>. Opcja użyteczna, jeśli proces podrzędny <acronym
+>KIO</acronym
+> powinien pracować w tym samym środowisku, co program. Tak może być w przypadku <application
+>Clearcase</application
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDE_HOME_READONLY</envar
+></term>
+<listitem
+><para
+>Ustaw tą zmienną, aby zasygnalizować, że Twój katalog domowy został zamontowany w trybie tylko-do-odczytu.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDE_NO_IPV6</envar
+></term
+><listitem
+><para
+>(Od &kde; 3.2.3) - ustaw tę zmienną, żeby wyłączyć wsparcie dla <acronym
+>IPv6</acronym
+> i zapytania <acronym
+>DNS</acronym
+> <acronym
+>IPv6</acronym
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDE_IS_PRELINKED</envar
+></term
+><listitem
+><para
+>(Od &kde; 3.2) - ustaw tę zmienną, żeby zaznaczyć, że Twoje pliki binarne &kde; i biblioteki są wstępnie zlinkowane. Wyłączy to używanie <command
+>kdeinit</command
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDE_UTF8_FILENAMES</envar
+></term
+><listitem
+><para
+>Jeśli ta zmienna środowiskowa jest ustawiona, &kde; przyjmuje, że wszystkie nazwy plików są zakodowane w <acronym
+>UTF-8</acronym
+>, niezależnie od aktualnych ustawień regionalnych C.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDE_FULL_SESSION</envar
+></term
+><listitem
+><para
+>(Od &kde; 3.2) Automatycznie ustawiane na true przy starcie &kde;, używane np. przez &konqueror-biernik; w celu określenia, czy powinno się rozważyć pozostanie w pamięci podczas zamykania dla przyszłego wykorzystania. Jeśli nie ustawione, &konqueror; opuści pamięć po zamknięciu (np. &kdesu; tak robi, jest to również przydatne przy debugowaniu).</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDESYCOCA</envar
+></term
+><listitem
+><para
+>Pozwala określić ścieżkę i nazwę wygenerowanego systemowego pliku konfiguracji pamięci podręcznej &kde;.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDETMP</envar
+></term
+><listitem
+><para
+>Pozwala określić inną, niż <filename class="directory"
+>/tmp</filename
+> ścieżkę, w której &kde; przechowuje swoje pliki tymczasowe.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>KDEVARTMP</envar
+></term
+><listitem
+><para
+>Pozwala określić inną, niż <filename class="directory"
+>/var/tmp</filename
+> ścieżkę, w której &kde; przechowuje swoje zmieniające się pliki.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>XDG_DATA_HOME</envar
+></term
+><listitem
+><para
+>(Od &kde; 3.2) Definiuje katalog bazowy, względem którego powinny być przechowywane specyficzne dla użytkownika dane. Domyślnie to <filename class="directory"
+>$<envar
+>HOME</envar
+>/.local/share</filename
+></para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>XDG_DATA_DIRS</envar
+></term
+><listitem
+><para
+>(Od &kde; 3.2) Określa uporządkowany według preferencji zbiór bazowych katalogów do przeszukania plików danych w uzupełnieniu do katalogu bazowego <filename class="directory"
+>$<envar
+>XDG_DATA_HOME</envar
+></filename
+>. Domyślna wartość to <literal
+>/usr/local/share/:/usr/share/</literal
+></para>
+
+<para
+>&kde; dodaje również położenia z $<envar
+>KDEDIRS</envar
+> i profili. Używane dla <literal role="extension"
+>.desktop</literal
+> i plików menu <literal role="extension"
+>.directory</literal
+>. Pliki <literal role="extension"
+>.desktop</literal
+> spod <filename class="directory"
+>$<envar
+>XDG_DATA_DIRS</envar
+>/applications</filename
+>. Pliki <literal role="extension"
+>.directory</literal
+> spod $XDG_DATA_DIRS/desktop-directories </para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>XDG_CONFIG_HOME</envar
+></term
+><listitem
+><para
+>(&kde; 3.2) - Definiuje katalog bazowy, względem którego powinny być przechowywane określone dla użytkownika pliki konfiguracyjne. Domyślna wartość to <filename class="directory"
+>$<envar
+>HOME</envar
+>/.config</filename
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry
+><term
+>$<envar
+>XDG_CONFIG_DIRS</envar
+></term
+><listitem
+><para
+>(&kde; 3.2) Określa uporządkowany według preferencji zbiór bazowych katalogów do przeszukania plików konfiguracyjnych w uzupełnieniu do katalogu bazowego $<envar
+>XDG_CONFIG_HOME</envar
+>. Domyślna wartość to <filename class="directory"
+>/etc/xdg</filename
+>. &kde; dodaje również położenia z $<envar
+>KDEDIRS</envar
+> i profili. Używane dla opisów <literal role="extension"
+>.menu</literal
+> w <filename class="directory"
+>$<envar
+>XDG_CONFIG_DIRS</envar
+>/menus</filename
+>. </para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</sect1>
+
+<sect1 id="the-kdeinit-mystery">
+<title
+>Tajemnica kdeinit</title>
+
+<!-- FIXME: Add more words. Fix markup -->
+
+<para
+><command
+>kdeinit</command
+> jest używany do uruchomienia wszystkich innych programów &kde;.<command
+>kdeinit</command
+> może uruchamiać normalne programy binarne, jak również ładowalne moduły <command
+>kdeinit</command
+> (<acronym
+>KLM</acronym
+>-y). <acronym
+>KLM</acronym
+>-y pracują tak jak zwykłe programy binarne, ale mogą być uruchomione w bardziej efektywny sposób. <acronym
+>KLM</acronym
+>-y znajdują się w katalogu <filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/lib/kde3</filename
+></para>
+
+<para
+>Ale minusem jest to, że programy uruchomione w ten sposób pojawiają się na wyjściu programów <command
+>top</command
+> i <command
+>ps</command
+> jako <computeroutput
+><command
+>kdeinit</command
+></computeroutput
+>. Należy użyć <command
+>top <option
+>-c</option
+></command
+>, lub <command
+>ps <option
+>aux</option
+></command
+>, żeby zobaczyć właściwą nazwę programu:</para>
+
+<screen
+><prompt
+>%</prompt
+> <userinput
+><command
+>ps aux | grep bastian</command
+></userinput>
+<computeroutput>
+bastian  26061  0.0  2.2 24284 11492 ?       S    21:27   0:00 kdeinit: Running...
+bastian  26064  0.0  2.2 24036 11524 ?       S    21:27   0:00 kdeinit: dcopserver
+bastian  26066  0.1  2.5 26056 12988 ?       S    21:27   0:00 kdeinit: klauncher
+bastian  26069  0.4  3.2 27356 16744 ?       S    21:27   0:00 kdeinit: kded
+bastian  26161  0.2  2.7 25344 14096 ?       S    21:27   0:00 kdeinit: ksmserver
+bastian  26179  1.1  3.4 29716 17812 ?       S    21:27   0:00 kdeinit: kicker
+bastian  26192  0.4  3.0 26776 15452 ?       S    21:27   0:00 kdeinit: klipper
+bastian  26195  1.0  3.5 29200 18368 ?       S    21:27   0:00 kdeinit: kdesktop
+</computeroutput
+>
+</screen>
+<para
+>Jak być może już wiesz, ma to inny efekt uboczny w postaci trudności w zabiciu procesu sprawiającego kłopoty:</para>
+
+<screen
+><prompt
+>%</prompt
+> <userinput
+><command
+>killall kdesktop</command
+></userinput>
+<computeroutput
+>kdesktop: no process killed</computeroutput
+></screen>
+
+<para
+>Może najść Cię pokusa użycia polecenia <userinput
+><command
+>killall kdeinit</command
+></userinput
+>, ale zabicie wszystkich procesów kdeinit spowoduje zamknięcie całego &kde;. Czyli - totalna zagłada!</para>
+
+<para
+>Są na to dwa proste sposoby:</para>
+
+<screen
+><prompt
+>%</prompt
+> <userinput
+><command
+>kdekillall kdesktop</command
+></userinput>
+lub stare dobre
+<prompt
+>%</prompt
+> <userinput
+><command
+>kill 26195</command
+></userinput
+></screen>
+<para
+><command
+>kdekillall</command
+> jest częścią pakietu &kde; <acronym
+>SDK</acronym
+>.</para>
+
+</sect1>
+
+</chapter>
+
+<chapter id="customizing-kde">
+<title
+>Dostrajanie &kde;</title>
+
+
+<sect1 id="desktop-icons">
+<title
+>Ikony pulpitu</title>
+
+<para
+>&kde; używa licznych typów ikon:</para>
+<itemizedlist>
+<listitem
+><para
+>Dokumenty</para>
+</listitem>
+<listitem
+><para
+>Odnośniki do stron www (z użyciem pliku <literal role="extension"
+>.desktop</literal
+>)</para>
+</listitem>
+<listitem
+><para
+>Odnośniki do programów (z użyciem pliku <literal role="extension"
+>.desktop</literal
+>)</para>
+</listitem>
+<listitem
+><para
+>Urządzenia - dyski, partycje i peryferia: <itemizedlist>
+<listitem
+><para
+>Kategorycznie z użyciem pliku <literal role="extension"
+>.desktop</literal
+></para>
+</listitem>
+<listitem
+><para
+>Automatycznie przez io-slave dla devices://</para>
+</listitem>
+</itemizedlist>
+</para>
+</listitem>
+<listitem
+><para
+>Specyficzne dla dystrybutora (np. Mój komputer w &SuSE;)</para>
+</listitem>
+</itemizedlist>
+
+<sect2 id="desktop-icons-websites">
+<title
+>Strony www</title>
+<para
+>Odnośniki do stron www przy użyciu pliku <literal role="extension"
+>.desktop</literal
+>: <menuchoice
+><guimenu
+>Utwórz nowe</guimenu
+><guisubmenu
+>Plik</guisubmenu
+><guimenuitem
+>Skrót do adresu (URL)</guimenuitem
+></menuchoice
+>. Zmień ikonkę przy pomocy okienka <guilabel
+>Właściwości</guilabel
+>. Wynikowy plik<literal role="extension"
+>.desktop</literal
+>: <programlisting
+>[Desktop Entry]
+Encoding=UTF-8
+Icon=/opt/kde3/share/apps/kdesktop/pics/ksslogo.png
+Type=Link
+URL=http://www.kde.org/
+</programlisting>
+</para>
+</sect2>
+
+<sect2 id="desktop-icons-applications">
+<title
+>Programy</title>
+
+<para
+>Dowiązania do programów przy użyciu pliku <literal role="extension"
+>.desktop</literal
+>: <menuchoice
+><guimenu
+>Utwórz nowe</guimenu
+><guisubmenu
+>Plik</guisubmenu
+><guimenuitem
+>Skrót do programu</guimenuitem
+></menuchoice
+>. Samemu trzeba określić szczegóły. Przeciągnij z menu &kde;: Skopiuj, lub utwórz dowiązanie, o wiele prostsze</para>
+
+<!-- Perhaps legacy and translated should be the other way around, but -->
+<!-- this is how it appears in Waldo's presentation. Need to check -->
+<!-- this -->
+
+<programlisting
+>[Desktop Entry]<co id="boilerplate"/>
+Encoding=UTF-8
+GenericName=IRC Client<co id="generic-desc"/>
+GenericName[af]=Irc Kli&euml;t
+GenericName[de]=IRC Programm
+...
+GenericName[zu]=Umthengi we IRC<co id="legacy"/>
+SwallowExec=<co id="translated"/>
+Name=KSirc
+Name[af]=Ksirc
+Name[de]=KSirc
+...
+</programlisting>
+
+<calloutlist>
+<callout arearefs="boilerplate"
+><para
+>Do wielokrotnego wykorzystania</para>
+</callout>
+<callout arearefs="generic-desc"
+><para
+>Przetłumaczony ogólny opis, nie używany na pulpicie</para>
+</callout>
+<callout arearefs="legacy"
+><para
+>Odziedziczone, można usunąć</para>
+</callout>
+<callout arearefs="translated"
+><para
+>Przetłumaczona nazwa, taka, jaka pojawi się na pulpicie</para>
+</callout>
+</calloutlist>
+
+<para
+>Ikony na pulpicie</para>
+<programlisting
+>...
+Name[zu]=Ksirc
+MimeType=<co id="co-mimetype"/>
+Exec=ksirc %i %m<co id="co-exec"/>
+Icon=ksirc<co id="co-icon"/>
+TerminalOptions=<co id="co-terminaloptions"/>
+Path=<co id="co-path"/>
+Type=Application<co id="co-type"/>
+Terminal=0<co id="co-terminal"/>
+X-KDE-StartupNotify=true<co id="co-x-kde-startupnotify"/>
+X-DCOP-ServiceType=Multi<co id="co-x-dcop-servicetype"/>
+Categories=Qt;KDE;Network<co id="co-categories"/>
+</programlisting>
+
+<calloutlist>
+<callout arearefs="co-mimetype"
+><para
+>Wspierane typy &MIME;, nie używane na pulpicie</para>
+</callout>
+<callout arearefs="co-exec"
+><para
+>Linia komend do wykonania</para>
+</callout>
+<callout arearefs="co-icon"
+><para
+>Ikona, z motywu, lub pełna ścieżka</para>
+</callout>
+<callout arearefs="co-terminaloptions"
+><para
+>Używane tylko wtedy, gdy potrzebny jest terminal</para>
+</callout>
+<callout arearefs="co-path"
+><para
+>Katalog roboczy dla polecenia</para>
+</callout>
+<callout arearefs="co-type"
+><para
+>Więcej dla wielokrotnego wykorzystania</para>
+</callout>
+<callout arearefs="co-terminal"
+><para
+>Użyj, gdy potrzebujesz terminala, program działa w trybie tekstowym</para>
+</callout>
+<callout arearefs="co-x-kde-startupnotify"
+><para
+>Pokaż skaczący kursor, wyłącz, gdy nie działa.</para>
+</callout>
+<callout arearefs="co-x-dcop-servicetype"
+><para
+>Program uruchomił się poprawnie? Usuń, jeśli to nie działa</para>
+</callout>
+<callout arearefs="co-categories"
+><para
+>Kategorie menu &kde;, nie używane na pulpicie</para>
+</callout>
+</calloutlist>
+
+
+
+</sect2>
+
+<sect2 id="desktop-icons-exec">
+<title
+>Opcja <varname
+>Exec</varname
+> w plikach <literal role="extension"
+>.desktop</literal
+></title>
+
+<para
+>Po samym poleceniu może występować wiele miejsc, które zostaną zastąpione właściwymi wartościami, kiedy właściwy program jest uruchamiany: <variablelist>
+<varlistentry>
+<term
+>%f</term
+> <listitem
+><para
+>Pojedyncza nazwa pliku; używana podczas upuszczania pliku na ikonę, lub z powiązaniami pliku.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>%F</term>
+<listitem
+><para
+>Lista plików; do użycia przy programach, które mogą naraz otwierać wiele plików.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>%u</term>
+<listitem
+><para
+>Pojedynczy &URL;: jeśli program może sam obsłużyć &URL;-e, np. &FTP;, lub &HTTP;, w przeciwnym wypadku &kde;.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>%U</term>
+<listitem
+><para
+>Lista &URL;-i; ściągnie najpierw plik, a do programu przekaże jego lokalną kopię(!!!)</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>%d</term>
+<listitem
+><para
+>Katalog pliku do otwarcia; użyteczne, gdy program potrzebuje mieć plik w bieżącym katalogu roboczym.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>%D</term>
+<listitem
+><para
+>Lista katalogów, niezbyt praktyczna.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>%i</term
+> 
+<listitem
+><para
+>Ikona; opcja <option
+>--icon</option
+>; program &kde; użyje ikony z linii <varname
+>Icon</varname
+>= w pasku zadań.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>%m</term>
+<listitem
+><para
+>Mini-ikona - odziedziczone.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>%c</term
+> 
+<listitem
+><para
+>Nagłówek; opcja <option
+>--caption</option
+>; program użyje nazwy z linii <varname
+>Name</varname
+>= na pasku zadań.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</para>
+
+<informalexample>
+<para
+>Przykłady: <segmentedlist>
+<segtitle
+><varname
+>Exec</varname
+> linia</segtitle>
+<segtitle
+>Polecenie wykonano</segtitle>
+<seglistitem
+><seg
+>ksirc %i</seg
+><seg
+><command
+>ksirc --icon ksirc</command
+></seg>
+</seglistitem>
+<seglistitem
+><seg
+>cd %d; kedit $(basename %f)</seg
+><seg
+><command
+>cd /tmp; kedit file.txt</command
+></seg>
+</seglistitem>
+</segmentedlist>
+</para>
+</informalexample>
+
+<!--Dont' know what this refers to: -->
+<!--See What's This (Shift-F1) in Properties Dialog-->
+
+</sect2>
+
+<sect2 id="desktop-icons-devices">
+<title
+>Urządzenia</title>
+<para
+>Dowiązania do urządzeń z wykorzystaniem pliku <literal role="extension"
+>.desktop</literal
+>: Utwórz nowe -> Urządzenie </para>
+</sect2>
+
+<sect2 id="where-to-define">
+<title
+>Gdzie definiować</title>
+
+<para
+>Istnieje wiele miejsc do zdefiniowania ikon pulpitu: <itemizedlist>
+
+<listitem
+><para
+><filename class="directory"
+>~/Desktop</filename
+>: kopiowany z <filename class="directory"
+>/etc/skel/Desktop</filename
+></para
+></listitem>
+
+<listitem
+><para
+><filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/apps/kdesktop/Desktop</filename
+> (łączone)</para
+></listitem>
+
+<listitem
+><para
+><filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/apps/kdesktop/DesktopLinks</filename
+> (kopiowany)</para
+></listitem>
+
+<listitem
+><para
+>Ikony urządzenia (dynamicznie łączone)</para
+></listitem>
+
+<listitem
+><para
+>Specyficzne dla dystrybucji SUSE Linux kopiuje pewne ikony w motywie startkde. z <filename class="directory"
+>/opt/kde3/share/config/SuSE/default/</filename
+></para
+></listitem>
+
+</itemizedlist>
+</para>
+</sect2>
+</sect1>
+
+<sect1 id="kde-menu">
+<title
+>Menu &kde;</title>
+
+<sect2 id="how-it-works">
+<title
+>Jak to działa</title>
+
+<para
+>W &kde; 3.2 zostaje zaprezentowany wspólny format menu: <ulink url="http://freedesktop.org/Standards/menu-spec/"
+>http://freedesktop.org/Standards/menu-spec/</ulink
+></para>
+<para
+>Przed &kde; 3.2: <itemizedlist>
+
+<listitem
+><para
+>Struktura katalogów pod <filename class="directory"
+>share/applnk</filename
+></para
+></listitem>
+
+<listitem
+><para
+>Struktura katalogów reprezentuje strukturę menu</para
+></listitem>
+
+<listitem
+><para
+>Każdy plik <literal role="extension"
+>.desktop</literal
+> reprezentuje pojedynczy program</para
+></listitem>
+
+</itemizedlist>
+</para>
+
+<para
+>Przearanżowanie struktury w &kde; 3.2 okazało się trudne, więc nowy format menu: <itemizedlist>
+<listitem
+><para
+>Określa strukturę w pojedynczym pliku .menu</para
+></listitem>
+<listitem
+><para
+>Bazuje na kategoriach</para
+></listitem>
+<listitem
+><para
+>jest współdzielone pomiędzy <acronym
+>GNOME</acronym
+> i &kde;</para
+></listitem>
+<listitem
+><para
+>Wspiera również style menu applnk</para
+></listitem>
+</itemizedlist>
+</para>
+
+<informalexample>
+<para
+>Przykład z <filename
+>applications.menu</filename
+>: <programlisting
+><markup>
+        &lt;Menu&gt;
+            &lt;Name&gt;Office&lt;/Name&gt;
+            &lt;Directory&gt;suse-office.directory&lt;/Directory&gt;
+            &lt;Include&gt;
+                &lt;Filename&gt;Acrobat Reader.desktop&lt;/Filename&gt;
+                &lt;Filename&gt;kde-kpresenter.desktop&lt;/Filename&gt;
+                &lt;Filename&gt;kde-kword.desktop&lt;/Filename&gt;
+            &lt;/Include&gt;
+        &lt;Menu&gt;
+</markup
+>
+</programlisting>
+</para>
+<para
+>Wpis menu z 3 programami: <itemizedlist>
+
+<listitem
+><para
+><filename
+>/usr/share/applications/Acrobat Reader.desktop</filename
+></para
+></listitem>
+
+<listitem
+><para
+><filename
+>/opt/kde3/share/applications/kde/kpresenter.desktop</filename
+></para
+></listitem>
+
+<listitem
+><para
+><filename
+>/opt/kde3/share/applications/kde/kword.desktop</filename
+></para
+></listitem>
+
+</itemizedlist>
+</para>
+</informalexample>
+</sect2>
+
+<sect2 id="stored-where">
+<title
+>Gdzie przechowywane?</title>
+
+<para
+>Pliki <literal role="extension"
+>.menu</literal
+> opisujące strukturę menu. Pliki te są przechowywane w <filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/etc/xdg/menus</filename
+> i <filename class="directory"
+>/etc/xdg/menus</filename
+>. One przechowują systemową strukturę menu i są kontrolowane przez $<envar
+>XDG_CONFIG_DIRS</envar
+>. <filename class="directory"
+>$<envar
+>HOME</envar
+>/.config/menus</filename
+> przechowuje zmiany użytkownika w stosunku do struktury menu i jest kontrolowany przez $<envar
+>XDG_CONFIG_HOME</envar
+>. Aby uzyskać więcej informacji, zerknij do <ulink url="http://www.freedesktop.org/Standards/basedir-spec"
+>http://www.freedesktop.org/Standards/basedir-spec</ulink
+>.</para>
+
+<para
+>Pliki <literal role="extension"
+>.desktop</literal
+> opisują programy i są umieszczone w: <filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/share/applications</filename
+>, <filename class="directory"
+>/usr/share/applications</filename
+> i <filename class="directory"
+>/usr/local/share/applications</filename
+>. Są one plikami systemowymi programów <literal role="extension"
+>.desktop</literal
+>, które są kontrolowane przez$<envar
+>XDG_DATA_DIRS</envar
+>.</para>
+
+<para
+><filename class="directory"
+>$<envar
+>HOME</envar
+>/.local/applications</filename
+> zawiera specyficzne dla użytkownika pliki <literal role="extension"
+>.desktop</literal
+> i zmiany. Jest kontrolowane przez $<envar
+>XDG_DATA_HOME</envar
+>. Aby uzyskać więcej informacji zobacz <ulink url="http://www.freedesktop.org/Standards/basedir-spec"
+>http://www.freedesktop.org/Standards/basedir-spec</ulink
+></para>
+
+
+<para
+>Pliki <literal role="extension"
+>.directory</literal
+> opisujące podmenu znajdują się w: <filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/share/desktop-directories</filename
+>, <filename class="directory"
+>/usr/share/desktop-directories</filename
+> i <filename class="directory"
+>/usr/local/share/desktop-directories</filename
+>. Są one systemowymi plikami menu <literal role="extension"
+>.directory</literal
+>, kontrolowanymi przez $<envar
+>XDG_DATA_DIRS</envar
+>. Zmiany specyficzne dla użytkownika znajdują się w <filename class="directory"
+>$<envar
+>HOME</envar
+>/.local/desktop-directories</filename
+>. Są one kontrolowane przez $<envar
+>XDG_DATA_HOME</envar
+>. Aby uzyskać więcej informacji, obejrzyj <ulink url="http://www.freedesktop.org/Standards/basedir-spec"
+>http://www.freedesktop.org/Standards/basedir-spec</ulink
+></para>
+
+<informalexample>
+<para
+>Przykład z <filename
+>applications.menu</filename
+>: <programlisting
+><markup>
+             &lt;Menu&gt;
+                        &lt;Name&gt;Art&lt;/Name&gt;
+                        &lt;Directory&gt;suse-edutainment-art.directory&lt;/Directory&gt;
+                        &lt;Include&gt;
+                                &lt;Category&gt;X-SuSE-Art&lt;/Category&gt;
+                        &lt;/Include&gt;
+                &lt;/Menu&gt;
+</markup
+>
+</programlisting>
+</para>
+
+<para
+><literal
+>Art</literal
+> to wewnętrzna nazwa tego menu. <filename
+>suse-edutainment-art.directory</filename
+> określa nazwę i ikonę dla tego menu, a menu dołącza wszystkie programy posiadające w liście kategorii wyszczególnione <literal
+>X-SuSE-Art</literal
+>, np.: <programlisting
+>Categories=Qt;KDE;Education;X-SuSE-Art
+</programlisting
+></para>
+
+<para
+><filename
+>suse-edutainment-art.directory</filename
+> określa nazwę i ikonę dla tego menu: <programlisting
+>[Desktop Entry]
+Name=Art and Culture
+Icon=kcmsystem
+</programlisting>
+</para>
+</informalexample>
+</sect2>
+
+<sect2 id="common-pitfalls">
+<title
+>Częste pułapki</title>
+
+<para
+>Programy <emphasis
+>nie znajdujące się</emphasis
+> w menu <emphasis
+>nie występują</emphasis
+> w odniesieniu do innych programów, lub powiązań typów plików: jeśli usuniesz program z menu, &kde; przyjmuje, że nie chcesz go używać.</para>
+
+<para
+>Kiedy programy w menu staną się niepożądane, umieść je albo w menu <filename
+>.hidden</filename
+>, albo w dedykowanym menu z <programlisting>
+NoDisplay=true
+</programlisting
+> w pliku <literal role="extension"
+>.directory</literal
+></para>
+</sect2>
+
+<sect2 id="essential-menus">
+<title
+>Istotne menu</title>
+
+<para
+><filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/etc/xdg/menus/applications-merged/</filename
+> zawiera <filename
+>kde-essential.menu</filename
+> który dołącza niektóre istotne menu, które normalnie nie są pokazywane w samym menu &kde;: <itemizedlist>
+<listitem
+><para
+>Centrum sterowania ma ukryte menu Ustawienia, którego zawartość jest definiowana przez <filename
+>kde-settings.menu</filename
+>, a ikona i nazwa są zdefiniowane przez <filename
+>kde-settings.directory</filename
+>.</para>
+</listitem>
+<listitem
+><para
+>Centrum informacji ma ukryte menu Informacje, którego zawartość jest definiowana przez <filename
+>kde-information.menu</filename
+>, a ikona i nazwa są zdefiniowane przez <filename
+>kde-information.directory</filename
+>.</para>
+</listitem>
+
+<listitem
+><para
+>Wygaszacze ekranu zawierają ukryte menu System/Wygaszacze ekranu, którego składniki są definiowane przez <filename
+>kde-screensavers.menu</filename
+>, a ikona i nazwa przez <filename
+>kde-system-screensavers.directory</filename
+>. <filename
+>$<envar
+>KDEDIR</envar
+>/share/desktop-directories/kde-system-screensavers.directory</filename
+> zawiera: <programlisting
+>NoDisplay=true
+</programlisting>
+</para>
+</listitem>
+</itemizedlist
+></para>
+</sect2>
+
+<sect2 id="old-style-menus">
+<title
+>Menu w starym stylu</title>
+
+<para
+>&kde; ciągle wspiera menu w starym stylu, które określone są przez strukturę katalogów w <filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/share/applnk</filename
+> (systemowe) i <filename class="directory"
+>$<envar
+>HOME</envar
+>/.kde/share/applnk</filename
+> (specyficzne dla użytkownika). Obserwuje się to dopóki plik <literal role="extension"
+>.desktop</literal
+> nie zawiera linii <varname
+>Categories</varname
+>=. W takim wypadku kategorie określają położenie menu.</para>
+</sect2>
+
+<sect2 id="ksycoca">
+<title
+><application
+>KSycoca</application
+></title>
+<para
+><application
+>KSycoca</application
+> przechowuje w pamięci podręcznej strukturę menu i informacje na temat wszystkich dostępnych programów. Można przebudować jego bazę za pomocą <userinput
+><command
+>kbuildsycoca</command
+></userinput
+>. Zbudowana baza jest umieszczona w <filename class="directory"
+>/var/tmp/kdecache-${<envar
+>USER</envar
+>}/ksycoca</filename
+>. Jest automatycznie aktualizowana przez <application
+>KDED</application
+>, sprawdzana podczas logowania &kde;, a <application
+>KDED</application
+> obserwuje zmiany między zalogowaniem, a wylogowaniem.</para>
+
+<para
+>Aby wyłączyć obserwowanie zmian (gdyż może to obniżać wydajność przy pracy z NFS), dodaj do <filename
+>kdedrc</filename
+>: <programlisting
+>[General]
+CheckSycoca=false
+</programlisting>
+</para>
+
+<para
+>Aby wymusić ponowne utworzenie bazy, uruchom <userinput
+><command
+>touch $<envar
+>KDEDIR</envar
+>/share/services/update_ksycoca</command
+></userinput
+>.</para>
+
+</sect2>
+
+<sect2 id="kmenuedit">
+<title
+>&kmenuedit;</title>
+
+<para
+>&kmenuedit; został przystosowany do modyfikacji ustawień dla pojedynczego użytkownika. Zmiany w strukturze menu są zapisywane do <filename
+>~/.config/menus/applications-kmenuedit.menu</filename
+>, zmiany odnośnie programów do <filename class="directory"
+>~/.local/share/applications/</filename
+>, a zmiany w podmenu (ikona, nazwa) do <filename class="directory"
+>~/.local/share/desktop-directories/</filename
+>. Narzędzie administracji KIOSK używa &kmenuedit; i kopiuje powyższe zmiany do lokacji związanych z profilem, lub ogólnosystemowych. </para>
+
+</sect2>
+
+</sect1>
+
+<!-- This section might be redundant. If it isn't, it needs some screenies -->
+<sect1 id="kde-panel">
+<title
+>Panel &kde;</title>
+
+<para
+>Panel &kde; jest również znany jako &kicker;. Jego cechą jest modularność, a składa się on z następujących komponentów: <itemizedlist>
+<listitem
+><para
+>Applety</para
+></listitem>
+<listitem
+><para
+>Przyciski programów</para
+></listitem>
+<listitem
+><para
+>Specjalne przyciski</para
+></listitem>
+</itemizedlist>
+</para>
+
+<para
+>Domyślnie panel zawiera następujące applety: <itemizedlist
+> <listitem
+><para
+>Przełącznik i przeglądarka pulpitów - pokazuje wirtualne pulpity</para
+></listitem
+> <listitem
+><para
+>Pasek zadań</para
+></listitem
+> <listitem
+><para
+>Tacka systemowa</para
+></listitem
+> <listitem
+><para
+>Zegar</para
+></listitem
+> </itemizedlist
+> i następujące przyciski specjalne: <itemizedlist>
+<listitem
+><para
+>Menu &kde;</para
+></listitem>
+<listitem
+><para
+>Przycisk pulpitu</para
+></listitem>
+</itemizedlist>
+</para>
+
+<para
+>Różne przyciski programów są również dodawane, o ile jest wolna przestrzeń: <itemizedlist>
+<listitem
+><para
+>Katalog domowy</para
+></listitem>
+<listitem
+><para
+>Przeglądarka WWW</para
+></listitem>
+<listitem
+><para
+>Przycisk KMail</para
+></listitem>
+</itemizedlist>
+</para>
+</sect1>
+
+<sect1 id="file-associations">
+<title
+>Powiązania plików</title>
+
+<para
+>Powiązania plików kojarzą typ pliku z programem, lub programami. Typ pliku zostaje ustanowiony przez określenie jego typu &MIME;. Typy &MIME; rozpoznawane przez &kde; przechowywane są w <filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/share/mimelnk</filename
+>, a plik każdego programu <literal role="extension"
+>.desktop</literal
+> zawiera listę typów &MIME; obsługiwanych przez ten program.</para>
+
+<informalexample>
+<para
+><filename
+>kview.desktop</filename
+>: <programlisting
+>MimeType=image/gif;image/x-xpm;image/x-xbm;image/jpeg;
+image/x-bmp;image/png;image/x-ico;image/x-portable-bitmap;
+image/x-portable-pixmap;image/x-portable-greymap;
+image/tiff;image/jp2
+</programlisting>
+</para>
+
+<para
+><filename
+>kuickshow.desktop</filename
+>: <programlisting
+>MimeType=image/gif;image/x-xpm;image/x-xbm;image/jpeg;
+image/png;image/tiff;image/x-bmp;image/x-psd;image/x-eim;
+image/x-portable-bitmap;image/x-portable-pixmap;
+image/x-portable-greymap
+</programlisting>
+</para>
+
+<para
+>Obie mogą otwierać image/gif. Która z nich zostanie użyta do otwarcia pliku <literal role="extension"
+>.gif</literal
+>?</para>
+
+<para
+>Program o wyższym pierwszeństwie! <filename
+>kview.desktop</filename
+> zawiera <programlisting>
+InitialPreference=3
+</programlisting
+>, podczas gdy <filename
+>kuickshow.desktop</filename
+> zawiera <programlisting>
+InitialPreference=6
+</programlisting
+>. Dlatego &kuickshow; zostanie użyty do otwarcia plików &gif;. </para>
+
+<para
+>Jak można domyślnym zrobić &kview;?</para>
+
+<para
+>Użytkownik może zmienić powiązania plików w &kcontrolcenter;. Zmiany te są przechowywane w <filename
+>$<envar
+>HOME</envar
+>/.kde/share/config/profilerc</filename
+>. Aby użyć tych samych ustawień dla wielu użytkowników, należy je przechować w katalogu profilu użytkownika, lub globalnym katalogu konfiguracyjnym &kde; w celu użycia jako domyślnych dla wielu użytkowników.</para>
+
+</informalexample>
+
+</sect1>
+
+</chapter>
+
+<chapter id="locking-down-kde">
+<title
+>Blokowanie &kde;</title>
+
+<sect1 id="how-it-works-the-basics">
+<title
+>Jak to działa - podstawy</title>
+
+<para
+>Cechy &kde; związane z blokowaniem skoncentrowane są wokół następujących opcji:</para>
+
+<itemizedlist>
+<listitem
+><para
+><link linkend="immutable-configuration-options"
+>Uczynienie opcji konfiguracyjnych niezmiennymi</link
+></para
+></listitem>
+<listitem
+><para
+><link linkend="action-restrictions"
+>Ograniczenie określonych akcji</link
+></para
+></listitem>
+<listitem
+><para
+><link linkend="url-restrictions"
+>Ograniczenie dostępu do pewnych &URL;-i</link
+></para
+></listitem>
+<listitem
+><para
+><link linkend="configuration-modules"
+>Ograniczenie dostępu do pewnych modułów konfiguracyjnych</link
+></para
+></listitem>
+</itemizedlist>
+
+</sect1>
+
+<sect1 id="immutable-configuration-options">
+<title
+>Niezmienne opcje konfiguracyjne</title>
+<subtitle
+>Blokowanie &kde;</subtitle>
+
+<para
+>Opcje niezmienne pozwalają administratorowi systemu na dostarczenie opcji domyślnych, które nie mogą być zmieniane przez użytkownika.</para>
+
+<para
+>Istniejące wcześniej opcje konfiguracyjne użytkownika będą ignorowane od momentu uczynienia opcji konfiguracyjnej niezmienną.</para>
+
+<para
+>Opcje mogą być kontrolowane w ramach pojedynczego wpisu, w ramach grupy, lub plik po pliku.</para>
+
+<para
+>Kiedy plik, lub grupa są niezmienne, wszystkie opcje konfiguracyjne, które do nich należą, są niezmienne, nawet te, dla których administrator systemu nie dostarczył wartości domyślnych.</para>
+
+<note
+><para
+>Wsparcie ze strony programu dla niezmiennych opcji może się wahać od programu do programu. Jakkolwiek użytkownik nie będzie w stanie dokonać permanentnych zmian w niezmiennych opcjach konfiguracyjnych, ciągle może mieć zaprezentowany interfejs użytkownika do zrobienia takiej zmiany.</para
+></note>
+
+</sect1>
+
+<sect1 id="action-restrictions">
+<title
+>Ograniczenia akcji</title>
+
+<para
+>Programy &kde; są zbudowane wokół pojęcia akcji. Akcje mogą być aktywowane w różnoraki sposób, typowo przez pasek menu, jeden z pasków narzędzi albo skrót klawiszowy. <action
+>Zapisz dokument</action
+> jest przykładem akcji. Jeśli znasz wewnętrzną nazwę akcji, jest możliwe jej ograniczenie. Kiedy akcja jest ograniczona, nie pojawia się w pasku menu, lub pasku narzędziowym. Wewnętrzną nazwą dla <action
+>Zapisz dokument</action
+> jest <option
+>action/file_save</option
+>. Struktura blokowania zapewnia również zestaw bardziej abstrakcyjnych ograniczeń, które mogą zostać użyte do wyłączenia funkcjonalności nie pokrytej przez pojedynczą akcję. Przykładem może być ograniczenie <option
+>shell_access</option
+>, które wyłącza całą funkcjonalność, która mogłaby udostępnić użytkownikowi powłokę &UNIX;-ową.</para>
+
+<example>
+<title
+>Ograniczenie dostępu do powłok</title>
+
+<para
+>Aby uniemożliwić dostęp użytkownika do powłoki poleceń można uniemożliwić akcję <option
+>shell_access</option
+> dodając do <filename
+>kdeglobals</filename
+>: </para
+> 
+
+<screen
+>[KDE Action Restrictions]
+shell_access=false</screen>
+
+<para
+>Ponieważ ma to wpływ na menu &kde; i dostępne programy, trzeba wymusić aktualizację bazy sycoca:</para>
+
+<screen
+><userinput
+><command
+>touch</command
+> <filename
+>$<envar
+>KDEDIR</envar
+>/share/services/update_ksycoca</filename
+></userinput
+></screen>
+
+<para
+>Teraz ponownie zaloguj się do &kde; i sprawdź następujące rzeczy:</para>
+
+<itemizedlist>
+<listitem
+><para
+>&kmenu;</para
+></listitem>
+<listitem
+><para
+>W &konqueror-miejscownik; <menuchoice
+><guimenu
+>Narzędzia</guimenu
+><guimenuitem
+>Otwórz terminal</guimenuitem
+></menuchoice
+></para
+></listitem>
+<listitem
+><para
+><keycombo action="simul"
+>&Alt;<keycap
+>F2</keycap
+></keycombo
+> wykonaj polecenie</para
+></listitem>
+</itemizedlist>
+</example>
+<para
+>Pełną dokumentację na temat dostępnych akcji można znaleźć na <ulink url="http://www.kde.org/areas/sysadmin/"
+>http://www.kde.org/areas/sysadmin/</ulink
+>.</para>
+
+<para
+>Kilka bardziej interesujących akcji wypisano poniżej:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><option
+>action/options_configure</option
+></term>
+<listitem
+><para
+>Opcja <guimenuitem
+>Konfiguruj</guimenuitem
+> z menu <guimenu
+>Ustawienia</guimenu
+></para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><option
+>action/help_report_bug</option
+></term>
+<listitem
+><para
+>Opcja <guimenuitem
+>Raport o błędzie</guimenuitem
+> z menu <guimenu
+>Pomoc</guimenu
+>.</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><option
+>action/kdesktop_rmb</option
+></term>
+<listitem
+><para
+>Menu prawego przycisku myszy na pulpicie.</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><option
+>action/kicker_rmb</option
+></term>
+<listitem
+><para
+>Menu prawego przycisku myszy na panelu.</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><option
+>user/root</option
+></term>
+<listitem
+><para
+>Ukryj wszystkie akcje, lub programy, które wymagają praw użytkownika <systemitem class="username"
+>root</systemitem
+>.</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><option
+>shell_access</option
+></term>
+<listitem
+><para
+>Ukrywa wszystkie akcje, lub programy, które udostępniają powłokę.</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><option
+>print/system</option
+></term>
+<listitem
+><para
+>Wyłącza opcję wybierania systemu drukowania (silnik).</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><option
+>lock_screen</option
+></term>
+<listitem
+><para
+>Czy użytkownik będzie mógł zablokować ekran</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><option
+>start_new_session</option
+></term>
+<listitem
+><para
+>Czy użytkownik może uruchomić drugą sesję X (zobacz również &kdm;)</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><option
+>opengl_screensavers</option
+></term>
+<listitem
+><para
+>Czy można używać wygaszaczy ekranu OpenGL.</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><option
+>manipulatescreen_screensavers</option
+></term>
+<listitem
+><para
+>Zezwól na wygaszacze ekranu, które nie ukrywają całego ekranu</para
+></listitem>
+</varlistentry>
+</variablelist>
+
+</sect1>
+
+<sect1 id="url-restrictions">
+<title
+>Restrykcje &URL;</title>
+
+<para
+>Istnieją trzy typy ograniczeń, które można zastosować w stosunku do &URL;-i:</para>
+
+<variablelist>
+<varlistentry>
+<term
+>list</term>
+<listitem
+><para
+>Do kontroli, czy wyświetlanie spisu zawartości katalogu jest dozwolone.</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+>open</term>
+<listitem
+><para
+>Do kontroli, czy pewne &URL;-e mogą być otwierane</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+>Redirect</term>
+<listitem
+><para
+>Do kontroli, czy jeden &URL; może otworzyć inny &URL; - automatycznie, lub poprzez odnośnik.</para
+></listitem>
+</varlistentry>
+</variablelist>
+
+<para
+>Reguły sprawdzane są w kolejności ich zdefiniowania. Ostatnia reguła, którą można zastosować w stosunku do &URL;-a, określa, czy można uzyskać do niego dostęp.</para>
+
+<para
+>Następujące reguły wyłączają otwieranie &URL;-i http i https poza domeną <systemitem class="domainname"
+>.ourcompany.com</systemitem
+>:</para>
+
+<screenco
+><areaspec>
+<area id="url_commas" coords="3"/>
+<area id="url_rule1" coords="3"/>
+<area id="url_rule2" coords="4"/>
+</areaspec>
+<screen
+>[KDE URL Restrictions]
+rule_count=2
+rule_1=open,,,,http,,,false
+rule_2=open,,,,http,*.ourcompany.com,,true</screen
+></screenco>
+
+<calloutlist>
+<callout arearefs="url_commas">
+<para
+>Pierwsze cztery przecinki pozwalają ominąć kryteria wyboru w stosunku do początkowego &URL;-a. Ta część potrzebna jest tylko w wypadku reguł przekierowania.</para
+> 
+</callout>
+<callout arearefs="url_rule1"
+><para
+><option
+>rule_1</option
+> zabrania otwierania jakiegokolwiek &URL;-a http, lub https</para
+></callout>
+<callout arearefs="url_rule2"
+><para
+><option
+>rule_2</option
+> pozwala na otwarcie dowolnego &URL;-a http, lub https w domenie <systemitem class="domainname"
+>.ourcompany.com</systemitem
+>. Zauważ, że znak zastępczy <token
+>*</token
+> może zostać użyty na początku nazwy domeny.</para
+></callout>
+</calloutlist>
+
+<para
+>Następujące reguły powodują, że użytkownik nie może już przeglądać katalogów na lokalnym systemie plików, położonych poza jego katalogiem $<envar
+>HOME</envar
+>:</para>
+
+<screenco
+><areaspec>
+<area id="home_rule1" coords="3"/>
+<area id="home_rule2" coords="4"/>
+</areaspec>
+<screen
+>[KDE URL Restrictions]
+rule_count=2
+rule_1=list,,,,file,,,false
+rule_2=list,,,,file,,$HOME,true</screen
+></screenco>
+
+<calloutlist>
+<callout arearefs="home_rule1"
+><para
+><option
+>rule_1</option
+> zabrania wyświetlania zawartości jakiegokolwiek katalogu lokalnego</para
+></callout>
+<callout arearefs="home_rule2"
+><para
+><option
+>rule_2</option
+> pozwala na wyświetlanie zawartości katalogów znajdujących się pod katalogiem $<envar
+>HOME</envar
+>.</para
+></callout>
+</calloutlist>
+
+<para
+>$<envar
+>HOME</envar
+> i $<envar
+>TMP</envar
+> są specjalnymi wartościami określającymi katalog domowy użytkownika i tymczasowy katalog użytkownika w &kde;, np. <filename class="directory"
+>/tmp/kde-bastian</filename
+></para>
+
+<para
+>Następujące reguły powodują, że użytkownik nie może już otwierać plików na lokalnym systemie plików, położonych poza jego katalogiem $<envar
+>HOME</envar
+>:</para>
+
+<screenco
+><areaspec>
+<area id="local_rule1" coords="3"/>
+<area id="local_rule2" coords="4"/>
+<area id="local_rule3" coords="5"/>
+</areaspec>
+<screen
+>[KDE URL Restrictions]
+rule_count=3
+rule_1=open,,,,file,,,false
+rule_2=open,,,,file,,$HOME,true
+rule_3=open,,,,file,,$TMP,true</screen
+></screenco>
+
+<calloutlist>
+<callout arearefs="local_rule1"
+><para
+><option
+>rule_1</option
+> zabrania otwierania lokalnych plików w ogóle</para
+></callout>
+<callout arearefs="local_rule2"
+><para
+><option
+>rule_2</option
+> pozwala na otwieranie lokalnych plików znajdujących się pod własnym katalogiem $<envar
+>HOME</envar
+> użytkownika.</para
+></callout>
+<callout arearefs="local_rule3"
+><para
+><option
+>rule_3</option
+> pozwala na otwieranie plików w tymczasowym katalogu użytkownika w &kde;. Niektóre programy &kde; tego wymagają, na przykład te, które wpierw ściągają plik, lub dokument do katalogu tymczasowego, a potem otwierają go w programie.</para
+></callout>
+</calloutlist>
+
+
+<para
+>Opcja przekierowania ma wpływ na to, czy dokumenty z określonej lokalizacji mogą odnosić się (automatycznie, lub przez odnośnik) do pewnej innej lokalizacji. Zestaw domyślnych reguł jest obecny jako ogólny wyznacznik bezpieczeństwa. Na przykład dokumenty zlokalizowane na Internecie nie mogą odwoływać się do dokumentów przechowywanych lokalnie.</para>
+
+<para
+>Na przykład, jeśli chcemy dać serwerowi intranetowemu <systemitem class="systemname"
+>www.mycompany.com</systemitem
+> możliwość odnoszenia się do lokalnych plików, możemy dodać następującą regułę:</para>
+
+<screen
+>[KDE URL Restrictions]
+rule_count=1
+rule_1=redirect,http,www.mycompany.com,,file,,,true</screen>
+
+<para
+>Zamiast wypisywania protokołów po nazwie, jest możliwość określenia całej grupy protokołów. Zdefiniowane zostały w tym celu następujące grupy:</para>
+
+<variablelist>
+<varlistentry>
+<term
+>:local</term>
+<listitem
+><para
+>Protokoły, które korzystają z przechowywanej lokalnie informacji, przykłady to: file:/, man:/, fonts:/, floppy:/</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+>:internet</term>
+<listitem
+><para
+>Często wykorzystywane protokoły internetowe, takie jak http i ftp</para
+></listitem>
+</varlistentry>
+</variablelist>
+
+<para
+>Informacja na temat protokołów jest przechowywana w plikach <literal role="extension"
+>*.protocol</literal
+> umieszczonych w <filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/share/services</filename
+>.</para>
+
+<para
+>Wpis <option
+>Class</option
+>= określa grupę, której częścią jest protokół: <userinput
+><command
+>grep</command
+> <option
+>Class=</option
+> <filename
+>$<envar
+>KDEDIR</envar
+>/share/services/*.protocol</filename
+></userinput
+></para>
+
+<para
+>Ogólne reguły:</para>
+
+<itemizedlist>
+<listitem
+><para
+>Protokoły :local mogą odwoływać się do każdego innego protokołu</para
+></listitem>
+<listitem
+><para
+>Zawsze można się odwołać do protokołu :internet</para
+></listitem>
+<listitem
+><para
+>Nie wszystkie protokoły są częścią grupy, na przykład fish:/.</para
+></listitem>
+</itemizedlist>
+
+</sect1>
+
+<sect1 id="configuration-modules">
+<title
+>Moduły konfiguracyjne</title>
+
+<para
+>&kde; posiada moduły konfiguracyjne do konfigurowania różnych aspektów swojego środowiska. Moduły konfiguracyjne występują w Centrum sterowania, w oknie dialogowym konfiguracji programu, albo w obydwu powyższych miejscach.</para>
+
+<informalexample>
+<para
+>Moduł konfigurujący serwer pośredniczący (proxy) jest obecny w Centrum sterowania, ale również jako część okna dialogowego <guilabel
+>Konfiguruj konquerora</guilabel
+> w &konqueror-miejscownik;</para>
+
+<para
+>Indywidualne moduły konfiguracyjne mogą być uruchomione przy pomocy <command
+>kcmshell</command
+> <replaceable
+>module</replaceable
+></para>
+
+<para
+>Aby uruchomić moduł konfiguracyjny serwera pośredniczącego (proxy) użyj:</para>
+<itemizedlist>
+<listitem
+><para
+><command
+>kcmshell</command
+> <filename
+>kde-proxy.desktop</filename
+></para
+></listitem>
+<listitem
+><para
+><command
+>kcmshell</command
+> proxy</para
+></listitem>
+</itemizedlist>
+
+<para
+><note
+><para
+>Nie wszystkie programy używają modułów konfiguracyjnych, często okno dialogowe konfiguracji jest integralną częścią samego programu.</para
+></note
+></para>
+</informalexample>
+
+<para
+>Wszystkie moduły konfiguracyjne są, ściśle rzecz biorąc, częścią menu &kde;.</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Moduły widoczne w Centrum sterowania zwykle mają plik <literal role="extension"
+>.desktop</literal
+> w <filename class="directory"
+>$<envar
+>KDEDIR</envar
+>/share/applications/kde</filename
+> i są posortowane po ukrytym menu <guimenu
+>Settings-Modules</guimenu
+> przez <filename
+>kde-settings.menu</filename
+>, dołączony z <filename
+>kde-essential.menu</filename
+></para>
+<screen
+><userinput
+><command
+>kbuildsycoca</command
+> <option
+>--menutest</option
+> 2&gt; /dev/null | <command
+>grep</command
+> Settings-Modules</userinput
+></screen>
+</listitem>
+<listitem>
+<para
+>Moduły specyficzne dla programów zwykle mają plik <literal role="extension"
+>.desktop</literal
+> pod <filename
+>$<envar
+>KDEDIR</envar
+>/share/applnk/.hidden</filename
+>, który odpowiada ukrytemu menu .hidden, dołączonemu jako rezultat <markup
+>&lt;KDELegacyDirs/&gt;</markup
+></para>
+<screen
+><userinput
+><command
+>kbuildsycoca</command
+> <option
+>--menutest</option
+> 2&gt; /dev/null | <command
+>grep</command
+> .hidden</userinput
+></screen>
+</listitem>
+<listitem
+><para
+>W &kde; 3.3. istnieje możliwość edycji Centrum sterowania przy pomocy <application
+>kcontroledit</application
+>. <application
+>kcontroledit</application
+> działa po prostu jak <application
+>kmenuedit</application
+>, zmiany tylko dla aktualnego użytkownika. Użyj <application
+>kiosktool</application
+>, żeby dokonać zmian dla wszystkich użytkowników.</para
+></listitem
+> 
+</itemizedlist>
+
+<para
+>Indywidualne moduły konfiguracyjne mogą zostać wyłączone przez dodanie do <filename
+>kdeglobals</filename
+>:</para>
+
+<screen
+>[KDE Control Module Restrictions]
+<replaceable
+>module-id</replaceable
+>=false</screen>
+<para
+>Na przykład żeby wyłączyć moduł serwera pośredniczącego użyj</para>
+<screen
+>[KDE Control Module Restrictions]
+kde-proxy.desktop=false</screen>
+<para
+>Sprawdź w Centrum sterowania i oknie dialogowym <guilabel
+>Konfiguruj konqueror</guilabel
+>, czy konfiguracja serwera pośredniczącego jest tam ciągle obecna.</para>
+
+</sect1>
+<!-- 
+<sect1 id="making-it-work">
+<title
+>Making it Work</title>
+
+Making It Work
+KDE 3.2: Set $KDEDIRS from startkde script
+Distribute profiles to all clients
+
+</para>
+</sect1>
+-->
+</chapter>
+
+<chapter id="the-lazy-admin">
+<title
+>Leniwa administracja</title>
+
+<!-- This section appears to need quite a lot of additional words to -->
+<!-- make sense. Perhaps it would be better to comment it out if it -->
+<!-- can't be updated before the next release (Phil) -->
+<!-- FIXME: Commented it out until it's got some more content fleshing it -->
+<!-- out (Lauri)
+
+<sect1 id="lazy-admin-overview">
+<title
+>Overview</title>
+
+<para>
+The Lazy Admin
+Overview
+Deployment
+	How to get &kde; available on many clients
+Remote Desktop Sharing
+Take a look at someone else desktop
+DCOP
+	The DCOP command line tool makes it possible to control &kde; applications from the command line
+KDialog
+	A versatile tool to use standard &kde; dialogs in your own scripts
+
+
+
+Deployment
+Thin Clients
+Installing Software
+= AutoYaST
+= KickStart
+Maintaining Settings
+= /etc/kderc, other settings
+= Use rsync to copy files around
+= Shared filesystem such as NFS
+o store profiles themselves on NFS
+
+
+
+http://www.suse.de/~nashif/autoinstall/index.html
+
+</para>
+</sect1>
+-->
+<sect1 id="remote-desktop-sharing">
+<title
+>Współdzielenie zdalnego pulpitu</title>
+
+<para
+>Zdalne współdzielenie pulpitu pozwala zdalnym użytkownikom oglądać, i opcjonalnie kontrolować pulpit aktualnego użytkownika. Zdalny użytkownik musi przysłać zaproszenie i jest możliwe stałego zaproszenia zabezpieczonego hasłem. Jest to doskonałe rozwiązanie dla zespołów wsparcia technicznego i administratorów, aby mogli dostać się do pulpitów użytkowników w celu rozwiązania problemu lub przeprowadzenia użytkownika przez jakąś procedurę.</para>
+
+<para
+>Zdalne współdzielenie pulpitu używa dwóch programów: &krfb; ( serwera VNC dla &kde;) i &krdc; (klienta VNC dla &kde;)</para>
+
+<para
+>&krfb; może być używane przez każdego użytkownika do tworzenia i zarządzania zaproszeniami. Utworzenie zaproszenia powoduje utworzenie jednorazowego hasła, które umożliwia odbiorcy połączenie z Twoim pulpitem. Domyślnie jest ono ważne tylko na jedno pomyślnie rozpoczęte połączenie i wygasa po jednej godzinie.</para>
+
+<para
+>Nadchodzące połączenia są obsługiwane przez moduł kinetd w kded. Możesz użyć polecenia <userinput
+><command
+>dcop</command
+> kded kinetd services</userinput
+>, aby zobaczyć czy jest uruchomiony. &krfb; domyślnie oczekuje na połączenia na porcie 5900. Kiedy nadejdzie połączenie, pojawi się okienko dialogowe z prośbą o zgodę aktualnego użytkownika.</para>
+
+<!-- TODO: Write a bit more here, with a walk through maybe? -->
+
+</sect1>
+
+<sect1 id="kde-diy">
+<title
+>&kde; Zrób To Sam - Budowanie własnych narzędzi</title>
+
+<sect2 id="dcop">
+<title
+>DCOP</title>
+
+<para
+>Protokół komunikacji pulpitu (Desktop COmmunication Protocol, <acronym
+>DCOP</acronym
+>), to prosty sposób komunikacji międzyprocesowej. <acronym
+>DCOP</acronym
+> pozwala użytkownikowi komunikować się z aktualnie uruchomionymi programami. &kde; udostępnia dwa programy pozwalające używać bezpośrednio <acronym
+>DCOP</acronym
+>: <application
+>dcop</application
+> - program uruchamiany z linii poleceń oraz <application
+>kdcop</application
+>, program z graficznym interfejsem użytkownika. </para>
+<para
+>Kilka uwag na temat używania <command
+>dcop</command
+>: </para>
+
+<para>
+<itemizedlist>
+<listitem>
+<para
+><command
+>dcop</command
+> [options] [application [object [function [arg1] [arg2] ... ] ] ] </para>
+</listitem>
+<listitem>
+<para
+>Programy, które mogą otwierać na raz więcej, niż jedno okno, będą wypisane jako &lt;program&gt;-<acronym
+>PID</acronym
+> </para>
+</listitem>
+<listitem>
+<para
+>Wszystkie argumenty są wrażliwe na wielkość znaków. setFullScreen i setfullscreen to dwie różne funkcje. </para>
+</listitem>
+<listitem>
+<para
+>Element wyrażenia regularnego * może zostać użyty w programach i argumentach obiektowych. <screen
+><prompt
+>&percnt; </prompt
+><userinput
+><command
+>dcop</command
+><option
+> kon*</option
+></userinput>
+konqueror-16006
+konsole-8954
+</screen>
+</para>
+</listitem>
+
+</itemizedlist>
+
+</para>
+
+<para
+>Poniżej kilka przykładowych komend i ich rezultatów działania: </para>
+
+<informalexample>
+<screen
+><prompt
+>&percnt; </prompt
+><userinput
+><command
+>dcop</command
+><option
+> konsole*</option
+></userinput>
+konsole-8954
+</screen>
+<para
+>Jeden z programów &konsole; działa z numerem <acronym
+>PID</acronym
+> równym 8954.</para>
+
+<screen
+><prompt
+>&percnt; </prompt
+><userinput
+><command
+>dcop</command
+><option
+> konsole-8954</option
+></userinput>
+KBookmarkManager-.../share/apps/kfile/bookmarks.xml
+KBookmarkManager-.../share/apps/konqueror/bookmarks.xml
+KBookmarkNotifier
+KDebug
+MainApplication-Interface
+konsole (default)
+konsole-mainwindow#1
+ksycoca
+session-1
+session-2
+session-3
+session-4
+</screen>
+<para
+>Można tu zobaczyć cztery działające sesje.</para>
+
+<screen
+><prompt
+>&percnt; </prompt
+><userinput
+><command
+>dcop</command
+><option
+> konsole-8954</option
+><option
+> konsole</option
+></userinput>
+QCStringList interfaces()
+QCStringList functions()
+int sessionCount()
+QString currentSession()
+QString newSession()
+QString newSession(QString type)
+QString sessionId(int position)
+void activateSession(QString sessionId)
+void nextSession()
+void prevSession()
+void moveSessionLeft()
+void moveSessionRight()
+bool fullScreen()
+void setFullScreen(bool on)
+ASYNC reparseConfiguration()
+</screen>
+<para
+>Oto opcje dla głównego programu &konsole;. </para>
+
+<screen
+><prompt
+>&percnt; </prompt
+><userinput
+><command
+>dcop</command
+><option
+> konsole-8954</option
+><option
+> session-1</option
+></userinput>
+QCStringList interfaces()
+QCStringList functions()
+bool closeSession()
+bool sendSignal(int signal)
+void clearHistory()
+void renameSession(QString name)
+QString sessionName()
+int sessionPID()
+QString schema()
+void setSchema(QString schema)
+QString encoding()
+void setEncoding(QString encoding)
+QString keytab()
+void setKeytab(QString keyboard)
+QSize size()
+void setSize(QSize size)
+</screen>
+<para
+>Oto opcje dla pierwszej sesji, session-1.</para>
+
+<screen
+><prompt
+>&percnt; </prompt
+><userinput
+><command
+>dcop</command
+><option
+> konsole-8954</option
+><option
+> konsole</option
+><option
+> setFullScreen</option
+><parameter
+> true</parameter
+></userinput
+>
+</screen>
+<para
+>To ustawia &konsole; na pełny ekran.</para>
+
+</informalexample>
+
+<para
+>Kiedy istnieje więcej, niż jeden program/obiekt, które powinno zostać użyte? To z odniesienia? </para>
+<screen
+><prompt
+>&percnt; </prompt
+><userinput
+><command
+>echo</command
+><option
+> $KONSOLE_DCOP</option
+></userinput>
+DCOPRef(konsole-7547,konsole)
+
+<prompt
+>&percnt; </prompt
+><userinput
+><command
+>dcop</command
+><option
+> $KONSOLE_DCOP</option
+><option
+> newSession</option
+></userinput>
+session-6
+
+<prompt
+>&percnt; </prompt
+><userinput
+><command
+>dcopstart</command
+><option
+> konsole</option
+></userinput>
+konsole-9058
+
+
+#!/bin/sh
+konsole=$(dcopstart konsole-script)
+session=$(dcop $konsole konsole currentSession)
+dcop $konsole $session renameSession Local
+
+session=$(dcop $konsole konsole newSession)
+dcop $konsole $session renameSession Remote
+
+session=$(dcop $konsole konsole newSession)
+dcop $konsole $session renameSession Code
+dcop $konsole $session sendSession 'cd /my/work/directory'
+
+</screen>
+
+</sect2>
+
+<sect2 id="kdialog">
+<title
+>KDialog</title>
+<subtitle
+>&kde; Zrób To Sam - Tworzenie własnych narzędzi</subtitle>
+
+<para
+>Można używać okien dialogowych &kde; z wnętrza własnych skryptów, aby połączyć moc skryptów powłoki &UNIX; z łatwością użycia &kde;.</para>
+
+<screen
+><userinput
+><command
+>kdialog</command
+> <option
+>--msgbox 'Masz nową pocztę!'</option
+></userinput
+></screen>
+
+<screen
+><userinput
+><command
+>kdialog</command
+> <option
+>--title 'Nowa poczta'</option
+> <option
+>--msgbox 'Masz nową pocztę!'</option
+></userinput
+></screen>
+
+<para
+>Część <application
+>KDialog</application
+> może zostać zastąpiona przy użyciu opcji <option
+>--caption</option
+></para>
+
+<screen
+><userinput
+><command
+>kdialog</command
+> <option
+>--title 'Nowa poczta'</option
+> <option
+>--msgbox 'Masz nową pocztę!'</option
+> <option
+>--dontagain myfile:mykey</option
+></userinput
+></screen>
+
+<para
+>Zapisuje w <filename
+>$<envar
+>KDEHOME</envar
+>/share/config/myfile</filename
+>, czy pokazać ponownie (zapisując do wymienionego pliku następujące linie):</para>
+
+<screen
+>[Notification Messages]
+mykey=false</screen>
+
+<para
+>Zamiast <option
+>--msgbox</option
+> można również użyć <option
+>--sorry</option
+> i <option
+>--error</option
+>, w odpowiednim kontekście. Na przykład można użyć <command
+>kdialog</command
+> <option
+>--sorry 'Sieć docelowa jest nieosiągalna'</option
+>, lub <command
+>kdialog</command
+> <option
+>--error 'Nie da się otworzyć skrzynki pocztowej'</option
+>.</para>
+
+<para
+>Można również stworzyć okienka wiadomości, które akceptują odpowiedź tak, lub nie.</para>
+
+<screen
+><command
+>kdialog</command
+> <option
+>--yesno 'Czy chcesz połączyć się
+z internetem?'</option
+> <command
+>echo</command
+> <returnvalue
+>$?</returnvalue
+></screen>
+
+<informaltable>
+<tgroup cols="2">
+<thead>
+<row>
+<entry
+>Wartości zwracane</entry>
+<entry
+>Znaczenie</entry>
+</row>
+</thead>
+<tbody>
+<row
+><entry
+>0</entry
+><entry
+>Tak, OK, Dalej</entry
+></row>
+<row
+><entry
+>1</entry
+><entry
+>Nie</entry
+></row>
+<row
+><entry
+>2</entry
+><entry
+>Anuluj</entry
+></row>
+</tbody>
+</tgroup>
+</informaltable>
+
+<para
+>Nie zapomnij zachować wyniku w zmiennej. Jeśli nie zostanie użyte bezpośrednio, następne polecenie ustawi nową wartość $?. Można tutaj również użyć opcji <option
+>--dontagain</option
+>, spowoduje ona zapamiętanie wyboru użytkownika i zwrócenie tej wartości następnym razem bez pokazywania okienka dialogowego.</para>
+
+<para
+>Dalsze możliwości to:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><option
+>--warningyesno</option
+></term>
+<listitem>
+<para
+>tak jak <option
+>--yesno</option
+>, ale z inną ikoną</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><option
+>--warningcontinuecancel</option
+></term>
+<listitem
+><para
+>Z przyciskami <guibutton
+>Dalej</guibutton
+> i <guibutton
+>Anuluj</guibutton
+>.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><option
+>--warningyesnocancel</option
+></term>
+<listitem
+><para
+>Z przyciskami <guibutton
+>Tak</guibutton
+>, <guibutton
+>Nie</guibutton
+> i <guibutton
+>Anuluj</guibutton
+>. Na przykład:</para>
+<screen
+><command
+>kdialog</command
+> <option
+>--warningyesnocancel 'Czy chcesz
+zapisać zmiany?'</option
+></screen>
+</listitem>
+</varlistentry>
+</variablelist>
+
+<screen
+><command
+>kdialog</command
+> <option
+>--inputbox "Wpisz swoje imię:" "YourName"</option
+></screen>
+
+<para
+>Rezultat jest wypisywany na standardowe wyjście, aby umieścić go w zmiennej można użyć <userinput
+>name=$(kdialog --inputbox "Wpisz swoje imię:" "YourName")</userinput
+>. Ostatni argument nie jest obowiązkowy, używa się go do wstępnego wypełnienia pola.</para>
+
+<screen
+><userinput
+><varname
+>password</varname
+>=$(<command
+>kdialog</command
+> <option
+>--password "Wpisz hasło:"</option
+>)</userinput
+></screen>
+
+<para
+>Opcja <option
+>--dontagain</option
+> nie działa z <option
+>--inputbox</option
+>, ani <option
+>--password</option
+></para>
+
+<para
+>Istnieją dwa dialogi, które pozwalają użytkownikowi dokonać wyboru na podstawie listy:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><option
+>--menu</option
+></term>
+<listitem>
+<para
+>Pozwala użytkownikowi wybrać z listy pojedynczą wartość.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><option
+>--checklist</option
+></term>
+<listitem>
+<para
+>Pozwala użytkownikowi wybrać jedną, lub więcej wartości z listy.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+<screen
+><userinput
+><varname
+>city</varname
+>=$(<command
+>kdialog</command
+> <option
+>--menu "Wybierz miasto" a Londyn b Madryt c Paryż d Berlin</option
+>)</userinput
+></screen>
+
+<para
+><varname
+>$city</varname
+> zwróci <returnvalue
+>a</returnvalue
+>, <returnvalue
+>b</returnvalue
+>, <returnvalue
+>c</returnvalue
+> lub <returnvalue
+>d</returnvalue
+>.</para>
+
+<screen
+><userinput
+><varname
+>city</varname
+>=$(<command
+>kdialog</command
+> <option
+>--checklist "Wybierz miasta" a Londyn off b Madryt on c Paryż on d Berlin off</option
+>)</userinput
+></screen>
+
+<para
+>Madryt i Paryż będą wstępnie zaznaczone. Rezultatem przy ich zostawieniu będzie <returnvalue
+>"b"</returnvalue
+> <returnvalue
+>"c"</returnvalue
+>.</para>
+
+<para
+>Kiedy dodasz opcję <option
+>--separate-output</option
+>, spowoduje to umieszczenie <returnvalue
+>b</returnvalue
+> i <returnvalue
+>c</returnvalue
+> w osobnych liniach, ułatwiając przetworzenie wyniku.</para>
+
+<screen
+>file=$(kdialog --getopenfilename $HOME)
+file=$(kdialog --getopenfilename $HOME "*.png *.jpg|Image Files")
+file=$(kdialog --getsavefilename $HOME/SaveMe.png)
+file=$(kdialog --getexistingdirectory $HOME)</screen>
+
+</sect2>
+
+</sect1>
+
+</chapter>
+&groupware-with-kontact; </part>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: xml
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:0
+sgml-indent-data:true
+sgml-parent-document:("index.docbook" "book" "part")
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

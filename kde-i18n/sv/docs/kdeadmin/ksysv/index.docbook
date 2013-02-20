@@ -1,0 +1,1368 @@
+<?xml version="1.0" ?>
+<!DOCTYPE book PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" 
+"dtd/kdex.dtd" [
+  <!ENTITY kappname "&ksysv;">
+  <!ENTITY package "kdeadmin">
+  <!ENTITY % addindex "IGNORE">
+  <!ENTITY % Swedish "INCLUDE"
+> <!-- change language only here -->
+]>
+
+<book lang="&language;">
+<bookinfo>
+<title
+>Handbok &ksysv;</title>
+<authorgroup>
+<author
+><firstname
+>Peter</firstname
+> <surname
+>Putzer</surname
+> <affiliation
+> <address
+><email
+>putzer@kde.org</email
+></address>
+</affiliation>
+</author>
+<othercredit role="translator"
+> <firstname
+>Stefan</firstname
+> <surname
+>Asserhäll</surname
+> <affiliation
+><address
+><email
+>stefan.asserhall@comhem.se</email
+></address
+></affiliation
+> <contrib
+>Översättare</contrib
+></othercredit
+> 
+</authorgroup>
+
+<date
+>2001-03-21</date>
+<releaseinfo
+>1.03.06</releaseinfo>
+
+<copyright>
+<year
+>1998</year>
+<year
+>2000</year>
+<year
+>2001</year>
+<holder
+>Peter Putzer</holder>
+</copyright>
+
+<legalnotice
+>&FDLNotice;</legalnotice>
+
+<abstract>
+<para
+>&ksysv; är en grafisk editor för startkonfiguration enligt Sys V.</para>
+</abstract>
+
+<keywordset>
+<keyword
+>KDE</keyword>
+<keyword
+>KSysV</keyword>
+<keyword
+>Körnivå</keyword>
+<keyword
+>Körnivåeditor</keyword>
+<keyword
+>System V-start</keyword>
+</keywordset>
+</bookinfo>
+
+<chapter id="Introduction">
+<title
+>Inledning</title>
+
+<para
+>Välkommen till &kde;:s SysV-starteditor, vanligen känd som (och hädanefter kallad) &ksysv;. Det här avsnittet tar upp några begrepp och förklarar vad man kan göra med &ksysv;. </para>
+
+</chapter>
+
+<chapter id="what-is-sysv-init">
+<title
+>En kort beskrivning av System V-start</title>
+
+<para
+>Följande förklaring är <quote
+>lånad</quote
+> av <application
+>tksysv</application
+> (en inspirationskälla för &ksysv;). </para>
+
+<para
+>System V-start är snabbt på väg att bli standardiserad i &Linux;-världen för att styra uppstart av programvara när datorn startas. Det här beror på att den utan tvekan är lättare att använda, mer kraftfull och flexibel än den traditionella <acronym
+>BSD</acronym
+>-starten. </para>
+
+<para
+>Jag tar inte upp historien här (huvudsakligen eftersom jag inte känner till den). </para>
+
+<para
+>Binärfilen init finns i <filename class="directory"
+>/sbin</filename
+> och inte i <filename class="directory"
+>/etc</filename
+>. Det här är viktigt eftersom man kan försöka att uppdatera en maskin till System V-start utan att installera om och formatera om. &Linux;-kärnan tittar först i <filename class="directory"
+>/etc</filename
+> efter init, så du måste försäkra dig om att den gamla init tas bort därifrån om den finns. </para>
+
+<para
+>SysV-start skiljer sig också från <acronym
+>BSD</acronym
+>-start på det sättet att konfigurationsfilerna finns i en underkatalog i <filename class="directory"
+>/etc</filename
+> istället för att ligga direkt i <filename class="directory"
+>/etc</filename
+>. Den här katalogen heter <filename class="directory"
+>rc.d</filename
+>. I den hittar du <filename
+>rc.sysinit</filename
+> och följande kataloger: </para>
+
+<itemizedlist>
+<listitem>
+<para>
+<filename class="directory"
+>init.d/</filename>
+</para>
+</listitem>
+<listitem>
+<para>
+<filename class="directory"
+>rc0.d/</filename>
+</para>
+</listitem>
+<listitem>
+<para>
+<filename class="directory"
+>rc1.d/</filename>
+</para>
+</listitem>
+<listitem>
+<para>
+<filename class="directory"
+>rc2.d/</filename>
+</para>
+</listitem>
+<listitem>
+<para>
+<filename class="directory"
+>rc3.d/</filename>
+</para>
+</listitem>
+<listitem>
+<para>
+<filename class="directory"
+>rc4.d/</filename>
+</para>
+</listitem>
+<listitem>
+<para>
+<filename class="directory"
+>rc5.d/</filename>
+</para>
+</listitem>
+<listitem>
+<para>
+<filename class="directory"
+>rc6.d</filename>
+</para>
+</listitem>
+</itemizedlist>
+
+<para
+><filename class="directory"
+>init.d</filename
+> innehåller en samling med skript. I huvudsak behövs ett skript för varje tjänst som man behöver köra när datorn startas eller när en annan körnivå aktiveras. En tjänst omfattar sådant som nätverkshantering, <acronym
+>NFS</acronym
+>, &Sendmail;, httpd, etc. En tjänst omfattar inte sådant som <command
+>setserial</command
+> som bara ska köras en gång och sedan avslutas. Sådant hör hemma i filen <filename
+>rc.local</filename
+>. </para>
+
+<para
+><filename
+>rc.local</filename
+> ska finnas i <filename class="directory"
+>/etc/rc.d</filename
+> om du vill ha en. De flesta system har en även om den inte gör mycket. Du kan också lägga till en <filename
+>rc.serial</filename
+> i <filename class="directory"
+>/etc/rc.d</filename
+>, om du behöver göra särskilda saker med serieportar när datorn startas. </para>
+
+<para
+>Kedjan av händelser är följande: </para>
+
+<orderedlist>
+<listitem>
+<para
+>Kärnan letar på flera ställen efter init och kör den första som den hittar. </para
+> 
+</listitem>
+<listitem>
+<para
+>init kör <filename
+>/etc/rc.d/rc.sysinit</filename
+>. </para>
+</listitem>
+<listitem>
+<para
+><filename
+>rc.sysinit</filename
+> gör ett antal nödvändiga saker och kör sedan <filename
+>rc.serial</filename
+> (om den finns) </para>
+</listitem>
+<listitem>
+<para
+>init kör <filename
+>rc.local</filename
+> </para>
+</listitem>
+<listitem>
+<para
+>init kör alla skript för den förvalda körnivån </para>
+</listitem>
+</orderedlist>
+
+
+<para
+>Den förvalda körnivån bestäms i <filename
+>/etc/inittab</filename
+>. Du bör ha en rad nära början som ser ut så här: </para>
+
+<screen
+>id:3:initdefault:</screen>
+
+<para
+>Här kan du se, genom att titta i andra kolumnen, att den förvalda körnivån är 3, vilket bör gälla för de flesta system. Om du vill ändra den, kan du redigera <filename
+>/etc/inittab</filename
+> för hand och ändra siffran 3. Var mycket försiktig när du rotar i inittab. Om du ställer till det, kan du komma åt att rätta till det genom att starta om och skriva: </para>
+
+<screen
+><computeroutput
+>LILO boot:</computeroutput
+> <userinput
+>linux single</userinput
+></screen>
+
+<para
+>Det här <emphasis
+>ska</emphasis
+> låta dig starta i enanvändarläge så att du kan rätta till det. </para>
+
+<para
+>Nå, hur körs alla de rätta skripten? Om du skriver <userinput
+><command
+>ls</command
+> <option
+>-l</option
+></userinput
+> i <filename class="directory"
+>rc3.d</filename
+>, ser du något som liknar: </para>
+
+
+<screen
+>lrwxrwxrwx 1 root root 13 13:11 S10network -&gt; ../init.d/network 
+lrwxrwxrwx 1 root root 16 13:11 S30syslog -&gt; ../init.d/syslog 
+lrwxrwxrwx 1 root root 14 13:32 S40cron -&gt; ../init.d/cron
+lrwxrwxrwx 1 root root 14 13:11 S50inet -&gt; ../init.d/inet
+lrwxrwxrwx 1 root root 13 13:11 S60nfs -&gt; ../init.d/nfs
+lrwxrwxrwx 1 root root 15 13:11 S70nfsfs -&gt; ../init.d/nfsfs
+lrwxrwxrwx 1 root root 18 13:11 S75keytable -&gt; ../init.d/keytable
+lrwxrwxrwx 1 root root 23 13:11 S80sendmail -&gt; ../init.d/sendmail.init
+lrwxrwxrwx 1 root root 18 13:11 S90lpd -&gt; ../init.d/lpd.init
+lrwxrwxrwx 1 root root 11 13:11 S99local -&gt; ../rc.local</screen>
+
+<para
+>Vad du ser är att det inte finns några riktiga filer i katalogen. Allt är länkar till ett av skripten i katalogen <filename class="directory"
+>init.d</filename
+>. </para>
+
+<para
+>Länkarna har också ett <literal
+>S</literal
+> och ett tal i början. <literal
+>S</literal
+> betyder att just det här skriptet ska startas och ett <literal
+>K</literal
+> betyder att det ska stoppas. Talet finns där bara för att ordna skripten. Init startar varje tjänst i den ordningen som de syns. Du kan upprepa samma tal, men det förvirrar dig bara en del. Du måste bara använda ett tal med två siffror, tillsammans med ett stort <literal
+>S</literal
+> eller <literal
+>K</literal
+> för att starta eller stoppa en tjänst enligt behov. </para>
+
+<para
+>Hur startas och stoppas en tjänst? Enkelt. Varje skript är skrivet för att ta emot en väljare som kan vara <option
+>start</option
+> och <option
+>stop</option
+>. I själva verket kan du köra skripten för hand med ett kommando som: </para>
+
+<screen
+><userinput
+><command
+>/etc/rc.d/init.d/httpd.init</command
+> <option
+>stop</option
+></userinput
+></screen>
+
+<para
+>För att stoppa httpd-servern. Init läser bara namnet och om det har ett <literal
+>K</literal
+>, anropar det skriptet med väljaren <option
+>stop</option
+>. Om det har ett <option
+>S</option
+> anropar det skriptet med väljaren <option
+>start</option
+>. </para>
+
+
+<sect1 id="why-all-the-runlevels">
+<title
+>Varför alla de här körnivåerna?</title>
+
+<para
+>Vissa personer vill ha ett enkelt sätt att ställa in datorer för flera syften. Man skulle kunna ha en <quote
+>server</quote
+>-körnivå som bara kör httpd, sendmail, networking, etc. Dessutom skulle man kunna ha en <quote
+>användar</quote
+>-körnivå som kör <application
+>kdm</application
+>, nätverkshantering, etc. </para>
+
+</sect1>
+
+</chapter>
+
+<chapter id="onscreen-fundamentals">
+<title
+>Grundläggande skärmanvändning</title>
+
+<para
+>Här kan du lära dig hur &ksysv; används, vilket inte borde vara svårt eftersom det konstruerades för att vara så användarvänligt som möjligt. </para>
+
+<sect1 id="mouse">
+<title
+>Mus</title>
+
+<para
+>Att använda &ksysv; med en mus eller annat pekdon är lätt: dra bara en post från området <guilabel
+>Tillgängliga tjänster</guilabel
+> till en av de sex körnivåerna för att starta (eller stoppa) den för körnivån. </para>
+
+<para
+>Du kan också flytta skript mellan körnivåer, eller ändra platsen i en given körnivå, genom att dra runt dem. Att göra detta tar bort posten från dess ursprungliga körnivå (eller plats). Det här sker inte när du drar en post från området <guilabel
+>Tillgängliga tjänster</guilabel
+>. </para>
+
+<note>
+<para
+>Poster flyttas när du drar dem till ett nytt område. För att kopiera en tjänst till en annan körnivå, måste du välja <guimenuitem
+>Kopiera</guimenuitem
+> i menyn <guimenu
+>Redigera</guimenu
+> eller den sammanhangsberoende menyn och <guimenuitem
+>Klistra in</guimenuitem
+> den i körnivån den ska till. </para>
+</note>
+
+<para
+>En posts <quote
+>sorteringstal</quote
+> kan ibland inte beräknas. För sådana fall måste du redigera sorteringstalen för omgivande poster innan du försöker att stoppa in tjänsten igen. </para>
+
+<note>
+<para
+>Sorteringstal kan gå från 00 till 99, men inte högre. </para>
+</note>
+
+<para
+>Du kan ta bort poster genom att dra dem till området med <guiicon
+>Papperskorgen</guiicon
+> (som symboliseras av ikonen som visar en soptunna). </para>
+
+<warning>
+<para
+>För närvarande finns det <emphasis
+>inget</emphasis
+> sätt att få tillbaka poster som har dragits till <guiicon
+>Papperskorgen</guiicon
+>, så var försiktig! </para>
+</warning>
+
+</sect1>
+
+<sect1 id="keyboard">
+<title
+>Tangentbord</title>
+
+<para
+>Du kan använda <keycap
+>Tab</keycap
+>-tangenten för att byta fokus mellan olika rutor (<guilabel
+>Tillgängliga tjänster</guilabel
+>, <guilabel
+>Körnivå 1 Starta</guilabel
+>, <guilabel
+>Körnivå 1 Stoppa</guilabel
+>, etc.) och piltangenterna för att flytta markeringen upp och ner. </para>
+
+<para
+>För att flytta en post till en annan körnivå, <guimenuitem
+>Klipp ut</guimenuitem
+> den till klippbordet (med <keycombo action="simul"
+>&Ctrl; <keycap
+>X</keycap
+></keycombo
+> och <guimenuitem
+>Klistra in</guimenuitem
+> den i körnivån dit den ska (med <keycombo action="simul"
+>&Ctrl; <keycap
+>V</keycap
+></keycombo
+>). </para>
+
+<para
+>För att ändra posternas sorteringsnummer eller namn för hand, tryck på returtangenten för att öppna dialogrutan med egenskaper. Använd <keycap
+>Tab</keycap
+>-tangenten för att byta mellan olika fält. Stäng dialogrutan genom att trycka på returtangenten för att acceptera ändringarna, eller tryck på <keycap
+>Esc</keycap
+> för att avbryta alla ändringar. </para>
+
+</sect1>
+
+<sect1 id="the-menu-entries">
+<title
+>Menyalternativen</title>
+
+<para
+>En beskrivning av &ksysv;s menyer i tur och ordning. </para>
+
+<sect2>
+<title
+>Menyn <guimenu
+>Arkiv</guimenu
+></title>
+
+<para
+>På grund av risken för att data går förlorad, begär alla menyalternativ under <guimenu
+>Arkiv</guimenu
+> att du bekräftar åtgärden innan den utförs. </para>
+
+<variablelist>
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Arkiv</guimenu
+> <guimenuitem
+>Ångra inställningar...</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para
+>Glöm alla ändringar som du har gjort och återgå till den senast sparade konfigurationen. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><shortcut
+> <keycombo action="simul"
+>&Ctrl; <keycap
+>O</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Arkiv</guimenu
+> <guimenuitem
+>Öppna...</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Öppna en tidigare sparad konfiguration.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><shortcut
+> <keycombo action="simul"
+>&Ctrl; <keycap
+>S</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Arkiv</guimenu
+> <guimenuitem
+>Spara inställningar</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para
+><action
+>Gör dina ändringar bestående.</action
+> Att spara skapar inga säkerhetskopior, så använd detta med försiktighet. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Arkiv</guimenu
+> <guimenuitem
+>Spara som...</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Spara en kopia av den nya konfigurationen.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><shortcut
+> <keycombo action="simul"
+>&Ctrl; <keycap
+>L</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Arkiv</guimenu
+> <guimenuitem
+>Spara logg...</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Spara en logg</action
+> <!-- FIXME: find out what the log is of.  Assume -->
+<!-- changes made, but best check -->
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><shortcut
+> <keycombo action="simul"
+>&Ctrl; <keycap
+>P</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Arkiv</guimenu
+> <guimenuitem
+>Skriv ut logg...</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Skriv ut en kopia av loggen.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><shortcut
+> <keycombo action="simul"
+>&Ctrl; <keycap
+>Q</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Arkiv</guimenu
+> <guimenuitem
+>Avsluta</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para
+><action
+>Avsluta</action
+> &ksysv;. </para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</sect2>
+
+<sect2>
+<title
+>Menyn <guimenu
+>Redigera</guimenu
+></title>
+
+<variablelist>
+<varlistentry>
+<term>
+<menuchoice
+><shortcut
+> <keycombo action="simul"
+>&Ctrl; <keycap
+>Z</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Redigera</guimenu
+> <guimenuitem
+>Ångra</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Ångra den senaste osparade ändringen som gjorts.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><shortcut
+> <keycombo action="simul"
+>&Ctrl; <keycap
+>Skift</keycap
+> <keycap
+>Z</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Redigera</guimenu
+> <guimenuitem
+>Gör om</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Gör om den senast ångrade ändringen.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><shortcut
+> <keycombo action="simul"
+>&Ctrl; <keycap
+>X</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Redigera</guimenu
+> <guimenuitem
+>Klipp ut</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Klipp ut tjänsten som för närvarande är vald till klippbordet.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><shortcut
+> <keycombo action="simul"
+>&Ctrl; <keycap
+>C</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Redigera</guimenu
+> <guimenuitem
+>Kopiera</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Kopiera posten som för närvarande är vald till klippbordet, utan att ta bort den från dess ursprungliga plats.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><shortcut
+> <keycombo action="simul"
+>&Ctrl; <keycap
+>V</keycap
+></keycombo
+> </shortcut
+> <guimenu
+>Redigera</guimenu
+> <guimenuitem
+>Klistra in</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Klistra in innehållet från klippbordet på markörens nuvarande plats.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Redigera</guimenu
+> <guimenuitem
+>Egenskaper</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Öppna dialogrutan med egenskaper för den valda posten.</action>
+</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</sect2>
+
+<sect2>
+<title
+>Menyn <guimenu
+>Verktyg</guimenu
+></title>
+
+<variablelist>
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Verktyg</guimenu
+> <guimenuitem
+>Starta tjänst...</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Starta den valda tjänsten</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Verktyg</guimenu
+> <guimenuitem
+>Stoppa tjänst...</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Stoppa den valda tjänsten</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Verktyg</guimenu
+> <guimenuitem
+>Starta om tjänst...</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Starta om den valda tjänsten.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Verktyg</guimenu
+> <guimenuitem
+>Redigera tjänst...</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Redigera den valda tjänsten</action
+><!-- FIXME: Add some more "meat" to 
+-->
+<!-- this one! -->
+</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</sect2>
+
+<sect2>
+<title
+>Menyn <guimenu
+>Inställningar</guimenu
+></title>
+
+<variablelist>
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Inställningar</guimenu
+> <guimenuitem
+>Visa verktygsrad</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Växla visning av och på för verktygsraden.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Inställningar</guimenu
+> <guimenuitem
+>Visa statusrad</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Växla visning av och på för statusraden.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Inställningar</guimenu
+> <guimenuitem
+>Visa logg</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Växla visning av och på för loggfönstret.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Inställningar</guimenu
+> <guimenuitem
+>Spara inställningar</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Spara dina nuvarande inställningar.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Inställningar</guimenu
+> <guimenuitem
+>Anpassa tangentbindningar...</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Anpassar förvalda tangentbindningar.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Inställningar</guimenu
+> <guimenuitem
+>Anpassa verktygsrader...</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para>
+<action
+>Anpassar verktygsraden.</action>
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<menuchoice
+><guimenu
+>Inställningar</guimenu
+> <guimenuitem
+>Anpassa SysV-starteditor...</guimenuitem
+> </menuchoice>
+</term>
+<listitem>
+<para
+><action
+>Anpassar beteendet</action
+> hos &ksysv; </para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</sect2>
+
+<sect2>
+<title
+>Menyn <guimenu
+>Hjälp</guimenu
+></title>
+&help.menu.documentation; </sect2>
+
+</sect1>
+
+</chapter>
+
+<chapter id="Configuration">
+<title
+>Anpassning</title>
+
+<para
+>Alla alternativ sparas i <filename
+>$<envar
+>KDEHOME</envar
+>/share/config/ksysvrc</filename
+>. Förvalda värden tas från den globala filen (<filename
+>$<envar
+>KDEDIR</envar
+>/share/config/ksysvrc</filename
+>), om den finns, eller skapas annars internt i &ksysv;. Ändringar av förvalda värden lagras i den lokala <filename
+>ksysvrc</filename
+>. </para>
+
+<sect1 id="recognized-sections">
+<title
+>Sektioner som känns igen</title>
+
+<para
+>Sektioner som känns igen och deras förvalda värden. </para>
+
+<sect2>
+<title
+>&lsqb;Path Settings&rsqb;</title>
+
+<segmentedlist>
+<segtitle
+>Nyckelord</segtitle>
+<segtitle
+>Förval</segtitle>
+<segtitle
+>Beskrivning</segtitle>
+<seglistitem>
+<seg
+>ScriptPath</seg>
+<seg
+><filename class="directory"
+>/etc/rc.d/init.d</filename
+></seg>
+<seg
+>Sökväg till skripten som används för att starta och stoppa tjänster.</seg>
+</seglistitem>
+
+<seglistitem>
+<seg
+>RunlevelPath</seg>
+<seg
+><filename class="directory"
+>/etc/rc.d</filename
+></seg>
+<seg
+>Sökväg till underkatalogerna för körnivå.</seg>
+</seglistitem>
+
+</segmentedlist>
+
+</sect2>
+
+<sect2>
+<title
+>&lsqb;Colors&rsqb;</title>
+
+
+<segmentedlist>
+<segtitle
+>Nyckelord</segtitle>
+<segtitle
+>Förval</segtitle>
+<segtitle
+>Beskrivning</segtitle>
+<seglistitem>
+<seg
+>Changed</seg>
+<seg
+>red</seg>
+<seg
+>Färg som används för ändrade poster</seg>
+</seglistitem>
+
+<seglistitem>
+<seg
+>New</seg>
+<seg
+>blue</seg>
+<seg
+>Färg som används för nya poster</seg>
+</seglistitem>
+
+</segmentedlist>
+
+</sect2>
+
+<sect2>
+<title
+>&lsqb;Geometry&rsqb;</title>
+
+<segmentedlist>
+<segtitle
+>Nyckelord</segtitle>
+<segtitle
+>Förval</segtitle>
+<segtitle
+>Beskrivning</segtitle>
+<seglistitem>
+<seg
+>Width</seg>
+<seg
+></seg>
+<seg
+>Bredd på &ksysv;s fönster</seg>
+</seglistitem>
+
+<seglistitem>
+<seg
+>Height</seg>
+<seg
+></seg>
+<seg
+>Höjd på &ksysv;s fönster</seg>
+</seglistitem>
+</segmentedlist>
+
+</sect2>
+
+<sect2>
+<title
+>&lsqb;Other Settings&rsqb;</title>
+
+<segmentedlist>
+<segtitle
+>Nyckelord</segtitle>
+<segtitle
+>Förval</segtitle>
+<segtitle
+>Beskrivning</segtitle>
+<seglistitem>
+<seg
+>ToolBar</seg>
+<seg
+>true</seg>
+<seg
+>Om verktygsraden är aktiverad eller inte</seg>
+</seglistitem>
+
+<seglistitem>
+<seg
+>StatusBar</seg>
+<seg
+>true</seg>
+<seg
+>Om statusraden är aktiverad eller inte</seg>
+</seglistitem>
+
+<seglistitem>
+<seg
+>ShowLog</seg>
+<seg
+>true</seg>
+<seg
+>Om loggfönstret visas eller inte</seg>
+</seglistitem>
+
+<seglistitem>
+<seg
+>PanningFactor</seg>
+<seg
+>80</seg>
+<seg
+>100 - panoreringsfaktor = procent av fönstret som är reserverat för att visa loggfilen</seg>
+</seglistitem>
+</segmentedlist>
+
+</sect2>
+
+</sect1>
+
+</chapter>
+
+<chapter id="questions-and-answers">
+<title
+>Vanliga frågor</title>
+
+<qandaset>
+<qandaentry>
+<question>
+<para
+>Jag lekte med den förvalda körnivån, och nu startar min dator om hela tiden. Vad ska jag göra? </para>
+</question>
+<answer>
+<para
+>Skriv in <userinput
+>linux single</userinput
+> vid <acronym
+>LILO</acronym
+>-prompten, och tryck på returtangenten för att starta med enanvändarläge. Redigera filen <filename
+>/etc/inittab</filename
+> och ändra den förvalda körnivån till något vettigt. <literal
+>3</literal
+> är normalt säkert. </para>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Min dator <quote
+>stannar</quote
+> igen precis efter den har startat </para>
+</question>
+<answer>
+<para
+>Se fråga 1, ovan. </para>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Jag har schemalagt några tjänster som ska köras i körnivå X med &ksysv;, men varför fungerar de inte? </para>
+</question>
+
+<answer>
+<para
+>Om du använder distributioner från SuSE eller Delix (DLD), måste du också redigera en fil som är specifik för varje distribution i <filename class="directory"
+>/etc</filename
+>. Titta i distributionens handbok för detaljer. </para>
+<para>
+<note>
+<para
+>Sättet att starta tjänster som används av ovannämnda distributioner gör det lätt att hantera konfiguration av tjänster för de egna konfigurationsverktygen som de här distributionerna tillhandahåller, men det är tyvärr inte standardiserat. Upphovsmännen till &ksysv; planerar skriva en generell utökning för att hantera det här sättet någon gång i framtiden, men vänta inte alltför ivrigt. </para>
+</note>
+</para>
+<para
+>Om du använder en annan distribution, kontrollera att du har alla konfigurationsfiler som behövs av tjänsten, och om de finns på rätt plats. Vissa demoner, till exempel <application
+>Apache</application
+> (också kallad <command
+>httpd</command
+>), avslutas bara utan något meddelande om deras konfigurationsfiler saknas eller är felaktiga. </para>
+</answer>
+</qandaentry>
+
+</qandaset>
+
+</chapter>
+
+<chapter id="standard-runlevels">
+<title
+>Vanlig semantik för körnivåer</title>
+
+<para
+>Den här varierar beroende på distributionen, så det här är en ofullständig lista för de vanligaste &Linux;-distributionerna. Om du har ytterligare distributioner, skicka gärna e-post till författaren så att informationen kan läggas till i den här handboken. </para>
+
+<variablelist>
+<varlistentry>
+<term
+>&RedHat;</term>
+<listitem>
+<variablelist>
+<varlistentry>
+<term
+>Körnivå 0:</term>
+<listitem>
+<para
+>Stanna (stänger av datorn) </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>Körnivå 1:</term>
+<listitem>
+<para
+>Enanvändarläge. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>Körnivå 2:</term>
+<listitem>
+<para
+>Fleranvändare bara text, utan <acronym
+>NFS</acronym
+>. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>Körnivå 3:</term>
+<listitem>
+<para
+>Fleranvändare bara text, med fullständig nätverkshantering. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>Körnivå 4:</term>
+<listitem>
+<para
+>Används inte. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>Körnivå 5:</term>
+<listitem>
+<para
+>Fleranvändare X11 med fullständig nätverkshantering. </para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+>Körnivå 6:</term>
+<listitem>
+<para
+>Starta om </para>
+</listitem>
+</varlistentry>
+</variablelist>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</chapter>
+
+<chapter id="credits">
+<title
+>Licens och tack till</title>
+<para
+>&ksysv; Copyright &copy; 1997-1998 Peter Putzer</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Peter Putzer, <email
+>putzer@kde.org</email
+> - Utvecklare </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Dokumentation: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Peter Putzer, <email
+>putzer@kde.org</email
+> - Ursprungligt innehåll </para>
+</listitem>
+<listitem
+><para
+>Eric Bischoff, <email
+>e.bischoff@noos.fr</email
+> - Redaktör </para>
+</listitem>
+</itemizedlist>
+<para
+>Översättning Stefan Asserhäll <email
+>stefan.asserhall@comhem.se</email
+></para
+> 
+&underFDL; &underGPL; </chapter>
+
+<appendix id="installation">
+<title
+>Installation</title>
+
+&install.intro.documentation;
+&install.compile.documentation;
+</appendix>
+
+</book>
+<!--
+Local Variables:
+mode: sgml
+sgml-omittag: nil
+sgml-shorttag: t
+End:
+-->
+

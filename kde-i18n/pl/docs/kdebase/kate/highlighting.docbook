@@ -1,0 +1,1378 @@
+<appendix id="highlight">
+<appendixinfo>
+<authorgroup>
+<author
+><personname
+><firstname
+></firstname
+></personname
+></author>
+<othercredit role="translator"
+><firstname
+>Krzysztof</firstname
+><surname
+>Woźniak</surname
+><affiliation
+><address
+><email
+>wozniakk@ceti.pl</email
+></address
+></affiliation
+><contrib
+>Polskie tłumaczenie</contrib
+></othercredit
+> 
+</authorgroup>
+</appendixinfo>
+<title
+>Praca z podświetlaniem składni</title>
+
+<sect1 id="highlight-overview">
+
+<title
+>Wprowadzenie</title>
+
+<para
+>System podświetlania składni służy do wyświetlania określonych fragmentów tekstu w różnych stylach czcionki i kolorach, w zależności od funkcji tego tekstu w strukturze edytowanego pliku. Na przykład jeżeli jest to kod źródłowy jakiegoś programu, to instrukcje kontrolne mogą być pogrubione, zaś typu zmiennych i komentarze mogą być wyróżnione kolorem innym od reszty tekstu. To znacznie podnosi czytelność tekstu, dzięki czemu tworzenie programów jest bardziej efektywne i produktywne.</para>
+
+<mediaobject>
+<imageobject
+><imagedata format="PNG" fileref="highlighted.png"/></imageobject>
+<textobject
+><phrase
+>Fragment programu w języku Perl wyświetlonego z wykorzystaniem podświetlania składni.</phrase
+></textobject>
+<caption
+><para
+>Fragment programu w języku Perl wyświetlonego z wykorzystaniem podświetlania składni.</para>
+</caption>
+</mediaobject>
+
+<mediaobject>
+<imageobject
+><imagedata format="PNG" fileref="unhighlighted.png"/></imageobject>
+<textobject
+><phrase
+>Ten sam fragment pokazany bez podświetlania</phrase
+></textobject>
+<caption
+><para
+>Ten sam fragment pokazany bez podświetlania.</para
+></caption>
+</mediaobject>
+
+<para
+>Który z dwóch powyższych przykładów jest bardziej czytelny?</para>
+
+<para
+>Edytor &kate; ma zintegrowany potężny, elastyczny i w pełni konfigurowalny system podświetlania składni, zaś domyślna instalacja programu zawiera wiele definicji dla różnych języków programowania, języków skryptowych, języków opartych na znacznikach oraz innych plików tekstowych. Dodatkowo użytkownik może tworzyć własne definicje podświetlania składni w plikach &XML; o stosunkowo prostej strukturze.</para>
+
+<para
+>Podczas otwierania pliku tekstowego, &kate; automatycznie wykryje odpowiednią dla tego pliku definicję podświetlania składni na podstawie przypisanego dla niego typu &MIME;. Typ pliku określany jest na podstawie rozszerzenia nazwy pliku, a jeżeli plik nie ma rozszerzenia. to na podstawie jego zawartości. Jeżeli typ pliku został wykryty niepoprawnie, to można ręcznie zmienić definicję podświetlania składni za pomocą menu <menuchoice
+><guimenu
+>Narzędzia</guimenu
+><guisubmenu
+>Typ pliku</guisubmenu
+></menuchoice
+>.</para>
+
+<para
+>Styl i kolor tekstu dla wszystkich reguł podświetlania może zostać zdefiniowany w karcie <link linkend="config-dialog-editor-appearance"
+>Czcionki i kolory</link
+>  <link linkend="config-dialog"
+> Okna konfiguracji</link
+> natomiast typy &MIME;, dla których powinny być stosowane określone reguły konfigurowane są w karcie <link linkend="config-dialog-editor-highlighting"
+>Podświetlenie</link
+>.</para>
+
+<note>
+<para
+>Podświetlanie składni ma na celu zwiększenie czytelności treści dokumentu, ale nie należy zbyt polegać na jego możliwościach wskazywania błędów w kodzie programu. Algorytmy rozpoznawania składni mogą być skomplikowane i zależy to od używanego formatu dokumentu. Autorzy reguł podświetlania składni mogą się pochwalić 98% skutecznością stosowanych algorytmów rozpoznawania składni, jednak często jest ona wyższa i tylko naprawdę rzadko stosowane definicje reguł podświetlania powodują 2% błędnych podświetleń.</para>
+</note>
+
+<tip>
+<para
+>Ze strony WWW programu &kate; można pobrać nowe i zaktualizowane bieżące definicje reguł podświetlania składni. Można to zrobić naciskając przycisk <guibutton
+>Pobierz...</guibutton
+> w karcie <link linkend="config-dialog-editor-highlighting"
+>Podświetlenie</link
+> okna dialogowego <link linkend="config-dialog"
+>Konfiguracji</link
+>.</para>
+</tip>
+
+</sect1>
+
+<sect1 id="katehighlight-system">
+
+<title
+>System podświetlania składni programu &kate;</title>
+
+<para
+>Poniższa sekcja zawiera bardziej szczegółowe omówienie mechanizmów podświetlania składni w programie &kate;. Jest ona przeznaczona dla użytkowników chcących dodawać lub modyfikować istniejące reguły podświetlania, lub dla osób chcących się czegoś więcej na ten temat dowiedzieć.</para>
+
+<sect2 id="katehighlight-howitworks">
+
+<title
+>Jak to działa?</title>
+
+<para
+>Przy każdej operacji otwierania pliku program &kate; próbuje wykryć odpowiednią dla niego regułę podświetlania składni. Podczas wyświetlania pliku i w trakcie jego edycji system podświetlania składni będzie analizował tekst za pomocą reguł określonych w definicji podświetlania składni oraz zaznaczać miejsca, w których poszczególne konteksty treści i style tekstu rozpoczynają się i kończą.</para>
+
+<para
+>Podczas edycji dokumentu nowo wprowadzany tekst jest analizowany i oznaczany na bieżąco, jeżeli więc użytkownik usunie znak będący początkiem lub końcem jakiegoś kontekstu to styl otaczającego ten znak tekstu zmieni się zgodnie z wymaganiami bieżącej reguły podświetlania składni.</para>
+
+<para
+>Definicje reguł podświetlania składni w &kate; to pliki zapisane w standardzie &XML; zawierające: <itemizedlist>
+<listitem
+><para
+>Zasady opisujące rolę spełnianą przez określone fragmenty tekstu zorganizowane w odpowienie bloki kontekstowe</para
+></listitem>
+<listitem
+><para
+>Listy słów kluczowych</para
+></listitem>
+<listitem
+><para
+>Definicje elementów stylu</para
+></listitem>
+</itemizedlist>
+</para>
+
+<para
+>Podczas analizy składni reguły są sprawdzane w kolejności ich wystąpienia w pliku. Jeżeli początek bieżącego tekstu zostaje dopasowany do danej reguły to następuje przełączenie na wskazany kontekst. Punkt przetwarzania treści przesuwa się na koniec bieżącego dopasowania reguły, a pętla sprawdzania reguł rozpoczyna się na nowo, ale już w kontekście przetwarzania wskazanym przez poprzednie dopasowanie.</para>
+
+</sect2>
+
+<sect2 id="highlight-system-rules">
+<title
+>Reguły</title>
+
+<para
+>Reguły stanowią serce systemu rozpoznawania składni. Reguła może odnosić się do napisu, pojedynczego znaku lub <link linkend="regular-expressions"
+>wyrażenia regularnego</link
+>. Do reguł dopasowywany jest analizowany tekst dokumentu. Reguły wskazują, jakiego stylu należy użyć do wyświetlenia dopasowanego fragmentu tekstu, mogą też przełączać kontekst roboczy systemu podświetlania składni przez podanie nazwy kontekstu lub nakazując powrót do kontekstu poprzedniego.</para>
+
+<para
+>Reguły są zgrupowane w bloki kontekstowe. Blok kontekstowy jest związany z głównymi elementami składni analizowanego tekstu np. tekst w cudzysłowach lub bloki komentarzy kodu źródłowego. Dzięki temu system podświetlania składni nie musi analizować wszystkich reguł, jeżeli nie jest to konieczne. Także pewne sekwencje znaków w tekście mogą być różnie traktowane w zależności od wybranego kontekstu przetwarzania. </para>
+
+<para
+>Kontekst przetwarzania może być generowany dynamicznie, pozwalając na stosowaniu w regułach danych zależnych od wystąpienia określonego tekstu w treści dokumentu.</para>
+
+</sect2>
+
+<sect2 id="highlight-context-styles-keywords">
+<title
+>Style kontekstu i słowa kluczowe</title>
+
+<para
+>W niektórych językach programowania kompilator (czyli program zmieniający tzw. kod źródłowy programu na plik wykonywalny) w różny sposób traktuje liczby całkowite i zmiennoprzecinkowe. Dodatkowo wewnątrz otoczonego cudzysłowami napisu mogą być znaki o specjalnym znaczeniu. W takich wypadkach sensowne jest wyróżnienie ich z otaczającego tekstu tak aby były łatwo identyfikowalne. Tak więc nawet jeżeli takie fragmenty tekstu nie stanowią osobnego kontekstu, to są tak traktowane przez system podświetlania składni i dzięki temu mogą być odpowiednio różnicowane przy wyświetlaniu.</para>
+
+<para
+>Definicja składni może zawierać dowolną liczbę stylów niezbędną do objęcia wszystkich elementów składniowych w danym formacie tekstu.</para>
+
+<para
+>Dla wielu formatów dokumentów definiuje się listy słów reprezentujących określone pojęcia. Na przykład w językach programowania są to instrukcje kontrolne, typy zmiennych oraz wbudowane funkcje (każda z tych kategorii stanowi osobne pojęcie). System podświetlania składni w &kate; wykorzystuje listy słów kluczowych do zaznaczania w tekście wystąpień poszczególnych kategorii skadniowych danego formatu dokumentu.</para>
+
+</sect2>
+
+<sect2 id="kate-highlight-system-default-styles">
+<title
+>Style domyślne</title>
+
+<para
+>W przypadku otwarcia pliku z programem w C++ , &Java; lub dokumentu <acronym
+>HTML</acronym
+> można zauważyć, że mimo iż poszczególne typy dokumentów znacząco się od siebie różnią (inne słowa są podświetlane, itp.) to używane przez &kate; kolory są identyczne. Dzieje się tak dlatego ponieważ w &kate; istnieje zdefiniowana lista stylów domyślnych tekstu wykorzystywanych przez wszystkie definicje reguł podświetlania składni.</para>
+
+<para
+>Pozwala to na użytkownikowi na rozpoznawanie pojęć o podobnym znaczeniu w różnych formatach dokumentu. Na przykład komentarze, które istnieją w kodzie źródłowym w niemal wszystkich językach programowania, językach skryptowych lub językach znaczników, są wyświetlane z użyciem tego samego stylu co pozwala użytkownikowi łatwo zidentyfikować wyróżniony w tekście fragment jako komentarz, niezależnie w jakim języku programowania ten tekst będzie napisany.</para>
+
+<tip>
+<para
+>Wszystkie definicje podświetlania składni korzystają z minimum jednego stylu domyślnego. Część z nich wykorzystuje więcej stylów domyślnych. Jeżeli z danego formatu dokumentu użytkownik często korzysta, to warto uruchomić okno konfiguracji i sprawdzić jakie pojęcia są dla niego zdefiniowane w zbiorze reguł podświetlania. Na przykład, dostępny jest tylko jeden styl domyślny dla napisów, jednak ponieważ język Perl działa na dwóch rodzajach napisów, to możliwe jest takie skonfigurowanie systemu podświetlania, aby oba rodzaje były wyświetlane w różny sposób. Wszystkie dostępne <link linkend="kate-highlight-default-styles"
+>style domyślne</link
+> zostaną omówione poniżej.</para>
+</tip>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="katehighlight-xml-format">
+<title
+>Struktura pliku definicji podświetlania składni w formacie &XML;</title>
+
+<sect2>
+<title
+>Wprowadzenie</title>
+
+<para
+>Poniższa sekcja zawiera opis formatu pliku definicji podświetlania składni. Opisane zostaną główne elementy skadni &XML; pliku, ich znaczenie oraz sposoby wykorzystania. Kolejna sekcja zawiera szczegółowy opis poszczególnych reguł interpretacji składni.</para>
+
+<para
+>Formalna definicja struktury pliku &XML; (czyli tak zwany dokument <acronym
+>DTD</acronym
+>) zawarta jest w pliku <filename
+>language.dtd</filename
+>, który najczęściej zlokalizowany jest w katalogu: <filename
+>$<envar
+>KDEDIR</envar
+>/share/apps/katepart/syntax</filename
+>. </para>
+
+<variablelist>
+<title
+>Główne sekcje pliku definicji reguł podświetlania składni dla programu &kate;</title>
+
+<varlistentry>
+<term
+>Plik z definicją reguł podświetlania składni zawiera nagłówek definiujący wersję języka XML oraz rodzaj dokumentu (doctype):</term>
+<listitem>
+<programlisting
+>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!DOCTYPE language SYSTEM &quot;language.dtd&quot;&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Głównym elementem składowym pliku z definicją jest element <userinput
+>language</userinput
+> posiadający następujące atrybuty:</term>
+
+<listitem>
+<para
+>Atrybuty wymagane:</para>
+<para
+><userinput
+>name</userinput
+> określa nazwę języka (format dokumentu), która pojawia się później w menu i w oknach dialogowych.</para>
+<para
+><userinput
+>section</userinput
+> określa kategorię danego formatu dokumentu.</para>
+<para
+><userinput
+>extensions</userinput
+> określa rozszerzenia nazw plików, np.: &quot;*.cpp;*.h&quot;</para>
+
+<para
+>Atrybuty opcjonalne:</para>
+<para
+><userinput
+>mimetype</userinput
+> typy &MIME; plików, których dotyczy zbiór definicji.</para>
+<para
+><userinput
+>version</userinput
+> określa wersję pliku definicji reguł podświetlania.</para>
+<para
+><userinput
+>kateversion</userinput
+> określa minimalną wersję &kate;, wymaganą do prawidłowego działania pliku definicji.</para>
+<para
+><userinput
+>casesensitive</userinput
+> określa wrażliwość na wielkość liter w słowach kluczowych.</para>
+<para
+><userinput
+>priority</userinput
+> określa priorytet stosowania danego zbioru definicji dla tych samych rozszerzeń nazw plików. Jeżeli do danego rozszerzenia pasuje kilka plików definicji, to zostaje wybrany ten o najwyższym priorytecie.</para>
+<para
+><userinput
+>author</userinput
+> zawiera imię i nazwisko autora definicji oraz jego adres e-mail.</para>
+<para
+><userinput
+>license</userinput
+> określa na jakiej licencji został udostępniony plik. Z reguły są to licencje: LGPL, Artistic, GPL, ale mogą też być inne.</para>
+<para
+><userinput
+>hidden</userinput
+> wyłącza wyświetlanie nazwy zbioru definicji w menu programu &kate;.</para>
+<para
+>Czyli kolejny wiersz pliku definicji może wyglądać następująco:</para>
+<programlisting
+>&lt;language name=&quot;C++&quot; version=&quot;1.00&quot; kateversion=&quot;2.4&quot; section=&quot;Sources&quot; extensions=&quot;*.cpp;*.h&quot; /&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Następnym elementem struktury pliku jest znacznik <userinput
+>highlighting</userinput
+> zawierający element opcjonalny <userinput
+>list</userinput
+> oraz elementy wymagane:<userinput
+>contexts</userinput
+> oraz <userinput
+>itemDatas</userinput
+>.</term>
+<listitem>
+<para
+>Elementy typu <userinput
+>list</userinput
+> zawierają listy słów kluczowych. W przedstawionym poniżej przykładzie są to słowa <emphasis
+>class</emphasis
+> i <emphasis
+>const</emphasis
+>. Możliwe jest dodanie wielu elementów typu <userinput
+>list</userinput
+> w zależności od potrzeb.</para>
+<para
+>Element <userinput
+>contexts</userinput
+> zawiera wszystkie konteksty występujące w składni definiowanego formatu dokumentu. Pierwszy kontekst jest domyślny i to od niego rozpoczyna się analiza składni. W omawianym przykładzie występują dwie reguły w kontekście o nazwie: <emphasis
+>Normal Text</emphasis
+>, dopasowujące listę słów kluczowych o nazwie: <emphasis
+>somename</emphasis
+> oraz reguła wykrywająca tekst w cudzysłowie przełączająca kontekst na: <emphasis
+>string</emphasis
+>. Więcej o regułach można przeczytać w kolejnym rozdziale.</para>
+<para
+>Trzecia część to element <userinput
+>itemDatas</userinput
+>. Zawiera on wszystkie kolory i style czcionek wykorzystywane przez konteksty i reguły. W omawianym przykładzie występują następujące elementy typu <userinput
+>itemData</userinput
+>: <emphasis
+>Normal Text</emphasis
+>, <emphasis
+>String</emphasis
+> i <emphasis
+>Keyword</emphasis
+>. </para>
+<programlisting
+>&lt;highlighting&gt;
+    &lt;list name=&quot;somename&quot;&gt;
+      &lt;item&gt; class &lt;/item&gt;
+      &lt;item&gt; const &lt;/item&gt;
+    &lt;/list&gt;
+    &lt;contexts&gt;
+      &lt;context attribute=&quot;Normal Text&quot; lineEndContext=&quot;#pop&quot; name=&quot;Normal Text&quot; &gt;
+        &lt;keyword attribute=&quot;Keyword&quot; context=&quot;#stay&quot; String=&quot;somename&quot; /&gt;
+        &lt;DetectChar attribute=&quot;String&quot; context=&quot;string&quot; char=&quot;&amp;quot;&quot; /&gt;
+      &lt;/context&gt;
+      &lt;context attribute=&quot;String&quot; lineEndContext=&quot;#stay&quot; name=&quot;string&quot; &gt;
+        &lt;DetectChar attribute=&quot;String&quot; context=&quot;#pop&quot; char=&quot;&amp;quot;&quot; /&gt;
+      &lt;/context&gt;
+    &lt;/contexts&gt;
+    &lt;itemDatas&gt;
+      &lt;itemData name=&quot;Normal Text&quot; defStyleNum=&quot;dsNormal&quot; /&gt;
+      &lt;itemData name=&quot;Keyword&quot; defStyleNum=&quot;dsKeyword&quot; /&gt;
+      &lt;itemData name=&quot;String&quot; defStyleNum=&quot;dsString&quot; /&gt;
+    &lt;/itemDatas&gt;
+  &lt;/highlighting&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Ostatnią częścią struktury piku definicji podświetlania jest opcjonalna sekcja <userinput
+>general</userinput
+>, która może zawierać dodatkowe informacje o słowach kluczowych, zasadach zwijaniu kodu, komentarzach i wcięciach.</term>
+
+<listitem>
+<para
+>W części <userinput
+>comment</userinput
+> definiowany jest napis rozpoczynający komentarz jedno-wierszowy. Możliwe jest także definiowanie komentarzy wielowierszowych za pomocą <emphasis
+>multiLine</emphasis
+> z dodatkowym atrybutem <emphasis
+>end</emphasis
+>. Ta część definicji jest niezbędna do działania poleceń <emphasis
+>Komentarz/Odkomentuj</emphasis
+> dostępnych w programie &kate;.</para>
+<para
+>W sekcji <userinput
+>keywords</userinput
+> określona jest wrażliwość na wielkość liter przy rozpoznawaniu słów kluczowych. Pozostałe atrybuty opisane są poniżej.</para>
+<programlisting
+>&lt;general&gt;
+    &lt;comments&gt;
+      &lt;comment name="singleLine" start="#"/&gt;
+    &lt;/comments&gt;
+    &lt;keywords casesensitive="1"/&gt;
+  &lt;/general&gt;
+&lt;/language&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+
+</sect2>
+
+<sect2 id="kate-highlight-sections">
+<title
+>Szczegółowy opis poszczególnych sekcji</title>
+<para
+>W tej części omówione zostaną wszystkie dostępne atrybuty dla elementów typu: context, itemData, keywords, a także dla komentarzy, zasad zwijania kodu i wcięć.</para>
+
+<variablelist>
+<varlistentry>
+<term
+>Element <userinput
+>context</userinput
+>, należący do grupy <userinput
+>contexts</userinput
+>, definiuje reguły specyficzne dla określonego kontekstu, czyli np. co ma się stać, jeżeli system analizy składni dojdzie do końca wiersza. Dostępne atrybuty to:</term>
+
+
+<listitem>
+<para
+><userinput
+>name</userinput
+> określa nazwę kontekstu wykorzystywaną w operacjach przełączania kontekstu podczas interpretacji reguł analizy składni.</para>
+<para
+><userinput
+>lineEndContext</userinput
+> określa na jaki kontekst system analizy powinien się przełączyć po osiągnięciu końca wiersza. Może to być nazwa kontekstu, napis <userinput
+>#stay</userinput
+> oznaczający pozostanie w bieżącym kontekście lub napis <userinput
+>#pop</userinput
+> powodujący przejście do poprzedniego kontekstu. Możliwe jest wielokrotne użycie #pop np.:<userinput
+>#pop#pop#pop</userinput
+> aby przejść do trzeciego kontekstu wstecz.</para>
+<para
+><userinput
+>lineBeginContext</userinput
+> określa zmianę kontekstu w przypadku wykrycia początku wiersza. Wartość domyślna: #stay.</para>
+<para
+><userinput
+>fallthrough</userinput
+> nakazuje systemowi podświetlania składni do przełączenia się do innego kontekstu (określonego przez "fallthroughContext"), jeżeli żadna reguła nie zostanie dopasowana. Wartość domyślna: <emphasis
+>false</emphasis
+>.</para>
+<para
+><userinput
+>fallthroughContext</userinput
+> określa kontekst, do którego system powinien się przełączyć, jeżeli żadna reguła nie zostanie dopasowana.</para>
+<para
+><userinput
+>dynamic</userinput
+> jeżeli ma wartość <emphasis
+>true</emphasis
+>, to powoduje zachowywanie napisów/wskaźników miejsca zapisanych przez reguły dynamiczne. Jest to wymagane np. przez dokumenty typu HERE. Wartość domyślna: <emphasis
+>false</emphasis
+>.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Element <userinput
+>itemData</userinput
+> należący do grupy <userinput
+>itemDatas</userinput
+> definiuje style czcionki i kolory. Możliwe jest z jego pomocą samodzielne definiowanie własnych stylów i kolorów, chociaż zalecane jest korzystanie ze stylów domyślnych, tak aby użytkownik widział te same kolory w różnych językach programowania. Czasami jednak niezbędne jest zdefiniowanie własnych kolorów i stylów czcionki. Dla tego elementu wymagane są atrybuty "name" oraz "defStyleNum" zaś pozostałe są opcjonalne. Dostępne atrybuty:</term>
+
+<listitem>
+<para
+><userinput
+>name</userinput
+> określa nazwę elementu itemData. Poszczególne reguły i konteksty będą korzystać z tej nazwy, odnosząc się do tego elementu itemData.</para>
+<para
+><userinput
+>defStyleNum</userinput
+> określa styl domyślny, który należy wykorzystać do wyświetlania. Dostępne style domyślne są opisane poniżej.</para>
+<para
+><userinput
+>color</userinput
+> określa kolor w formacie '#rrggbb' lub '#rgb'.</para>
+<para
+><userinput
+>selColor</userinput
+> określa kolor zaznaczenia.</para>
+<para
+><userinput
+>italic</userinput
+> jeżeli <emphasis
+>true</emphasis
+> to tekst będzie wyświetlony kursywą.</para>
+<para
+><userinput
+>bold</userinput
+> jeżeli <emphasis
+>true</emphasis
+> to tekst będzie pogrubiony.</para>
+<para
+><userinput
+>underline</userinput
+> jeżeli <emphasis
+>true</emphasis
+> to tekst będzie podkreślony.</para>
+<para
+><userinput
+>strikeout</userinput
+> jeżeli <emphasis
+>true</emphasis
+> to tekst będzie przekreślony.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Element <userinput
+>keywords</userinput
+> należący do grupy <userinput
+>general</userinput
+> określa właściwości dla słów kluczowych i posiada następujące atrybuty:</term>
+
+<listitem>
+<para
+>Atrybut <userinput
+>casesensitive</userinput
+> mogący przyjmować wartości <emphasis
+>true</emphasis
+> lub <emphasis
+>false</emphasis
+>. Jeżeli będzie to wartość <emphasis
+>true</emphasis
+> to operacja dopasowania słów kluczowych będzie wrażliwa na wielkość liter.</para>
+<para
+><userinput
+>weakDeliminator</userinput
+> zawiera listę znaków nie pełniących funkcji rozdzielającej słowa. Na przykład kropka <userinput
+>'.'</userinput
+> rozdziela słowa. Jeżeli więc jakieś słowo kluczowe na liście <userinput
+>list</userinput
+> zawiera kropkę, to zostanie dopasowane tylko wtedy, gdy kropka zostanie zdefiniowana tutaj jako znak nie pełniący funkcji rozdzielającej.</para>
+<para
+><userinput
+>additionalDeliminator</userinput
+> określa dodatkowe znaki rozdzielające.</para>
+<para
+><userinput
+>wordWrapDeliminator</userinput
+> określa znak, po którym może nastąpić przejście do następnego wiersza.</para>
+<para
+>Domyślnymi znakami rozdzielającymi są znaki: <userinput
+>.():!+,-&lt;=&gt;%&amp;*/;?[]^{|}~\</userinput
+>, spacja (<userinput
+>' '</userinput
+>) oraz tabulator (<userinput
+>'\t'</userinput
+>).</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Element <userinput
+>comment</userinput
+> należący do grupy  <userinput
+>comments</userinput
+> zawiera informacje niezbędne do działania poleceń menu: <menuchoice
+><guimenu
+>Narzędzia</guimenu
+><guimenuitem
+>Komentarz</guimenuitem
+></menuchoice
+> oraz <menuchoice
+><guimenu
+>Narzędzia</guimenu
+><guimenuitem
+>Odkomentuj</guimenuitem
+></menuchoice
+>. Dostępne atrybuty:</term>
+
+<listitem>
+<para
+>Atrybut <userinput
+>name</userinput
+> może mieć wartość <emphasis
+>singleLine</emphasis
+> lub <emphasis
+>multiLine</emphasis
+>. W przypadku użycia argumentu <emphasis
+>multiLine</emphasis
+> wymagane stają się atrybuty <emphasis
+>end</emphasis
+> oraz <emphasis
+>region</emphasis
+>.</para>
+<para
+><userinput
+>start</userinput
+> określa napis oznaczający początek komentarza (np. w języku C++ jest to &quot;/*&quot;).</para>
+<para
+><userinput
+>end</userinput
+> określa napis oznaczający koniec komentarza (np. w języku  C++ jest to &quot;*/&quot;).</para>
+<para
+><userinput
+>region</userinput
+> określa  nazwę dla zwijalnego wielowierszowego komentarza. Zakładając, że zdefiniowane są następujące reguły: <emphasis
+>beginRegion="Comment"</emphasis
+> ... <emphasis
+>endRegion="Comment"</emphasis
+> można jako wartość tego atrybutu ustawić <emphasis
+>region="Comment"</emphasis
+>. Dzięki temu odkomentowywanie tekstu działa nawet jeżeli nie zostanie zaznaczony cały komentarz wielowierszowy. Wystarczy, że kursor znajduje się w dowolnym miejscu treści tego komentarza.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Element <userinput
+>folding</userinput
+> należący do grupy <userinput
+>general</userinput
+> określa właściwości funkcji zwijania kodu. Dostępne są dla niego następujące atrybuty:</term>
+
+<listitem>
+<para
+><userinput
+>indentationsensitive</userinput
+> jeżeli jest <emphasis
+>true</emphasis
+>, to znaczniki zwijania będą dodawane z uwzględnieniem wcięć, tak jak w języku skryptowym Python. Z reguły nie jest to jednak wymagane, a wartością domyślną jest: <emphasis
+>false</emphasis
+>.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Element <userinput
+>indentation</userinput
+> należący do grupy <userinput
+>general</userinput
+> określa algorytm generowania automatycznych wcięć. Definiowanie tego elementu nie jest wskazane, dlatego iż wcięcia są generowane w zależności od typu pliku lub od trybu edycji wiersza. Jeżeli element zostanie zdefiniowany to spowoduje wymuszenie na użytkowniku stosowania automatycznych wcięć, nawet jeżeli on tego nie potrzebuje. Dla elementu dostępne są atrybuty:</term>
+
+<listitem>
+<para
+><userinput
+>mode</userinput
+> określa nazwę trybu generowania wcięć. Możliwe są następujące tryby: <emphasis
+>normal, cstyle, csands, xml, python</emphasis
+> oraz <emphasis
+>varindent</emphasis
+>.</para>
+</listitem>
+</varlistentry>
+
+
+</variablelist>
+
+
+</sect2>
+
+<sect2 id="kate-highlight-default-styles">
+<title
+>Style domyślne</title>
+<para
+>Style domyślne zostały już wcześniej <link linkend="kate-highlight-system-default-styles"
+>krótko omówione</link
+>. Są to predefiniowane w programie &kate; style i kolory czcionki.</para>
+<variablelist>
+<varlistentry>
+<term
+>Poniżej przedstawiono listę dostępnych stylów domyślnych:</term>
+<listitem>
+<para
+><userinput
+>dsNormal</userinput
+>, dla zwykłego tekstu.</para>
+<para
+><userinput
+>dsKeyword</userinput
+>, dla słów kluczowych.</para>
+<para
+><userinput
+>dsDataType</userinput
+>, dla definicji typów danych.</para>
+<para
+><userinput
+>dsDecVal</userinput
+>, dla liczb dziesiętnych.</para>
+<para
+><userinput
+>dsBaseN</userinput
+>, dla liczb zapisanych w systemie innym niż dziesiętny.</para>
+<para
+><userinput
+>dsFloat</userinput
+>, dla liczb zmiennoprzecinkowych.</para>
+<para
+><userinput
+>dsChar</userinput
+>, dla znaków.</para>
+<para
+><userinput
+>dsString</userinput
+>, dla napisów.</para>
+<para
+><userinput
+>dsComment</userinput
+>, dla komentarzy.</para>
+<para
+><userinput
+>dsOthers</userinput
+>, dla 'pozostałych' elementów.</para>
+<para
+><userinput
+>dsAlert</userinput
+>, dla komunikatów i ostrzeżeń.</para>
+<para
+><userinput
+>dsFunction</userinput
+>, dla wywołań funkcji.</para>
+<para
+><userinput
+>dsRegionMarker</userinput
+>, dla wyświetlania znaczników regionów.</para>
+<para
+><userinput
+>dsError</userinput
+>, dla podświetlenia błędów w kodzie i błędnej składni.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="kate-highlight-rules-detailled">
+<title
+>Reguły interpretacji składni</title>
+
+<para
+>Poniższa sekcja opisuje reguły rozpoznawania składni.</para>
+
+<para
+>Każda reguła może zostać dopasowana do zera lub większej liczby znaków, począwszy od początku napisu podlegającego interpretacji. Jeżeli reguła zostaje dopasowana, to określonym znakom przypisany zostaje styl lub <emphasis
+>atrybut</emphasis
+> określony przez tę regułę. Może też zostać przełączony kontekst analizy treści.</para>
+
+<para
+>Reguła wykrywania zapisana jest następująco:</para>
+
+<programlisting
+>&lt;RuleName attribute=&quot;(identyfikator)&quot; context=&quot;(identyfikator)&quot; [atrybuty specyficzne dla reguły] /&gt;</programlisting>
+
+<para
+>Element <emphasis
+>attribute</emphasis
+> określa nazwę stylu wyświetlania dla dopasowanego napisu, zaś <emphasis
+>context</emphasis
+> określa kontekst, który powinien obowiązywać począwszy od tego miejsca.</para>
+
+<para
+>Atrybut <emphasis
+>context</emphasis
+> może zostać zapisany jako:</para>
+
+<itemizedlist>
+<listitem>
+<para
+><emphasis
+>Identyfikator</emphasis
+> stanowiący nazwę kontekstu.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>Kolejność</emphasis
+> tzn. określenie czy system ma pozostać w bieżącym kontekście(<userinput
+>#stay</userinput
+>) czy też zmienić kontekst na poprzedni (<userinput
+>#pop</userinput
+>).</para>
+<para
+>Przejście o kilka kontekstów wstecz możliwe jest za pomocą powtórzeń słowa #pop, np: <userinput
+>#pop#pop#pop</userinput
+></para>
+</listitem>
+</itemizedlist>
+
+<para
+>Niektóre reguły mogą posiadać <emphasis
+>reguły powiązane</emphasis
+>, które są przetwarzane w przypadku zaistnienia dopasowania reguły podstawowej. Całość dopasowanego napisu otrzyma atrybut zdefiniowany przez regułę podstawową. Przykładowa reguła zawierająca regułę powiązaną wygląda tak:</para>
+
+<programlisting
+>&lt;RuleName (atrybuty)&gt;
+  &lt;ChildRuleName (atrybuty) /&gt;
+  ...
+&lt;/RuleName&gt;
+</programlisting>
+
+
+<para
+>Atrybuty dotyczące poszczególnych reguł mogą się różnić, a ich charakterystyka zamieszczona jest poniżej.</para>
+
+
+<itemizedlist>
+<title
+>Atrybuty wspólne</title>
+<para
+>Wszystkie reguły posiadają pewne wspólne zestawy atrybutów, co zaznaczone jest w opisie reguły określeniem: <userinput
+>(atrybuty wspólne)</userinput
+>. Atrybuty <emphasis
+>attribute</emphasis
+> oraz <emphasis
+>context</emphasis
+> są wymagane, a wszystkie pozostałe są opcjonalne. </para>
+
+<listitem>
+<para
+><emphasis
+>attribute</emphasis
+>: Atrybut odnoszący się do zdefiniowanego elementu <emphasis
+>itemData</emphasis
+>.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>context</emphasis
+>: Określa kontekst, na który ma przełączyć się system podświetlania składni, jeżeli reguła zostanie dopasowana.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>beginRegion</emphasis
+>: Definiuje początek bloku zwijania kodu. Wartość domyślna: nie ustawione.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>endRegion</emphasis
+>: Kończy blok dla zwijania kodu. Wartość domyślna: nie ustawione.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>lookAhead</emphasis
+>: Jeżeli jest <emphasis
+>true</emphasis
+>, to system podświetlania nie będzie przetwarzał całej długości dopasowania. Wartość domyślna to: <emphasis
+>false</emphasis
+>.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>firstNonSpace</emphasis
+>: Dopasowuje regułę, ale tylko wtedy gdy dany napis jest pierwszym napisem w wierszu, nie rozpoczynającym się od spacji. Wartość domyślna: <emphasis
+>false</emphasis
+>.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>column</emphasis
+>: Dopasowuje regułę tylko jeżeli kolumna też jest dopasowana. Wartość domyślna: nie ustawione.</para>
+</listitem>
+</itemizedlist>
+
+<itemizedlist>
+<title
+>Zasady dynamiczne</title>
+<para
+>Niektóre reguły dopuszczają stosowanie atrybutu logicznego <userinput
+>dynamic</userinput
+>, który ma wartość domyślną <emphasis
+>false</emphasis
+>. Jeżeli nadana zostanie mu wartość <emphasis
+>true</emphasis
+>, to reguła może wtedy wykorzystać znacznik pozycji dla tekstu dopasowanego przez regułę z <emphasis
+>wyrażeniem regularnym</emphasis
+>, która spowodowała przełączenie się do bieżącego kontekstu. Dla <userinput
+>napisu</userinput
+> znacznik miejsca <replaceable
+>%N</replaceable
+> (gdzie N to liczba) będzie zamieniony przez tekst odpowiadający <replaceable
+>N</replaceable
+>-temu podwyrażeniu w wyrażeniu regularnym. Dla <userinput
+>znaku</userinput
+> znacznik ten też musi być liczbą i zostanie zamieniony na pierwszy znak <replaceable
+>N</replaceable
+>-tego podwyrażenia w wyrażeniu regularnym. Jeżeli reguła dopuszcza istnienie tego atrybutu, to zostanie oznaczona napisem <emphasis
+>(dynamiczna)</emphasis
+> w poniższej dokumentacji.</para>
+
+<listitem>
+<para
+><emphasis
+>dynamic</emphasis
+> może przyjmować wartości <emphasis
+>(true|false)</emphasis
+>.</para>
+</listitem>
+</itemizedlist>
+
+<sect2 id="highlighting-rules-in-detail">
+<title
+>Reguły - charakterystyka</title>
+
+<variablelist>
+<varlistentry>
+<term
+>DetectChar</term>
+<listitem>
+<para
+>Wykrywa określony znak. Często używane na przykład do wykrywania końca napisów w cudzysłowach.</para>
+<programlisting
+>&lt;DetectChar char=&quot;(znak)&quot; (atrybuty wspólne) (dynamiczna) /&gt;</programlisting>
+<para
+>Atrybut <userinput
+>char</userinput
+> określa poszukiwany znak.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Detect2Chars</term>
+<listitem>
+<para
+>Wykrywa dwa następujące po sobie znaki.</para>
+<programlisting
+>&lt;Detect2Chars char=&quot;(znak)&quot; char1=&quot;(znak)&quot; (atrybuty wspólne) (dynamiczna) /&gt;</programlisting>
+<para
+><userinput
+>char</userinput
+> określa pierwszy znak do wykrycia, zaś <userinput
+>char1</userinput
+> określa drugi znak.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>AnyChar</term>
+<listitem>
+<para
+>Wykrywa jeden znak ze zdefiniowanego zbioru znaków.</para>
+<programlisting
+>&lt;AnyChar String=&quot;(napis)&quot; (atrybuty wspólne) /&gt;</programlisting>
+<para
+>Atrybut <userinput
+>String</userinput
+> definiuje zbiór znaków.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>StringDetect</term>
+<listitem>
+<para
+>Wykrywa dokładne wystąpienie napisu.</para>
+<programlisting
+>&lt;StringDetect String=&quot;(napis)&quot; [insensitive=&quot;true|false&quot;] (atrybuty wspólne) (dynamiczna) /&gt;</programlisting>
+<para
+>Atrybut <userinput
+>String</userinput
+> określa napis wyszukiwany. Atrybut <userinput
+>insensitive</userinput
+> ma wartość domyślną <emphasis
+>false</emphasis
+> i jest przekazywany do funkcji porównywania napisów. Jeżeli wartość tego atrybutu jest <emphasis
+>true</emphasis
+>, to dopasowanie tekstów będzie wrażliwe na wielkość liter.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>RegExpr</term>
+<listitem>
+<para
+>Wyszukuje fragment zdefiniowany wyrażeniem regularnym.</para>
+<programlisting
+>&lt;RegExpr String=&quot;(napis)&quot; [insensitive=&quot;true|false&quot;] [minimal=&quot;true|false&quot;] (atrybuty wspólne) (dynamiczna) /&gt;</programlisting>
+<para
+>Atrybut <userinput
+>String</userinput
+> zawiera wyrażenie regularne.</para>
+<para
+>Atrybut <userinput
+>insensitive</userinput
+> ma wartość domyślną <emphasis
+>false</emphasis
+> i jest przekazywany jako parametr do systemu interpretacji wyrażeń regularnych.</para>
+<para
+><userinput
+>minimal</userinput
+> ma wartość domyślną<emphasis
+>false</emphasis
+> i jest przekazywany jako parametr do systemu interpretacji wyrażeń regularnych.</para>
+<para
+>Ponieważ reguły są zawsze dopasowywane od początku bieżącego tekstu, wyrażenie regularne rozpoczynające się od znaku karetki (<literal
+>^</literal
+>) będzie oznaczać, iż reguła powinna być dopasowana tylko na początku wiersza.</para>
+<para
+>Więcej informacji na ten temat w części: <link linkend="regular-expressions"
+>Wyrażenia regularne</link
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>keyword</term>
+<listitem>
+<para
+>Wykrywa słowo kluczowe z podanej listy.</para>
+<programlisting
+>&lt;keyword String=&quot;(nazwa listy)&quot; (atrybuty wspólne) /&gt;</programlisting>
+<para
+>Atrybut <userinput
+>String</userinput
+> określa listę słów kluczowych poprzez jej nazwę. Lista o tej nazwie musi istnieć.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Int</term>
+<listitem>
+<para
+>Wykrywa liczbę całkowitą.</para>
+<para
+><programlisting
+>&lt;Int (atrybuty wspólne) (dynamiczna) /&gt;</programlisting
+></para>
+<para
+>Reguła ta nie posiada dodatkowych atrybutów. Reguły powiązane są zwykle wykorzystywane do wykrywania kombinacji znaków <userinput
+>L</userinput
+> oraz <userinput
+>U</userinput
+>, następujących po liczbie, określających zwykle typ liczby całkowitej w kodzie programu. Jako regułę powiązaną można wykorzystać dowolną inną regułę mimo tego, że definicja składni <acronym
+>DTD</acronym
+> dopuszcza jedynie powiązanie z regułą <userinput
+>StringDetect</userinput
+>.</para>
+<para
+>Poniższy przykład przedstawia regułę, która dopasowuje liczbę całkowitą po której wystąpi litera 'L'. <programlisting
+>&lt;Int attribute="Decimal" context="#stay" &gt;
+  &lt;StringDetect attribute="Decimal" context="#stay" String="L" insensitive="true"/&gt;
+&lt;/Int&gt;
+</programlisting
+></para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Float</term>
+<listitem>
+<para
+>Wykrywa liczbę zmiennoprzecinkową.</para>
+<para
+><programlisting
+>&lt;Float (atrybuty wspólne) /&gt;</programlisting
+></para>
+<para
+>Ta reguła nie ma dodatkowych atrybutów. Może być powiązana z regułą <userinput
+>AnyChar</userinput
+>, która wykorzystywana jest często do wyszukiwania różnych wariantów. Podobne zastosowanie przedstawiono przy omawianiu reguły <userinput
+>Int</userinput
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HlCOct</term>
+<listitem>
+<para
+>Wykrywa liczbę zapisaną w formacie ósemkowym.</para>
+<para
+><programlisting
+>&lt;HlCOct (atrybuty wspólne) /&gt;</programlisting
+></para>
+<para
+>Ta reguła nie ma dodatkowych atrybutów.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HlCHex</term>
+<listitem>
+<para
+>Wykrywa liczbę zapisaną w formacie szesnastkowym.</para>
+<para
+><programlisting
+>&lt;HlCHex (atrybuty wspólne) /&gt;</programlisting
+></para>
+<para
+>Ta reguła nie ma dodatkowych atrybutów.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HlCStringChar</term>
+<listitem>
+<para
+>Wykrywa znak specjalny zapisany za pomocą odwrotnego ukośnika.</para>
+<para
+><programlisting
+>&lt;HlCStringChar (atrybuty wspólne) /&gt;</programlisting
+></para>
+<para
+>Ta reguła nie ma dodatkowych atrybutów.</para>
+
+<para
+>Dopasowuje sekwencje specjalne, reprezentujące znaki specjalne często używane w kodach źródłowych programów, np. <userinput
+>\n</userinput
+> (znak nowego wiersza) lub <userinput
+>\t</userinput
+> (znak tabulacji).</para>
+
+<para
+>Zostaną dopasowane następujące znaki zapisane po odwrotnym ukośniku (<literal
+>\</literal
+>) : <userinput
+>abefnrtv&quot;'?\</userinput
+>. Dodatkowo dopasowane zostaną sekwencje zawierające liczby szesnastkowe: <userinput
+>\xff</userinput
+> lub ósemkowe <userinput
+>\033</userinput
+>.</para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HlCChar</term>
+<listitem>
+<para
+>Wykrywa znak w języku C.</para>
+<para
+><programlisting
+>&lt;HlCChar (atrybuty wspólne) /&gt;</programlisting
+></para>
+<para
+>Ta reguła nie ma dodatkowych atrybutów.</para>
+
+<para
+>Reguła dopasowuje pojedynczy znak w języku C zamknięty apostrofami (np.:<userinput
+>'c'</userinput
+>). Wewnątrz apostrofów może znajdować się pojedynczy znak lub sekwencja specjalna opisująca pojedynczy znak. Więcej o dopasowaniu sekwencji specjalnych znajduje się w opisie reguły HlCStringChar.</para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>RangeDetect</term>
+<listitem>
+<para
+>Wykrywa napis rozpoczynający się i kończący określonymi znakami.</para>
+<programlisting
+>&lt;RangeDetect char=&quot;(znak)&quot;  char1=&quot;(znak)&quot; (atrybuty wspólne) /&gt;</programlisting>
+<para
+><userinput
+>char</userinput
+> określa początkowy znak zakresu znaków, zaś <userinput
+>char1</userinput
+> określa znak kończący zakres.</para>
+<para
+>Reguła może być wykorzystywana do wykrywania krótkich napisów w cudzysłowach, należy jednak pamiętać, iż system podświetlania składni analizuje pojedyncze wiersze, tak więc nie zostaną wykryte napisy wielowierszowe.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>LineContinue</term>
+<listitem>
+<para
+>Wykrywa koniec wiersza.</para>
+<programlisting
+>&lt;LineContinue (atrybuty wspólne) /&gt;</programlisting>
+<para
+>Ta reguła nie ma dodatkowych atrybutów.</para>
+<para
+>Reguła ta jest przydatna przy przełączaniu kontekstu po osiągnięciu końca wiersza, jeżeli ostatnim znakiem jest odwrotny ukośnik (<userinput
+>'\'</userinput
+>). Jest to wykorzystywane na przykład w językach C i C++ do zapisu makr w wielu wierszach kodu.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>IncludeRules</term>
+<listitem>
+<para
+>Dołącza reguły z innego kontekstu lub pliku definicji języka.</para>
+<programlisting
+>&lt;IncludeRules context=&quot;odnośnikkontekstu&quot; [includeAttrib=&quot;true|false&quot;] /&gt;</programlisting>
+
+<para
+>Parametr <userinput
+>context</userinput
+> określa kontekst, który należy dołączyć.</para>
+<para
+>Jeżeli parametr jest nazwą innego kontekstu to spowoduje, to przyłączenie wszystkich określonych w innym kontekście reguł do bieżącego kontekstu, np.: <programlisting
+>&lt;IncludeRules context=&quot;anotherContext&quot; /&gt;</programlisting
+></para>
+
+<para
+>Jeżeli podany napis rozpoczyna się od <userinput
+>##</userinput
+>, to system podświetlania składni odszuka definicji innego języka o podanej nazwie, np.: <programlisting
+>&lt;IncludeRules context=&quot;##C++&quot; /&gt;</programlisting
+></para>
+<para
+>Jeżeli atrybut <userinput
+>includeAttrib</userinput
+> ma wartość <emphasis
+>true</emphasis
+>, to nastąpi zmiana atrybutów na występujący w źródle. Może to być przydatne do podświetlania fragmentów z przykładami w innym formacie dokumentu, tzn. gdy tekst dopasowany przez dołączony kontekst wykorzystuje inną definicję dla podświetlania składni. </para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>DetectSpaces</term>
+<listitem>
+<para
+>Wykrywa spacje.</para>
+<programlisting
+>&lt;DetectSpaces (atrybuty wspólne) /&gt;</programlisting>
+
+<para
+>Ta reguła nie ma dodatkowych atrybutów.</para>
+<para
+>Regułę tę wykorzystuje się w przypadkach, gdy wiadome jest, iż w wierszu znajduje się wiele spacji, np. przy wciętych wierszach. Spowoduje ona pominięcie wszystkich spacji jednocześnie zamiast testowania wszystkich reguł znak po znaku dla każdej z nich.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>DetectIdentifier</term>
+<listitem>
+<para
+>Wykrywa identyfikatory (określone wyrażeniem regularnym: [a-zA-Z_][a-zA-Z0-9_]*).</para>
+<programlisting
+>&lt;DetectIdentifier (atrybuty wspólne) /&gt;</programlisting>
+
+<para
+>Ta reguła nie ma dodatkowych atrybutów.</para>
+<para
+>Reguła powyższa służy do pomijania całego napisu składającego się ze znaków składających się na wyraz, zamiast sprawdzania wielu reguł z powodu braku dopasowania.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</sect2>
+
+<sect2>
+<title
+>Porady</title>
+
+<itemizedlist>
+<para
+>Po zrozumieniu zasady działania mechanizmu przełączania kontekstów tworzenie definicji reguł podświetlania stanie się proste. Należy jednak zawsze dokładnie sprawdzić dostosowanie wybranej reguły do konkretnej sytuacji. Wyrażenia regularne dają ogromne możliwości, ale działają wolno w porównaniu z innymi regułami. Poniżej opisano kilka porad pomocnych w tworzeniu plików definicji reguł podświetlania. </para>
+
+<listitem>
+<para
+>Jeżeli poszukiwane są tylko dwa znaki to należy wykorzystywać regułę <userinput
+>Detect2Chars</userinput
+> zamiast <userinput
+>StringDetect</userinput
+> (to samo dotyczy reguły <userinput
+>DetectChar</userinput
+>).</para>
+</listitem>
+<listitem>
+<para
+>Użycie wyrażeń regularnych jest proste, jednak często istnieją inne, dużo szybsze sposoby osiągnięcie tego samego rezultatu. Zakładając, iż konieczne jest dopasowanie znaku <userinput
+>'#'</userinput
+> jako pierwszego w wierszu. Odpowiednie wyrażenie regularne miałoby postać: <programlisting
+>&lt;RegExpr attribute=&quot;Macro&quot; context=&quot;macro&quot; String=&quot;^\s*#&quot; /&gt;</programlisting
+>To samo można uzyskać poprzez: <programlisting
+>&lt;DetectChar attribute=&quot;Macro&quot; context=&quot;macro&quot; char=&quot;#&quot; firstNonSpace=&quot;true&quot; /&gt;</programlisting
+> Zamiast wyrażenia regularnego <userinput
+>'^#'</userinput
+> można zastosować regułę <userinput
+>DetectChar</userinput
+> z atrybutem <userinput
+>column=&quot;0&quot;</userinput
+>. Atrybut <userinput
+>column</userinput
+> odnosi się do znaków w tekście, tak więc znak tabulatora zostanie policzony jako jeden znak. </para>
+</listitem>
+<listitem>
+<para
+>Możliwe jest przełączanie kontekstów bez przetwarzania znaków. Przypuśćmy, iż konieczne jest przełączenie kontekstu po napotkaniu napisu <userinput
+>*/</userinput
+> ale konieczne jest przetworzenie tego napisu w kolejnym kontekście. Poniższa reguła zostanie dopasowana, zaś atrybut <userinput
+>lookAhead</userinput
+> spowoduje zachowanie dopasowanego napisu do przetwarzania w kolejnym kontekście. <programlisting
+>&lt;Detect2Chars attribute=&quot;Comment&quot; context=&quot;#pop&quot; char=&quot;*&quot; char1=&quot;/&quot; lookAhead=&quot;true&quot; /&gt;</programlisting>
+</para>
+</listitem>
+<listitem>
+<para
+>Można skorzystać z <userinput
+>DetectSpaces</userinput
+>, jeżeli spodziewane jest wystąpienie wielu spacji.</para>
+</listitem>
+<listitem>
+<para
+>Zamiast wyrażenia regularnego <userinput
+>'[a-zA-Z_]\w*'</userinput
+> można wykorzystać <userinput
+>DetectIdentifier</userinput
+>.</para>
+</listitem>
+<listitem>
+<para
+>Należy w miarę możliwości używać styli domyślnych, dzięki temu użytkownik będzie miał spójne środowisko pracy z różnymi plikami.</para>
+</listitem>
+<listitem>
+<para
+>Można podejrzeć zawartość innych plików definicji reguł podświetlania, aby zorientować się w sposobie definiowania bardziej skomplikowanych reguł.</para>
+</listitem>
+<listitem>
+<para
+>Sprawdzenie poprawności stworzonego pliku XML możliwe jest z wykorzystaniem polecenia: <command
+>xmllint --dtdvalid language.dtd mySyntax.xml</command
+>.</para>
+</listitem>
+<listitem>
+<para
+>W przypadku częstego korzystania z wyrażeń regularnych można skorzystać z mechanizmu <emphasis
+>ENTITIES</emphasis
+>, np:</para>
+<programlisting
+>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE language SYSTEM "language.dtd"
+[
+        &lt;!ENTITY myref    "[A-Za-z_:][\w.:_-]*"&gt;
+]&gt;
+</programlisting>
+<para
+>Dzięki temu można zastosować <emphasis
+>&amp;myref;</emphasis
+> zamiast wyrażenia regularnego.</para>
+</listitem>
+</itemizedlist>
+</sect2>
+
+</sect1>
+
+</appendix>

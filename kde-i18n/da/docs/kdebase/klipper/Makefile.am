@@ -1,0 +1,4 @@
+KDE_LANG = da
+SUBDIRS = $(AUTODIRS)
+KDE_DOCS = klipper
+KDE_MANS = AUTO

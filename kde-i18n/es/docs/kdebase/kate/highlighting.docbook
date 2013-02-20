@@ -1,0 +1,1412 @@
+<appendix id="highlight">
+<appendixinfo>
+<authorgroup>
+<author
+><personname
+><firstname
+></firstname
+></personname
+></author>
+<othercredit role="translator"
+> <firstname
+>Pablo</firstname
+> <surname
+>de Vicente</surname
+> <affiliation
+><address
+><email
+>vicente@oan.es</email
+></address
+></affiliation
+> <contrib
+>Traductor</contrib
+> </othercredit
+> <othercredit role="translator"
+> <firstname
+>Marcos</firstname
+> <surname
+>Fouces Lago</surname
+> <affiliation
+><address
+><email
+>mfouces@yahoo.es</email
+></address
+></affiliation
+> <contrib
+>Traductor</contrib
+> </othercredit
+> <othercredit role="translator"
+> <firstname
+>Santiago</firstname
+> <surname
+>Fernández Sancho</surname
+> <affiliation
+><address
+><email
+>santi@kde-es.org</email
+></address
+></affiliation
+> <contrib
+>Traductor</contrib
+> </othercredit
+> 
+</authorgroup>
+</appendixinfo>
+<title
+>Trabajo con resaltado de sintaxis</title>
+
+<sect1 id="highlight-overview">
+
+<title
+>Introducción</title>
+
+<para
+>El resaltado de sintaxis es lo que hace que el editor muestre automáticamente texto en diferentes estilos y colores, dependiendo de la función de la cadena en relación al propósito del archivo. En el código fuente de un programa, por ejemplo, las sentencias de control se pueden presentar en negrita, mientras que los tipos de datos y los comentarios pueden tener diferentes colores que el resto del texto. Esto mejora notablemente la legibilidad del texto, y ayuda al autor a ser más eficiente y productivo.</para>
+
+<mediaobject>
+<imageobject
+><imagedata format="PNG" fileref="highlighted.png"/></imageobject>
+<textobject
+><phrase
+>Una función de perl, presentada con resaltado de sintaxis.</phrase
+></textobject>
+<caption
+><para
+>Una función de perl, presentada con resaltado de sintaxis.</para>
+</caption>
+</mediaobject>
+
+<mediaobject>
+<imageobject
+><imagedata format="PNG" fileref="unhighlighted.png"/></imageobject>
+<textobject
+><phrase
+>La misma función de perl, sin el resaltado.</phrase
+></textobject>
+<caption
+><para
+>La misma función de perl, sin el resaltado.</para
+></caption>
+</mediaobject>
+
+<para
+>De los dos ejemplos, ¿cuál resulta más sencillo de leer?</para>
+
+<para
+>&kate; cuenta con un sistema de resaltado de sintaxis flexible, configurable y capaz, la distribución estándar proporciona definiciones para un gran conjunto de lenguajes de programación, descripción y realización de guiones, a parte de otros formatos. Además usted puede incluir sus propias definiciones en simples archivos &XML;.</para>
+
+<para
+>&kate; detectará automáticamente las reglas de sintaxis correctas cuando abra un archivo, basándose en el tipo &MIME; de dicho archivo, determinado por su extensión, o, si no tiene, por su contenido. Si la elección no es la correcta, usted puede establecerla manualmente en el menú <menuchoice
+><guimenu
+>Documento</guimenu
+><guisubmenu
+>Modo resaltado</guisubmenu
+></menuchoice
+>.</para>
+
+<para
+>Los estilos y colores utilizados por cada definición de resaltado de sintaxis pueden configurarse utilizando la página <link linkend="config-dialog-editor-appearance"
+>Aspecto</link
+> , del <link linkend="config-dialog"
+>diálogo de configuración</link
+>, mientras que los tipos &MIME; para los que se debe utilizar, se pueden configurar utilizando la página <link linkend="config-dialog-editor-highlighting"
+>Resaltado</link
+>.</para>
+
+<note>
+<para
+>El resaltado de sintaxis tiene su uso en la mejora de la legibilidad del texto, pero no puede confiar en ello como prueba de que el texto es correcto. Marcar el texto en función de su sintaxis puede ser difícil, dependiendo del formato que esté utilizando, y en algunos casos los autores de las reglas de sintaxis pueden estar orgullosos si el 98% del texto se procesa correctamente, ya que hará falta un estilo muy raro para poder ver el 2% incorrecto.</para>
+</note>
+
+<tip>
+<para
+>Puede descargar o actualizar definiciones de resaltado de sintaxis de la página web de &kate; pulsando en el botón <guibutton
+>Descargar</guibutton
+> en la <link linkend="config-dialog-editor-highlighting"
+>Página de resaltado</link
+> del <link linkend="config-dialog"
+>Diálogo de configuración</link
+>.</para>
+</tip>
+
+</sect1>
+
+<sect1 id="katehighlight-system">
+
+<title
+>El sistema de resaltado de sintaxis de &kate;</title>
+
+<para
+>Esta sección tratará sobre el mecanismo de resaltado de sintaxis de &kate; con más detalle. Le recomendamos su lectura si desea aprender sobre ello, o si desea crear o modificar las definiciones de sintaxis.</para>
+
+<sect2 id="katehighlight-howitworks">
+
+<title
+>Cómo funciona</title>
+
+<para
+>Siempre que abre un archivo, una de las primeras cosas que hace el editor de &kate; es detectar qué definición de sintaxis se utilizará en dicho archivo. Mientras va leyendo el texto del archivo, y mientras va escribiendo en él, el sistema de resaltado de sintaxis analiza el texto utilizando las reglas establecidas por la definición de sintaxis y marcando dónde comienzan y terminan los diferentes contextos y estilos.</para>
+
+<para
+>Cuando usted escribe en el documento, el nuevo texto es analizado y marcado al vuelo, así que si borra un carácter que marca el principio o el final de un contexto, el estilo del texto adyacente cambia consecuentemente.</para>
+
+<para
+>Las definiciones de sintaxis utilizadas por el sistema de resaltado de sintaxis de &kate; son archivos &XML;, que contienen: <itemizedlist>
+<listitem
+><para
+>Reglas para decidir la relevancia del texto, organizadas en bloques de contexto.</para
+></listitem>
+<listitem
+><para
+>Listas de palabras clave.</para
+></listitem>
+<listitem
+><para
+>Definiciones de estilos de elementos.</para
+></listitem>
+</itemizedlist>
+</para>
+
+<para
+>Al analizar el texto, las reglas de detección se evalúan en el orden en el que están definidas, y si el principio de la cadena actual coincide con la regla, se utiliza el contexto relacionado. El punto de inicio del texto se mueve al punto final en el que la regla coincide y comienza un nuevo ciclo de reglas, comenzando en el contexto establecido por la regla coincidente.</para>
+
+</sect2>
+
+<sect2 id="highlight-system-rules">
+<title
+>Reglas</title>
+
+<para
+>Las reglas de detección son el núcleo del sistema de detección del resaltado. Una regla es una cadena, un carácter o una <link linkend="regular-expressions"
+>expresión regular</link
+> contra la que se debe hacer coincidir el texto que está siendo analizado. Contiene información sobre el estilo a utilizar para la parte coincidente del texto. Puede cambiar el contexto de trabajo del sistema, ya sea hacia un contexto mencionado explícitamente o hacia el anterior contexto utilizado por el texto.</para>
+
+<para
+>Las reglas se organizan en grupos de contextos. Un grupo de contexto se utiliza para los conceptos principales del texto dentro del formato, por ejemplo, las cadenas de texto entrecomilladas o los bloques de comentarios en el código fuente de un programa. Esto garantiza que el sistema de resaltado no necesita realizar un ciclo por todas las reglas cuando no es necesario, y que algunas secuencias de caracteres del texto se pueden tratar de forma diferente dependiendo del contexto actual. </para>
+
+<para
+>Es posible generar dinámicamente contextos para permitir el uso de datos específicos de instancias en las reglas.</para>
+
+</sect2>
+
+<sect2 id="highlight-context-styles-keywords">
+<title
+>Estilos y palabras clave del contexto</title>
+
+<para
+>En algunos lenguajes de programación, los números enteros son tratados por el compilador (el programa que convierte el código fuente en un ejecutable binario) de una forma diferente a los de coma flotante, y puede que haya caracteres que tengan un significado especial dentro de una cadena entrecomillada. En esos casos, tiene sentido procesarlos de diferente manera que el texto adyacente, para que resulten fáciles de identificar. Así que incluso si no representan contextos especiales, pueden ser vistos como tales por el sistema de resaltado de sintaxis, así que son marcados para un procesado diferente.</para>
+
+<para
+>Una definición de sintaxis puede contener tantos estilos como sean requeridos para cubrir todos los conceptos del formato para el que se utilizan.</para>
+
+<para
+>En muchos formatos hay listas de palabras que representan un concepto específico. Por ejemplo, en los lenguajes de programación, las sentencias de control son un concepto, los nombres de los tipos de datos otro, y la funciones integradas en el lenguaje son un tercero. El sistema de resaltado de sintaxis de &kate; puede utilizar tales listas para detectar y marcar palabras del texto para enfatizar conceptos de los formatos de texto.</para>
+
+</sect2>
+
+<sect2 id="kate-highlight-system-default-styles">
+<title
+>Estilos predeterminados</title>
+
+<para
+>Si abre un archivo de código fuente de C++, un archivo fuente de &Java; y un archivo <acronym
+>HTML</acronym
+> en &kate; podrá comprobar que aunque los formatos son diferentes, y por lo tanto las palabras que reciben un tratamiento especial también son diferentes, los colores utilizados son los mismos. Esto es debido a que &kate; tiene una lista predefinida de estilos predeterminados, que se emplean en las definiciones de sintaxis individuales.</para>
+
+<para
+>Esto facilita el reconocer conceptos similares en diferentes formatos de texto. Por ejemplo, los comentarios están presentes en prácticamente cualquier lenguaje de programación, guiones o descripción, y si se presentan utilizando el mismo estilo en todos los lenguajes, usted no tendrá que pararse a pensar e identificar su posición en el texto.</para>
+
+<tip>
+<para
+>Todos los estilos de definición de sintaxis utilizan uno de los estilos predeterminados. Hay pocas definiciones de sintaxis que utilicen más estilos de los que hay de manera predeterminada, así que, si utiliza un formato muy a menudo, puede que le merezca la pena abrir el diálogo de configuración para ver si algunos conceptos están utilizando el mismo estilo. Por ejemplo, sólo hay un estilo predeterminado para las cadenas, pero como el lenguaje de programación perl utiliza dos tipos de cadena, puede mejorar el resaltado configurando ambas de forma ligeramente diferente. Más adelante se explicarán todos los <link linkend="kate-highlight-default-styles"
+>estilos predeterminados incluídos</link
+>.</para>
+</tip>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="katehighlight-xml-format">
+<title
+>El formato &XML; de definición de resaltados</title>
+
+<sect2>
+<title
+>Introducción</title>
+
+<para
+>Esta sección es una introducción al formato &XML; de definición de resaltado. Describe los componentes principales, su significado y utilización, y entra en detalles con las reglas de detección.</para>
+
+<para
+>La definición formal, es decir, el <acronym
+>DTD</acronym
+>, se almacena en el archivo <filename
+>language.dtd</filename
+>, que debería estar instalado en la carpeta <filename
+>$<envar
+>KDEDIR</envar
+>/share/apps/kate/syntax</filename
+> de su sistema. </para>
+
+<variablelist>
+<title
+>Las seccione principales de las definiciones de resaltado de &kate;</title>
+
+<varlistentry>
+<term
+>Todos los archivos de resaltado contienen un encabezado que define la definición de XML y el doctype (tipo de documento):</term>
+<listitem>
+<programlisting
+>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!DOCTYPE language SYSTEM &quot;language.dtd&quot;&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>La parte principal del archivo de definición es el elemento <userinput
+>languaje. Los atrib</userinput
+>utos disponibles son:</term>
+
+<listitem>
+<para
+>Atributos requeridos:</para>
+<para
+><userinput
+>name</userinput
+> configura el nombre del lenguaje. Después aparecerá en el menú y en los diálogos.</para>
+<para
+><userinput
+>section</userinput
+> especifica la categoría.</para>
+<para
+><userinput
+>extensions</userinput
+> define las extensiones de los archivos, como &quot;*.cpp;*.h&quot;</para>
+
+<para
+>Atributos opcionales:</para>
+<para
+><userinput
+>mimetype</userinput
+> archivos &MIME; asociados al tipo en que se basan.</para>
+<para
+><userinput
+>version</userinput
+> especifica la versión actual del archivo de definición.</para>
+<para
+><userinput
+>kateversion</userinput
+> especifica la última versión soportada por &kate;.</para>
+<para
+><userinput
+>casesensitive</userinput
+> define, si las palabras clave son sensibles a mayúsculas y minúsculas o no.</para>
+<para
+><userinput
+>priority</userinput
+> se necesita si otra definición de resaltado utiliza las mismas extensiones. Se utilizará la de mayor prioridad.</para>
+<para
+><userinput
+>author</userinput
+> contiene el nombre del autor y su dirección de correo electrónico.</para>
+<para
+><userinput
+>license</userinput
+> contiene la licencia, normalmente LPGL, artística, GPL y otras.</para>
+<para
+><userinput
+>hidden</userinput
+> define cuándo debería aparecer el nombre en los menús de &kate;.</para>
+<para
+>De ahí que dicha línea pueda tener un aspecto similar a:</para>
+<programlisting
+>&lt;language name=&quot;C++&quot; version=&quot;1.00&quot; kateversion=&quot;2.4&quot; section=&quot;Sources&quot; extensions=&quot;*.cpp;*.h&quot; /&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>A continuación estaría el elemento <userinput
+>highlighting</userinput
+>, que contiene el elemento opcional <userinput
+>list</userinput
+> y los elementos requeridos <userinput
+>contexts</userinput
+> e <userinput
+>itemDatas</userinput
+>.</term>
+<listitem>
+<para
+>Los elementos <userinput
+>list</userinput
+> contienen una lista de palabras clave. En este caso las palabras clave son <emphasis
+>class</emphasis
+> y <emphasis
+>const</emphasis
+>. Puede añadir tantas listas como necesite.</para>
+<para
+>El elemento <userinput
+>contexts</userinput
+> contiene todos los contextos. El primer contexto es el predeterminado y con él se iniciará el resaltado. Existen dos reglas en el contexto <emphasis
+>Normal Text</emphasis
+>, que harán coincidir la lista de palabras clave con el nombre <emphasis
+>somename</emphasis
+> y una regla que detecta una comilla y cambia el contexto a <emphasis
+>string</emphasis
+>. Para aprender más sobre las reglas lea el siguiente capítulo.</para>
+<para
+>La tercera parte es el elemento <userinput
+>itemDatas</userinput
+>. Contiene todos los colores y tipos de letra que necesitan los contextos y las reglas. En este ejemplo, se utilizan <userinput
+>itemData</userinput
+> <emphasis
+>Normal Text</emphasis
+>, <emphasis
+>String</emphasis
+> y <emphasis
+>Keyword</emphasis
+>. </para>
+<programlisting
+>&lt;highlighting&gt;
+    &lt;list name=&quot;somename&quot;&gt;
+      &lt;item&gt; class &lt;/item&gt;
+      &lt;item&gt; const &lt;/item&gt;
+    &lt;/list&gt;
+    &lt;contexts&gt;
+      &lt;context attribute=&quot;Normal Text&quot; lineEndContext=&quot;#pop&quot; name=&quot;Normal Text&quot; &gt;
+        &lt;keyword attribute=&quot;Keyword&quot; context=&quot;#stay&quot; String=&quot;somename&quot; /&gt;
+        &lt;DetectChar attribute=&quot;String&quot; context=&quot;string&quot; char=&quot;&amp;quot;&quot; /&gt;
+      &lt;/context&gt;
+      &lt;context attribute=&quot;String&quot; lineEndContext=&quot;#stay&quot; name=&quot;string&quot; &gt;
+        &lt;DetectChar attribute=&quot;String&quot; context=&quot;#pop&quot; char=&quot;&amp;quot;&quot; /&gt;
+      &lt;/context&gt;
+    &lt;/contexts&gt;
+    &lt;itemDatas&gt;
+      &lt;itemData name=&quot;Normal Text&quot; defStyleNum=&quot;dsNormal&quot; /&gt;
+      &lt;itemData name=&quot;Keyword&quot; defStyleNum=&quot;dsKeyword&quot; /&gt;
+      &lt;itemData name=&quot;String&quot; defStyleNum=&quot;dsString&quot; /&gt;
+    &lt;/itemDatas&gt;
+  &lt;/highlighting&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>La última parte de la definición de resaltado es la sección opcional <userinput
+>general</userinput
+>. Puede contener información sobre palabras clave, plegado de código, comentarios y sangrado.</term>
+
+<listitem>
+<para
+>La sección <userinput
+>comment</userinput
+> define con qué cadena se introduce un comentario en una línea sencilla. También puede definir comentarios en múltiples líneas utilizando <emphasis
+>multiLine</emphasis
+> con el atributo adicional <emphasis
+>end</emphasis
+>. Esto se utiliza si el usuario pulsa el correspondiente acceso rápido para <emphasis
+>comentar/descomentar</emphasis
+>.</para>
+<para
+>La sección <userinput
+>keywords</userinput
+> define si las listas de palabras clave son sensibles a mayúsculas y minúsculas o no. Posteriormente se explicarán otros atributos.</para>
+<programlisting
+>&lt;general&gt;
+    &lt;comments&gt;
+      &lt;comment name="singleLine" start="#"/&gt;
+    &lt;/comments&gt;
+    &lt;keywords casesensitive="1"/&gt;
+  &lt;/general&gt;
+&lt;/language&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+
+</sect2>
+
+<sect2 id="kate-highlight-sections">
+<title
+>Las secciones al detalle</title>
+<para
+>Esta parte describe todos los atributos para los contextos, listas de datos, palabras clave, comentarios, plegado de código y sangrado.</para>
+
+<variablelist>
+<varlistentry>
+<term
+>El elemento <userinput
+>context</userinput
+> pertenece al grupo <userinput
+>contexts</userinput
+>. Un contexto define las reglas específicas de contexto que se deben seguir cuando el sistema de resaltado alcanza el final de una línea. Los atributos disponibles son:</term>
+
+
+<listitem>
+<para
+><userinput
+>name</userinput
+> es el nombre del contexto. Las reglas utilizarán el nombre para especificar el contexto al que cambiar en el caso de que coincidan las reglas.</para>
+<para
+><userinput
+>lineEndContext</userinput
+> define el contexto al que cambiará el sistema de resaltado si alcanza el final de la línea. Puede ser un nombre u otro contexto, <userinput
+>#stay</userinput
+> permitirá que no se cambie el contexto (ejem: no hacer nada) o <userinput
+>#pop</userinput
+> hará que se salga de este contexto. Es posible utilizar por ejemplo <userinput
+>#pop#pop#pop</userinput
+> para salir tres veces.</para>
+<para
+><userinput
+>lineBeginContext</userinput
+> define el contexto si se encuentra el comienzo de una línea. De forma predeterminada: #stay.</para>
+<para
+><userinput
+>fallthrough</userinput
+> define si el sistema de resaltado cambiará al contexto especificado en fallthroughtContext si no coinciden las reglas. De forma predeterminada vale <emphasis
+>false</emphasis
+>.</para>
+<para
+><userinput
+>fallthroughContext</userinput
+> especifica el siguiente contexto si no hay reglas que coincidan.</para>
+<para
+><userinput
+>dynamic</userinput
+> si vale <emphasis
+>true</emphasis
+>, el contexto recordará cadenas/elementos reemplazables guardados por las reglas dinámicas. Esto se necesita, por ejemplo, en los documentos HERE. Su valor predeterminado es <emphasis
+>false</emphasis
+>.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>El elemento <userinput
+>itemData</userinput
+> se encuentra en el grupo <userinput
+>itemDatas</userinput
+>. Define el estilo y los colores de los tipos de letra. Por tanto es posible definir sus propios estilos y colores, sin embargo recomendamos utilizar los estilos predeterminados, ya que así el usuario verá colores homogéneos para los diferentes lenguajes. Si bien, algunas veces no existen otras posibilidades y es necesario cambiar el color y los atributos de los tipos de letra. Los atributos name y defStyleNum son necesarios, los otros son opcionales. Los atributos disponibles son:</term>
+
+<listitem>
+<para
+><userinput
+>name</userinput
+> configura el nombre del itemData. Los contextos y las reglas utilizarán este nombre en sus atributos <emphasis
+>attribute</emphasis
+> para referenciar un itemData.</para>
+<para
+><userinput
+>defStyleNum</userinput
+> define qué estilo se utilizará de forma predeterminada. Los estilos predeterminados disponibles se explicarán posteriormente.</para>
+<para
+><userinput
+>color</userinput
+> define un color. Los formatos válidos son '#rrggbb' o '#rgb'.</para>
+<para
+><userinput
+>selColor</userinput
+> define el color de la selección.</para>
+<para
+><userinput
+>italic</userinput
+>. Si vale <emphasis
+>true</emphasis
+> el texto se mostrará en cursiva.</para>
+<para
+><userinput
+>bold</userinput
+>. Si vale <emphasis
+>true</emphasis
+> el texto se mostrará en negrita.</para>
+<para
+><userinput
+>underline</userinput
+>. Si vale <emphasis
+>true</emphasis
+> el texto se mostrará subrayado.</para>
+<para
+><userinput
+>strikeout</userinput
+>. Si vale <emphasis
+>true</emphasis
+> el texto se mostrará tachado.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>El elemento <userinput
+>keywords</userinput
+> en el grupo <userinput
+>general</userinput
+> define la propiedad keyword. Los atributos disponibles son:</term>
+
+<listitem>
+<para
+><userinput
+>casesensitive</userinput
+> puede valer <emphasis
+>true</emphasis
+> o <emphasis
+>false</emphasis
+>. Si vale <emphasis
+>true</emphasis
+>, todas las palabras clave son sensibles a mayúsculas y minúsculas.</para>
+<para
+><userinput
+>weakDeliminator</userinput
+> es una lista de caracteres que no actúan como delimitadores de palabras (delimitador débil). Por ejemplo el punto <userinput
+>'.'</userinput
+> es un delimitador de palabra. Si tenemos una palabra clave en una <userinput
+>list</userinput
+> que contiene un punto, solo la encontrará si especifica el punto como delimitador débil.</para>
+<para
+><userinput
+>additionalDeliminator</userinput
+> define delimitadores adicionales.</para>
+<para
+><userinput
+>wordWrapDeliminator</userinput
+> define los caracteres tras los cuales se puede producir un ajuste de línea.</para>
+<para
+>Los delimitadores predeterminados de ajuste de línea son los caracteres <userinput
+>.():!+,-&lt;=&gt;%&amp;*/;?[]^{|}~\</userinput
+>, espacio (<userinput
+>' '</userinput
+>) y tabulador (<userinput
+>'\t'</userinput
+>).</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>El elemento <userinput
+>comment</userinput
+> en el grupo <userinput
+>comments</userinput
+> define las propiedades de los comentarios que va a utilizar <menuchoice
+><guimenu
+>Herramientas</guimenu
+><guimenuitem
+>Comentar</guimenuitem
+></menuchoice
+> y <menuchoice
+><guimenu
+>Herramientas</guimenu
+><guimenuitem
+>Descomentar</guimenuitem
+></menuchoice
+>. Los atributos disponibles son:</term>
+
+<listitem>
+<para
+><userinput
+>name</userinput
+> puede ser <emphasis
+>singleLine</emphasis
+> o <emphasis
+>multiLine</emphasis
+>. Si selecciona <emphasis
+>multiLine</emphasis
+> se necesitan los atributos <emphasis
+>end</emphasis
+> y <emphasis
+>region</emphasis
+>.</para>
+<para
+><userinput
+>start</userinput
+> define la cadena que se utiliza para iniciar un comentario. En C++ debería ser &quot;/*&quot;.</para>
+<para
+><userinput
+>end</userinput
+> define la cadena utilizada para cerrar un comentario. En C++ debería ser &quot;*/&quot;.</para>
+<para
+><userinput
+>region</userinput
+> debería ser el nombre con el que se guardará el comentario multilínea. Si asumimos que tenemos una región <emphasis
+>beginRegion="Comentario"</emphasis
+> ... <emphasis
+>endRegion="Comentario"</emphasis
+> en sus reglas debería utilizar <emphasis
+>region="Comentario"</emphasis
+>. De esta forma se descomentará incluso aunque no haya seleccionado todo el texto en un comentario multilínea. Solo es necesario que el cursor esté dentro del comentario multilínea.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>El elemento <userinput
+>folding</userinput
+> en el grupo <userinput
+>general</userinput
+> define las propiedades de plegado del código. Los atributos disponibles son:</term>
+
+<listitem>
+<para
+><userinput
+>indentationsensitive</userinput
+>. Si vale <emphasis
+>true</emphasis
+>, los marcadores de plegado de código se añadirán al sangrado, como en el lenguaje de script Python. Normalmente no necesitará utilizarlo, y por ello su valor predeterminado es <emphasis
+>false</emphasis
+>.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>El elemento <userinput
+>indentation</userinput
+> en el grupo <userinput
+>general</userinput
+> define qué sangrado se utilizará, sin embargo, le recomendamos fervientemente que omita este elemento, ya que el elemento de sangrado suele estar configurado en el tipo de archivo o al añadir el modo de línea al archivo de texto. Aunque especifique un sangrado, podrá forzar un sangrado específico para un usuario, por otra que le agrade más. Los atributos disponibles son:</term>
+
+<listitem>
+<para
+><userinput
+>mode</userinput
+> es el nombre del sangrado. Los sangrados a la derecha disponibles son: <emphasis
+>normal, cstyle, csands, xml, python</emphasis
+> y <emphasis
+>varindent</emphasis
+>.</para>
+</listitem>
+</varlistentry>
+
+
+</variablelist>
+
+
+</sect2>
+
+<sect2 id="kate-highlight-default-styles">
+<title
+>Estilos predeterminados disponibles</title>
+<para
+>Los estilos predeterminados <link linkend="kate-highlight-system-default-styles"
+>ya se explicaron</link
+>, a modo de resumen: Los estilos predeterminados están predefinidos para los estilos de tipos de letras y colores.</para>
+<variablelist>
+<varlistentry>
+<term
+>Veamos la lista de los estilos predeterminados disponibles:</term>
+<listitem>
+<para
+><userinput
+>dsNormal</userinput
+>, utilizados para el texto normal.</para>
+<para
+><userinput
+>dsKeyword</userinput
+>, utilizados para las palabras clave.</para>
+<para
+><userinput
+>dsDataType</userinput
+>, utilizados para los tipos de datos.</para>
+<para
+><userinput
+>dsDecVal</userinput
+>, utilizados para los valores decimales.</para>
+<para
+><userinput
+>dsBaseN</userinput
+>, utilizados para los valores en una base diferente a 10.</para>
+<para
+><userinput
+>dsFloat</userinput
+>, utilizados para valores de coma flotante.</para>
+<para
+><userinput
+>dsChar</userinput
+>, utilizados para caracteres.</para>
+<para
+><userinput
+>dsString</userinput
+>, utilizados para cadenas.</para>
+<para
+><userinput
+>dsComment</userinput
+>, utilizados para comentarios.</para>
+<para
+><userinput
+>dsOthers</userinput
+>, utilizados para 'otras' cosas.</para>
+<para
+><userinput
+>dsAlert</userinput
+>, utilizados para mensajes de aviso.</para>
+<para
+><userinput
+>dsFunction</userinput
+>, utilizados para llamadas a funciones.</para>
+<para
+><userinput
+>dsRegionMarker</userinput
+>, utilizados para marcadores de región.</para>
+<para
+><userinput
+>dsError</userinput
+>, utilizados para errores de resaltado y sintaxis incorrecta.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="kate-highlight-rules-detailled">
+<title
+>Reglas de detección del resaltado</title>
+
+<para
+>Esta sección describe las reglas de detección del resaltado.</para>
+
+<para
+>Cada regla puede coincidir en ninguno o con varios caracteres del principio de la cadena con la que se comparan. Si la regla coincide, a los caracteres coincidentes se les asigna el estilo o <emphasis
+>atributo</emphasis
+> definido por la regla, asimismo una regla puede pedir que se cambie el contexto actual.</para>
+
+<para
+>Una regla tiene este aspecto:</para>
+
+<programlisting
+>&lt;NombreRegla attribute=&quot;(identificador)&quot; context=&quot;(identificador)&quot; [atributos específicos de la regla] /&gt;</programlisting>
+
+<para
+>El <emphasis
+>atributo</emphasis
+> identifica el estilo que utilizaran los caracteres coincidentes por nombre, y el <emphasis
+>contexto</emphasis
+> identifica el contexto a utilizar desde aquí.</para>
+
+<para
+>El <emphasis
+>contexto</emphasis
+> se puede identificar por:</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Un <emphasis
+>identificador</emphasis
+>, que es el nombre de los otros contextos.</para>
+</listitem>
+<listitem>
+<para
+>Una <emphasis
+>orden</emphasis
+> que le indica al motor que permanezca en el contexto actual (<userinput
+>#stay</userinput
+>), o que salte al contexto anterior (<userinput
+>#pop</userinput
+>).</para>
+<para
+>Para retroceder más pasos, se puede repetir la palabra clave #pop: <userinput
+>#pop#pop#pop</userinput
+></para>
+</listitem>
+</itemizedlist>
+
+<para
+>Algunas reglas pueden tener <emphasis
+>reglas hijas</emphasis
+> que se ejecutan únicamente si la regla padre resulta aplicable. A toda la cadena coincidente se le dará el atributo definido por la regla padre. Una regla con reglas hijas tiene este aspecto:</para>
+
+<programlisting
+>&lt;NombreRegla (atributos)&gt;
+  &lt;NombreReglaHija (atributos) /&gt;
+  ...
+&lt;/NombreRegla&gt;
+</programlisting>
+
+
+<para
+>Los atributos específicos de la regla varían, y se describen en las siguientes secciones.</para>
+
+
+<itemizedlist>
+<title
+>Atributos comunes</title>
+<para
+>Todas las reglas tienen los siguientes atributos comunes y están disponibles siempre que aparezcan <userinput
+>(atributos comunes)</userinput
+>. <emphasis
+>attribute</emphasis
+> y <emphasis
+>context</emphasis
+> son atributos requeridos, los demás son opcionales. </para>
+
+<listitem>
+<para
+><emphasis
+>attribute</emphasis
+>: Un mapa de atributos de un determinado <emphasis
+>itemData</emphasis
+>.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>context</emphasis
+>: Especifica el contexto al que cambiará el sistema de resaltado si las reglas coinciden.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>beginRegion</emphasis
+>: Inicia un bloque de plegado de código. Valor predeterminado: unset.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>endRegion</emphasis
+>: Finaliza un bloque de plegado de código. Valor predeterminado: unset.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>lookAhead</emphasis
+>: Si vale <emphasis
+>true</emphasis
+>, el sistema de resaltado no procesará las longitudes coincidentes. Valor predeterminado: <emphasis
+>false</emphasis
+>.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>firstNonSpace</emphasis
+>: Coincidirán únicamente si la cadena no contiene un espacio en blanco al principio de la línea. Valor predeterminado: <emphasis
+>false</emphasis
+>.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>column</emphasis
+>: Únicamente coincidirá si coincide la columna. Valor predeterminado: unset.</para>
+</listitem>
+</itemizedlist>
+
+<itemizedlist>
+<title
+>Reglas dinámicas</title>
+<para
+>Algunas reglas permiten el atributo opcional <userinput
+>dynamic</userinput
+> de tipo lógico, cuyo valor predeterminado es <emphasis
+>false</emphasis
+>. Si dynamic vale <emphasis
+>true</emphasis
+>, la regla puede utilizar argumentos que representen el texto coincidente con una regla de una <emphasis
+>expresión regular</emphasis
+> que cambie al contexto actual por el contenido en los atributos <userinput
+>string</userinput
+> o <userinput
+>char</userinput
+>. En un <userinput
+>string</userinput
+>, el argumento <replaceable
+>%N</replaceable
+> (donde N es un número) se reemplazará con el equivalente <replaceable
+>N</replaceable
+> de la llamada de la expresión regular. En un <userinput
+>char</userinput
+> el argumento debería ser un número <replaceable
+>N</replaceable
+> y será reemplazado con el primer caracter del equivalente <replaceable
+>N</replaceable
+> de la llamada de la expresión regular. Siempre que un regla permita este atributo deberá contener un <emphasis
+>(dynamic)</emphasis
+>.</para>
+
+<listitem>
+<para
+><emphasis
+>dynamic</emphasis
+>: puede ser <emphasis
+>(true|false)</emphasis
+>.</para>
+</listitem>
+</itemizedlist>
+
+<sect2 id="highlighting-rules-in-detail">
+<title
+>Las reglas al detalle</title>
+
+<variablelist>
+<varlistentry>
+<term
+>DetectChar</term>
+<listitem>
+<para
+>Detecta un único carácter especificado. Normalmente se utiliza, por ejemplo, para hallar el final de las cadenas entrecomilladas.</para>
+<programlisting
+>&lt;DetectChar char=&quot;(caracter)&quot; (atributos comunes) (dynamic) /&gt;</programlisting>
+<para
+>El atributo <userinput
+>char</userinput
+> define el carácter a localizar.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Detect2Chars</term>
+<listitem>
+<para
+>Detecta dos caracteres especificados en el orden definido.</para>
+<programlisting
+>&lt;Detect2Chars char=&quot;(caracter)&quot; char1=&quot;(caracter)&quot; (atributos comunes) (dynamic) /&gt;</programlisting>
+<para
+>El atributo <userinput
+>char</userinput
+> define el primer carácter a localizar, <userinput
+>char1</userinput
+> el segundo.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>AnyChar</term>
+<listitem>
+<para
+>Detecta un carácter de un conjunto de caracteres especificados.</para>
+<programlisting
+>&lt;AnyChar String=&quot;(cadena)&quot; (atributos comunes) /&gt;</programlisting>
+<para
+>El atributo <userinput
+>String</userinput
+> define el conjunto de caracteres.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>StringDetect</term>
+<listitem>
+<para
+>Detecta una cadena exacta.</para>
+<programlisting
+>&lt;StringDetect String=&quot;(string)&quot; [insensitive=&quot;true|false&quot;] (atributos comunes) (dynamic) /&gt;</programlisting>
+<para
+>El atributo <userinput
+>String</userinput
+> define la cadena a localizar. El atributo <userinput
+>insensitive</userinput
+> tiene como valor predeterminado <userinput
+>false</userinput
+> y se pasa a la función de comparación de cadena. Si el valor es <userinput
+>true</userinput
+> la comparación no es sensible a mayúsculas y minúsculas.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>RegExpr</term>
+<listitem>
+<para
+>Busca la coincidencia con una expresión regular.</para>
+<programlisting
+>&lt;RegExpr String=&quot;(string)&quot; [insensitive=&quot;true|false&quot;] [minimal=&quot;true|false&quot;] (atributos comunes) (dynamic) /&gt;</programlisting>
+<para
+>El atributo <userinput
+>String</userinput
+> define la expresión regular.</para>
+<para
+><userinput
+>insensitive</userinput
+> tiene <userinput
+>false</userinput
+> como valor predeterminado y se pasa al motor de expresiones regulares.</para>
+<para
+><userinput
+>minimal</userinput
+> tiene <userinput
+>false</userinput
+> como valor predeterminado y se pasa al motor de expresiones regulares.</para>
+<para
+>Como siempre se trata de que las reglas coincidan con el principio de la cadena actual, una expresión regular que comience con el símbolo del circunflejo (<literal
+>^</literal
+>) indica que la regla se debe comparar únicamente con el principio de una línea.</para>
+<para
+>Vea la sección sobre <link linkend="regular-expressions"
+>expresiones regulares</link
+> para obtener más información.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>keyword</term>
+<listitem>
+<para
+>Detecta una palabra clave de una lista especificada.</para>
+<programlisting
+>&lt;keyword String=&quot;(nombre de la lista)&quot; (atributos comunes) /&gt;</programlisting>
+<para
+>El atributo <userinput
+>String</userinput
+> identifica la lista de palabras claves por su nombre. Debe existir una lista con ese nombre.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Int</term>
+<listitem>
+<para
+>Detecta un número entero.</para>
+<para
+><programlisting
+>&lt;Int (atributos comunes) (dynamic) /&gt;</programlisting
+></para>
+<para
+>Esta regla no tiene atributos específicos. Las reglas hijas normalmente se utilizan para detectar combinaciones de <userinput
+>L</userinput
+> y <userinput
+>U</userinput
+> después del número, indicando el tipo de entero en el código del programa. En realidad se admiten todas las reglas como reglas hijas, aunque, el <userinput
+>DTD</userinput
+> únicamente permite la regla hija <userinput
+>StringDetect</userinput
+>.</para>
+<para
+>El siguiente ejemplo encuentra números enteros seguidos del caracter 'L'. <programlisting
+>&lt;Int attribute="Decimal" context="#stay" &gt;
+  &lt;StringDetect attribute="Decimal" context="#stay" String="L" insensitive="true"/&gt;
+&lt;/Int&gt;
+</programlisting
+></para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Float</term>
+<listitem>
+<para
+>Detecta un número de coma flotante.</para>
+<para
+><programlisting
+>&lt;Float (atributos comunes) /&gt;</programlisting
+></para>
+<para
+>Esta regla no tiene atributos específicos. Se permite <userinput
+>AnyChar</userinput
+> como regla hija y normalmente se utiliza para detectar combinaciones, véa la regla <userinput
+>Int</userinput
+> para obtener una referencia.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HlCOct</term>
+<listitem>
+<para
+>Detecta una representación numérica de un número octal.</para>
+<para
+><programlisting
+>&lt;HlCOct (atributos comunes) /&gt;</programlisting
+></para>
+<para
+>Esta regla no tiene atributos específicos.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HlCHex</term>
+<listitem>
+<para
+>Detecta una representación numérica de un número hexadecimal.</para>
+<para
+><programlisting
+>&lt;HlCHex (atributos comunes) /&gt;</programlisting
+></para>
+<para
+>Esta regla no tiene atributos específicos.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HlCStringChar</term>
+<listitem>
+<para
+>Detecta un carácter escapado.</para>
+<para
+><programlisting
+>&lt;HlCStringChar (atributos comunes) /&gt;</programlisting
+></para>
+<para
+>Esta regla no tiene atributos específicos.</para>
+
+<para
+>Localiza representaciones tipográficas de caracteres que se utilizan habitualmente en el código de programación, por ejemplo <userinput
+>\n</userinput
+> (nueva línea) o <userinput
+>\t</userinput
+> (TAB).</para>
+
+<para
+>Los siguientes caracteres cumplirán con la regla si siguen a una barra invertida (<literal
+>\</literal
+>): <userinput
+>abefnrtv&quot;'?\</userinput
+>. Además serán válidos los números hexadecimales escapados como por ejemplo <userinput
+>\xff</userinput
+>, y los números octales escapados como <userinput
+>\033</userinput
+>.</para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HlCChar</term>
+<listitem>
+<para
+>Detecta un carácter C.</para>
+<para
+><programlisting
+>&lt;HlCChar (atributos comunes) /&gt;</programlisting
+></para>
+<para
+>Esta regla no tiene atributos específicos.</para>
+
+<para
+>Localiza caracteres C encerrados en una marca (Ejemplo: <userinput
+>'c'</userinput
+>). La marca puede ser un caracter simple o un caracter escapado. Véa HICStringChar para localizar secuencias de caracteres escapados.</para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>RangeDetect</term>
+<listitem>
+<para
+>Detecta una cadena con caracteres de inicio y fin definidos.</para>
+<programlisting
+>&lt;RangeDetect char=&quot;(carácter)&quot;  char1=&quot;(carácter)&quot; (atributos comunes) /&gt;</programlisting>
+<para
+><userinput
+>char</userinput
+> define el carácter que inicia el rango, <userinput
+>char1</userinput
+> el carácter que finaliza el rango.</para>
+<para
+>Es muy útil para detectar por ejemplo pequeña cadenas entrecomilladas y similares, pero tenga en cuenta que el motor de resaltado puede trabajar sólo con una cada vez, así que no se detectarán cadenas que estén divididas en dos líneas o más.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>LineContinue</term>
+<listitem>
+<para
+>Localiza el final de la línea.</para>
+<programlisting
+>&lt;LineContinue (atributos comunes) /&gt;</programlisting>
+<para
+>Esta regla no tiene atributos específicos.</para>
+<para
+>Esta regla es práctica para cambiar el contexto al final de la línea, si el último caracter es una barra invertida (<userinput
+>'\'</userinput
+>). Esto es necesario por ejemplo en C/C++ para continuar macros o cadenas.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>IncludeRules</term>
+<listitem>
+<para
+>Incluye reglas de otro contexto o lenguaje/archivo.</para>
+<programlisting
+>&lt;IncludeRules context=&quot;contextlink&quot; [includeAttrib=&quot;true|false&quot;] /&gt;</programlisting>
+
+<para
+>El atributo <userinput
+>context</userinput
+> define el contexto a incluir.</para>
+<para
+>Si es una cadena simple incluye todas las reglas definidas en el contexto actual, ejemplo: <programlisting
+>&lt;IncludeRules context=&quot;anotherContext&quot; /&gt;</programlisting
+></para>
+
+<para
+>Si la cadena comienza con <userinput
+>##</userinput
+> el sistema de resaltado buscará otra definición de lenguaje con el nombre dado, ejemplo: <programlisting
+>&lt;IncludeRules context=&quot;##C++&quot; /&gt;</programlisting
+></para>
+<para
+>Si el atributo <userinput
+>includeAttrib</userinput
+> vale <emphasis
+>true</emphasis
+>, cambia el atributo de destino por otro de la fuente. Esto es necesario, por ejemplo, para comentar trabajo, si el texto coincide con contexto introducido se utiliza un resaltado diferente que con el contexto anfitrión. </para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>DetectSpaces</term>
+<listitem>
+<para
+>Detecta espacios en blanco</para>
+<programlisting
+>&lt;DetectSpaces (atributos comunes) /&gt;</programlisting>
+
+<para
+>Esta regla no tiene atributos específicos.</para>
+<para
+>Utilice esta regla si sabe que pueden existir varios espacios en blanco delante, por ejemplo, al principio de las líneas sangradas. Esta regla saltará todos los espacios en blanco a la vez, en lugar de comprobar múltiples reglas y saltar si no existen coincidencias.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>DetectIdentifier</term>
+<listitem>
+<para
+>Detecta identificadores de cadenas (como una expresión regular: [a-zA-Z_][a-zA-Z0-9_]*).</para>
+<programlisting
+>&lt;DetectIdentifier (atributos comunes) /&gt;</programlisting>
+
+<para
+>Esta regla no tiene atributos específicos.</para>
+<para
+>Utilice esta regla para saltar una cadena de una palabra de caracteres, en lugar de comprobar múltiples reglas y saltar si no existen coincidencias.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</sect2>
+
+<sect2>
+<title
+>Trucos útiles</title>
+
+<itemizedlist>
+<para
+>Una vez que haya entendido cómo funciona el cambio de contexto será sencillo escribir definiciones de resaltado. Aunque debería ser cuidadoso para comprobar qué regla debería seleccionar en qué situación. Las expresiones regulares son muy potentes, pero son lentas en comparación con otras reglas. Por ello debería tener en cuenta los siguientes consejos. </para>
+
+<listitem>
+<para
+>Si solo debe localizar dos caracteres utilice <userinput
+>Detect2Chars</userinput
+> en lugar de <userinput
+>StringDetect</userinput
+>. Lo mismo se aplica a <userinput
+>DetectChar</userinput
+>.</para>
+</listitem>
+<listitem>
+<para
+>Las expresiones regulares son fáciles de utilizar pero algunas veces existen formas mucho más rápidas de obtener el mismo resultado. Imagine que únicamente desea localizar el caracter <userinput
+>'#'</userinput
+> si éste es el primer caracter de la línea. Un solución basada en una expresión regular sería algo parecido a esto: <programlisting
+>&lt;RegExpr attribute=&quot;Macro&quot; context=&quot;macro&quot; String=&quot;^\s*&quot; /&gt;</programlisting
+> Puede conseguir lo mismo mucho más rápido utilizando: <programlisting
+>&lt;DetectChar attribute=&quot;Macro&quot; context=&quot;macro&quot; char=&quot;#&quot; firstNonSpace=&quot;true&quot; /&gt;</programlisting
+> Si desea que la expresión regular localice <userinput
+>'^#'</userinput
+> también puede utilizar <userinput
+>DetectChar</userinput
+> con el atributo <userinput
+>column=&quot;0&quot;</userinput
+>. El atributo <userinput
+>column</userinput
+> cuenta los caracteres base, por tanto el tabulador es solo un caracter. </para>
+</listitem>
+<listitem>
+<para
+>Puede cambiar de contexto sin procesar caracteres. Suponga que desea cambiar de contexto cuando encuentra una cadena <userinput
+>*/</userinput
+>, pero necesita procesar esta cadena en el siguiente contexto. La siguiente regla lo localizará, y el atributo <userinput
+>lookAhead</userinput
+> hará que se guarde la cadena localizada para el siguiente contexto. <programlisting
+>&lt;Detect2Chars attribute=&quot;Comment&quot; context=&quot;#pop&quot; char=&quot;*&quot; char1=&quot;/&quot; lookAhead=&quot;true&quot; /&gt;</programlisting>
+</para>
+</listitem>
+<listitem>
+<para
+>Utilice <userinput
+>DetectSpaces</userinput
+> si sabe cuantos espacios en blanco existen.</para>
+</listitem>
+<listitem>
+<para
+>Utilice <userinput
+>DetectIdentifier</userinput
+> en lugar de la expresión regular <userinput
+>'[a-zA-Z_]\w*'</userinput
+>.</para>
+</listitem>
+<listitem>
+<para
+>Utilice los estilos predeterminados siempre que pueda. De esta forma el usuario se encontrará con un entorno familiar.</para>
+</listitem>
+<listitem>
+<para
+>Véa otros archivos XML para comprobar de qué forma otras personas implementan reglas delicadas.</para>
+</listitem>
+<listitem>
+<para
+>Puede validar cada uno de los archivos XML utilizando la orden <command
+>xmllint --dtdvalid lenguaje.dtd miSintaxis.xml</command
+>.</para>
+</listitem>
+<listitem>
+<para
+>Si repite expresiones regulares complejas muy frecuentemente puede utlizar <emphasis
+>ENTITIES</emphasis
+> (entidades). Ejemplo:</para>
+<programlisting
+>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE language SYSTEM "lenguaje.dtd"
+[
+        &lt;!ENTITY miref    "[A-Za-z_:][\w.:_-]*"&gt;
+]&gt;
+</programlisting>
+<para
+>Ahora puede utilizar <emphasis
+>&amp;miref;</emphasis
+> en lugar de la expresión regular.</para>
+</listitem>
+</itemizedlist>
+</sect2>
+
+</sect1>
+
+</appendix>

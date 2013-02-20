@@ -1,0 +1,155 @@
+<appendix id="appendix-accounting-template">
+<title
+>Przykładowy szablon pliku zasad dla potrzeb rejestracji kosztów połączeń</title>
+
+<para
+>Jeżeli zestaw zasad dla danego kraju jest niedostępny, to należy go stworzyć z wykorzystaniem poniższego szablonu. Jest to naprawdę proste, nie należy się tego obawiać.</para>
+
+<para
+>Nie zapomnij przesłać swojego zestawu zasad do opiekuna programu &kppp;. Nowo stworzony plik z zestawem zasad, może być sprawdzony pod kątem błędów skadniowych z wykorzystaniem opcji <userinput
+><option
+>-r</option
+> <replaceable
+>plik_zasad</replaceable
+></userinput
+> przy uruchamianiu  &kppp; w linii poleceń. Następnie powinien zostać zainstalowany w katalogu <filename class="directory"
+>${KDEDIR}/share/apps/kppp/Rules</filename
+> lub <filename class="directory"
+>${HOME}/.kde/share/apps/kppp/Rules</filename
+> co spowoduje, że będzie można go wybrać w oknie konfiguracji kosztów połaczeń.</para>
+
+<programlisting
+>################################################################
+#
+# Disclaimer/License
+# This Template ist (c) by Mario Weilguni &lt;mweilguni@kde.org&gt;
+# It ist licensed under the same terms as the kppp package, 
+# which it is part of
+#
+################################################################
+#
+# Jest to przykładowy zestaw zasad obliczania kosztów dla programu kppp
+# Możesz wykorzystać go jako szablon do stworzenia własnego zestawu zasad.
+# Jeżeli tak zrobisz, to usuń wszelkie komentarze i dodaj swoje, co pozwoli innym
+# użytkownikom na łatwiejsze sprawdzenie twojego zestawu zasad
+# 
+# Podpisz plik zasad swoim imieniem i adresem email, tak aby opiekun mógł się z tobą
+# skontaktować w razie potrzeby
+#
+# UWAGA: zasady w tym zestawie nie mają większego sensu, i stanowią jedynie
+# przykład dla celów demonstracyjnych
+#
+# UWAGA NA NAZWY PLIKÓW:
+#        jeżeli stworzysz swój zestaw zasad, zawsze używaj "_" w nazwie pliku
+#        zamiast spacji, oraz dodaj rozszerzenie ".rst
+#           np. plik "Taryfa dzienna TPSA"
+#          --> powinien nazywać się "Taryfa_dzienna_TPSA.rst"
+#
+# Z góry dziękuję, Bernd Wuebben
+# wuebben@math.cornell.edu / wuebben@kde.org
+################################################################
+
+
+################################################################
+#
+# NAZWA ZESTAWU ZASAD. Wymagana w celach rozliczania kosztów.
+#
+################################################################
+name=default
+
+################################################################
+# ustawienia dotyczące stosowanej waluty
+################################################################
+
+# określa PLN (polski złoty) jako symbol waluty, nie jest to opcja wymagana
+# wartością domyślną jest = "$")
+currency_symbol=PLN
+
+# Określenie umiejscowienia (right/left) symbolu waluty (nie jest to opcja wymagana).
+# wartością domyślną jest: "right")
+currency_position=right 
+
+# Określenie ilości miejsc po przecinku.
+# (nie jest wymagane, wartość domyślna to "2"
+currency_digits=2
+
+
+
+################################################################
+# ustawienia połączenia
+################################################################
+
+# UWAGA: poniższe warunki są sprawdzane z góry do dołu, co oznacza, że
+#       OSTATNI pasujący warunek, jest wykorzystany do obliczenia kosztu
+
+# W poniżej linii wprowadza się opłatę stałą za połączenie. Czyli jeżeli nie musisz płacić
+# za samo połączenie wpisz tutaj  "0" lub usuń linię.
+per_connection=0.0
+
+
+# minimalny koszt każdego połączenia. Jeżeli wynikający z czasu koszt połączenia jest mniejszy
+# od poniższej wartości, to do obliczeń brana jest wpisana tu wartość
+minimum_costs=0.0
+
+
+# Płacisz .74 PLN za pierwsze 3 minuty (180 sekund) niezależnie czy twoje połączenie
+# trwa 1 sekundę czy też 180 sekund.
+# Poniższe zasada ma priorytet przez pierwsze 180 sekund połączenia, niezależnie od innych
+# zasad. Zobacz w rysunek costgraphs.gif w katalogu docs dystrybucji kppp 
+# dla graficznej ilustracji działania tej zasady
+flat_init_costs=(0.74,180)
+
+# To jest zasada domyślna, wykorzystywana gdy żadna inna zasada nie pasuje do warunku
+# Pierwszy element  "0.1" to cena za jednostkę połączenia, zaś "72" to czas trwania w sekundach.
+# Czyli poniższa zasada oznacza:: "Co 72 sekundy dodaj 0.1 do podsumowania kosztów"
+default=(0.1, 72)
+
+#
+# bardziej skomplikowane zasady:
+#
+
+# od poniedziałku do niedzieli, od północy do 23.59 koszt połączenia wynosi 0,2 za każde 72 sekundy
+on () between () use (0.2, 2)
+
+# analogicznie jak wyżejon (monday..sunday) between () use (0.2, 2)
+
+# analogicznie jak wyżej. Należy używać 24 godzinnego zapisu czasu, gdyż inaczej 
+# obliczenia nie będą działać poprawnie
+on (monday..sunday) between (0:00..23:59) use (0.2, 2)
+
+# dotyczy piątku, soboty, niedzieli i poniedziałku od godziny 8-mej rano do 1-szej po południu
+on (friday..monday) between (8:00..13:00) use(0.3,72)
+
+# UWAGA:
+on(monday..friday) between (21:00..5:00) use (0.4,2)
+# NIE dotyczy soboty od godziny 0.00 do 5.00, a jedynie od zakres poniedziałku do piątku.
+
+# w przypadku podanej daty (Boże Narodzenie)
+on (12/25) between () use (0.3,72)
+
+# zakres dat i jeden dzień tygodnia
+on (12/25..12/27, 12/31, 07/04, monday) between () use (0.4, 72)
+
+# w przypadku wielkanocy wprowadzamy
+on (easter) between () use (0.3,72)
+
+# 50 dni po wielkanocy  (wielki poniedziałek)
+on (easter+50) between () use (0.3,72)
+
+on (thursday) between (20:00..21:52) use (8.2, 1)
+
+
+# Zasady typu "on()" omawiane wyżej dotyczą aktualnego czasu. Możesz również stworzyć zasadę
+# uzależnioną od czasu trwania połączenia w sekundach poprzez podanie tego czasu
+# jako trzeciego argumentu w instrukcji "use()".
+# Na przykład, powiedzmy że standardowa stawka nocna wynosi 0.20 za minutę,
+# i zmniejsza się o 20% po jednej godzinie od połączenia. Wyglądać to będzie tak:
+
+on () between (19:30..08:00) use (0.20, 60)
+on () between (19:30..08:00) use (0.16, 60, 3600)
+
+# Należy zwrócić uwagę na kolejność zasad, są one interpetowane w kolejności
+# pojawiania się
+</programlisting>
+
+</appendix>

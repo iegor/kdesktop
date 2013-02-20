@@ -1,0 +1,4 @@
+KDE_LANG = en_GB
+SUBDIRS = $(AUTODIRS)
+KDE_DOCS = kcontrol/keys
+KDE_MANS = AUTO

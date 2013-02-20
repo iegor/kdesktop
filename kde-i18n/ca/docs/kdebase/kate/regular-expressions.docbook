@@ -1,0 +1,1198 @@
+<appendix id="regular-expressions">
+<appendixinfo>
+<authorgroup>
+<author
+>&Anders.Lund; &Anders.Lund.mail;</author>
+&traductor.Antoni.Bella; 
+</authorgroup>
+</appendixinfo>
+
+<title
+>Expressions regulars</title>
+
+<synopsis
+>Aquest apèndix conté una breu però probablement suficient i
+completa introducció al món de les <emphasis
+>expressions
+regulars</emphasis
+>. Les documenta tal i com apareixen en
+el &kate;, donat que no són compatibles amb les expressions
+regulars de perl, ni de <command
+>grep</command
+>, per exemple.</synopsis>
+
+<sect1>
+
+<title
+>Introducció</title>
+
+<para
+>Les <emphasis
+>expressions regulars</emphasis
+> us proporcionen un mètode per a descriure el possible contingut d'una cadena de text de manera que pugui ser interpretada per una petita peça de programari, i d'aquesta manera es pugui esbrinar si un text es correspon amb el cercat i, en el cas d'aplicacions avançades, es posin els mitjans per a recuperar parts del text coincident.</para>
+
+<para
+>Per exemple: Posem que voleu cercar un text que és el començament d'un paràgraf que inclou els noms <quote
+>Enric</quote
+> o <quote
+>Pere</quote
+>, seguits d'alguna forma del verb <quote
+>dir</quote
+>.</para>
+
+<para
+>En una recerca normal, s'hauria de començar a cercar pel primer nom, <quote
+>Enric</quote
+> potser seguit de <quote
+>di</quote
+>, de la següent manera: <userinput
+>Enric di</userinput
+>, i mentre cerca coincidències, haureu de descartar aquelles que no estiguin al començament d'un paràgraf, així com aquelles en les que la paraula que comenci per <quote
+>di</quote
+> que no pertanyi al verb <quote
+>dir</quote
+>. I després tornar a repetir tot el procés amb el següent nom...</para>
+
+<para
+>Amb les expressions regulars, aquesta tasca s'hauria de realitzar d'una sola recerca, i amb un alt grau de precisió.</para>
+
+<para
+>Per a aconseguir-ho, les expressions regulars estableixen regles per expressar amb detall una generalització de la cadena a cercar. El nostre exemple el podríem expressar literalment com: <quote
+>Una línia que comença per <quote
+>Enric</quote
+> o per <quote
+>Pere</quote
+> (possiblement després de 4 espais en blanc o tabulacions) seguit d'un espai en blanc seguit de <quote
+>di</quote
+> i després <quote
+>u</quote
+> o <quote
+>gué</quote
+></quote
+>, es podria expressar amb la següent expressió regular:</para
+> <para
+><userinput
+>^[ \t]{0,4}(Enric|Pere) di(u|gué)</userinput
+></para>
+
+<para
+>L'exemple anterior mostra els quatre conceptes principals de les expressions regulars modernes, a veure:</para>
+
+<itemizedlist>
+<listitem
+><para
+>Patrons</para
+></listitem>
+<listitem
+><para
+>Declaracions</para
+></listitem>
+<listitem
+><para
+>Quantificadors</para
+></listitem>
+<listitem
+><para
+>Referències enrere</para
+></listitem>
+</itemizedlist>
+
+<para
+>El barret (<literal
+>^</literal
+>) que es troba al començament de l'expressió és una declaració, que tan sols és certa si la resta de la cadena de recerca es troba al començament d'una línia.</para>
+
+<para
+>Les cadenes <literal
+>[ \t]</literal
+> i <literal
+>(Enric|Pere) di(u|gué)</literal
+> són patrons. El primer és una <emphasis
+>classe de caràcters</emphasis
+> que coincideix amb un espai en blanc o amb una tabulació (horitzontal); l'altra patró conté un primer subpatró que coincideix amb <literal
+>Enric</literal
+> <emphasis
+>o amb</emphasis
+> <literal
+>Pere</literal
+>, després una part de coincidència exacta <literal
+>di</literal
+> i per últim un altra subpatró que coincideix amb <literal
+>u</literal
+> <emphasis
+>o amb </emphasis
+> <literal
+>gué</literal
+></para>
+
+<para
+>La cadena <literal
+>{0,4}</literal
+> és un quantificador que diu <quote
+>en qualsevol lloc des de 0 a 4 caràcters anteriors</quote
+>.</para>
+
+<para
+>Com el programari d'expressions regulars suporta el concepte de <emphasis
+>referències enrere</emphasis
+> desa tota la part coincident de la cadena així com els subpatrons tancats entre parèntesis, proporcionant mitjans per accedir a aquestes referències, podem posar les nostres mans tant en la cadena coincident completa (quan es cerca al text d'un editor mitjançant una expressió regular, que normalment apareix marcada com a seleccionada) com en el nom trobat, o en la última part del verb.</para>
+
+<para
+>Unint-ho tot, l'expressió coincidirà a on nosaltres vulguem, i tan sols allí.</para>
+
+<para
+>Les següents seccions descriuen amb detall com construir i usar patrons, classes de caràcters, declaracions, quantificadors i referències enrere, i la última secció presentarà una serie d'útils exemples.</para>
+
+</sect1>
+
+<sect1 id="regex-patterns">
+
+<title
+>Patrons</title>
+
+<para
+>Els patrons consten de cadenes literals i classes de caràcter. Els patrons poden contenir subpatrons, que són patrons tancats entre parèntesis.</para>
+
+<sect2>
+<title
+>Caràcters d'escapada</title>
+
+<para
+>En els patrons, així com en les classes de caràcter, alguns caràcters tenen un significat especial. Per aconseguir una coincidència literal amb algun d'aquests caràcters, és necessari marcar-los com a <emphasis
+>escapats</emphasis
+> per a permetre a l'intèrpret d'expressions regulars comprendre que aquests caràcters han de ser inclosos en el seu significat literal.</para>
+
+<para
+>Això es fa precedint el caràcter d'una barra invertida (<literal
+>\</literal
+>).</para>
+
+
+<para
+>El programari d'expressions regulars ignorarà l'escapat de qualsevol caràcter que no tingui cap significat especial en el context, així que escapar, per exemple, <quote
+>j</quote
+> (<userinput
+>\j</userinput
+>) no te per què causar problemes. Si teniu cap dubte sobre quan un caràcter pot tenir un significat especial, escapeu-lo amb seguretat.</para>
+
+<para
+>L'escapat inclou el propi caràcter de la barra invertida. Per a poder presentar-la de forma literal, heu d'escriure <userinput
+>\\</userinput
+>.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Classes de caràcter i abreujaments</title>
+
+<para
+>Una <emphasis
+>classe de caràcter</emphasis
+> és una expressió que coincideix amb un conjunt de caràcters definit. En les expressions regulars, les classes de caràcter s'estableixen col·locant els caràcters vàlids de la classe entre claudàtors <literal
+>[]</literal
+>, o usant una de les classes abreujades que es descriuen a continuació.</para>
+
+<para
+>Les classes de caràcters simples tan sols contenen un o més caràcters literals, per exemple <userinput
+>[abc]</userinput
+> (que coincidirà amb les lletres <quote
+>a</quote
+>, <quote
+>b</quote
+> o <quote
+>c</quote
+>) o <userinput
+>[0123456789]</userinput
+> (que coincidirà amb qualsevol dígit).</para>
+
+<para
+>Com les lletres i els números tenen un ordre lògic, ho podeu abreujar usant rangs: <userinput
+>[a-c]</userinput
+> és igual a <userinput
+>[abc]</userinput
+> i <userinput
+>[0-9]</userinput
+> és igual a <userinput
+>[0123456789]</userinput
+>. Combinant aquestes construccions, per exemple <userinput
+>[a-fynot1-38]</userinput
+> resulta completament vàlid (aquesta última hauria de coincidir amb qualsevol dels caràcters o dígits <quote
+>a</quote
+>, <quote
+>b</quote
+>, <quote
+>c</quote
+>, <quote
+>d</quote
+>, <quote
+>e</quote
+>, <quote
+>f</quote
+>, <quote
+>y</quote
+>, <quote
+>n</quote
+>, <quote
+>o</quote
+>, <quote
+>t</quote
+>, <quote
+>1</quote
+>, <quote
+>2</quote
+>, <quote
+>3</quote
+> o <quote
+>8</quote
+>).</para>
+
+<para
+>Com les lletres majúscules són caràcters diferents que els seus equivalents en minúscula, per a crear una classe de caràcter que sigui independent del format de les lletres, haureu d'escriure <userinput
+>[aAbB]</userinput
+>.</para>
+
+<para
+>De manera que és possible crear una classe <quote
+>negativa</quote
+> per a que es faci coincidir <quote
+>tot menys</quote
+>. Per a fer-ho inclogueu un barret (<literal
+>^</literal
+>) al començament de la classe: </para>
+
+<para
+><userinput
+>[^abc]</userinput
+> coincidirà amb qualsevol caràcter <emphasis
+>excepte amb</emphasis
+> <quote
+>a</quote
+>, <quote
+>b</quote
+> o <quote
+>c</quote
+>.</para>
+
+<para
+>A més dels caràcters literals, hi ha alguns abreujaments definits, per a facilitar una mica les coses: <variablelist>
+
+<varlistentry>
+<term
+><userinput
+>\a</userinput
+></term>
+<listitem
+><para
+>Aquest coincideix amb el caràcter <acronym
+>ASCII</acronym
+> del timbre (BEL, 0x07).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\f</userinput
+></term>
+<listitem
+><para
+>Aquest coincideix amb el caràcter <acronym
+>ASCII</acronym
+> del salt de pàgina (FF, 0x0C).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\n</userinput
+></term>
+<listitem
+><para
+>Aquest coincideix amb el caràcter <acronym
+>ASCII</acronym
+> del salt de línia (LF, 0x0A, nova línia a Unix).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\r</userinput
+></term>
+<listitem
+><para
+>Aquest coincideix amb el caràcter <acronym
+>ASCII</acronym
+> de retorn de carro (CR, 0x0D).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\t</userinput
+></term>
+<listitem
+><para
+>Aquest coincideix amb el caràcter <acronym
+>ASCII</acronym
+> del tabulador horitzontal (HT, 0x09).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\v</userinput
+></term>
+<listitem
+><para
+>Aquest coincideix amb el caràcter <acronym
+>ASCII</acronym
+> del tabulador vertical (VT, 0x0B).</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><userinput
+>\xhhhh</userinput
+></term>
+
+<listitem
+><para
+>Aquest coincideix amb el caràcter Unicode corresponent al número hexadecimal hhhh (entre 0x0000 i 0xFFFF). \0ooo (&ead;, \zero ooo) coincideix amb el caràcter <acronym
+>ASCII</acronym
+>/Latin-1 corresponent al número octal ooo (entre 0 i 0377).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>.</userinput
+> (punt)</term>
+<listitem
+><para
+>Aquest coincideix amb qualsevol caràcter (inclòs el de nova línia).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\d</userinput
+></term>
+<listitem
+><para
+>Aquest coincideix amb un dígit. És igual que <literal
+>[0-9]</literal
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\D</userinput
+></term>
+<listitem
+><para
+>Aquest coincideix amb un no dígit. És igual que <literal
+>[^0-9]</literal
+> o <literal
+>[^\d]</literal
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\s</userinput
+></term>
+<listitem
+><para
+>Aquest coincideix amb un caràcter d'espai en blanc. Pràcticament igual que <literal
+>[\t\n\r]</literal
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\S</userinput
+></term>
+<listitem
+><para
+>Aquest coincideix amb un no espai en blanc. Pràcticament igual que <literal
+>[^\t\r\n]</literal
+>, i igual que <literal
+>[^\s]</literal
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\w</userinput
+></term>
+<listitem
+><para
+>Coincideix amb qualsevol <quote
+>caràcter d'una paraula</quote
+>, en aquest cas qualsevol lletra o número. Tingueu present que el subratllat (<literal
+>_</literal
+>) no hi estarà inclòs, a diferència de les expressions regulars de perl. És igual que <literal
+>[a-zA-Z0-9]</literal
+>.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\W</userinput
+></term>
+<listitem
+><para
+>Coincideix amb qualsevol caràcter que no sigui una paraula, qualsevol cosa menys lletres o números. És igual que <literal
+>[^a-zA-Z0-9]</literal
+> o <literal
+>[^\w]</literal
+>.</para
+></listitem>
+</varlistentry>
+
+
+</variablelist>
+
+</para>
+
+<para
+>Les classes abreujades es poden posar a dins d'una classe pròpia, per exemple per a fer coincidir un caràcter d'una paraula, un espai en blanc o un punt, podeu escriure <userinput
+>[\w \.]</userinput
+></para
+> 
+
+<note
+> <para
+>La notació POSIX de classes, <userinput
+>[:&lt;class name&gt;:]</userinput
+> actualment no està suportada.</para
+> </note>
+
+<sect3>
+<title
+>Caràcters amb significat especial dintre de les classes de caràcters</title>
+
+<para
+>Els següents caràcters tenen un significat especial dintre de la construcció de classes dels caràcters <quote
+>[]</quote
+>, i és necessari escapar-los per a que siguin inclosos literalment en una classe:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><userinput
+>]</userinput
+></term>
+<listitem
+><para
+>Finalitza la classe de caràcters. Haurà d'estar escapat excepte si és el primer caràcter de la classe (pot seguir a un barret sense escapar).</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><userinput
+>^</userinput
+> (barret)</term>
+<listitem
+><para
+>Indica que es tracta d'una classe negativa, si és el primer caràcter. Haurà d'estar escapat per a cercar una coincidència literal en el cas que sigui el primer caràcter en la classe.</para
+></listitem
+> 
+</varlistentry>
+<varlistentry>
+<term
+><userinput
+>-</userinput
+> (guió)</term>
+<listitem
+><para
+>Indica un rang lògic. Haurà d'estar escapat en una classe de caràcter.</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><userinput
+>\</userinput
+> (barra invertida)</term>
+<listitem
+><para
+>El caràcter de escape. Haurà d'estar sempre escapat.</para
+></listitem>
+</varlistentry>
+
+</variablelist>
+
+</sect3>
+
+</sect2>
+
+<sect2>
+
+<title
+>Alternatives: Coincidències amb <quote
+>un de</quote
+></title>
+
+<para
+>Si desitgeu que la coincidència sigui una d'una sèrie de patrons alternatius, els podeu separar amb <literal
+>|</literal
+> (caràcter de barra vertical).</para>
+
+<para
+>Per exemple, per a trobar <quote
+>Jordi</quote
+> o <quote
+>Albert</quote
+>, hauríeu d'usar una expressió <userinput
+>Jordi|Albert</userinput
+>.</para>
+
+</sect2>
+
+<sect2>
+
+<title
+>Subpatrons</title>
+
+<para
+>Els <emphasis
+>subpatrons</emphasis
+> són patrons tancats entre parèntesis, i tenen diversos usos en el mon de les expressions regulars.</para>
+
+<sect3>
+
+<title
+>Especificació d'alternatives</title>
+
+<para
+>Podeu usar un subpatró per agrupar un conjunt d'alternatives dins d'un patró més gran. Les alternatives es separen amb el caràcter <quote
+>|</quote
+> (barra vertical).</para>
+
+<para
+>Per exemple, per a cercar la coincidència de les paraules <quote
+>int</quote
+>, <quote
+>float</quote
+> o <quote
+>double</quote
+>, es podria usar el patró <userinput
+>int|float|double</userinput
+>. Si tan sols desitgeu trobar-ne una seguida d'algun tipus d'espai en blanc i després algunes lletres, poseu les alternatives dins d'un subpatró: <userinput
+>(int|float|double)\s+\w+</userinput
+>.</para>
+
+</sect3>
+
+<sect3>
+
+<title
+>Captura del text coincident (referències enrere)</title>
+
+<para
+>Si desitgeu usar una referència enrere, useu un subpatró per a que es recordi la part desitjada del patró.</para>
+
+<para
+>Per exemple, si desitgeu trobar dues ocurrències de la mateixa paraula separades per una coma i possiblement algun espai en blanc, podeu escriure <userinput
+>(\w+),\s*\1</userinput
+>. El subpatró <literal
+>\w+</literal
+> localitzarà un conjunt de caràcters d'una paraula, i tota la expressió coincidirà si aquest conjunt va seguit d'una coma, 0 o més espais en blanc i després un conjunt de caràcters d'una paraula igual al primer. (La cadena <literal
+>\1</literal
+> fa referència al <emphasis
+>primer subpatró delimitat per parèntesis</emphasis
+>)</para>
+
+<!-- <para
+>See also <link linkend="backreferences"
+>Back references</link
+>.</para
+> -->
+
+</sect3>
+
+<sect3 id="lookahead-assertions">
+<title
+>Declaracions d'anticipació</title>
+
+<para
+>Una declaració d'anticipació és un subpatró, que comença per <literal
+>?=</literal
+> o per <literal
+>?!</literal
+>.</para>
+
+<para
+>Per exemple, si voleu cercar la cadena literal <quote
+>Bill</quote
+>, però tan sols si no va seguida de <quote
+> Gates</quote
+>, podeu usar l'expressió: <userinput
+>Bill(?! Gates)</userinput
+>. (Això coincidirà amb <quote
+>Bill Clinton</quote
+> i amb <quote
+>Billy el nen</quote
+>, però ignoraria en silenci les altres coincidències).</para>
+
+<para
+>Els subpatrons usats en les declaracions no es capturen.</para>
+
+<para
+>Veure també <link linkend="assertions"
+>Declaracions</link
+>.</para>
+
+</sect3>
+
+</sect2>
+
+<sect2 id="special-characters-in-patterns">
+<title
+>Caràcters amb un significat especial dins dels patrons</title>
+
+<para
+>Els següents caràcters tenen significat dins dels patrons, i és necessari escapar-los per a una coincidència literal: <variablelist>
+
+<varlistentry>
+<term
+><userinput
+>\</userinput
+> (barra invertida)</term>
+<listitem
+><para
+>El caràcter d'escapada.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>^</userinput
+> (barret)</term>
+<listitem
+><para
+>Declara el començament de la cadena.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>$</userinput
+></term>
+<listitem
+><para
+>Declara el final de la cadena.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>()</userinput
+> (parèntesis dret i esquerra)</term>
+<listitem
+><para
+>Denota subpatrons.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>{}</userinput
+> (claus dreta i esquerra)</term>
+<listitem
+><para
+>Denota quantificadors numèrics.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>[]</userinput
+> (claudàtors dret i esquerra)</term>
+<listitem
+><para
+>Denota classes de caràcter.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>|</userinput
+> (barra vertical)</term>
+<listitem
+><para
+>O lògic. Separa alternatives.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>+</userinput
+> (signe més)</term>
+<listitem
+><para
+>Quantificador, 1 o més.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>*</userinput
+> (asterisc)</term>
+<listitem
+><para
+>Quantificador, 0 o més.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>?</userinput
+> (signe d'interrogació)</term>
+<listitem
+><para
+>Un caràcter opcional. Es pot interpretar com quantificador, 0 o 1.</para
+></listitem>
+</varlistentry>
+
+</variablelist>
+
+</para>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="quantifiers">
+<title
+>Quantificadors</title>
+
+<para
+>Els <emphasis
+>quantificadors</emphasis
+> permeten que una expressió regular coincideixi amb un número o un rang de números de qualsevol caràcter, una classe de caràcter o un subpatró.</para>
+
+<para
+>Els quantificadors es col·loquen entre claus (<literal
+>{</literal
+> i <literal
+>}</literal
+>). Teniu la forma general <literal
+>{[ocurrències-mínimes][,[ocurrències-màximes]]}</literal
+> </para>
+
+<para
+>L'ús s'explica millor en aquest exemple: <variablelist>
+
+<varlistentry>
+<term
+><userinput
+>{1}</userinput
+></term>
+<listitem
+><para
+>Exactament 1 ocurrència</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>{0,1}</userinput
+></term>
+<listitem
+><para
+>Cero o 1 ocurrències</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>{,1}</userinput
+></term>
+<listitem
+><para
+>El mateix, però amb menys treball ;)</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>{5,10}</userinput
+></term>
+<listitem
+><para
+>Com a mínim 5 i com a màxim 10 ocurrències.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>{5,}</userinput
+></term>
+<listitem
+><para
+>Com a mínim 5 ocurrències, sense màxim.</para
+></listitem>
+</varlistentry>
+
+</variablelist>
+
+</para>
+
+<para
+>A més, hi ha alguns abreujaments: <variablelist>
+
+<varlistentry>
+<term
+><userinput
+>*</userinput
+> (asterisc)</term>
+<listitem
+><para
+>Similar a <literal
+>{0,}</literal
+>, troba qualsevol número d'ocurrències.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>+</userinput
+> (signe més)</term>
+<listitem
+><para
+>Similar a <literal
+>{1,}</literal
+>, almenys 1 ocurrència.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>?</userinput
+> (signe d'interrogació)</term>
+<listitem
+><para
+>Similar a <literal
+>{0,1}</literal
+>, cero o 1 ocurrència.</para
+></listitem>
+</varlistentry>
+
+</variablelist>
+
+</para>
+
+<sect2>
+
+<title
+>Avarícia</title>
+
+<para
+>Quan s'usen quantificadors sense màxim, les expressions regulars intenten coincidir amb la major part possible de la cadena cercada, coneguen-se aquest comportament com a <emphasis
+>avariciós</emphasis
+>.</para>
+
+<para
+>El programari modern d'expressions regulars proporciona els mitjans per a <quote
+>desactivar l'avarícia</quote
+>, tot i que en els entorns gràfics dependrà de la interfície al tenir accés a aquesta característica. Per exemple, un diàleg de recerca que permeti expressions regulars, podria tenir una casella de comprovació anomenada <quote
+>Coincidència mínima</quote
+>. A més hi podria haver una indicació quant a que el comportament per omissió és d'avarícia.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Exemples en context</title>
+
+<para
+>Aquests són alguns exemples que usen quantificadors:</para>
+
+<variablelist>
+
+<varlistentry>
+<term
+><userinput
+>^\d{4,5}\s</userinput
+></term>
+<listitem
+><para
+>Coincideix amb els dígits en <quote
+>1234 ja</quote
+> i <quote
+>12345 ara</quote
+>, però no amb els de <quote
+>567 onze</quote
+> ni els de <quote
+>223459 enlloc</quote
+>.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\s+</userinput
+></term>
+<listitem
+><para
+>Coincideix amb un o més espais en blanc.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>(bla){1,}</userinput
+></term>
+<listitem
+><para
+>Coincideix amb <quote
+>blablabla</quote
+> i amb el <quote
+>bla</quote
+> de <quote
+>blanc</quote
+> o <quote
+>tabla</quote
+>.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>/?&gt;</userinput
+></term>
+<listitem
+><para
+>Coincideix amb <quote
+>/&gt;</quote
+> en <quote
+>&lt;ítemtancat/&gt;</quote
+> així com amb <quote
+>&gt;</quote
+> en <quote
+>&lt;ítemobert&gt;</quote
+>.</para
+></listitem>
+</varlistentry>
+
+</variablelist>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="assertions">
+<title
+>Declaracions</title>
+
+<para
+>Les <emphasis
+>declaracions</emphasis
+> permeten que una expressió regular tan sols coincideixi sota una sèrie de condiciones controlades.</para>
+
+<para
+>Una declaració no necessita la coincidència d'un caràcter, si no que investiga els voltants en recerca d'una possible coincidència abans de donar-la per vàlida. Per exemple, la declaració <emphasis
+>límit de paraula</emphasis
+> no intenta trobar un caràcter que no sigui d'una paraula en oposició a un que sí estigui en la seva posició, en comptes d'això mira d'assegurar que no és un caràcter d'una paraula. Això vol dir que la declaració pot ser vàlida en el cas que no hi hagi cap caràcter, &ead;, al final de la cadena cercada.</para>
+
+<para
+>Algunes declaracions actuals no tenen un patró amb el que coincidir, però la part coincident de la cadena no serà part del resultat de la coincidència de l'expressió completa.</para>
+
+<para
+>Les expressions regulars aquí documentades suporten les següents declaracions: <variablelist>
+
+<varlistentry
+> 
+<term
+><userinput
+>^</userinput
+> (barret: el començament d'una cadena)</term
+> 
+<listitem
+><para
+>Coincideix amb el començament de la cadena cercada.</para
+> <para
+>L'expressió <userinput
+>^Pere</userinput
+> coincidirà amb <quote
+>Pere</quote
+> en la cadena <quote
+>Pere, hola!</quote
+> però no en <quote
+>Hola Pere!</quote
+> </para
+> </listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>$</userinput
+> (final de la cadena)</term>
+<listitem
+><para
+>Coincideix amb el final de la cadena cercada.</para>
+
+<para
+>L'expressió <userinput
+>tu\?$</userinput
+> coincidirà amb el final de la cadena <quote
+>No l'has fet tu?</quote
+>, però amb cap part de <quote
+>Tu no l'has fet?</quote
+></para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\b</userinput
+> (límit d paraula)</term>
+<listitem
+><para
+>Coincideix si hi ha un caràcter de paraula a un costat i un altra que no sigui a l'altra.</para>
+<para
+>Això es molt útil per a trobar el final de les paraules, o ambdós extrems per a delimitar tota la paraula. L'expressió <userinput
+>\bin\b</userinput
+> coincidirà amb el <quote
+>in</quote
+> separat en la cadena <quote
+>He came in through the window</quote
+>, però no amb el <quote
+>in</quote
+> de <quote
+>window</quote
+>.</para
+></listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\B</userinput
+> (no límit de paraula)</term>
+<listitem
+><para
+>Coincideix amb tot el que <quote
+>\b</quote
+> no coincideix.</para>
+<para
+>Això vol dir que coincidirà, per exemple, dins de les paraules: L'expressió <userinput
+>\Bin\B</userinput
+> coincidirà en <quote
+>window</quote
+> però no en <quote
+>integer</quote
+> o en <quote
+>I'm in love</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>(?=PATRÓ)</userinput
+> (Anticipació positiva)</term>
+<listitem
+><para
+>Una declaració d'anticipació cerca la part de la cadena seguida d'una possible coincidència. L'anticipació positiva prevé la coincidència de la cadena si el text que segueix no correspon al <emphasis
+>PATRÓ</emphasis
+> de la declaració, i el text que coincideix amb aquest no serà inclòs en el resultat.</para>
+<para
+>L'expressió <userinput
+>handy(?=\w)</userinput
+> coincidirà amb <quote
+>handy</quote
+> en <quote
+>handyman</quote
+> però no en <quote
+>That came in handy!</quote
+></para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>(?!PATRÓ)</userinput
+> (Anticipació negativa)</term>
+
+<listitem
+><para
+>L'anticipació negativa prevé una possible coincidència si la següent part de la cadena coincideix amb el <emphasis
+>PATRÓ</emphasis
+>.</para>
+<para
+>L'expressió <userinput
+>const \w+\b(?!\s*&amp;)</userinput
+> coincidirà amb <quote
+>const char</quote
+> en la cadena <quote
+>const char* foo</quote
+>, mentre que no coincidirà amb <quote
+>const QString</quote
+> en <quote
+>const QString&amp; bar</quote
+>, atès que el <quote
+>&amp;</quote
+> coincideix amb el patró de la declaració d'anticipació negativa.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+</para>
+
+</sect1>
+
+<!-- TODO sect1 id="backreferences">
+
+<title
+>Back References</title>
+
+<para
+></para>
+
+</sect1 -->
+
+</appendix>

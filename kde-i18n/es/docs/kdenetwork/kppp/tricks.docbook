@@ -1,0 +1,288 @@
+<chapter id="modem-tricks">
+<title
+>Trucos del módem</title>
+
+<para
+>Esta sección debería introducir a los temerosos en el (no tan) ancestral arte de la configuración del módem. Todos las órdenes utilizadas pertenecen al estándar Hayes AT, pero no todos los módems son iguales, así que los resultados podrían variar.</para>
+
+<sect1 id="modem-sessions">
+<title
+>Sesiones del módem</title>
+
+<para
+>Una sesión del módem le permite interaccionar con el módem directamente. Usted teclea órdenes y el módem responderá. Para obtener una sesión del módem, cuando no haya ninguna conexión activa, vaya al diálogo <guibutton
+>Configuración</guibutton
+>, después a <guilabel
+>Módem</guilabel
+> <guibutton
+>Terminal</guibutton
+>. Se abrirá una ventana para configuración interactiva del módem. Pruebe a teclear <userinput
+><command
+>ATZ</command
+></userinput
+> (que reiniciará el módem). Debería obtener OK como respuesta. Utilice <menuchoice
+><guimenu
+>Archivo</guimenu
+><guimenuitem
+>Cerrar</guimenuitem
+></menuchoice
+> para finalizar la sesión.</para>
+
+</sect1>
+
+<sect1 id="modem-profiles">
+<title
+>Perfiles del módem</title>
+					
+<para
+>Una de las razones por las razones por las que puede querer enviar órdenes al módem directamente es si tiene un conjunto de configuraciones del módem que desea mantener, y no tenerlas que especificar en cada conexión. Un buen método para hacer esto es a través de los perfiles del módem. Los módems puede tener almacenados varios perfiles numerados 0,1,... Se puede utilizar <command
+>AT&amp;V</command
+> para verlos todos. El perfil predeterminado normalmente es 0 (esto se puede cambiar mediante <command
+>AT&amp;Y</command
+>). El perfil en uso se denomina perfil «activo».</para>
+
+<para
+>Cuando cambie un parámetro, se modificará el perfil activo. La orden <command
+>ATZ</command
+> hará que el módem cargue el perfil predeterminado, borrando todos los cambios que se hayan hecho. Para guardar los cambios, cargue el perfil que desea cambiar mediante <command
+>ATZ<replaceable
+>n</replaceable
+></command
+> (donde <replaceable
+>n</replaceable
+> es el número del perfil). Realice los cambios que desee, y guárdelos con <command
+>AT&amp;W<replaceable
+>n</replaceable
+></command
+>. Para que kppp utilice el perfil que usted desee, cambie la cadena de inicialización del módem (<guibutton
+>Configuración</guibutton
+> <guilabel
+>Módem</guilabel
+> <guibutton
+>Órdenes del módem</guibutton
+> <guilabel
+>Cadena de inicialización</guilabel
+>). Por ejemplo <command
+>ATZ1</command
+> hará que kppp reinicie el módem y utilice el perfil almacenado número 1.</para>
+
+<para
+>Si desea reiniciar su módem para volver al punto de inicio, utilice <command
+>AT&amp;F&amp;W</command
+> para establecer en el perfil activo los valores predeterminados en fábrica, y almacenarlos como perfil predeterminado.</para>
+
+<para
+>Los ejemplos de cambios de perfiles se encuentran en la siguiente sección</para>
+
+</sect1>
+
+<sect1 id="modem-hangup">
+<title
+>Hacer que el módem cuelgue</title>
+
+<para
+>En ocasiones puede encontrase con que &kppp; tiene dificultades para colgar el módem. Esto se debe con casi total seguridad al una incoherencia entre los parámetros de &kppp; y los del módem. Un módem normal utiliza dos métodos para decidir colgar la línea: <link linkend="hangup-command-method"
+>orden</link
+>, y <link linkend="hangup-dtr-method"
+><acronym
+>DTR</acronym
+></link
+>. El método Órden implica el envío de una secuencia de escape al módem, que lo deja en modo de órdenes, y depués envía la orden de colgado (<command
+>ATH</command
+>).</para>
+
+<para
+>A parte de &kppp;, al configurar el paquete <application
+>pppd</application
+> manualmente, es muy útil utilizar el método orden, ya que puede abandonar una sesión de terminal, y después iniciar <application
+>pppd</application
+> sin que el módem cuelgue. En la mayoría de otras situaciones, se prefiere el método <acronym
+>DTR</acronym
+>, ya que es más sencillo.</para>
+
+<sect2 id="hangup-dtr-method">
+<title
+>Método <acronym
+>DTR</acronym
+> (<command
+>AT&amp;Dn</command
+>)</title>
+
+<para
+>El método <acronym
+>DTR</acronym
+> hará que el módem cuelgue en cualquier situación en la que &kppp; deje de utilizarlo. Si obtiene una sesión del módem, hace una petición del estado a través de <command
+>AT&amp;V</command
+>, y puede encontrar entre las opciones del perfil mostradas el texto <command
+>&amp;D0</command
+>, significa que el método del colgado <acronym
+>DTR</acronym
+> está desactivado. Para activarlo utilice el botón <guibutton
+>Terminal</guibutton
+> para abrir una sesión con el módem, y después:</para>
+
+<screen
+><userinput
+><command
+>ATZ</command
+></userinput
+> <lineannotation
+># reiniciar el perfil predeterminado</lineannotation>
+<userinput
+><command
+>AT&amp;D2</command
+></userinput
+>  <lineannotation
+># Establecer el colgado por el método DTR</lineannotation>
+<userinput
+><command
+>AT&amp;W</command
+></userinput
+>  <lineannotation
+># Guardar el perfil predeterminado</lineannotation
+>
+</screen>
+
+<sect3>
+<title
+>Cómo funciona el método <acronym
+>DTR</acronym
+></title>
+
+<para
+>Cada vez que la línea Data Terminal Ready (<acronym
+>DTR</acronym
+>), que va entre el ordenador y el módem, sube, el módem cuelga. Cuando &kppp; abre el puerto serie, la línea <acronym
+>DTR</acronym
+> se baja. En un módem externo se puede apreciar cómo el indicador <acronym
+>DTR</acronym
+> (o <acronym
+>TR</acronym
+>) se ilumina cuando ocurre esto. Cuando se apaga el indicador de <acronym
+>TR</acronym
+> (porque &kppp; ha cerrado el puerto serie, o algo peor), el módem cuelga.</para>
+</sect3>
+
+</sect2>
+
+<sect2 id="hangup-command-method">
+<title
+>Método de órdenes</title>
+
+<para
+>Otro métido de hacer que el módem cuelgue durante una conexión (utilizado si en <command
+>AT&amp;D<replaceable
+>n</replaceable
+></command
+>, <replaceable
+>n</replaceable
+> no es igual a <returnvalue
+>2</returnvalue
+>) es hacer que el módem acepte la orden durante una sesión en progreso. Para que cuelgue adecuadamente, abra una sesión del módem, y establezca el tiempo de guarda a un intervalo corto:</para>
+
+<screen
+><userinput
+><command
+>ATZ</command
+></userinput>
+<userinput
+><command
+>ATS12=5</command
+></userinput>
+<userinput
+><command
+>AT&amp;W</command
+></userinput
+>
+</screen>
+
+<para
+>Después utilice el deslizador <guilabel
+>Tiempo de guarda</guilabel
+>, en la sección de órdenes del módem, para que coincida con el registro (<varname
+>S12</varname
+> a este valor <returnvalue
+>5</returnvalue
+>). El módem debe colgar adecuadamente.</para>
+
+<sect3>
+<title
+>Cómo funciona el método de órdenes</title>
+
+<para
+>Cuando el módem local está conectado al módem remoto, se encuentra en estado «connect», en el que pasa todos los caracteres que recibe al módem remoto, sin interpretarlos. Para hacer que el módem acepte los caracteres como órdenes, es necesario establecer el módem en modo de órdenes. El código de escape lo hace.</para>
+
+<para
+>El código de escape se define como tres intervalos del tiempo cuya logitud está definida por <varname
+>S12</varname
+> en cincuentaavos de segundo.</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Tranquilo (debe durar más que <varname
+>S12</varname
+>/50 segundos)</para>
+</listitem>
+<listitem>
+<para
+>Carácter de escape (definido por el registro <varname
+>S2</varname
+>, el predeterminado es «+»), repetido tres veces (menos de <varname
+>S12</varname
+>/50 segundos entre cada una).</para>
+</listitem>
+<listitem>
+<para
+>Tranquilo (debe durar más que <varname
+>S12</varname
+>/50 segundos)</para>
+</listitem>
+</itemizedlist>
+
+<para
+>Una vez que el módem se encuentra en estado de órdenes, se le pueden enviar estos. Para colgarlo, envíe la orden <command
+>ATH</command
+>. Los códigos de escape y la secuencia de colgado utilizados por &kppp; se muestran en el diálogo <link linkend="modem-commands"
+><guilabel
+>Órdenes del módem</guilabel
+></link
+>. Deben ajustarse a la configuración de su módem.</para>
+
+</sect3>
+</sect2>
+</sect1>
+
+<sect1 id="tone-dialing-speedup">
+<title
+>Cómo hacer más rápida la marcación por tonos</title>
+
+<para
+>Si puede utilizar marcación por tonos, el tiempo que tarda en marcar se puede modificar utilizando el registro <varname
+>S11</varname
+>. Determina la duración (en centésimas de segundo) de cada uno de los tonos al marcar. El valor predeterminado es normalmente 95 (casi un segundo). La velocidad máxima depende de la tecnología de conmutación que utilice su operadora telefónica. La duración mínima es de 50, velocidad que es casi la mitad y que normalmente funciona. </para>
+
+<screen
+><userinput
+><command
+>ATZ</command
+></userinput
+>        <lineannotation
+> # cargar el perfil predeterminado</lineannotation>
+<userinput
+><command
+>ATS11=50</command
+></userinput
+>   <lineannotation
+># la marcación más rápida posible, utilice un número mayor si este no funciona</lineannotation>
+<userinput
+><command
+>AT&amp;W</command
+></userinput
+>   <lineannotation
+># escribir el perfil predeterminado</lineannotation
+>
+</screen>
+
+</sect1>
+</chapter>

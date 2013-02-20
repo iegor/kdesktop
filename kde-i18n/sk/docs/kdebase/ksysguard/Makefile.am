@@ -1,0 +1,4 @@
+KDE_LANG = sk
+SUBDIRS = $(AUTODIRS)
+KDE_DOCS = ksysguard
+KDE_MANS = AUTO

@@ -1,0 +1,4 @@
+KDE_LANG = hu
+SUBDIRS = $(AUTODIRS)
+KDE_DOCS = kinfocenter/dma
+KDE_MANS = AUTO

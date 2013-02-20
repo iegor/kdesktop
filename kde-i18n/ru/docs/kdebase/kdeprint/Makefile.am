@@ -1,0 +1,4 @@
+KDE_LANG = ru
+SUBDIRS = $(AUTODIRS)
+KDE_DOCS = kdeprint
+KDE_MANS = AUTO

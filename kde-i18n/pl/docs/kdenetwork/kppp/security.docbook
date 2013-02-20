@@ -1,0 +1,137 @@
+<chapter id="security">
+<title
+>Kwestie związane z bezpieczeństwem w &kppp;</title>
+
+<para
+>Ta część dokumentacji przeznaczona jest dla Administratorów systemu (użytkownika <systemitem
+>root</systemitem
+>), osób o wysokich wymaganiach dotyczących bezpieczeństwa, lub osób zainteresowanych technicznymi kwestiami funkcjonowania systemu. Nie jest konieczne czytanie tego tekstu, jeżeli wykorzystujesz Linuksa w domu dla swoich potrzeb, jednak zawsze możesz nauczyć się czegoś interesującego.</para>
+
+<sect1 id="security-restricting-access">
+<title
+>Ograniczanie dostępu do &kppp; </title>
+
+<para
+>Administrator systemu może decydować kto może wykorzystywać &kppp;Istnieją dwie możliwości realizacji tego zadania.</para>
+
+<sect2 id="security-group-permissions">
+<title
+>Ograniczanie dostępu z wykorzystaniem grupowych praw dostępu</title>
+
+<para
+>Utwórz nową grupę (możesz ją nazwać na przykład <systemitem
+>dialout</systemitem
+>) i przypisz do niej wszystkich użytkowników, którzy będą mogli korzystać z &kppp;, a nasŧępnie wpisz następującego polecenia:</para>
+
+<screen
+><prompt
+>#</prompt
+> <userinput
+><command
+>chown</command
+> <option
+>root.dialout</option
+> <filename
+>/opt/kde/bin/kppp</filename
+></userinput>
+<prompt
+>#</prompt
+> <userinput
+><command
+>chmod</command
+> <option
+>4750</option
+> <filename
+>/opt/kde/bin/kppp</filename
+></userinput
+>
+</screen>
+
+<para
+>W powyższym przykładzie, zakłada się iż &kde; zainstalowano w katalogu <filename class="directory"
+> /opt/kde/</filename
+> oraz, że nowo utworzona grupa nosi nazwę <systemitem
+>dialout</systemitem
+>.</para>
+
+</sect2>
+
+<sect2 id="security-kppps-way">
+<title
+>Ograniczanie dostępu z wykorzystaniem mechanizmów &kppp;</title>
+
+<para
+>Zanim program &kppp; wykona cokolwiek, najpierw sprawdza on istnienie pliku <filename
+>/etc/kppp.allow</filename
+>. Zawiera on listę wszystkich użytkowników, którzy mogą skorzystać z programu &kppp;. Plik ten powinien posiadać ustawione prawo odczytu dla każdego użytkownika (ale oczywiście   <emphasis
+>BEZ</emphasis
+> prawa zapisu). Program &kppp; rozpoznaje jedynie nazwy (loginy) użytkowników, tak więc nie możesz wykorzystywać numerów <acronym
+>UID</acronym
+> użytkownika. Poniżej przedstawiono krótki przykład:</para>
+
+<screen
+># /etc/kppp.allow
+# komentarze oraz linie puste są ignorowane
+
+krzys
+antek
+monika
+</screen>
+
+<para
+>W powyższym przykładzie, jedynie użytkownicy: <systemitem
+>krzys</systemitem
+>, <systemitem
+>antek</systemitem
+> oraz <systemitem
+>marta</systemitem
+> mogą wykorzystać program &kppp; i zadzwonić do dostawcy internetowego. Poza wymienionymi w pliku loginami, pełne możliwości programu może wykorzystywać użytkownik o numerze <acronym
+>UID</acronym
+> równym 0 (co oznacza, że nie musisz wpisywać tutaj użytkownika: root)</para>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="security-why-suid">
+<title
+>Program &kppp; ma ustawiony znacznik <acronym
+>SUID</acronym
+> ? Czy nie wpływa to negatywnie na bezpieczeństwo?</title>
+
+<para
+>Jest praktycznie niemożliwe napisanie programu, który ma dostęp do sprzętu (modemu), bez zastosowania znacznika <acronym
+>SUID</acronym
+>  w sposób jednocześnie bezpieczny i łatwy dla niedoświadczonego użytkownika. Program &kppp; radzi sobie z tym problemem w sposób następujący:</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Natychmiast po uruchomieniu program &kppp; rozdziela się (fork) na osobne procesy..</para>
+</listitem>
+<listitem>
+<para
+>Proces główny, obsługujący interfejs użytkownika (<acronym
+>GUI</acronym
+>), pozbywa się znacznika  <acronym
+>SUID</acronym
+> i działa dalej na prawach zwykłego użytkownika.</para>
+</listitem>
+<listitem>
+<para
+>Proces pomocniczy utrzymuje podwyższone uprawnienia, gdyż jest on odpowiedzialny za wszystkie działania wymagające uprawnień Administratora. Aby jego działanie było bezpieczne, to ta część programu nie wykorzystuje żadnych funkcji środowiska  &kde; lub bibliotek &Qt;. Kod źródłowy procesu pomocniczego jest krótki (około 500 linii) oraz dobrze udokumentowany, tak aby możliwe było szybkie wykrycie wszelkich luk i zagrożeń dla bezpieczeństwa.</para>
+</listitem>
+<listitem>
+<para
+>Procesy główny oraz pomocniczy komunikują się ze sobą z wykorzystaniem standardowego mechanizmu <acronym
+>IPC</acronym
+>. systemu &UNIX; </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Specjalne podziękowania należą się Harri'emu Portenowi za napisanie tego wspaniałego programu. Wszyscy myśleli, że jest to niemożliwe, ale jemu udało się to w ciągu tygodnia.</para>
+
+</sect1>
+
+</chapter>

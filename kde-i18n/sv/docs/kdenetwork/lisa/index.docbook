@@ -1,0 +1,907 @@
+<?xml version="1.0" ?>
+<!DOCTYPE book PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" "dtd/kdex.dtd" [
+  <!ENTITY lisa "<application
+>LISa</application
+>">
+  <!ENTITY package "kdenetwork">
+  <!ENTITY reslisa "<application
+>resLISa</application
+>">
+  <!ENTITY kappname "&lisa;"
+><!-- replace kapp here -->
+  <!ENTITY % addindex "IGNORE">
+  <!ENTITY % Swedish "INCLUDE"
+><!-- change language only here -->
+]>
+
+<book lang="&language;">
+
+<bookinfo>
+
+<title
+>Handbok &lisa;</title>
+
+<authorgroup>
+<author
+><firstname
+>Alexander</firstname
+> <surname
+>Neundorf</surname
+> <affiliation
+> <address
+><email
+>neundorf@kde.org</email
+></address>
+</affiliation>
+</author>
+
+<othercredit role="translator"
+> <firstname
+>Stefan</firstname
+> <surname
+>Asserhäll</surname
+> <affiliation
+><address
+><email
+>stefan.asserhall@comhem.se</email
+></address
+></affiliation
+> <contrib
+>Översättare</contrib
+></othercredit
+> 
+
+</authorgroup>
+
+<copyright>
+<year
+>2001</year>
+<holder
+>Alexander Neundorf</holder>
+</copyright>
+
+<date
+>2001-07-07</date>
+<releaseinfo
+>0.01.00</releaseinfo>
+
+<abstract>
+<para
+>&lisa; är tänkt att ge en sorts <quote
+>nätverksomgivning</quote
+>, men beror enbart på TCP/IP-protokollet, ingen <acronym
+>SMB</acronym
+> eller något annat krävs.</para>
+
+<para
+>Det här är en handbok för både <acronym
+>LAN</acronym
+> Informationsservern (&lisa;) och den begränsade <acronym
+>LAN</acronym
+> informationsservern (&reslisa;)</para>
+
+</abstract>
+
+<keywordset>
+<keyword
+>KDE</keyword>
+<keyword
+>kdenetwork</keyword>
+<keyword
+>LAN</keyword>
+<keyword
+>nätverk</keyword>
+<keyword
+>nätverksomgivning</keyword>
+</keywordset>
+
+</bookinfo>
+
+<chapter id="introduction">
+<title
+>Inledning</title>
+
+<para
+>&lisa; är tänkt att ge en sorts <quote
+>nätverksomgivning</quote
+>, men beror enbart på TCP/IP-protokollet, ingen SMB eller något annat.</para>
+
+<para
+>Den är fullständigt oberoende av &kde;/&Qt;.</para>
+
+<para
+>Listan på värddatorer som är uppstartade tillhandahålls via <acronym
+>TCP</acronym
+>-porten 7741.</para>
+
+<para
+>&lisa; stödjer två sätt att hitta värddatorer:</para>
+
+<orderedlist>
+<listitem>
+<para
+>Du anger ett intervall med <acronym
+>IP</acronym
+>-adresser till &lisa;, därefter skickar &lisa; en <acronym
+>ICMP</acronym
+>-ekoförfrågning till alla angivna <acronym
+>IP</acronym
+>-adresser, och väntar på svar.</para>
+</listitem>
+<listitem>
+<para
+>Du kan tala om för &lisa; att den ska köra <command
+>nmblookup</command
+> <option
+>"*"</option
+>. Kommandoradsverktyget från Samba-paketet <command
+>nmblookup</command
+> måste vara installerat. <command
+>nmblookup</command
+> <option
+>"*"</option
+> skickar en utsändning till de anslutna nätverken, och alla värddatorer som kör en <acronym
+>SMB</acronym
+>-tjänst svarar på utsändningen.</para>
+</listitem>
+
+</orderedlist>
+
+</chapter>
+
+<chapter id="how-it-works">
+<title
+>Hur det fungerar</title>
+
+<para
+>I konfigurationsfilen anger du ett interval av IP-adresser som &lisa; ska kontrollera för att se om de är startade.</para>
+
+<para
+>I det enklaste fallet kan det här vara din IP-adress/undernätsmask. I så fall kontrollerar &lisa; varje möjlig värddator på nätverket för att se om de är startade.</para>
+
+<para
+>Värddatorerna undersöks med <acronym
+>ICMP</acronym
+>-ekoförfrågningar. För att kunna skicka och ta emot <acronym
+>ICMP</acronym
+>-ekoförfrågningar och svar måste programmet öppna ett så kallat <quote
+>direktuttag</quote
+> (raw socket). Därför behöver det <systemitem class="username"
+>root</systemitem
+>-behörigheter. Det här uttaget öppnas direkt efter programmet har startat, och efter att ha öppnat uttaget med lyckat resultat, så släpps root-behörigheterna omedelbart (se <filename
+>main.cpp</filename
+> och <filename
+>strictmain.cpp</filename
+>).</para>
+
+<para
+>Om du ställer in &lisa; så att den också använder <command
+>nmblookup</command
+>, kommer den att köra <literal
+>popen("nmblookup \"*\"")</literal
+> och sedan tolka resultaten.</para>
+
+<para
+>Eftersom <acronym
+>ICMP</acronym
+>-förfrågningar och utsändningar kan orsaka en del nätverkstrafik om det finns mer än en sådan server som kör i ett nätverk, samarbetar servrarna med varandra. Innan de börjar göra anrop med ping (eller <command
+>nmblookup</command
+>), skickar de en utsändning på port 7741.</para>
+
+<para
+>Om någon svarar på den här utsändningen, hämtar de den fullständiga listan på värddatorer som är startade via <acronym
+>TCP</acronym
+>-porten 7741 från den här värddatorn och börjar inte anropa med ping (eller <command
+>nmblookup</command
+>).</para>
+
+<para
+>Om ingen svarar, så börjar värddatorn som skickade utsändningen att börja anropa värddatorer med ping (eller gör en <command
+>nmblookup</command
+>) och öppnar sedan ett uttag som lyssnar efter de ovannämnda utsändningarna. Om värddatorn tog emot ett svar på utsändningen, har den inte uttaget som lyssnar efter utsändningar öppet. Så vanligtvis har precis en av servrarna det här uttaget öppet och bara den här kommer verkligen att anropa med ping (eller göra en <command
+>nmblookup</command
+>) till värddatorerna. </para>
+
+<para
+>Med andra ord så är servrarna lata, de arbetar enligt <quote
+>Jag gör bara något om ingen annan kan göra det åt mig</quote
+>.</para>
+
+<para
+>Det finns en annan funktion som reducerar nätverksbelastningen.</para>
+
+<para
+>Låt oss anta att du ställt in &lisa; att uppdatera var 10:de minut. Nu kommer du inte åt servern särskilt ofta. Om ingen kommer åt servern under den senaste uppdateringsperioden, kommer servern att uppdatera (antingen själv, eller från den som verkligen gör jobbet) och därefter dubblera uppdateringsperioden, dvs. nästa uppdatering kommer att ske om 20 minuter.</para>
+
+<para
+>Det här händer fyra gånger, så om ingen kommer åt servern med en uppdateringsperiod på 10 minuter på länge, så ökas dess uppdateringsperiod till 160 minuter, nästan tre timmar. Om någon sedan kommer åt data från servern, får de en gammal lista (upp till 160 minuter gammal). När den har kommits åt återställer servern sin uppdateringsperiod till ursprungsvärdet, dvs. 10 minuter, och startar omedelbart en uppdatering om den senaste uppdateringen gjordes för mer än 10 minuter sen. Det här betyder att om du får en mycket gammal lista, kan du försöka igen om några sekunder, så ska du få en aktuell version.</para>
+
+<para
+>Det här kommer att få en snabb effekt för servrarna, som inte anropar med ping (eller gör nmblookup) själva, eftersom bara en enda oftast kommer åt dem, och det har mindre effekt på servern som gör anropen (eller <command
+>nmblookup</command
+>), eftersom den här servern kan kommas åt av alla andra servrar i nätverket.</para>
+
+<para
+>På det här sättet är det möjligt att många värddatorer i ett nätverk kör den här servern, men den totala belastningen förblir låg. För användaren är det inte nödvändigt att veta om det finns en server (dvs en namnserver eller filserver eller något annat) i nätverket som också kör &lisa;. Användaren kan alltid köra &lisa; lokalt och &lisa; upptäcker om det finns någon, transparent för användaren.</para>
+
+<para
+>Den första klienten för &lisa; är en I/O-slav för &kde; 2, så användaren kan skriva in antingen <userinput
+>lan://localhost/</userinput
+> eller <userinput
+>lan:/</userinput
+> där, för att kontakta &lisa; på det egna systemet.</para>
+
+<para
+>Om det finns en dator som kör hela tiden och användaren vet att den här datorn också kör &lisa;, kan &lisa;-klienten användas direkt med den här servern (alltså med den ovannämnda I/O-slaven <userinput
+>lan://server_namnet/</userinput
+>).</para>
+
+<para
+>Om du inte vill att din &lisa; ska delta i utsändningen, utan alltid göra utsändningarna själv, använd en annan port med kommandoradsväljaren <option
+>--port</option
+> eller <option
+>-p</option
+>. Det här rekommenderas inte!</para>
+
+<para
+>Om du skickar <command
+>SIGHUP</command
+> till &lisa;, läser den om sin konfigurationsfil. Om du skickar <command
+>SIGUSR1</command
+> till &lisa;, skriver den ut en del statusinformation på standardutmatningen.</para>
+
+<para
+>Data som skickas via uttaget har ett enkelt format: <computeroutput
+>&lt;decimal IP-adress i nätverkets byte-ordning&gt;&lt;ett blanktecken 0x20&gt;&lt;fullständigt namn på värddatorn&gt;&lt;ett avslutande '\0'&gt;&lt;nyrad '\n'&lt;</computeroutput
+> och den sista raden <computeroutput
+>0 succeeded&lt;'\n'&gt;</computeroutput
+> </para>
+
+<para
+>Till exempel,</para>
+
+<screen
+><computeroutput
+>17302538 någon_värddator.någonstans.se
+18285834 linux.någonstans.se
+17827082 namnserver.någonstans.se
+0 succeeded</computeroutput
+></screen>
+
+<para
+>Det här bör göra den lätt att tolka.</para>
+
+<para
+>Om det finns mycket strikta säkerhetsregler i ditt nätverk, kan några anse att anrop med ping är en potentiell attack. Om du har problem med det här, prova med den begränsade versionen, &reslisa;.</para
+> 
+
+</chapter>
+
+<chapter id="reslisa">
+<title
+>&reslisa;</title>
+
+<para
+>Om du har mycket strikta säkerhetsregler i ditt nätverk, eller om du inte vill ha en annan port öppen eller något annat, kan du använda &reslisa;.</para>
+
+<para
+>Med &reslisa; kan du inte anropa hela nätverk och adressintervall med ping, utan du kan ge &reslisa; för närvarande upp till 64 värddatorer med namn i dess konfigurationsfil. Dessa kommer att anropas. Du kan fortfarande använda <command
+>nmblookup</command
+>.</para>
+
+<para
+>&reslisa; skickar också endast informationen via ett uttag i Unix-domänen, dvs inte via nätverket. Namnet på uttaget är <filename
+>/tmp/resLisa-DittInloggningsnamn</filename
+>, så &reslisa; kan köras säkert av flera användare på samma dator.</para>
+
+<para
+>Eftersom den inte bör kunna skapa en säkerhetsrisk av något slag är det säkert att installera &reslisa; setuid <systemitem class="username"
+>root</systemitem
+>. <systemitem class="username"
+>root</systemitem
+>-behörigheter släpps direkt efter uppstart (se <filename
+>strictmain.cpp</filename
+>), de behövs bara för att skapa ett direktuttag för att skicka <acronym
+>ICMP</acronym
+>-ekoförfrågningar.</para>
+
+<para
+>Den skickar eller tar inte heller emot utsändningar. Den första klienten för den är en I/O-slav för &kde; 2 (till exempel <userinput
+>rlan://localhost/</userinput
+> i &konqueror;).</para>
+
+</chapter>
+
+<chapter id="config-file-format">
+<title
+>Konfigurationsfilen</title>
+
+<para
+>Här är ett exempel på en konfigurationsfil:</para>
+
+<screen
+>PingAddresses = 192.168.100.0/255.255.255.0;192.168.100.10-192.168.199.19;192.168.200.1;192-192.168-168.100-199.0-9;
+PingNames = bb_mail;
+AllowedAddresses = 192.168.0.0/255.255.0.0
+BroadcastNetwork = 192.168.100.0/255.255.255.0
+SearchUsingNmblookup = 1                #försök också med nmblookup
+FirstWait = 30                          #30 hundradels sekunder
+SecondWait = -1                         #bara ett försök
+#SecondWait = 60                         #försök två gånger, och vänta 0,6 sekunder andra gången
+UpdatePeriod = 300                      #uppdatera efter 300 sek
+DeliverUnnamedHosts = 0                 #visa inte värddatorer utan namn
+MaxPingsAtOnce = 256                    #skicka upp till 256 ICMP-ekoförfrågningar på en gång
+</screen>
+
+<sect1 id="pingaddresses">
+<title
+><option
+>PingAddresses</option
+></title>
+
+<para
+>Det här är troligen den viktigaste posten.</para>
+
+<para
+>Här anger du vilka adresser som ska anropas med ping. Du kan ange flera intervaller, som avgränsas med semikolon.</para>
+
+<para
+>Det finns fyra möjliga sätt att definiera adresser:</para>
+
+<variablelist>
+<varlistentry>
+<term
+>IP-adress/nätverksmask</term>
+<listitem>
+<para
+>192.168.100.0/255.255.255.0, dvs. en <acronym
+>IP</acronym
+>-adress och den tilldelade nätverksmasken.</para>
+
+<para
+>Det här behöver inte vara IP-adressen och nätmasken på din dator. Om du till exempel har 10.0.0.0/255.0.0.0 som din egen adress, skulle du kunna ange 10.1.2.0/255.255.255.0 om du bara är intresserad av de här adresserna. Den kombinerade <acronym
+>IP</acronym
+>-adressen och nätverksmasken måste avgränsas med ett snedstreck <quote
+>/</quote
+> och adressen behöver inte vara en riktig nätverksadress, den kan också vara en värddatoradress i det önskade nätverket, dvs.10.12.34.67/255.0.0.0 är samma sak som 10.0.0.0/255.0.0.0 .</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>ett intervall med <acronym
+>IP</acronym
+>-adresser</term>
+<listitem>
+<para
+>Till exempel: 192.168.100.10-192.168.199.19</para>
+
+<para
+>En <acronym
+>IP</acronym
+>-adress där anrop med ping börjar och en annan <acronym
+>IP</acronym
+>-adress där anrop slutar.</para>
+
+<para
+>Båda adresserna måste vara avdelade med ett <quote
+>-</quote
+>.</para>
+
+<para
+>För det här exemplet skulle det resultera i 199-100+1 = 100, 100*256 = 25 600, 25 600+(19-10+1) = 25 590 adresser</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>En <acronym
+>IP</acronym
+>-adress, representerad med intervall för vart och ett av de fyra decimaltalen.</term>
+<listitem>
+<para
+>En <acronym
+>IP</acronym
+>-adress kan representeras av sina fyra decimaltal, och du kan ange intervall för vart och ett av de här fyra talen: 192-192.169-171.100-199.0-9 </para>
+
+<para
+>I det här exemplet kommer alla <acronym
+>IP</acronym
+>-adresser med det första talet 192, det andra talet från 168 till 168, det tredje talet från 100 upp till 199 och det sista talet från 0 upp till 9 att anropas med ping. Det här skulle ge 1*1*100*10 = 1 000 adresser.</para>
+
+<para
+>Det här är förmodligen bara användbart i ett fåtal fall. Här måste du ange intervall för vart fjärde tal, alltid avgränsade med <quote
+>-</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>En enkel <acronym
+>IP</acronym
+>-adress eller ett värddatornamn</term>
+<listitem>
+<para
+><acronym
+>IP</acronym
+>-adressen eller värddatornamnet för någon dator som du är särskilt intresserad av.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+<para
+>Det är också giltigt att lämna den här posten tom.</para>
+
+</sect1>
+
+<sect1 id="pingnames">
+<title
+><option
+>PingNames</option
+></title>
+
+<para
+>Här kan du dessutom ange namn för värddatorer som ska anropas med ping. Namnen måste separeras med semikolon.</para>
+
+<para
+>Det är också giltigt att lämna den här posten tom.</para>
+
+</sect1>
+
+<sect1 id="allowedaddresses">
+<title
+><option
+>AllowedAddresses</option
+></title>
+
+<para
+>Det här är också mycket viktigt. &lisa; kommer bara att anropa adresser med ping, acceptera klienter och svara på utsändningar från adresser som täcks av adresserna som anges på den här raden. Du kan lägga till upp till 32 IP-adresser/nätmasker eller enskilda adresser. Separera dem med semikolon, och använd inga mellanslag mellan adresserna!</para>
+
+<para
+>Till exempel, 192.168.0.0/255.255.0.0;192.169.0.0</para>
+
+<para
+>Ett helt nätverk eller en enstaka adress är giltiga. Gör alltid detta så begränsat som möjligt, oftast är din IP-adress/delnätmask ett bra val.</para>
+
+</sect1>
+
+<sect1 id="broadcastnetwork">
+<title
+><option
+>BroadcastNetwork</option
+></title>
+
+<para
+>Den här posten innehåller precis en IP-adress/delnätmask. Utsändningar skickas till den här adressen. Vanligtvis ska det här vara din egen IP-adress/delnätmask, till exempel 192.168.0.0/255.255.0.0</para>
+
+</sect1>
+
+<sect1 id="searchusingnmblookup">
+<title
+><option
+>SearchUsingNmblookup</option
+></title>
+
+<para
+>Här kan du ange <parameter
+>0</parameter
+> eller <parameter
+>1</parameter
+>. <parameter
+>1</parameter
+> betyder att &lisa; kör <command
+>nmblookup</command
+> <option
+>"*"</option
+> och tolkar utmatningen från det här kommandot. Det här ger mindre nätverkstrafik än anrop med ping, men du får bara reda på värddatorer som har en <acronym
+>SMB</acronym
+>-tjänst igång (&Windows;-datorer eller datorer som kör Samba).</para>
+
+<para
+>Om du aktiverar det här alternativet, och dessutom anger <acronym
+>IP</acronym
+>-adresser för anrop med ping, så körs <command
+>nmblookup</command
+> först och sedan startar anropen. Då anropas bara adresser som inte redan härleddes från <command
+>nmblookup</command
+>. Det här borde minska nätverksbelastningen lite grand.</para>
+
+</sect1>
+
+<sect1 id="firstwait">
+<title
+><option
+>FirstWait</option
+></title>
+
+<para
+>Om &lisa; anropar med ping, dvs om den skickar <acronym
+>ICMP</acronym
+>-ekoförfrågningar, skickar det ett antal förfrågningar på en gång, och väntar sedan så många hundradels sekunder som du anger här. Oftast är värden från 5 till 50 bra, det maximala värdet är 99 (som ger 0,99 sekunder, en mycket lång tid). Försök att sätta det här värdet så lågt som möjligt medan fortfarande alla värddatorer som är startade hittas.</para>
+
+</sect1>
+
+<sect1 id="secondwait">
+<title
+><option
+>SecondWait</option
+></title>
+
+<para
+>Efter &lisa; har skickat ekoförfrågning för första gången, kan det vara möjligt att vissa värddatorer inte hittades. För att förbättra resultaten, kan &lisa; anropa en gång till. Den här gången anropas bara värddatorer som den inte fick något svar från. Om du får bra resultat med att anropa bara en gång, kan du stänga av den andra gången genom att ange <userinput
+>-1</userinput
+> för SecondWait.</para>
+
+<para
+>Annars kan det vara en bra idé att göra det här värdet något större än värdet för <option
+>FirstWait</option
+>, eftersom de värddatorer som inte hittades vid första försöket troligen är långsammare eller längre bort så att de tar några millisekunder längre att svara. Oftast är värden från 5 till 50 bra, eller -1 för att stänga av den andra avsökningen. Det maximala värdet är 99 (som ger 0,99 sekunder, en mycket lång tid).</para>
+
+</sect1>
+
+<sect1 id="updateperiod">
+<title
+><option
+>UpdatePeriod</option
+></title>
+
+<para
+>Det här är intervallet som &lisa; väntar innan en uppdatering. Efter den här tiden gör &lisa; ett anrop med ping eller <command
+>nmblookup</command
+> eller hämtar listan med värddatorer från &lisa;-servern som verkligen gör anropen.</para>
+
+<para
+>Giltiga värde är mellan 30 sekunder och 1800 sekunder (en halvtimma). Om du har ett stort nätverk, gör inte intervallet för litet (för att hålla nätverksbelastningen låg). Värden från 300 till 900 sekunder (5 till 15 minuter) bör vara en bra idé.</para>
+
+<para
+>Kom ihåg att uppdateringsperioden dubbleras om ingen kommer åt servern, upp till fyra gånger, så intervallet blir 16 gånger det värde som anges här och återställs till värdet som anges här om någon kommer åt servern.</para>
+
+</sect1>
+
+<sect1 id="deliver-unnamed-hosts">
+<title
+><option
+>DeliverUnnamedHosts</option
+></title>
+
+<para
+>Om ett svar på en ekoförfrågning tas emot från en IP-adress där &lisa; inte kan avgöra namnet, skickas den bara via porten om du ställer in det här till 1.</para>
+
+<para
+>Jag är inte säker på att detta är en användbar funktion, men kanske finns det några infrastrukturenheter i nätverket som inte har namn tilldelade till sig, så att de inte behöver publiceras. Välj 0 här om du vill låta dem vara hemliga. Välj 0 om du är osäker.</para>
+
+</sect1>
+
+<sect1 id="max-pings-at-once">
+<title
+>MaxPingsAtOnce</title>
+
+<para
+>När &lisa; skickar anrop med ping (ekoförfrågningar), skickar den ett antal på en gång och väntar sedan på svaren. Normalt skickas 256 anrop på en gång, och du behöver oftast inte ändra på det här värdet. Om du gör det mycket större, kan de interna buffrarna för mottagning av svaren av ekoförfrågningar bli för små. Om du gör det för litet blir uppdatering långsammare.</para>
+
+</sect1>
+
+<sect1 id="examples">
+<title
+>Ytterligare tre exempel på filer</title>
+
+<example>
+<title
+>ATT GÖRA</title>
+
+<para
+>Du är medlem i ett litet nätverk med 24-bitars nätverksmask, dvs. upp till 256 värddatorer.</para>
+
+<screen
+>PingAddresses = 192.168.100.0/255.255.255.0
+AllowedAddresses = 192.168.100.0/255.255.255.0
+BroadcastNetwork = 192.168.100.0/255.255.255.0
+SearchUsingNmblookup = 0                         #använd inte nmblookup
+FirstWait = 20                                   #20 hundradels sekunder
+SecondWait = 30                                  #30 hundradels sekunder vid andra försöket
+UpdatePeriod = 300                               #uppdatera efter 300 sek
+DeliverUnnamedHosts = 0                          #visa inte värddatorer utan namn
+</screen>
+
+</example>
+
+<example>
+<title
+>Konfigurationsfil för värddatorer som bara kör <acronym
+>SMB</acronym
+></title>
+
+<para
+>Du är bara intresserad av värddatorer som kör <acronym
+>SMB</acronym
+>-tjänsten och du har inga routrar i nätverket.</para>
+
+<screen
+>AllowedAddresses = 192.168.100.0/255.255.255.0
+BroadcastNetwork = 192.168.100.0/255.255.255.0
+SearchUsingNmblookup = 1                #använd nmblookup
+UpdatePeriod = 300                      #uppdatera efter 300 sek
+DeliverUnnamedHosts = 0                 #visa inte värddatorer utan namn
+</screen>
+</example>
+
+<example>
+<title
+>Konfigurationsfil som använder både <command
+>nmblookup</command
+> och anrop med ping</title>
+
+<para
+>Samma nätverk, men här används både nmblookup och anrop med ping.</para>
+
+<screen
+>PingAddresses = 192.168.100.0/255.255.255.0
+PingNames = bb_mail
+AllowedAddresses = 192.168.0.0/255.255.0.0
+BroadcastNetwork = 192.168.100.0/255.255.255.0
+SearchUsingNmblookup = 1                #försök också med nmblookup
+FirstWait = 30                          #30 hundradels sekunder
+SecondWait = -1                         #försök bara en gång
+#SecondWait = 60                         #försök två gånger, och vänta 0,6 sekunder andra gången
+UpdatePeriod = 300                      #uppdatera efter 300 sek
+DeliverUnnamedHosts = 0                 #visa inte värddatorer utan namn
+MaxPingsAtOnce = 256                    #skicka upp till 256 ICMP-ekoförfrågningar på en gång
+</screen>
+
+</example>
+
+<example>
+<title
+>Konfigurationsfil för &reslisa;</title>
+
+<para
+>Och nu en konfigurationsfil för &reslisa;, PingAddresses används inte av &reslisa;, inte heller BroadcastNetwork.</para>
+
+<screen
+>PingNames = bb_mail;någon_värddator;någon_annan_värddator
+AllowedAddresses = 192.168.0.0/255.255.0.0
+SearchUsingNmblookup = 1                # använd nmblookup
+FirstWait = 30                          #30 hundradels sekunder
+SecondWait = -1                         #bara ett försök
+#SecondWait = 60                         #försök två gånger, och vänta 0,6 sekunder andra gången
+UpdatePeriod = 300                      #uppdatera efter 300 sek
+DeliverUnnamedHosts = 1                 #visa inte värddatorer utan namn
+MaxPingsAtOnce = 256                    #skicka upp till 256 ICMP-ekoförfrågningar på en gång
+</screen>
+
+</example>
+</sect1>
+</chapter>
+
+<chapter id="command-line-options">
+<title
+>Kommandoradsväljare och övrig användning</title>
+
+<para
+>Följande kommandoradsväljare stöds:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><option
+>-v</option
+>, <option
+>--version</option
+></term>
+<listitem>
+<para
+>Skriver ut kortfattad versionsinformation.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-h</option
+>, <option
+>--help</option
+></term>
+<listitem>
+<para
+>Ger en översikt över kommandoradsväljare</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-u</option
+>, <option
+>--unix</option
+></term>
+<listitem>
+<para
+>Leta först efter <filename
+>$<envar
+>HOME</envar
+>/.lisarc</filename
+>, sedan efter <filename
+>/etc/lisarc</filename
+>. Det här är det normala beteendet.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-k</option
+>, <option
+>--kde1</option
+></term>
+<listitem>
+<para
+>Leta först efter <filename
+>$<envar
+>HOME</envar
+>/.kde/share/config/lisarc</filename
+>, sedan efter <filename
+>$<envar
+>KDEDIR</envar
+>/share/config/lisarc</filename
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-K</option
+>, <option
+>--kde2</option
+></term>
+<listitem>
+<para
+>Letar efter filen <filename
+>lisarc</filename
+>  i varje katalog som returneras genom att köra <userinput
+><command
+>kde-config</command
+> <option
+>--path</option
+> <parameter
+>config</parameter
+></userinput
+></para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-c</option
+>, <option
+>--config=</option
+><parameter
+>FIL</parameter
+></term>
+<listitem>
+<para
+>Läs <parameter
+>FIL</parameter
+> och ingen annan konfigurationsfil.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-p</option
+>, <option
+>--port</option
+> <parameter
+>PORTNR</parameter
+></term>
+<listitem>
+<para
+>Starta servern med det här portnumret. Om du använder det här kommer &lisa; inte att kunna samarbeta med andra &lisa;-program i nätverket. Det här alternativet är inte tillgängligt för &reslisa;</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+     
+<para
+>Om du skickar signalen SIGHUP till &lisa; eller &reslisa;, kommer den att läsa om sin konfigurationsfil (<userinput
+><command
+>killall</command
+> <option
+>-HUP lisa</option
+></userinput
+>).</para>
+
+<para
+>Om du skickar signalen SIGUSR1 till &lisa; eller &reslisa;, skriver den ut en del statusinformation till standardutmatningen (<userinput
+><command
+>killall</command
+> <option
+>-USR1 lisa</option
+></userinput
+>). Du ser ingenting om terminalen där &lisa;/&reslisa; startades har avslutats.</para>
+
+
+
+</chapter>
+
+<chapter id="credits-and-license">
+<title
+>Tack till och licens</title>
+
+<para
+>&lisa; och &reslisa; copyright 2000, 2001, Alexander Neundorf</para>
+
+
+
+<para
+>Översättning Stefan Asserhäll <email
+>stefan.asserhall@comhem.se</email
+></para
+> 
+
+<para
+>Ha roligt, Alexander Neundorf <email
+>neundorf@kde.org</email
+></para>
+&underFDL; &underGPL; </chapter>
+
+<appendix id="installation">
+<title
+>Installation</title>
+
+<para
+>&lisa; och &reslisa; behöver libstdc++ (de använder strängklassen från det), de <emphasis
+>behöver inte</emphasis
+> varken &Qt; eller &kde;.</para>
+
+&install.compile.documentation;
+
+<sect1 id="other-requirements">
+<title
+>Andra krav</title>
+
+<para
+>Både &reslisa; och &lisa; öppnar ett så kallat <quote
+>direktuttag</quote
+> (raw socket) för att skicka och ta emot <acronym
+>ICMP</acronym
+>-ekoförfrågningar (anrop med ping). För att kunna göra detta, behöver de <systemitem class="username"
+>root</systemitem
+>-behörigheter.</para>
+
+
+<para
+>&lisa; tillhandahåller en tjänst på <acronym
+>TCP</acronym
+>-porten 7741, och måste installeras av <systemitem class="username"
+>root</systemitem
+> och startas när systemet sätts igång. Det beror mycket på operativsystemet hur det här kan åstadkommas.</para>
+
+<para
+>&reslisa; är avsett att startas av varje användare, den tillhandahåller ingenting till nätverket. Den måste installeras setuid <systemitem class="username"
+>root</systemitem
+>.</para>
+
+<para
+>Om du använder <userinput
+>rlan</userinput
+> I/O-slaven från &kde; 2, kan &reslisa; startas automatiskt.</para>
+
+<para
+>&lisa; läser filen <filename
+>lisarc</filename
+>, &reslisa; läser filen <filename
+>reslisarc</filename
+>. Om du vill kunna ställa in båda från inställningscentralen, måste du starta dem med kommandoradsväljaren <option
+>-K</option
+>.</para>
+
+<para
+>För mer information om var de letar efter konfigurationsfiler, läs kapitlet om <xref linkend="command-line-options"/>.</para>
+
+</sect1>
+</appendix>
+</book>

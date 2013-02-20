@@ -1,0 +1,158 @@
+<sect1 id="networking-with-windows">
+<sect1info>
+<authorgroup>
+<author
+><firstname
+>Gardner</firstname
+> <surname
+>Bell</surname
+> </author>
+</authorgroup>
+</sect1info>
+
+
+<title
+>Взаимодействие с Windows через сеть</title>
+
+<para
+>Этот раздел основан на файле README по LISa, написанный Александром Неундорфом (Alexander Neundorf).</para>
+
+<para
+>В дистрибутив &kde; входит мощный сервер сбора сведений о локальной сети (Lan Information Server, <application
+>LISa</application
+>) и сервер сбора сведений о локальной сети с ограниченным доступом (Restricted Lan Information Server, <application
+>resLISa</application
+>). С их помощью можно обнаруживать серверы CIFS и другие серверы локальной сети, то есть функция этих серверов аналогична программе «Сетевое окружение», входящей в состав &Microsoft; &Windows;.</para>
+
+<sect2 id="How-It-Works">
+<title
+>Как это работает</title>
+
+<para
+>&lisa; использует только стек TCP/IP, поэтому настраивать Samba не требуется. Тем не менее, наличие пакета <ulink url="http://www.samba.org"
+>samba</ulink
+> в системе необходимо. В файле параметров &lisa; вы указываете диапазон IP-адресов, которые необходимо проверить. При запуске демон &lisa; отправляет эхо-запрос <ulink url="http://www.ietf.org/rfc/rfc792.txt"
+>ICMP</ulink
+> на каждый из IP-адресов, указанных в конфигурационном файле, и ожидает ответа.</para>
+
+<note
+><para
+>Демон &lisa; требует привилегии суперпользователя для того, чтобы открыть сокет, однако после этого программа переходит на непривилегированный уровень выполнения.</para
+></note>
+
+<para
+>Вы можете запустить &lisa;, выполнив <command
+>nmblookup <option
+>"*"</option
+></command
+>.<note
+><para
+>Программу <command
+>nmblookup</command
+> можно загрузить с сервера <ulink url="http://www.samba.org"
+>http://www.samba.org</ulink
+> или установить из пакетов вашего дистрибутива</para
+></note
+>. Команда Samba <command
+>nmblookup <option
+>"*"</option
+></command
+> отправляет сообщение всем машинам вашей сети (на широковещательный адрес). Ответ на этот запрос означает, что отправившая его машина, на которой запущен сервис smb, принимает входящие соединения.</para>
+</sect2>
+
+<sect2 id="resLISa">
+<title
+><application
+>resLISa</application
+></title>
+
+<para
+>Если политика вашей компании не допускает открытие посторонних портов, для связи с машинами вашей сети можно использовать &reslisa;. &reslisa; не может отправлять широковещательные и групповые эхо-запросы, поэтому в файле параметров требуется отдельно указать имя каждой машины. Текущая версия программы может опрашивать до 64 адресов.</para>
+
+<note
+><para
+>&reslisa; показывает информацию, полученную не через сеть, а через сокет домена &UNIX;. Используется имя сокета <filename
+>/tmp/resLISa-<replaceable
+>имя_пользователя</replaceable
+></filename
+>, поэтому несколько пользователей могут запускать &reslisa; одновременно.</para
+></note>
+</sect2>
+
+<sect2 id="configuration">
+<title
+>Настройка</title>
+
+<para
+>При запуске &lisa; анализирует пользовательский файл параметров <filename
+>$<envar
+>HOME</envar
+>/.lisarc</filename
+>. Если этот файл не существует, &lisa; использует общесистемный файл параметров, <filename
+>/etc/lisarc</filename
+>. Ниже приведён пример такого файла:</para>
+
+<programlisting
+>PingAddresses = 192.168.100.0/255.255.255.0;192.168.100.10-192.168.199.19;192.168.200.1;
+PingNames = my_host1;my_host2    #Указываются имена машин (требуется для работы <application
+>resLISa</application
+>)
+AllowedAddresses = 192.168.0.0/255.255.0.0
+BroadcastNetwork = 192.168.100.0/255.255.255.0
+SearchUsingNmblookup = 1         #также использовать nmblookup
+FirstWait = 30                   #30 сотых долей секунды
+SecondWait = -1                  #Опрашивать только один раз
+#SecondWait = 60                 #При втором запросе ждать 0,6 секунды
+UpdatePeriod = 300               #Обновлять информацию каждые 300 секунд
+DeliverUnnamedHosts = 0          #Не выводить сведения о машинах без имени
+MaxPingsAtOnce = 256             #Максимальное количество эхо-запросов ICMP, отправляемых при опросе компьютеров
+</programlisting>
+
+<para
+>&lisa; можно настроить также с помощью программы с графическим интерфейсом. Выберите пункт &kmenu; <menuchoice
+><guimenuitem
+>Центр управления</guimenuitem
+><guisubmenu
+>Сеть и Интернет</guisubmenu
+><guimenuitem
+>Обзор локальной сети</guimenuitem
+> </menuchoice
+>. Для того чтобы &lisa; использовала указанные здесь параметры, запустите эту службу с параметром <option
+>-K</option
+>.</para>
+
+<!--TODO add a section explaining graphical configuration? -->
+
+<!-- Add links to "further reading" here -->
+<itemizedlist>
+<title
+>Связанная информация</title>
+<listitem
+><para
+>Полный список параметров командной строки и дополнительные примеры содержатся в полном руководстве &lisa;. Введите <userinput
+>help:/lisa</userinput
+> в строке адреса программы &konqueror;, чтобы открыть этот документ.</para>
+</listitem>
+</itemizedlist>
+
+
+</sect2>
+</sect1>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: xml
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:0
+sgml-indent-data:true
+sgml-parent-document:("index.docbook" "book" "sect1")
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

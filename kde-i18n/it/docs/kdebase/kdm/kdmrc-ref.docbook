@@ -1,0 +1,3460 @@
+<!-- generated from ../../kdm/config.def - DO NOT EDIT! -->
+
+<chapter id="kdm-files">
+<title
+>I file che &kdm; usa per la configurazione</title>
+
+<para
+>Questo capitolo documenta i file che controllano il comportamento di &kdm;. Alcuni parametri possono essere controllati dal modulo di &kcontrol;, ma non tutti.</para>
+
+<sect1 id="kdmrc">
+<title
+>&kdmrc; - Il file di configurazioni principale di &kdm;</title>
+
+<para
+>Il formato base del file è <quote
+>simil-INI</quote
+>. Le opzioni sono coppie chiave/valore, inserite in sezioni. Tutti gli elementi del file fanno distinzione fra maiuscole e minuscole. Gli errori di sintassi e gli identificatori di chiave/sezione non riconosciuti fanno emettere a &kdm; dei messaggi di errore non fatale.</para>
+
+<para
+>Le righe che iniziano con <literal
+>#</literal
+> sono commenti; le righe vuote sono anch'esse ignorate.</para>
+
+<para
+>Le sezioni sono indicate da <literal
+>[</literal
+><replaceable
+>Nome della sezione</replaceable
+><literal
+>]</literal
+>. </para>
+
+<para
+>Puoi configurare ogni display di X individualmente.</para>
+<para
+>Ogni display ha un nome che consiste del nome dell'host (che è vuoto per i display locali specificati in <option
+>StaticServers</option
+> o <option
+>ReserveServers</option
+>), un due punti, ed il numero del display. Inoltre, un display appartiene ad una classe di display (che può essere ignorata nella maggior parte dei casi).</para>
+
+<para
+>Le sezioni con impostazioni specifiche per i display hanno la sintassi formale <literal
+>[X-</literal
+>&nbsp;<replaceable
+>host</replaceable
+>&nbsp;[&nbsp;<literal
+>:</literal
+>&nbsp;<replaceable
+>numero</replaceable
+>&nbsp;[&nbsp;<literal
+>_</literal
+>&nbsp;<replaceable
+>classe</replaceable
+>&nbsp;]&nbsp;]&nbsp;<literal
+>-</literal
+>&nbsp;<replaceable
+>sottosezione</replaceable
+>&nbsp;<literal
+>]</literal
+> </para>
+<para
+>Tutte le sezioni con lo stessa <replaceable
+>sottosezione</replaceable
+> creano una classe di sezioni.</para>
+
+<para
+>Puoi usare il carattere jolly <literal
+>*</literal
+> (corrisponde a qualunque cosa) per <replaceable
+>host</replaceable
+>, <replaceable
+>numero</replaceable
+> e <replaceable
+>classe</replaceable
+>. Puoi omettere i componenti finali; in tal caso è come se fossero dichiarati come <literal
+>*</literal
+>. La parte host può essere la specifica di un dominio come <replaceable
+>.inf.tu-dresden.de</replaceable
+> o il carattere jolly <replaceable
+>+</replaceable
+> (corrisponde a una stringa non vuota).</para>
+
+<para
+>Da quale sezione un'impostazione venga presa è determinato dalle seguenti regole:</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Una corrispondenza esatta ha precedenza su una corrispondenza parziale (per la parte dell'host), che a sua volta ha precedenza su un carattere jolly (<literal
+>+</literal
+> ha precedenza su <literal
+>*</literal
+>).</para>
+</listitem>
+
+<listitem>
+<para
+>La precedenza decresce da sinistra a destra per corrispondenze egualmente corrette.</para>
+</listitem>
+
+<listitem>
+
+<para
+>Esempio: nome del display <quote
+>miohost.pippo:0</quote
+>, classe <quote
+>dpy</quote
+> </para>
+<itemizedlist>
+<listitem>
+<para
+>[X-miohost.pippo:0_dpy] precede</para>
+</listitem>
+<listitem>
+<para
+>[X-miohost.pippo:0_*] (è lo stesso che [X-miohost.pippo:0]) che precede</para>
+</listitem>
+<listitem>
+<para
+>[X-miohost.pippo:*_dpy] che precede</para>
+</listitem>
+<listitem>
+<para
+>[X-miohost.pippo:*_*] (è lo stesso che [X-miohost.pippo]) che precede</para>
+</listitem>
+<listitem>
+<para
+>[X-.pippo:*_*] (è lo stesso che [X-.pippo]) che precede</para>
+</listitem>
+<listitem>
+<para
+>[X-+:0_dpy] che precede</para>
+</listitem>
+<listitem>
+<para
+>[X-*:0_dpy] che precede</para>
+</listitem>
+<listitem>
+<para
+>[X-*:0_*] (lo stesso che [X-*:0]) che precede</para>
+</listitem>
+<listitem>
+<para
+>[X-*:*_*] (identico a [X-*]).</para>
+</listitem>
+<listitem>
+<para
+>Queste sezioni <emphasis
+>non</emphasis
+> corrispondono a questo display:</para>
+<para
+>[X-suohost], [X-miohost.pippo:0_dec], [X-*:1], [X-:*]</para>
+</listitem>
+</itemizedlist>
+
+</listitem>
+
+</itemizedlist>
+
+<para
+>Le sezioni comuni sono [X-*] (tutti i display), [X-:*] (tutti i display locali) e [X-:0] (il primo display locale).</para>
+
+<para
+>Il formato per tutte le chiavi è <userinput
+><option
+><replaceable
+>chiave</replaceable
+></option
+>&nbsp;<literal
+>=</literal
+>&nbsp;<parameter
+>valore</parameter
+></userinput
+>. Le chiavi sono valide solo nelle classi di sezioni per cui sono definite. Alcune chiavi non si applicano a display particolari, nel qual caso sono ignorate. </para>
+
+<para
+>Se un'impostazione non viene trovata in nessuna sezione corrispondente, verrà usata l'impostazione predefinita.</para>
+
+<para
+>I caratteri speciali devono essere preceduti dalla barra inversa (spazi iniziali e finali (<literal
+>\s</literal
+>), tab (<literal
+>\t</literal
+>), avanzamento riga (<literal
+>\n</literal
+>), ritorno carrello (<literal
+>\r</literal
+>) e la barra inversa stessa (<literal
+>\\</literal
+>)).</para>
+<para
+>Nelle liste, i campi sono separati da virgole senza spazi fra di loro. </para>
+<para
+>Alcune stringhe di comando sono soggette ad una suddivisione in parole in stile sh semplificata: gli apici singoli (<literal
+>'</literal
+>) e doppi (<literal
+>"</literal
+>) hanno il significato usuale; la barra inversa si può usare per tutti i caratteri (non solo per quelli speciali). Nota che le barre inverse devono essere raddoppiate a causa del doppio livello di citazione.</para>
+
+<note
+><para
+>Un file &kdmrc; originale è ampiamente commentato. Tutti i commenti andranno perduti se cambi questo file dall'interfaccia grafica di kcontrol.</para
+></note>
+
+
+<sect2 id="kdmrc-general">
+<title
+>La sezione [General] di &kdmrc;</title>
+
+<para
+>Questa sezione contiene opzioni globali che non sono adatte a sezioni specifiche. </para>
+
+<variablelist>
+
+<varlistentry>
+<term id="option-configversion"
+><option
+>ConfigVersion</option
+></term>
+<listitem>
+<para
+>Questa opzione esiste solo per automatizzare in modo pulito gli aggiornamenti. <emphasis
+>Non deve</emphasis
+> essere cambiata, per non interferire con gli aggiornamenti futuri, e potrebbe impedire l'esecuzione di &kdm;. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-staticservers"
+><option
+>StaticServers</option
+></term>
+<listitem>
+<para
+>L'elenco dei display (&X-Server;) gestiti in modo permanente da &kdm;. I display com un nome host sono display esterni che devono essere già in esecuzione, gli altri sono display locali per cui &kdm; avvia un proprio &X-Server;; vedi <option
+>ServerCmd</option
+>. Ciascun display può appartenere ad una classe di display; la classe può essere apposta al nome del display, separandola con un carattere di sottolineatura. Vedi <xref linkend="kdmrc-xservers"/> per i dettagli. </para>
+<para
+>Il valore predefinito è <quote
+>:0</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-reserveservers"
+><option
+>ReserveServers</option
+></term>
+<listitem>
+<para
+>Elenco di display su richiesta. Vedi <option
+>StaticServers</option
+> per la sintassi. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-servervts"
+><option
+>ServerVTs</option
+></term>
+<listitem>
+<para
+>Elenco dei terminali virtuali da allocare sugli &X-Server;. Per i numeri negativi è usato il valore assoluto, ed il<acronym
+>VT</acronym
+> sarà allocato solo se il kernel dice che è a disposizione. Se &kdm; esaurisce questo elenco, allocherà <acronym
+>VT</acronym
+> liberi con il valore assoluto maggiore del più grande dell'elenco. Al momento è una configurazione utile solo con Linux. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-consolettys"
+><option
+>ConsoleTTYs</option
+></term>
+<listitem>
+<para
+>Questa opzione è per i sistemi operativi <acronym
+>OS</acronym
+>, Operating System) che gestiscono i terminali virtuali (<acronym
+>VT</acronym
+>, Virual Terminal) sia da &kdm; che dall'<acronym
+>OS</acronym
+> stesso. Attualmente, solo Linux. </para
+><para
+>Quando &kdm; cambia alla modalità console, inizia a sorvegliare tutte le linee <acronym
+>TTY</acronym
+> elencate qui (con un prefisso <literal
+>/dev/</literal
+>). Se nessuno è attivo per un certo periodo, &kdm; torna alla schermata di accesso di X. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-pidfile"
+><option
+>PidFile</option
+></term>
+<listitem>
+<para
+>Il file col nome specificato sarà creato per contenere la rappresentazione ASCII dell'ID del processo principale di &kdm;. il PID non sarà memorizzato se il nome del file è vuoto. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-lockpidfile"
+><option
+>LockPidFile</option
+></term>
+<listitem>
+<para
+>Questa opzione controlla se &kdm; debba usare un file di blocco per impedire a più gestori di display di interferire fra di loro. </para>
+<para
+>Il valore predefinito è <quote
+>true</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-authdir"
+><option
+>AuthDir</option
+></term>
+<listitem>
+<para
+>Permette di specificare il nome della directory dove &kdm; memorizza i file di autorizzazione di &X-Server; durante l'inizializzazione della sessione. &kdm; si aspetta che il sistema ripulisca questa directory dai file obsoleti al riavvio. </para
+><para
+>Il file di autorizzazione da usare per un display particolare può essere specificato con l'opzione <option
+>AuthFile</option
+> in [X-*-Core]. </para>
+<para
+>Il valore predefinito è <quote
+>/var/run/xauth</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-autorescan"
+><option
+>AutoRescan</option
+></term>
+<listitem>
+<para
+>Questa opzione booleana controlla se &kdm; debba rileggere automaticamente i suoi file di configurazione se scopre che sono cambiati. </para>
+<para
+>Il valore predefinito è <quote
+>true</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-exportlist"
+><option
+>ExportList</option
+></term>
+<listitem>
+<para
+>Variabili di ambiente aggiuntive che &kdm; deve passare ai programmi che esegue. <envar
+>LD_LIBRARY_PATH</envar
+> e <envar
+>XCURSOR_THEME</envar
+> sono buone candidate; altrimenti, non dovrebbero essere necessarie molto spesso. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-randomfile"
+><option
+>RandomFile</option
+></term>
+<listitem>
+<para
+>Se il sistema non ha una fonte nativa di entropia, come /dev/urandom (vedi <option
+>RandomDevice</option
+>) e non ha un demone per l'entropia come EGD (vedi <option
+>PrngdSocket</option
+> e <option
+>PrngdPort</option
+>) in esecuzione, &kdm; ripiegherà sul proprio generatore di numeri pseudocasuali che, tra l'altro, potrà eseguire in seguito la somma di controllo di parti di questo file (che ovviamente dovrebbe cambiare frequentemente). </para
+><para
+>Questa opzione non esiste in Linux e vari sistemi BSD. </para>
+<para
+>Il valore predefinito è <quote
+>/dev/mem</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-prngdsocket"
+><option
+>PrngdSocket</option
+></term>
+<listitem>
+<para
+>Se il sistema non ha una fonte nativa di entropia, come /dev/urandom (vedi <option
+>RandomDevice</option
+>), legge dati casuale da un demone per la generazione di numeri pseudocasuali, come EGD (http://egd.sourceforge.net) attraverso questo socket di dominio UNIX. </para
+><para
+>Questa opzione non esiste in Linux e vari sistemi BSD. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-prngdport"
+><option
+>PrngdPort</option
+></term>
+<listitem>
+<para
+>Identica a <option
+>PrngdSocket</option
+>, tranne che per l'uso di un socket TCP su localhost. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-randomdevice"
+><option
+>RandomDevice</option
+></term>
+<listitem>
+<para
+>Il percorso di un dispositivo a caratteri da cui &kdm; può leggere dati casuali. Se è vuoto significa che deve essere usato il dispositivo entropico preferito dal sistema se ve n'è uno. </para
+><para
+>Questa opzione non esiste in OpenBSD, perché usa la funzione arc4_random al posto di un dispositivo. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-fifodir"
+><option
+>FifoDir</option
+></term>
+<listitem>
+<para
+>La directory in cui le <acronym
+>FiFo</acronym
+> dei comandi devono esser create; lasciala vuota per disabilitarle. </para>
+<para
+>Il valore predefinito è <quote
+>/var/run/xdmctl</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-fifogroup"
+><option
+>FifoGroup</option
+></term>
+<listitem>
+<para
+>Il gruppo a cui la <acronym
+>FiFo</acronym
+> dei comandi globali debba appartenere; può essere un nome o un ID numerico. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-datadir"
+><option
+>DataDir</option
+></term>
+<listitem>
+<para
+>La directory in cui si vuole che &kdm; conservi i dati persistenti; fra tali dati c'è, ad esempio, l'ultimo utente che si è connesso con sucecsso ad un certo display. </para>
+<para
+>Il valore predefinito è <quote
+>/var/lib/kdm</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-dmrcdir"
+><option
+>DmrcDir</option
+></term>
+<listitem>
+<para
+>La directory in cui si vuole che &kdm; conservi i file <filename
+>.dmrc</filename
+> degli utenti. È necessaria solo se le directory home degli utenti non sono leggibili prima dell'avvenuta connessione (come con AFS). </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</sect2>
+
+
+<sect2 id="kdmrc-xdmcp">
+<title
+>La sezione [Xdmcp] di &kdmrc;</title>
+
+<para
+>Questa sezione contiene le opzioni che controllano la gestione delle richieste &XDMCP; da parte di &kdm;. </para>
+
+<variablelist>
+
+<varlistentry>
+<term id="option-enable"
+><option
+>Enable</option
+></term>
+<listitem>
+<para
+>Se &kdm; debba ascoltare le richieste &XDMCP; in arrivo. </para>
+<para
+>Il valore predefinito è <quote
+>true</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-port"
+><option
+>Port</option
+></term>
+<listitem>
+<para
+>Indica il numero della porta UDP che &kdm; usa per ascoltare le richieste &XDMCP; in arrivo. A meno che non debbe eseguire il debug del sistema, lascia il valore predefinito. </para>
+<para
+>Il valore predefinito è <quote
+>177</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-keyfile"
+><option
+>KeyFile</option
+></term>
+<listitem>
+<para
+>L'autenticazione in stile XDM-AUTHENTICATION-1 di &XDMCP; richiede una chiave privata da condividere tra &kdm; ed il terminale. Questa opzione specifica il file contenente questi valori. Ciascuna voce del file consiste del nome del display e della chiave condivisa. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-xaccess"
+><option
+>Xaccess</option
+></term>
+<listitem>
+<para
+>Per impedire la connessione di servizi &XDMCP; non autorizzati e per permettere l'inoltro delle richieste &XDMCP; indirette, questo file contiene un database di hostname a cui è permesso l'accesso diretto a questa macchina,m o hanno un elenco di host a cui inoltrare le richieste. Il formato del file è descritto in <xref linkend="kdmrc-xaccess"/>. </para>
+<para
+>Il valore predefinito è <quote
+>${<envar
+>kde_confdir</envar
+>}/kdm/Xaccess</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-choicetimeout"
+><option
+>ChoiceTimeout</option
+></term>
+<listitem>
+<para
+>Numero di secondi da attendere perché il display risponda dopo che l'utente ha selezionato l'host dal pannello di scelta. Se il display invia un IndirectQuery &XDMCP; entro questo tempo, la richiesta è inoltrata all'host selezionato; altrimenti, è considerata una richiesta per una nuova sessione ed il pannello di scelta è mostrato nuovamente. </para>
+<para
+>Il valore predefinito è <quote
+>15</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-removedomainname"
+><option
+>RemoveDomainname</option
+></term>
+<listitem>
+<para
+>durante la creazione del nome del displat per i client &XDMCP;, il risolutore dei nomi tipicamente crea un nome di host completamente qualificato per il terminale. Poiché questo a volte può confondere, &kdm; elimina la porzione del nome del dominio se il nome dell'host è nello stesso dominio dell'host locale, quando questa opzione è selezionata. </para>
+<para
+>Il valore predefinito è <quote
+>true</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-sourceaddress"
+><option
+>SourceAddress</option
+></term>
+<listitem>
+<para
+>Usa l'IP numerico della connessione in arrivo sugli host multihome invece del nome dell'host. Ciò serve ad evitare la connessione all'interfaccia sbagliata che potrebbe essere inattiva in questo momento. </para>
+<para
+>Il valore predefinito è <quote
+>false</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-willing"
+><option
+>Willing</option
+></term>
+<listitem>
+<para
+>Specifica un programma eseguito (come <systemitem class="username"
+>root</systemitem
+>) quando un DirectQuery o un BroadcastQuery di &XDMCP; è ricevuto e questo host è configurato per offrire la gestione di un display &XDMCP;. L'output del programma può essere mostrato nella finestra di scelta. Se non viene specificato un programma, viene inviata la stringa <quote
+>Willing to manage</quote
+>. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</sect2>
+
+
+<sect2 id="kdmrc-shutdown">
+<title
+>La sezione [Shutdown] di &kdmrc;</title>
+
+<para
+>Questa sezione contiene opzioni globali sullo spegnimento del sistema. </para>
+
+<variablelist>
+
+<varlistentry>
+<term id="option-haltcmd"
+><option
+>HaltCmd</option
+></term>
+<listitem>
+<para
+>Il comando (soggetto a suddivisione in parole) da eseguire per fermare/spegnere il sistema. </para
+><para
+>Il valore predefinito è qualcosa di ragionevole per il sistema su cui è stato compilato &kdm;, come <command
+>/sbin/shutdown&nbsp;<option
+>-h</option
+>&nbsp;<parameter
+>now</parameter
+></command
+>. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-rebootcmd"
+><option
+>RebootCmd</option
+></term>
+<listitem>
+<para
+>Il comando (soggetto a suddivisione in parole) da eseguire per riavviare il sistema. </para
+><para
+>Il valore predefinito è qualcosa di ragionevole per il sistema su cui è stato compilato &kdm;, come <command
+>/sbin/shutdown&nbsp;<option
+>-r</option
+>&nbsp;<parameter
+>now</parameter
+></command
+>. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-allowfifo"
+><option
+>AllowFifo</option
+></term>
+<listitem>
+<para
+>Se è permesso spegnere il sistema attraverso la <acronym
+>FiFo</acronym
+> globale dei comandi. </para>
+<para
+>Il valore predefinito è <quote
+>false</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-allowfifonow"
+><option
+>AllowFifoNow</option
+></term>
+<listitem>
+<para
+>Se è permesso interrompere le sessioni attive allo spegnimento del sistema atttraverso la <acronym
+>FiFo</acronym
+> globale dei comandi. </para
+><para
+>Non ha effetto a meno che <option
+>AllowFifo</option
+> non sia abilitata. </para>
+<para
+>Il valore predefinito è <quote
+>true</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-bootmanager"
+><option
+>BootManager</option
+></term>
+<listitem>
+<para
+>Il gestore del boot che &kdm; deve usare per offrire le opzioni di boot nella finestra di spegnimento. </para>
+<variablelist>
+<varlistentry>
+<term
+><parameter
+>None</parameter
+></term>
+<listitem
+><para
+>nessun gestore del boot</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>Grub</parameter
+></term>
+<listitem
+><para
+>Il gestore del boot Grub</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>Lilo</parameter
+></term>
+<listitem
+><para
+>Il gestore del boot Lilo (solo per Linux i386 e x86-64)</para
+></listitem>
+</varlistentry>
+</variablelist>
+<para
+>Il valore predefinito è <quote
+>None</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</sect2>
+
+
+<sect2 id="kdmrc-core">
+<title
+>La classe di sezioni [X-*-core] di &kdmrc;</title>
+
+<para
+>Questa classe di sezioni contiene le opzioni che riguardano la configurazione del backend di &kdm;. </para>
+
+<variablelist>
+
+<varlistentry>
+<term id="option-opendelay"
+><option
+>OpenDelay</option
+></term>
+<listitem>
+<para
+>Vedi <option
+>OpenRepeat</option
+>. </para>
+<para
+>Il valore predefinito è <quote
+>15</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-opentimeout"
+><option
+>OpenTimeout</option
+></term>
+<listitem>
+<para
+>Vedi <option
+>OpenRepeat</option
+>. </para>
+<para
+>Il valore predefinito è <quote
+>120</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-openrepeat"
+><option
+>OpenRepeat</option
+></term>
+<listitem>
+<para
+>Queste opzioni controllano il comportamento di &kdm; quando prova a connettersi ad un &X-Server;. <option
+>OpenDelay</option
+> è la lunghezza della pausa (in secondi) tra i tentativi successivi, <option
+>OpenRepeat</option
+> è il numero di tentativi da effettuare e <option
+>OpenTimeout</option
+> india quanto tempo usare per un tentativo di connessione. Dopo che <option
+>OpenRepeat</option
+> tentativi sono stati fatti, o se sono passati <option
+>Opentimeout</option
+> secondi in uno dei tentativi di connessione, il tentativo di avvio è considerato non riuscito. </para>
+<para
+>Il valore predefinito è <quote
+>5</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-startattempts"
+><option
+>StartAttempts</option
+></term>
+<listitem>
+<para
+>Quante volte &kdm; deve provare ad avviare un display <literal
+>estraneo</literal
+> elencato in <option
+>StaticServers</option
+> prima di rinunciare e disabilitarlo. I display locali sono provati una sola volta, ed i display &XDMCP; sono controllati senza limiti ai tentativi dal client (a meno che l'opzione <option
+>-once</option
+> non sia data all'&X-Server;). </para>
+<para
+>Il valore predefinito è <quote
+>4</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-serverattempts"
+><option
+>ServerAttempts</option
+></term>
+<listitem>
+<para
+>Quante volte &kdm; deve provare ad avviare un &X-Server; locale. L'avvio include la sua esecuzione e l'attesa perché sia in piedi. </para>
+<para
+>Il valore predefinito è <quote
+>1</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-servertimeout"
+><option
+>ServerTimeout</option
+></term>
+<listitem>
+<para
+>Quanti secondi &kdm; debba aspettare perché il server X locale sia in piedi. </para>
+<para
+>Il valore predefinito è <quote
+>15</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-servercmd"
+><option
+>ServerCmd</option
+></term>
+<listitem>
+<para
+>La riga di comando per l'avvio dell'&X-Server;, senza il numero del display e la specifica del VT. Questa stringa è soggetta alla suddivisione in parole. </para
+><para
+>Il valore predefinito è qualcosa di ragionevole per il sistema su cui è stato compilato &kdm;, come <command
+>/usr/X11R6/bin/X</command
+>. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-serverargslocal"
+><option
+>ServerArgsLocal</option
+></term>
+<listitem>
+<para
+>Argomenti aggiuntivi per &X-Server; per le sessioni locali. Questa stringa è soggetta alla suddivisione in parole. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-serverargsremote"
+><option
+>ServerArgsRemote</option
+></term>
+<listitem>
+<para
+>Argomenti aggiuntivi per &X-Server; per le sessioni remote. Questa stringa è soggetta alla suddivisione in parole. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-servervt"
+><option
+>ServerVT</option
+></term>
+<listitem>
+<para
+>Il VT su cui l'&X-Server; deve girare. Dovrebbe essere usata <option
+>ServerVTs</option
+> invece di questa opzione. Lasciala a zero per permettere a &kdm; di assegnare un <acronym
+>VT</acronym
+> automaticamente. Imposta a <literal
+>-1</literal
+> per evitare del tutto l'assegnamento di un <acronym
+>VT</acronym
+> — ciò è necessario per le configurazioni con più console fisiche. Attualmente questa opzione è solo per Linux. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-servertty"
+><option
+>ServerTTY</option
+></term>
+<listitem>
+<para
+>Questa opzione serve per gli <acronym
+>OS</acronym
+> senza <acronym
+>VT</acronym
+>, o in &kdm; o nell'<acronym
+>OS</acronym
+> stesso. Attualmente, si applica per tutti gli <acronym
+>OS</acronym
+> tranne Linux. </para
+><para
+>Quando &kdm; va in modalità console, comincia a sorvegliare l'attività di questa linea <acronym
+>TTY</acronym
+> (specificata senza il prefisso <literal
+>/dev/</literal
+>). Se la linea non è usata per un certo tempo, &kdm; torna alla schermata di accesso di X. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-pinginterval"
+><option
+>PingInterval</option
+></term>
+<listitem>
+<para
+>Vedi <option
+>PingTimeout</option
+>. </para>
+<para
+>Il valore predefinito è <quote
+>5</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-pingtimeout"
+><option
+>PingTimeout</option
+></term>
+<listitem>
+<para
+>Per scoprire quando scompaiono i display <emphasis
+>remoti</emphasis
+>, &kdm; invia loro un ping ad intervalli regolari. <option
+>PingInterval</option
+> specifica il tempo (in minuti) fra i ping e <option
+>PingTimeout</option
+> specifica il massimo periodo di tempo (in minuti) da attendere perché il terminale risponda alla richiesta. Se il terminale non risponde, la sessione è dichiarata <quote
+>morta</quote
+> e viene fatta terminare. </para
+><para
+>Se usi frequentemente terminali X che possono rimanere isolati dall'host di gestione, puoi preferire aumentare il tempo di scadenza. L'unica preoccupazione è che le sessioni continueranno ad esistere dopo che il terminale è stato accidentalmente disabilitato. </para>
+<para
+>Il valore predefinito è <quote
+>5</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-terminateserver"
+><option
+>TerminateServer</option
+></term>
+<listitem>
+<para
+>Se &kdm; deve riavviare l'&X-Server; locale dopo l'uscita di una sessione invece di ripristinarlo ai valori predefiniti. Usa questa opzione se l'&X-Server; perde memoria o schianta il sistema durante i tentativi di ripristino. </para>
+<para
+>Il valore predefinito è <quote
+>false</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-resetsignal"
+><option
+>ResetSignal</option
+></term>
+<listitem>
+<para
+>Il numero di segnale da usare per reimpostare l'&X-Server; locale. </para>
+<para
+>Il valore predefinito è <quote
+>1 (SIGHUP)</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-termsignal"
+><option
+>TermSignal</option
+></term>
+<listitem>
+<para
+>Il numero di segnale da usare per far terminare l'&X-Server; locale. </para>
+<para
+>Il valore predefinito è <quote
+>15 (SIGTERM)</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-authorize"
+><option
+>Authorize</option
+></term>
+<listitem>
+<para
+>Controlla se &kdm; genera ed usa l'autorizzazione per le connession degli &X-Server; <emphasis
+>locali</emphasis
+>. Per i display &XDMCP; l'autorizzazione richiesta è sempre usata; i display estranei non-&XDMCP; non supportano assolutamente l'autorizzazione. </para>
+<para
+>Il valore predefinito è <quote
+>true</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-authnames"
+><option
+>AuthNames</option
+></term>
+<listitem>
+<para
+>Se <option
+>Authorize</option
+> vale true, usa i meccanismi di autorizzazione elencati qui. L'autorizzazione MIT-MAGIC-COOKIE-1 authorization è sempre disponibile; possono esserci anche XDM-AUTHORIZATION-1, SUN-DES-1  MIT-KERBEROS-5, a seconda di della configurazione a tempo di compilazione. </para>
+<para
+>Il valore predefinito è <quote
+>DEF_AUTH_NAME</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-resetforauth"
+><option
+>ResetForAuth</option
+></term>
+<listitem>
+<para
+>Alcuni <emphasis
+>vecchi</emphasis
+> &X-Server; leggono il file di autorizzazione durante la reimpostazione dell'&X-Server;, invece del momento in cui viene controllata la connessione iniziale. Poiché &kdm; genera le informazioni sull'autorizzazione subito prima di connettersi al display, un vecchio &X-Server; non otterrebbe informazioni aggiornate. Questa opzione può essere usata perché &kdm; invii un SIGHUP all'&X-Server; dopo aver preparato il file, in modo da reinizializzare l'&X-Server; che quindi leggerà le informazioni corrette. </para>
+<para
+>Il valore predefinito è <quote
+>false</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-authfile"
+><option
+>AuthFile</option
+></term>
+<listitem>
+<para
+>Questo file è usato per comunicare i dati di autorizzazione da &kdm; all'&X-Server;, usando l'opzione <option
+>-auth</option
+> della riga di comando di &X-Server;. Dovrebbe essere tenuto in una directory che non sia scrivibile dal mondo, poiché potrebbe essere rimosso facilmente, disabilitando il meccanismo di autenticazione di &X-Server;. Se non è specificato, verrà generato un nome casuale in base al valore di <option
+>AuthDir</option
+> ed al nome del display. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-resources"
+><option
+>Resources</option
+></term>
+<listitem>
+<para
+>Questa opzione specifica il nome del file da caricare da <command
+>xrdb</command
+> come il database delle risorse sulla finestra radice dello schermo 0 del display. I programmi KDE di solito non fanno uso delle risorse di X, per cui questa opzione è necessaria solo se il programma <option
+>Setup</option
+> richiede alcune X-resource. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-xrdb"
+><option
+>Xrdb</option
+></term>
+<listitem>
+<para
+>Il programma <command
+>xrdb</command
+> da usare per leggere il file X-resources specificato in <option
+>Resources</option
+>. Il comando è soggetto alla suddivisione delle parole. </para>
+<para
+>Il valore predefinito è <quote
+>${<envar
+>x_bindir</envar
+>}/xrdb</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-setup"
+><option
+>Setup</option
+></term>
+<listitem>
+<para
+>Questa stringa è soggetta alla suddivisione in parole. Specifica un programma da lanciare (come utente <systemitem class="username"
+>root</systemitem
+>) prima di offrire la schermata di benvenuto. Può essere usata per cambiare l'aspetto dello schermo che fa da sfondo alla finestra di benvenuto, o per mettere altre finestre (ad esempio, puoi voler far partire <command
+>xconsole</command
+> qui). Il nome convenzionale del programma usato qui è <command
+>Xsetup</command
+>. Vedi <xref linkend="kdmrc-xsetup"/>. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-startup"
+><option
+>Startup</option
+></term>
+<listitem>
+<para
+>Questa stringa è soggetta alla suddivisione in parole. Specifica un programma che viene eseguito (come <systemitem class="username"
+>root</systemitem
+>) dopo che il processo di autenticazione dell'utente ha avuto successo. Il nome convenzionale di un programma usato qui è <command
+>Xstartup</command
+>. Vedi <xref linkend="kdmrc-xstartup"/>. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-reset"
+><option
+>Reset</option
+></term>
+<listitem>
+<para
+>Questa stringa è soggetta alla suddivisione in parole. Specifica un programma da lanciare (come <systemitem class="username"
+>root</systemitem
+>) dopo che la sessione è terminata. Il nome convenzionale di un programma usato qui è <command
+>Xreset</command
+>. Vedi <xref linkend="kdmrc-xreset"/>. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-session"
+><option
+>Session</option
+></term>
+<listitem>
+<para
+>Questa stringa è soggetta alla suddivisione in parole. Specifica un programma da lanciare (come l'utente che possiede la sessione) della sessione. Il nome convenzionale di un programma usato qui è <command
+>Xsession</command
+>. Vedi <xref linkend="kdmrc-xsession"/>. </para>
+<para
+>Il valore predefinito è <quote
+>${<envar
+>x_bindir</envar
+>}/xterm -ls -T</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-failsafeclient"
+><option
+>FailsafeClient</option
+></term>
+<listitem>
+<para
+>Se il programma <option
+>Session</option
+> non viene eseguito con successo, &kdm; ripiegherà su questo programma. Questo programma è eseguito senza argomenti, ma viene eseguito con le stesse variabili di ambiente che avrebbe avuto la sessione (vedi <xref linkend="kdmrc-xsession"/>). </para>
+<para
+>Il valore predefinito è <quote
+>${<envar
+>x_bindir</envar
+>}/xterm</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-userpath"
+><option
+>UserPath</option
+></term>
+<listitem>
+<para
+>La variabile di ambiente <envar
+>PATH</envar
+> per le sessioni non-<systemitem class="username"
+>root</systemitem
+>. </para
+><para
+>Il valore predefinito dipende dal sistema su cui è stato compilato &kdm;. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-systempath"
+><option
+>SystemPath</option
+></term>
+<listitem>
+<para
+>La variabile di ambiente <envar
+>PATH</envar
+> per tutti i programmi tranne le sessioni non-<systemitem class="username"
+>root</systemitem
+>. Nota che è una buona pratica l'esclusione di <envar
+>.</envar
+> (la directory corrente) da questa voce. </para
+><para
+>Il valore predefinito dipende dal sistema su cui è stato compilato &kdm;. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-systemshell"
+><option
+>SystemShell</option
+></term>
+<listitem>
+<para
+>La variabile di ambiente <envar
+>SHELL</envar
+> per tutti i programmi tranne <option
+>Session</option
+>. </para>
+<para
+>Il valore predefinito è <quote
+>/bin/sh</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-userauthdir"
+><option
+>UserAuthDir</option
+></term>
+<listitem>
+<para
+>Quando &kdm; non riesce a scrivere il solito file di autorizzazione del server ($<envar
+>HOME</envar
+>/.Xauthority), crea un nome di file univoco e fa puntare la variabile d'ambiente <envar
+>XAUTHORITY</envar
+> al file creato. </para>
+<para
+>Il valore predefinito è <quote
+>/tmp</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-autorelogin"
+><option
+>AutoReLogin</option
+></term>
+<listitem>
+<para
+>Se è abilitata, &kdm; riavvia automaticamente una sessione dopo un crash dell'&X-Server; (o in caso di interruzione con Alt-Ctrl-BackSpace). Nota che abilitando questa opzione si apre un buco di sicurezza: un blocco sicuro del display può essere aggirato (a meno che non venga usato il bloccaschermo integrato di &kde;). </para>
+<para
+>Il valore predefinito è <quote
+>false</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-allowrootlogin"
+><option
+>AllowRootLogin</option
+></term>
+<listitem>
+<para
+>Se disabilitata, non permette a <systemitem class="username"
+>root</systemitem
+> (e a qualsiasi utente con UID = 0) di accedere direttamente al sistema. </para>
+<para
+>Il valore predefinito è <quote
+>true</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-allownullpasswd"
+><option
+>AllowNullPasswd</option
+></term>
+<listitem>
+<para
+>Se disabilitata, dolo gli utenti a cui è assegnata una password possono accedere al sistema. </para>
+<para
+>Il valore predefinito è <quote
+>true</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-allowshutdown"
+><option
+>AllowShutdown</option
+></term>
+<listitem>
+<para
+>A chi è permesso lo spegnimento del sistema. Si applica sia allo schermo di benvenuto che alla <acronym
+>FiFo</acronym
+> dei comandi. </para>
+<variablelist>
+<varlistentry>
+<term
+><parameter
+>None</parameter
+></term>
+<listitem
+><para
+>nessuna voce <guilabel
+>Spegni...</guilabel
+> verrà mostrata</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>Root</parameter
+></term>
+<listitem
+><para
+>la password di <systemitem class="username"
+>root</systemitem
+> deve essere immessa per lo spegnimento</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>All</parameter
+></term>
+<listitem
+><para
+>tutti possono spegnere la macchina</para
+></listitem>
+</varlistentry>
+</variablelist>
+<para
+>Il valore predefinito è <quote
+>All</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-allowsdforcenow"
+><option
+>AllowSdForceNow</option
+></term>
+<listitem>
+<para
+>A chi è permessa l'interruzione delle sessioni attive allo spegnimento. </para>
+<variablelist>
+<varlistentry>
+<term
+><parameter
+>None</parameter
+></term>
+<listitem
+><para
+>non è permesso affatto lo spegnimento forzato</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>Root</parameter
+></term>
+<listitem
+><para
+>la password di <systemitem class="username"
+>root</systemitem
+> deve essere immessa per lo spegnimento forzato</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>All</parameter
+></term>
+<listitem
+><para
+>tutti possono spegnere la macchina in modo forzato</para
+></listitem>
+</varlistentry>
+</variablelist>
+<para
+>Il valore predefinito è <quote
+>All</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-defaultsdmode"
+><option
+>DefaultSdMode</option
+></term>
+<listitem>
+<para
+>La scelta predefinita per la condizione/temporizzazione dello spegnimento. </para>
+<variablelist>
+<varlistentry>
+<term
+><parameter
+>Schedule</parameter
+></term>
+<listitem
+><para
+>spegne il computer dopo che tutte le sessioni attive sono uscite (eventualmente tutte assieme)</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>TryNow</parameter
+></term>
+<listitem
+><para
+>spegne il computer se nessuna sessione attiva è aperta; altrimenti, non fa niente.</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>ForceNow</parameter
+></term>
+<listitem
+><para
+>spegne il computer incondizionatamente</para
+></listitem>
+</varlistentry>
+</variablelist>
+<para
+>Il valore predefinito è <quote
+>Schedule</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-scheduledsd"
+><option
+>ScheduledSd</option
+></term>
+<listitem>
+<para
+>Come offrire le opzioni per la pianificazione dello spegnimento: </para>
+<variablelist>
+<varlistentry>
+<term
+><parameter
+>Never</parameter
+></term>
+<listitem
+><para
+>mai</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>Optional</parameter
+></term>
+<listitem
+><para
+>come pulsante in una semplice finestra di dialogo per lo spegnimento</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>Always</parameter
+></term>
+<listitem
+><para
+>al posto di una semplice finestra di dialogo per lo spegnimento</para
+></listitem>
+</varlistentry>
+</variablelist>
+<para
+>Il valore predefinito è <quote
+>Never</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-nopassenable"
+><option
+>NoPassEnable</option
+></term>
+<listitem>
+<para
+>Abilita la connessione al display senza password. <emphasis
+>Usa con molta attenzione!</emphasis
+> </para>
+<para
+>Il valore predefinito è <quote
+>false</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-nopassusers"
+><option
+>NoPassUsers</option
+></term>
+<listitem>
+<para
+>Gli utenti che non devono fornire una password per l'accesso. Gli elementi con il prefisso <literal
+>@</literal
+> rappresentano tutti gli utenti del gruppo nominato da tale elemento. <literal
+>*</literal
+> indica tutti gli utenti tranne <systemitem class="username"
+>root</systemitem
+> (e qualsiasi altro utente con UID = 0). <emphasis
+>Non elencare mai</emphasis
+> l'utente <systemitem class="username"
+>root</systemitem
+>. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-autologinenable"
+><option
+>AutoLoginEnable</option
+></term>
+<listitem>
+<para
+>Abilita la connessione automatica. <emphasis
+>Usa con estrema attenzione!</emphasis
+> </para>
+<para
+>Il valore predefinito è <quote
+>false</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-autologinagain"
+><option
+>AutoLoginAgain</option
+></term>
+<listitem>
+<para
+>Se è true, si connetta automaticamente dopo una disconnessione. Se false, la connessione automatica è effettuata solo quando viene avviata una sessione del display. </para>
+<para
+>Il valore predefinito è <quote
+>false</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-autologindelay"
+><option
+>AutoLoginDelay</option
+></term>
+<listitem>
+<para
+>Il ritardo in secondi prima che una connessione automatica venga avviata. Questo è anche noto come <quote
+>Accesso temporizzato</quote
+>. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-autologinuser"
+><option
+>AutoLoginUser</option
+></term>
+<listitem>
+<para
+>L'utente da connettere automaticamente <emphasis
+>Non usare mai</emphasis
+> l'utente <systemitem class="username"
+>root</systemitem
+>! </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-autologinpass"
+><option
+>AutoLoginPass</option
+></term>
+<listitem>
+<para
+>La password dell'utente per l'accesso automatico. <emphasis
+>Non è richiesta</emphasis
+> se l'utente non deve accedere ad un dominio <acronym
+>NIS</acronym
+> o Kerberos. Se usi questa opzione, dovresti usare <command
+>chmod&nbsp;<option
+>600</option
+>&nbsp;<filename
+>kdmrc</filename
+></command
+> per motivi ovvi. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-autologinlocked"
+><option
+>AutoLoginLocked</option
+></term>
+<listitem>
+<para
+>Blocca automaticamente la sessione avviata. Funziona solo con le sessioni di KDE. </para>
+<para
+>Il valore predefinito è <quote
+>false</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-sessionsdirs"
+><option
+>SessionsDirs</option
+></term>
+<listitem>
+<para
+>Un elenco delle directory contenenti le definizioni dei tipi di sessione. </para>
+<para
+>Il valore predefinito è <quote
+>${<envar
+>kde_datadir</envar
+>}/kdm/sessions</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-clientlogfile"
+><option
+>ClientLogFile</option
+></term>
+<listitem>
+<para
+>Il file (con percorso relativo alla directory home dell'utente) su cui redirigere l'output. La prima sequenza <parameter
+>%s</parameter
+> incontrata in questa stringa verrà sostituita dal nome del display. Usa <parameter
+>%%</parameter
+> per ottenere letteralmente <literal
+>%</literal
+>. </para>
+<para
+>Il valore predefinito è <quote
+>.xsession-errors</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-usesessreg"
+><option
+>UseSessReg</option
+></term>
+<listitem>
+<para
+>Specifica se la registrazione integrata su utmp/wtmp/lastlog di &kdm; debba essere usata. Se non lo è, dovrebbe essere usato lo strumento <command
+>sessreg</command
+>  negli script <option
+>Startup</option
+> e <option
+>Reset</option
+>, o, in alternativa, il modulo pam_lastlog dovrebbe essere usato sui sistemi che usano <acronym
+>PAM</acronym
+>. </para>
+<para
+>Il valore predefinito è <quote
+>true</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</sect2>
+
+
+<sect2 id="kdmrc-greeter">
+<title
+>La classe di sezione [X-*-Greeter] di &kdmrc;</title>
+
+<para
+>Questa classe di sezioni contiene le opzioni che riguardano la configurazione del programma di benvenuto di &kdm;. </para>
+
+<variablelist>
+
+<varlistentry>
+<term id="option-guistyle"
+><option
+>GUIStyle</option
+></term>
+<listitem>
+<para
+>Specifica lo stile dei controlli per lo schermo di benvenuto. Se è vuoto indica di usare lo stile predefinito, che attualmente è <literal
+>Plastik</literal
+>. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-colorscheme"
+><option
+>ColorScheme</option
+></term>
+<listitem>
+<para
+>Specifica lo schema di colori per i controlli dello schermo di benvenuto. Se è vuoto indica di usare lo schema predefinito, che attualmente è grigio-giallino con qualche elemento blu e giallo. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-logoarea"
+><option
+>LogoArea</option
+></term>
+<listitem>
+<para
+>Che cosa mostrare nella schermata di benvenuto sul lato destro delle caselle di testo (se <option
+>UserList</option
+> è disabilitata) o sopra di esse (se <option
+>UserList</option
+> è abilitata): </para>
+<variablelist>
+<varlistentry>
+<term
+><parameter
+>None</parameter
+></term>
+<listitem
+><para
+>nulla</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>Logo</parameter
+></term>
+<listitem
+><para
+>l'immagine specificata da <option
+>LogoPixmap</option
+></para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>Clock</parameter
+></term>
+<listitem
+><para
+>un bell'orologio analogico</para
+></listitem>
+</varlistentry>
+</variablelist>
+<para
+>Il valore predefinito è <quote
+>Clock</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-logopixmap"
+><option
+>LogoPixmap</option
+></term>
+<listitem>
+<para
+>L'immagine da mostrare nella schermata di benvenuto se <option
+>LogoArea</option
+> vale <literal
+>Logo</literal
+>. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-greeterpos"
+><option
+>GreeterPos</option
+></term>
+<listitem>
+<para
+>Le coordinate relative (percentuale della dimensione dello schermo; X,Y) in cui posizionare il centro della schermata di benvenuto. &kdm; allinea la finestra ai bordi dello schermo che incrocerebbe altrimenti. </para>
+<para
+>Il valore predefinito è <quote
+>50,50</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-greeterscreen"
+><option
+>GreeterScreen</option
+></term>
+<listitem>
+<para
+>Lo schermo da usare per il benvenuto in una configurazione Xinerama o multi-head. La numerazione inizia da 0. Pre Xinerama, corrisponde all'ordine dell'elenco della sezione ServerLayout di XF86Config; -1 indica di usare lo schermo in alto a sinistra, -2 di usare quello in alto a destra. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-greetstring"
+><option
+>GreetString</option
+></term>
+<listitem>
+<para
+>Il titolo della schermata di benvenuto. Un messaggio vuoto indica nessun titolo. </para
+><para
+>Le seguenti coppie di caratteri sono sostituite dal loro valore: <variablelist>
+<varlistentry>
+<term
+><parameter
+>%d</parameter
+></term>
+<listitem
+><para
+>il nome del display attuale</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>%h</parameter
+></term>
+<listitem
+><para
+>il nome dell'host locale, eventualmente con il nome del dominio</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>%n</parameter
+></term>
+<listitem
+><para
+>il nome del nodo locale, con ogni probabilità il nome dell'host senza il nome del dominio</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>%s</parameter
+></term>
+<listitem
+><para
+>il sistema operativo</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>%r</parameter
+></term>
+<listitem
+><para
+>la versione del sistema operativo</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>%m</parameter
+></term>
+<listitem
+><para
+>tipo di macchina (hardware)</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>%%</parameter
+></term>
+<listitem
+><para
+>un semplice carattere <literal
+>%</literal
+></para
+></listitem>
+</varlistentry>
+</variablelist>
+</para>
+<para
+>Il valore predefinito è <quote
+>Welcome to %s at %n</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-antialiasing"
+><option
+>AntiAliasing</option
+></term>
+<listitem>
+<para
+>Se i caratteri usati nella schermata di benvenuto debbano avere l'antialias. </para>
+<para
+>Il valore predefinito è <quote
+>false</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-greetfont"
+><option
+>GreetFont</option
+></term>
+<listitem>
+<para
+>Il tipo di caratteri da usare per il titolo della schermata di benvenuto. </para>
+<para
+>Il valore predefinito è <quote
+>Serif,20,bold</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-stdfont"
+><option
+>StdFont</option
+></term>
+<listitem>
+<para
+>Il tipo di carattere normale da usare nella schermata di benvenuto. </para>
+<para
+>Il valore predefinito è <quote
+>Sans Serif,10</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-failfont"
+><option
+>FailFont</option
+></term>
+<listitem>
+<para
+>Il tipo di caratteri da usare per il messaggio <quote
+>Connessione fallita</quote
+>. </para>
+<para
+>Il valore predefinito è <quote
+>Sans Serif,10,bold</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-numlock"
+><option
+>NumLock</option
+></term>
+<listitem>
+<para
+>Che cosa fare del modificatore BlocNum per il tempo in cui lo schermo di benvenuto è in esecuzione: </para>
+<variablelist>
+<varlistentry>
+<term
+><parameter
+>Off</parameter
+></term>
+<listitem
+><para
+>disattivato</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>On</parameter
+></term>
+<listitem
+><para
+>attivato</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>Keep</parameter
+></term>
+<listitem
+><para
+>non cambiare stato</para
+></listitem>
+</varlistentry>
+</variablelist>
+<para
+>Il valore predefinito è <quote
+>Keep</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-language"
+><option
+>Language</option
+></term>
+<listitem>
+<para
+>Lingua e locale da usare per la schermata di benvenuto, codificata come $<envar
+>LC_LANG</envar
+>. </para>
+<para
+>Il valore predefinito è <quote
+>en_US</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-usercompletion"
+><option
+>UserCompletion</option
+></term>
+<listitem>
+<para
+>Abilita il completamento automatico nella casella di testo del nome utente. </para>
+<para
+>Il valore predefinito è <quote
+>false</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-userlist"
+><option
+>UserList</option
+></term>
+<listitem>
+<para
+>Mostra un elenco con i nomi utente di Unix, i nomi reali e le immagini nella schermata di benvenuto. </para>
+<para
+>Il valore predefinito è <quote
+>true</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-showusers"
+><option
+>ShowUsers</option
+></term>
+<listitem>
+<para
+>Questa opzione controlla quali utenti saranno mostrati nella lista degli utenti (<option
+>UserList</option
+>) o offerti per l'autocompletamento (<option
+>UserCompletion</option
+>). Se è impostata a <literal
+>Selected</literal
+>, <option
+>SelectedUsers</option
+> contiene l'elenco definitivo degli utenti. Se è <literal
+>NotHidden</literal
+>, la lista iniziale degli utenti contiene tutti gli utenti del sistema. Gli utenti contenuti in <option
+>HiddenUsers</option
+> sono eliminati dalla lista, come anche gli utenti con UID più minore di <option
+>MinShowUID</option
+> o maggiore di <option
+>MaxShowUID</option
+>. Le voci in <option
+>SelectedUsers</option
+> e <option
+>HiddenUsers</option
+> che hanno il prefisso <literal
+>@</literal
+> rappresentano tutti gli utenti del gruppo indicato dalla voce. Infine, la lista degli utenti sarà ordinata alfabeticamente, se <option
+>SortUsers</option
+> è abilitata. </para>
+<para
+>Il valore predefinito è <quote
+>NotHidden</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-selectedusers"
+><option
+>SelectedUsers</option
+></term>
+<listitem>
+<para
+>Vedi <option
+>ShowUsers</option
+>. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-hiddenusers"
+><option
+>HiddenUsers</option
+></term>
+<listitem>
+<para
+>Vedi <option
+>ShowUsers</option
+>. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-minshowuid"
+><option
+>MinShowUID</option
+></term>
+<listitem>
+<para
+>Vedi <option
+>ShowUsers</option
+>. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-maxshowuid"
+><option
+>MaxShowUID</option
+></term>
+<listitem>
+<para
+>Vedi <option
+>ShowUsers</option
+>. </para>
+<para
+>Il valore predefinito è <quote
+>65535</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-sortusers"
+><option
+>SortUsers</option
+></term>
+<listitem>
+<para
+>Vedi <option
+>ShowUsers</option
+>. </para>
+<para
+>Il valore predefinito è <quote
+>true</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-facesource"
+><option
+>FaceSource</option
+></term>
+<listitem>
+<para
+>Se <option
+>UserList</option
+> è abilitata, questa specifica da dove &kdm; debba ottenere le immagini: </para>
+<variablelist>
+<varlistentry>
+<term
+><parameter
+>AdminOnly</parameter
+></term>
+<listitem
+><para
+>da <filename
+>&lt;<option
+>FaceDir</option
+>&gt;/$<envar
+>USER</envar
+>.face[.icon]</filename
+></para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>PreferAdmin</parameter
+></term>
+<listitem
+><para
+>preferisce &lt;<option
+>FaceDir</option
+>&gt;, ricade in $<envar
+>HOME</envar
+></para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>PreferUser</parameter
+></term>
+<listitem
+><para
+>...e viceversa</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>UserOnly</parameter
+></term>
+<listitem
+><para
+>Dalla cartella <filename
+>$<envar
+>HOME</envar
+>/.face[.icon]</filename
+> dell'utente</para
+></listitem>
+</varlistentry>
+</variablelist>
+
+<para
+>Le immagini possono essere in uno qualsiasi dei formati che Qt riconosce, ma il nome del file deve corrispondere alle aspettative di &kdm;: <literal
+>.face.icon</literal
+> dovrebbe essere un'icona 48x48, mentre <literal
+>.face</literal
+> dovrebbe essere un'immagine 300x300. Attualmente l'immagine grande è usata solo come ripiego ed è riscalata, ma in futuro potrebbe essere mostrata a dimensione intera nell'area del logo o come suggerimento. </para>
+<para
+>Il valore predefinito è <quote
+>AdminOnly</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-facedir"
+><option
+>FaceDir</option
+></term>
+<listitem>
+<para
+>Vedi <option
+>FaceSource</option
+>. </para>
+<para
+>Il valore predefinito è <quote
+>${<envar
+>kde_datadir</envar
+>}/kdm/faces</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-preselectuser"
+><option
+>PreselectUser</option
+></term>
+<listitem>
+<para
+>Specifica se e quale utente debba essere preselezionato per la connessione: </para>
+<variablelist>
+<varlistentry>
+<term
+><parameter
+>None</parameter
+></term>
+<listitem
+><para
+>non preselezionare nessun utente</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>Previous</parameter
+></term>
+<listitem
+><para
+>l'utente che si è connesso con successo per ultimo</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>Default</parameter
+></term>
+<listitem
+><para
+>l'utente specificato nell'opzione <option
+>DefaultUser</option
+></para
+></listitem>
+</varlistentry>
+</variablelist>
+
+<para
+>Se <option
+>FocusPasswd</option
+> è abilitata e l'utente è preselezionato, il cursore è posizionato automaticamente nella casella di immissione della password. </para>
+<note
+><para
+>L'abilitazione della preselezione dell'utente può essere considerata un buco di sicurezza, perché fornisce un nome di accesso valido al potenziale attaccante, per cui dovrà <quote
+>solo</quote
+> indovinare la password. D'altra parte, si potrebbe impostare <option
+>DefaultUser</option
+> ad un nome inesistente.</para
+></note>
+ 
+<para
+>Il valore predefinito è <quote
+>None</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-defaultuser"
+><option
+>DefaultUser</option
+></term>
+<listitem>
+<para
+>Vedi <option
+>PreselectUser</option
+>. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-focuspasswd"
+><option
+>FocusPasswd</option
+></term>
+<listitem>
+<para
+>Vedi <option
+>PreselectUser</option
+>. </para>
+<para
+>Il valore predefinito è <quote
+>false</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-echomode"
+><option
+>EchoMode</option
+></term>
+<listitem>
+<para
+>Il campo di immissione della password nasconde il testo inserito. Specifica come farlo: </para>
+<variablelist>
+<varlistentry>
+<term
+><parameter
+>OneStar</parameter
+></term>
+<listitem
+><para
+>un <literal
+>*</literal
+> è mostrato per ciascun carattere inserito</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>ThreeStars</parameter
+></term>
+<listitem
+><para
+>tre <literal
+>*</literal
+> (***) sono mostrati per ciascun carattere inserito</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>NoEcho</parameter
+></term>
+<listitem
+><para
+>non viene mostrato nulla, il cursore non si muove</para
+></listitem>
+</varlistentry>
+</variablelist>
+<para
+>Il valore predefinito è <quote
+>OneStar</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-usebackground"
+><option
+>UseBackground</option
+></term>
+<listitem>
+<para
+>Se questa opzione è abilitata, &kdm; avvierà automaticamente il programma <command
+>krootimage</command
+> per preparare uno sfondo; altrimenti, il programma <option
+>Setup</option
+> è responsabile per lo sfondo. </para>
+<para
+>Il valore predefinito è <quote
+>true</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-backgroundcfg"
+><option
+>BackgroundCfg</option
+></term>
+<listitem>
+<para
+>Il file di configurazione da usare per <command
+>krootimage</command
+>. Contiene una sezione chiamata <literal
+>[Desktop0]</literal
+> analoga a quella di <filename
+>kdesktoprc</filename
+>. Le sue opzioni non sono descritte qui; dovrai indovinarne il significato o usare il centro di controllo. </para>
+<para
+>Il valore predefinito è <quote
+>${<envar
+>kde_confdir</envar
+>}/kdm/backgroundrc</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-grabserver"
+><option
+>GrabServer</option
+></term>
+<listitem>
+<para
+>Per migliorare la sicurezza, lo schermo di benvenuto si impadronisce dell'&X-Server; e poi intercetta tutti gli eventi di tastiera quando viene avviato. Questa opzione specifica se il <quote
+>grab</quote
+> dell'&X-Server; debba essere tenuto per tutta la durata della lettura di nome e password. Quando è disabilitata, l'&X-Server; è rilasciato dopo il grab della tastiera; altrimenti, è effettuato il grab dell'&X-Server; fino ad un attimo prima dell'inizio della sessione dell'utente. </para>
+<note
+><para
+>Abilitare questa opzione disabilita <option
+>UseBackground</option
+> e <option
+>Setup</option
+>.</para
+></note>
+ 
+<para
+>Il valore predefinito è <quote
+>false</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-grabtimeout"
+><option
+>GrabTimeout</option
+></term>
+<listitem>
+<para
+>Questa opzione specifica il periodo di tempo massimo per cui &kdm; aspetta che il grab abbia successo. Un grab può fallire se altri client X hanno già il grab dell'&X-Server; o della tastiera, o anche se la latenza della rete è molto alta. Stai molto attento se aumenti questo valore, perché gli utenti possono essere ingannati da finestre dall'aspetto identico sul display. Se un grab fallisce, &kdm; uccide e riavvia l'&X-Server; (se possibile) e la sessione. </para>
+<para
+>Il valore predefinito è <quote
+>3</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-authcomplain"
+><option
+>AuthComplain</option
+></term>
+<listitem>
+<para
+>Avverte se un display non ha X-authorization. Questo succede se <itemizedlist>
+ <listitem
+><para
+>il file di autorizzazione per un server X locale non può essere creato, </para
+></listitem>
+ <listitem
+><para
+>un display remoto di &XDMCP; non ha richiesto alcuna autorizzazione oppure </para
+></listitem>
+ <listitem
+><para
+>il display è un display <quote
+>estraneo</quote
+> specificato in <option
+>StaticServers</option
+>. </para
+></listitem>
+</itemizedlist>
+</para>
+<para
+>Il valore predefinito è <quote
+>true</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-loginmode"
+><option
+>LoginMode</option
+></term>
+<listitem>
+<para
+>Specifica se lo schermo di benvenuto dei display locali debba partire in modalità di scelta dell'host (remoto) o di avvio (locale) e se è permesso il cambio di modalità. </para>
+<variablelist>
+<varlistentry>
+<term
+><parameter
+>LocalOnly</parameter
+></term>
+<listitem
+><para
+>è possibile il solo accesso locale</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>DefaultLocal</parameter
+></term>
+<listitem
+><para
+>inizia in modo locale, ma permette di cambiare al modo remoto</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>DefaultRemote</parameter
+></term>
+<listitem
+><para
+>...e viceversa</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><parameter
+>RemoteOnly</parameter
+></term>
+<listitem
+><para
+>è possibile solo la scelta di un host remoto</para
+></listitem>
+</varlistentry>
+</variablelist>
+<para
+>Il valore predefinito è <quote
+>LocalOnly</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-chooserhosts"
+><option
+>ChooserHosts</option
+></term>
+<listitem>
+<para
+>Un elenco di host da aggiungere automaticamente al menu di accesso remoto. Il nome speciale <literal
+>*</literal
+> indica una ricerca broadcast. Non a effetto se <option
+>LoginMode</option
+> è <literal
+>LocalOnly</literal
+>. </para>
+<para
+>Il valore predefinito è <quote
+>*</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-forgingseed"
+><option
+>ForgingSeed</option
+></term>
+<listitem>
+<para
+>Usa questo numero come seme casuale per creare i tipi di sessione salvati ecc. degli utenti sconosciuti. Ciò è usato per evitare di lasciar trapelare i dati degli utenti ad un attacco informatico. Il valore dovrebbe essere casuale ma costante in tutto il dominio di accesso. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-showlog"
+><option
+>ShowLog</option
+></term>
+<listitem>
+<para
+>Abilita la <command
+>xconsole</command
+> integrata di &kdm;. nota che questa può essere abilitata per un solo display per volta. È disponibile solo se &kdm; è stato configurato con <command
+>configure</command
+> <option
+>--enable-kdm-xconsole</option
+>. </para>
+<para
+>Il valore predefinito è <quote
+>false</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-logsource"
+><option
+>LogSource</option
+></term>
+<listitem>
+<para
+>La fonte dei dati per l'<command
+>xconsole</command
+> integrata di &kdm;. Se è vuota, viene richiesta la redirezione del log da <filename
+>/dev/console</filename
+>. Non ha effetto se <option
+>ShowLog</option
+> è disabilitata. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-pluginslogin"
+><option
+>PluginsLogin</option
+></term>
+<listitem>
+<para
+>Specifica il plugin di conversazione per il dialogo di accesso; inizialmente è selezionato il primo della lista. Ciascun plugin può essere specificato come nome base (che viene espanso in <filename
+>$<envar
+>kde_modulesdir</envar
+>/kgreet_<replaceable
+>base</replaceable
+></filename
+>) o come nome-percorso completo. </para
+><para
+>I plugin di conversazione sono moduli per la schermata di benvenuto che ottengono i dati di autenticazione per l'utente. Attualmente viene fornito con &kde; solo il plugin <literal
+>classic</literal
+>; fornisce un ben noto modulo per l'inserimento di nome utente e password. </para>
+<para
+>Il valore predefinito è <quote
+>classic</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-pluginsshutdown"
+><option
+>PluginsShutdown</option
+></term>
+<listitem>
+<para
+>Identica a <option
+>PluginsLogin</option
+>, ma per la finestra di spegnimento. </para>
+<para
+>Il valore predefinito è <quote
+>classic</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-pluginoptions"
+><option
+>PluginOptions</option
+></term>
+<listitem>
+<para
+>Un elenco di opzioni nella forma <replaceable
+>Chiave</replaceable
+><literal
+>=</literal
+><replaceable
+>Valore</replaceable
+>. I plugin di conversazione può interrogare queste impostazioni; sta a loro stabilire quali siano le chiavi possibili. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-allowconsole"
+><option
+>AllowConsole</option
+></term>
+<listitem>
+<para
+>Mostra l'azione <guilabel
+>Accesso alla console</guilabel
+> nella schermata di benvenuto (se almeno una di <option
+>ServerTTY</option
+>/<option
+>ConsoleTTYs</option
+> è configurata). </para>
+<para
+>Il valore predefinito è <quote
+>true</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-allowclose"
+><option
+>AllowClose</option
+></term>
+<listitem>
+<para
+>Mostra l'azione <guilabel
+>Riavvia il server X</guilabel
+>/<guilabel
+>Chiudi la connessione</guilabel
+> nella schermata di benvenuto. </para>
+<para
+>Il valore predefinito è <quote
+>true</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-preloader"
+><option
+>Preloader</option
+></term>
+<listitem>
+<para
+>Un programma da eseguire quando è visibile lo schermo di benvenuto. È fatto er precaricare il più possibile della sessione che (con maggior probabilità) verrà avviata. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-usetheme"
+><option
+>UseTheme</option
+></term>
+<listitem>
+<para
+>Se la schermata di benvenuto debba usare un tema. </para>
+<para
+>Il valore predefinito è <quote
+>false</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term id="option-theme"
+><option
+>Theme</option
+></term>
+<listitem>
+<para
+>Il tema da usare per lo schermo di benvenuto. Può puntare ad una directory o ad un file XML. </para>
+<para
+>È vuota inizialmente.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</sect2>
+
+
+
+</sect1>
+
+<sect1 id="kdmrc-xservers">
+<title
+>Specificare server X permanenti</title>
+
+<para
+>Ciascuna voce della lista <option
+>StaticServers</option
+> indica un display che deve essere costantemente gestito e che non usa &XDMCP;. Questo metodo è tipicamente usato solo per gli &X-Server; che sono avviati da &kdm; ma &kdm; può gestire &X-Server; avviati dall'esterno (<quote
+>estranei</quote
+>), sia che siano eseguiti sulla macchina locale che su una macchina remota.</para>
+
+<para
+>La sintassi formale di una specifica è <screen>
+<userinput
+><replaceable
+>nome&nbsp;display</replaceable
+>&nbsp;[<literal
+>_</literal
+><replaceable
+>classe&nbsp;display</replaceable
+>]</userinput>
+</screen
+> per tutti gli &X-Server;. I display <quote
+>estranei</quote
+> sono diversi perché hanno il nome dell'host nel nome del display, può essere <literal
+>localhost</literal
+>.</para>
+
+<para
+>Il <replaceable
+>nome del display</replaceable
+> deve essere qualcosa che possa essere passato all'opzione <option
+>-display</option
+> di un programma X. Questa stringa è usata per generare i nomi delle sezioni specifiche per display, quindi stai attento a far corrispondere i nomi. Il nome dei display &XDMCP; viene generato dall'indirizzo del display usando la risoluzione inversa del nome dell'host. Per gli scopi della configurazione, il prefisso <literal
+>localhost</literal
+> dei display &XDMCP; locali <emphasis
+>non</emphasis
+> è rimosso per renderli distinguibili dagli &X-Server; avviati da &kdm;.</para>
+
+<para
+>La parte <replaceable
+>classe display</replaceable
+> è anche usata per le sezioni specifiche per-display. È utile se hai molti display simili (come un laboratorio con molti terminali X) e vuoi impostare le opzioni per un gruppo di essi. Quando si usa &XDMCP;, il display è obbligato a specificare una classe di display, quindi il manuale per quel particolare terminale X dovrebbe documentare la stringa della classe di display del dispositivo. Se non lo fa, puoi eseguire &kdm; in modo debug e usare <command
+>grep</command
+> per trovare <quote
+>class</quote
+> nel log.</para>
+
+<para
+>Il display specificato da <option
+>ReserveServers</option
+> non parte quando &kdm; è avviato, ma solo quando è specificamente richiesto dal socket dei comandi (o <acronym
+>FiFo</acronym
+>). Se vengono specificati display di riserva, il menu di &kde; avrà una voce <guilabel
+>Avvia nuova sessione</guilabel
+> verso il fondo; usa tale voce per cambiare display, ed avrai a disposizione un minuto di tempo per completare l'accesso. Se non ci sono altri display di riserva disponibili, la voce del menu sarà disabilitata.</para>
+
+<para
+>Quando &X-Server; avvia una sessione, prepara i dati di autorizzazione dell'&kdm;. Per i server locali, &kdm; passa <command
+><option
+>--auth</option
+>&nbsp;<filename
+><replaceable
+>nomefile</replaceable
+></filename
+></command
+> sulla riga di comando dell'&X-Server; per puntare ai propri dati di autorizzazione. Per i display &XDMCP;, &kdm; passa i dati di autorizzazione all'&X-Server; con il messaggio <quote
+>Accept</quote
+>.</para>
+
+</sect1>
+
+<sect1 id="kdmrc-xaccess">
+<title
+>Controllo dell'accesso &XDMCP;</title>
+
+<para
+>Il file specificato dall'opzione <option
+>AccessFile</option
+> fornisce informazioni che &kdm; usa per controllare l'accesso dai display che richiedono servizi da &XDMCP;. I file contengono quattro tipi di voci: le voci che controllano la risposta alle richieste <quote
+>Direct</quote
+> e <quote
+>Broadcast</quote
+>, le voci che controllano la risposta delle richieste <quote
+>Indirect</quote
+>, definizioni di macro per le voci <quote
+>Indirect</quote
+>, e voci che controllano su quali interfacce di rete &kdm; si mette in ascolto per le richieste &XDMCP;. Le righe vuote sono ignorate, il carattere <literal
+>#</literal
+> è trattato come un delimitatore di commento che fa ignorare il resto della riga, e <literal
+>\</literal
+> fa ignorare un a capo immediatamente successivo, permettendo alle liste di host indiretti di usare più righe. </para>
+
+<para
+>Il formato delle voci <quote
+>Direct</quote
+> è semplice, è o un nome di host o un modello, che è confrontato con il nome dell'host del dispositivo di visualizzazione. I modelli sono distinti dai nomi degli host dalla presenza di metacaratteri; <quote
+>*</quote
+> corrisponde ad una sequenza di 0 o più caratteri, e <literal
+>?</literal
+> corrisponde ad un qualsiasi carattere singolo. Se la voce è il nome di un host, tutte le comparazioni vengono fatte usando l'indirizzo di rete, quindi ogni nome che può essere convertito correttamente ad un indirizzo di rete può essere usato. Per i modelli, solo i nomi canonici degli host sono usati nelle comparazioni, quindi assicurati di non cercare corrispondenze con gli alias. I nomi degli host delle richieste &XDMCP; contengono sempre il nome di dominio locale anche se il reverse lookup restituisce il nome breve, quindi puoi usare i modelli per il dominio locale. Facendo precedere la voce da un carattere <literal
+>!</literal
+> fa escludere il nome dell'host che corrisponde a tale voce. Per rispondere solo a richieste <quote
+>Direct</quote
+> per un host o un modello, puoi farlo seguire dalla parola chiave opzionale <literal
+>NOBROADCAST</literal
+>. Ciò può essere usato per impedire ai server di &kdm; di apparire in menu basati su richieste <quote
+>Broadcast</quote
+>.</para>
+
+<para
+>Anche una voce <quote
+>Indirect</quote
+> contiene il nome di un host o un modello, ma lo fa seguire da un elenco di nomi di host o macro a cui devono essere inoltrate le richieste. Anche le voci <quote
+>Indirect</quote
+> possono essere escludenti, nel qual caso un nome di host (valido) come segnaposto deve essere inserito per rendere la voce distinguibile da una voce <quote
+>Direct</quote
+>. Se è stato compilato per gestire l'IPv6, i gruppi di indirizzi multicast possono essere inclusi nella lista di indirizzi a cui inoltrare le richieste. Se la lista di indirizzi indiretti contiene la parola chiave <literal
+>CHOOSER</literal
+>, le richieste <quote
+>Indirect</quote
+> non sono inoltrate; invece, viene mostrato una finestra per la scelta degli host da &kdm;. La finestra di scelta invierà una richiesta <quote
+>Direct</quote
+> a tutti i restanti nomi di host della lista e offrirà un menu per tutti gli host che rispondono. La lista degli host può contenere la parola chiave <literal
+>BROADCAST</literal
+>, per fare in modo che la finestra di scelta invii anche una richiesta <quote
+>Broadcast</quote
+>; nota che alcuni sistemi operativi non permettono l'invio in broadcast di pacchetti UDP, quindi questa funzione potrebbe mancare. </para>
+
+<para
+>Quando viene controllato l'accesso per un particolare host di display, ciascuna voce è analizzata e la prima voce che corrisponde determina la risposta. Le voci <quote
+>Direct</quote
+> e <quote
+>Broadcast</quote
+> sono ignorate durante l'analisi per una voce <quote
+>Indirect</quote
+> e viceversa.</para>
+
+<para
+>Una definizione di macro contiene il nome della macro ed una lista di nomi di host ed altre macro in cui la macro viene espansa. Per distinguere le macro dai nomi degli host, i nomi delle macro iniziano con un carattere <literal
+>%</literal
+>.</para>
+
+<para
+>L'ultimo tipo di voce è la direttiva <literal
+>LISTEN</literal
+>. La sintassi formale è <screen>
+<userinput
+>&nbsp;<literal
+>LISTEN</literal
+>&nbsp;[<replaceable
+>interfaccia</replaceable
+>&nbsp;[<replaceable
+>lista&nbsp;multicast</replaceable
+>]]</userinput>
+</screen
+> Se sono specificate una o più righe <literal
+>LISTEN</literal
+>, &kdm; si mette in attesa di richieste &XDMCP; solo sulle interfacce specificate. <replaceable
+>interfaccia</replaceable
+> può essere il nome dell'host o l'indirizzo IP che rappresenta un'interfaccia di rete di questa macchina, o un carattere jolly <literal
+>*</literal
+> che rappresenta tutte le interfacce di rete disponibili. Se vengono elencati su una riga <literal
+>LISTEN</literal
+> degli indirizzi di gruppi multicast, &kdm; si connette al gruppo multicast dell'interfaccia data. Per il multicast IPv6, IANA ha assegnato permanentemente gli indirizzi multicast ff0<replaceable
+>X</replaceable
+>:0:0:0:0:0:0:12b ad &XDMCP;. L'<replaceable
+>X</replaceable
+> nel prefisso può essere sostituito da un qualsiasi indicatore di contesto valido, come 1 per Node-Local, 2 per Link-Local, 5 per Site-Local, e così via (vedi l'RFC 2373 dell'IETF o il suo sostituto per maggiori dettagli e per le definizione dei contesti). &kdm; normalmente ascolta nel contesto Link-local all'indirizzo ff02:0:0:0:0:0:0:12b per simulare il comportamento del broadcast su sottorete di IPv4 il più fedelmente possibile. Se non vengono fornite righe <literal
+>LISTEN</literal
+>, &kdm; ascolta su tutte le interfacce e si connette al gruppo multicast IPv6 predefinito per &XDMCP; (se è compilato con il supporto IPv6). Per disabilitare del tutto l'ascolto per le richieste &XDMCP;, può essere specificata una riga <literal
+>LISTEN</literal
+> senza indirizzi, ma l'uso dell'opzione <option
+>Enable</option
+> del gruppo <literal
+>[Xdmcp]</literal
+> è preferito. </para>
+
+</sect1>
+
+<sect1 id="kdm-scripts">
+<title
+>Programmi supplementari</title>
+
+<para
+>I seguenti programmi sono eseguiti da &kdm; in vari stadi della sessione. Sono tipicamente degli script di shell. </para>
+
+<para
+>I programmi Setup, Startup e Reset sono eseguiti come utente <systemitem class="username"
+>root</systemitem
+>, quindi devi stare attento alla sicurezza. Il primo argomento è <literal
+>auto</literal
+> se la sessione risulta da una connessione automatica; altrimenti, non gli viene passato alcun argomento. </para>
+
+<sect2 id="kdmrc-xsetup">
+<title
+>Programma di setup</title>
+
+<para
+>Il programma <filename
+>Xsetup</filename
+> è avviato dopo l'avvio di &X-Server; o la sua reinizializzazione, ma prima che venga mostrata la schermata di benvenuto. Questo è il posto dove cambiare lo sfondo dello schermo (se l'opzione <option
+>UseBackground</option
+> è disabilitata) o far comparire altre finestre che debbano apparire sullo schermo assieme alla finestra di benvenuto. </para>
+
+<para
+>In aggiunta a quelle specificate da <option
+>ExportList</option
+>, le seguenti variabili di ambiente sono passate:</para>
+<variablelist>
+ <varlistentry>
+  <term
+>DISPLAY</term>
+  <listitem
+><para
+>il nome del display associato</para
+></listitem>
+ </varlistentry>
+ <varlistentry>
+  <term
+>PATH</term>
+  <listitem
+><para
+>il valore di <option
+>SystemPath</option
+></para
+></listitem>
+ </varlistentry>
+ <varlistentry>
+  <term
+>SHELL</term>
+  <listitem
+><para
+>il valore di <option
+>SystemShell</option
+></para
+></listitem>
+ </varlistentry>
+ <varlistentry>
+  <term
+>XAUTHORITY</term>
+  <listitem
+><para
+>può essere impostata ad un file di authority</para
+></listitem>
+ </varlistentry>
+ <varlistentry>
+  <term
+>DM_CONTROL</term>
+  <listitem
+><para
+>il valore di <option
+>FifoDir</option
+></para
+></listitem>
+ </varlistentry>
+</variablelist>
+
+<para
+>Nota che poiché &kdm; intercetta la tastiera, tutte le altre finestre non potranno ricevere immissioni da tastiera. Potranno interagire con il mouse, però; attento ai potenziali buchi di sicurezza. Se <option
+>GrabServer</option
+> è impostata, <filename
+>Xsetup</filename
+> non potrà affatto connettersi al display. Le risorse di questo programma possono essere inserite in un file nominato in <option
+>Resources</option
+>. </para>
+
+</sect2>
+
+<sect2 id="kdmrc-xstartup">
+<title
+>Progaramma Startup</title>
+
+<para
+>Il programma <filename
+>Xstartup</filename
+> è eseguito come <systemitem class="username"
+>root</systemitem
+> quando l'utente accede al sistema. Questo è il luogo dove mettere i comandi che aggiungono voci a <filename
+>utmp</filename
+> (il programma <command
+>sessreg</command
+> potrebbe essere utile a questo punto), monta le directory degli utenti dai server di file, o interrompe la sessione se qualche requisito non è presente (ma nota che sui sistemi moderni molti di questi compiti sono svolti dai moduli <acronym
+>PAM</acronym
+>).</para>
+
+<para
+>In aggiunta a quelle specificate da <option
+>ExportList</option
+>, le seguenti variabili di ambiente sono passate:</para>
+<variablelist>
+ <varlistentry>
+  <term
+>DISPLAY</term>
+  <listitem
+><para
+>il nome del display associato</para
+></listitem>
+ </varlistentry>
+ <varlistentry>
+  <term
+>HOME</term>
+  <listitem
+><para
+>la directory di lavoro iniziale dell'utente</para
+></listitem>
+ </varlistentry>
+ <varlistentry>
+  <term
+>LOGNAME</term>
+  <listitem
+><para
+>il nome utente</para
+></listitem>
+ </varlistentry>
+ <varlistentry>
+  <term
+>USER</term>
+  <listitem
+><para
+>il nome utente</para
+></listitem>
+ </varlistentry>
+ <varlistentry>
+  <term
+>PATH</term>
+  <listitem
+><para
+>il valore di <option
+>SystemPath</option
+></para
+></listitem>
+ </varlistentry>
+ <varlistentry>
+  <term
+>SHELL</term>
+  <listitem
+><para
+>il valore di <option
+>SystemShell</option
+></para
+></listitem>
+ </varlistentry>
+ <varlistentry>
+  <term
+>XAUTHORITY</term>
+  <listitem
+><para
+>può essere impostata ad un file di authority</para
+></listitem>
+ </varlistentry>
+ <varlistentry>
+  <term
+>DM_CONTROL</term>
+  <listitem
+><para
+>il valore di <option
+>FifoDir</option
+></para
+></listitem>
+ </varlistentry>
+</variablelist>
+
+<para
+>&kdm; attende fino al termine di questo programma prima di iniziare la sessione dell'utente. Se il valore di uscita del programma non è zero, &kdm; interrompe la sessione e ricomincia un ciclo di autenticazione.</para>
+
+</sect2>
+
+<sect2 id="kdmrc-xsession">
+<title
+>Programma Session</title>
+
+<para
+>Il programma <filename
+>Xsession</filename
+> è il comando eseguito come sessione dell'utente. È eseguito con i permessi dell'utente autorizzato. Una delle parole chiave <filename
+>failsafe</filename
+>, <literal
+>default</literal
+> o <literal
+>custom</literal
+>, o una stringa da valutare (<command
+>eval</command
+>) con una shell compatibile Bourne è passata come primo argomento.</para>
+
+<para
+>In aggiunta a quelle specificate da <option
+>ExportList</option
+>, le seguenti variabili di ambiente sono passate:</para>
+<variablelist>
+ <varlistentry>
+  <term
+>DISPLAY</term>
+  <listitem
+><para
+>il nome del display associato</para
+></listitem>
+ </varlistentry>
+ <varlistentry>
+  <term
+>HOME</term>
+  <listitem
+><para
+>la directory di lavoro iniziale dell'utente</para
+></listitem>
+ </varlistentry>
+ <varlistentry>
+  <term
+>LOGNAME</term>
+  <listitem
+><para
+>il nome utente</para
+></listitem>
+ </varlistentry>
+ <varlistentry>
+  <term
+>USER</term>
+  <listitem
+><para
+>il nome utente</para
+></listitem>
+ </varlistentry>
+ <varlistentry>
+  <term
+>PATH</term>
+  <listitem
+><para
+>il valore di <option
+>UserPath</option
+> (o <option
+>SystemPath</option
+> per le sessioni dell'utente <systemitem class="username"
+>root</systemitem
+>)</para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term
+>SHELL</term>
+  <listitem
+><para
+>la shell predefinita dell'utente</para
+></listitem>
+ </varlistentry>
+ <varlistentry>
+  <term
+>XAUTHORITY</term>
+  <listitem
+><para
+>può essere impostata ad un file di authority non standard</para
+></listitem>
+ </varlistentry>
+ <varlistentry>
+  <term
+>KRBTKFILE</term>
+  <listitem
+><para
+>può essere impostata al nome della cache delle credenziali Kerberos4</para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term
+>KRB5CCNAME</term>
+  <listitem
+><para
+>può essere impostata al nome della cache delle credenziali Kerberos5</para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term
+>DM_CONTROL</term>
+  <listitem
+><para
+>il valore di <option
+>FifoDir</option
+></para
+></listitem>
+ </varlistentry>
+ <varlistentry>
+  <term
+>XDM_MANAGED</term>
+  <listitem
+><para
+>contiene una lista di elementi separati da virgole dei parametri che la sessione può ritenere interessanti, come il percorso della <acronym
+>FiFo</acronym
+> dei comandi e le sue capacità, e quale plugin di conversazione è stato usato per l'accesso.</para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term
+>DESKTOP_SESSION</term>
+  <listitem
+><para
+>il nome della sessione che l'utente ha scelto di avviare</para>
+  </listitem>
+ </varlistentry>
+</variablelist>
+
+</sect2>
+
+<sect2 id="kdmrc-xreset">
+<title
+>Il programma di reset</title>
+
+<para
+>In modo simmetrico rispetto a <filename
+>Xstartup</filename
+>, il programma <filename
+>Xreset</filename
+> è eseguito dopo che la sessione dell'utente è terminata. È eseguito come <systemitem class="username"
+>root</systemitem
+>, e dovrebbe contenere comandi che annullano gli effetti di <filename
+>Xstartup</filename
+>, eliminando le voci da <filename
+>utmp</filename
+> o smontando le directory dai server dei file.</para>
+
+<para
+>Le variabili di ambiente che sono state passate a <filename
+>Xstartup</filename
+> sono passate anche a <filename
+>Xreset</filename
+>. </para>
+
+</sect2>
+
+</sect1>
+
+</chapter>

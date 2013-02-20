@@ -1,0 +1,445 @@
+<?xml version="1.0"  encoding="UTF-8" ?>
+
+<chapter id="extending">
+<chapterinfo>
+<authorgroup>
+<author
+><firstname
+>Andras</firstname
+> <surname
+>Mantia</surname
+> <affiliation
+><address
+><email
+>amantia@kde.org</email
+></address
+></affiliation>
+</author>
+<author
+><firstname
+>Michal</firstname
+> <surname
+>Rudolf</surname
+> <affiliation
+><address
+><email
+>mrudolf@kdewebdev.org</email
+></address
+></affiliation>
+</author>
+
+<othercredit role="translator"
+><firstname
+>Marek</firstname
+> <surname
+>Laane</surname
+> <affiliation
+><address
+><email
+>bald@smail.ee</email
+></address
+> </affiliation
+><contrib
+>Tõlge eesti keelde</contrib
+></othercredit
+> 
+
+</authorgroup>
+</chapterinfo>
+<title
+>&kommander;i laiendamine</title>
+
+<sect1 id="create-widgets">
+<title
+>&kommander;i vidinate loomine</title>
+<para
+>&kommander;iga saab päris lihtsalt luua uusi vidinaid ka &kommander;i-väliste vidinate põhjal. </para>
+<para
+>&kommander;ile saab uusi vidinaid luua kahel viisil: luues pluginaid või lisades neid otseselt &kommander;i lähtekoodi. </para>
+<sect2 id="create-class">
+<title
+>Vidinaklassi loomine</title>
+<para
+>Esimeseks sammuks on vidinaklassi loomine. Selleks tuleb tuletada oma uus &kommander;i vidina klass &Qt;/&kde; vidinast, mida soovid &kommander;iga põimida, ning seejärel ka klassist KommanderWidget. Selle klassi alistamismeetodid annavadki &kommander;i vidinale vajalikud funktsioonid. </para>
+<para
+>Enamik &kommander;i vidina koodist on lihtsalt mallkood. Seepärast saab enamiku &kommander;i vidina koodi genereerimiseks ära kasutada KDevelopi &kommander;i plugina malli. Selleks käivita KDevelop (soovitavalt vähemalt versioon 3.5), vali <guimenu
+>Projekt->Uus projekt</guimenu
+>, märgi ära kastike <guilabel
+>Kõigi projektimallide näitamine</guilabel
+> ja vali <guilabel
+>C++/&kommander;/KommanderPlugin</guilabel
+> mall. Anna oma pluginale nimi ja järgi nõustaja juhiseid. </para>
+<para
+>Sul tuleb vaid täita vidinale olulised komponendid, näiteks olekuteave, vidina tekst jms. </para>
+<para
+>Oletame, et soovid luua &kommander;ile uue tekstikasti, võttes selle aluseks &kde; vidina KLineEdit. &kommander;i vidina genereerimise dialoogi kasutades võtab päisefail umbes sellise kuju: </para>
+<screen
+>#include &lt;kommanderwidget.h&gt;
+
+class QShowEvent;
+class KomLineEdit : public KLineEdit, public KommanderWidget
+{
+    Q_OBJECT
+
+    Q_PROPERTY(QString populationText READ populationText WRITE setPopulationText DESIGNABLE false)
+    Q_PROPERTY(QStringList associations READ associatedText WRITE setAssociatedText DESIGNABLE false)
+    Q_PROPERTY(bool KommanderWidget READ isKommanderWidget)
+    
+public:
+    KomLineEdit(QWidget *a_parent, const char *a_name);
+    ~KomLineEdit();
+
+    virtual QString widgetText() const;
+
+    virtual bool isKommanderWidget() const;
+    virtual void setAssociatedText(const QStringList&amp;);
+    virtual QStringList associatedText() const;
+    virtual QString currentState() const;
+
+    virtual QString populationText() const;
+    virtual void setPopulationText(const QString&amp;);
+public slots:
+    virtual void setWidgetText(const QString &amp;);
+    virtual void populate();
+protected:
+    void showEvent( QShowEvent *e );
+signals:
+    void widgetOpened();
+    void widgetTextChanged(const QString &amp;);
+};
+</screen>
+<para
+>Peamiselt on tegemist mallkoodiga, mille üle ei tasu pead murda. Tähele tuleb panna vaid kaht asja: fail kommanderwidget.h peab olema kaasatud kohe alguses ning klass peab olema esmalt tuletatud vidinast, mida me soovime lõimida &kommander;iga ja teiseks KommanderWidget'ist. </para>
+<para
+>cpp-failis on teatud osad, mida tuleb iga konkreetse vidina puhul tähele panna. </para>
+<screen
+>KomLineEdit::KomLineEdit(QWidget *a_parent, const char *a_name)
+    : KLineEdit(a_parent, a_name), KommanderWidget(this)
+{
+    QStringList states;
+    states &lt;&lt; "default";
+    setStates(states);
+    setDisplayStates(states);
+}
+</screen>
+<para
+>Konstruktoris saab määrata vidina võimalikud olekud. Meie tekstikastil ei ole mingeid olekuid, sestap anname talle ainult ühe, vaikimisi oleku <emphasis
+>default</emphasis
+>. Kui lood vidina, millel võib olla mitu olekut, näiteks märkekasti, siis saab siin määrata kolm olekut: märkimata (<emphasis
+>unchecked</emphasis
+>), poolmärgitud (<emphasis
+>semichecked</emphasis
+>) ja märgitud<emphasis
+>checked</emphasis
+>.  </para>
+<screen
+>QString KomLineEdit::currentState() const
+{
+    return QString("default");
+}</screen>
+<para
+>Eespool määrasime konstruktoris olekud ning see tagastab lihtsalt vidina aktiivse oleku. Meie vidina puhul on see alati <emphasis
+>default</emphasis
+>, aga muidu tuleb siia kirjutada kood, mis kontrollib, millises olekus vidin parasjagu on, ning tagastab vajaliku teate. </para>
+<screen
+>QString KomLineEdit::widgetText() const
+{
+    return KLineEdit::text();
+}
+
+void KomLineEdit::setWidgetText(const QString &amp;a_text)
+{
+    KLineEdit::setText(a_text);
+    emit widgetTextChanged(a_text);
+}
+</screen>
+<para
+>Need on kaks kõige tähtsamat meetodit, mis sisaldavat põhiosa funktsionaalsest koodist. Meetod <emphasis
+>QString KomLineEdit::widgetText() const</emphasis
+> tagastab vidina teksti (teksti, milleks tekstiseoses laiendatakse eri <emphasis
+>@widgetText</emphasis
+>. Meie vidina puhul on tekst see, mida kirjutatakse tekstikasti, nii et see tagastataksegi. Vidina teksti määramisel tuleb meil määrata tekstikasti kirjutatav tekst. Me saadame pärast vidina teksti määramist signaali <emphasis
+>widgetTextChanged()</emphasis
+>, et teised vidinat teaksid, et seda vidinat on uuendatud. </para>
+<para
+>Vidinale funktsionaalsuse lisamiseks tuleb registreerida vastavad funktsioonid ja lisada neile vajalik kood. Registreerimiseks mõeldud kood tuleb asetada cpp-faili algusse konstruktori ette: </para>
+<screen
+>#include &lt;klocale.h&gt; //for i18n
+
+#include "kommanderplugin.h"
+#include "specials.h"
+
+enum Functions {
+  FirstFunction = 1159,
+  Function1,
+  Function2,
+  LastFunction
+};
+KomLineEdit::KomLineEdit(QWidget *a_parent, const char *a_name)
+    : KLineEdit(a_parent, a_name), KommanderWidget(this)
+{
+  ... //code like described above
+  KommanderPlugin::setDefaultGroup(Group::DCOP);
+  KommanderPlugin::registerFunction(Function1, "function1(QString widget, QString arg1, int arg2)",  i18n("Call function1 with two arguments, second is optional."), 2, 3);
+  KommanderPlugin::registerFunction(function2, "function2(QString widget)",  i18n("Get a QString as a result of function2."), 1);  
+}
+</screen>
+<para
+>See registreerib kaks funktsiooni: <emphasis
+>function1 ja function2</emphasis
+>. Funktsioonile omistatav number (siin <emphasis
+>1160</emphasis
+> ja <emphasis
+>1161</emphasis
+>) peab olema unikaalne, seda ei tohi kasutada üheski muus pluginas ega &kommander;is endas. Funktsioonile <emphasis
+>function1</emphasis
+> võib anda kaks argumenti, millest üks pole kohustuslik; funktsioonil <emphasis
+>function2</emphasis
+> ei saa anda ühtegi argumenti ja see tagastab stringi. Argument <emphasis
+>QString widget</emphasis
+> näitab, et funktsioonid tegutsevad vidinas, näiteks: <emphasis
+>KomLineEdit.function1("foo", 1)</emphasis
+>. </para>
+<para
+>Et ka &kommander; teaks ,et vidin neid funktsioone toetab, lisa selline meetod: </para>
+<screen
+>bool KomLineEdit::isFunctionSupported(int f)
+{
+  return (f 
+> FirstFunction &amp;&amp; f &lt; LastFunction) || f == DCOP::text;
+}
+</screen>
+<para
+>See tähendab, et KomLineEdit toetab ülaltoodud funktsioone ja standardset funktsiooni <emphasis
+>text</emphasis
+>. Funktsiooni koodi saab käsitleda meetodi handleDCOP raames: </para>
+<screen
+>QString KomLineEdit::handleDCOP(int function, const QStringList&amp; args)
+{
+  switch (function)
+  {
+    case function1:
+      handleFunction1(arg[0], arg[1].toInt()); //call your function1 handler
+      break;
+    case function2:
+      return handleFunction2(); //call function2
+      break;
+    case DCOP::text:
+      return text(); //call the standard KLineEdit::text() method
+      break;
+    default:
+      return KommanderWidget::handleDCOP(function, args);
+  }
+  return QString::null;
+}
+</screen>
+<para
+>Tegemist on juhtudega, kus vidin võib olla redaktoris ja executoris erinev, näiteks skriptiobjektide, infodialoogi vms. puhul. Tavaliselt näidatakse vidina asemel QLabel'it. Selleks peab vidin tulenema QLabel'ist, milleks konstruktoris peab seisma järgmine kood: </para>
+<screen
+>if (KommanderWidget::inEditor)
+  {
+    setPixmap(KGlobal::iconLoader()->loadIcon("iconname", KIcon::NoGroup, KIcon::SizeMedium));
+    setFrameStyle(QFrame::Box | QFrame::Plain);
+    setLineWidth(1);
+    setFixedSize(pixmap()->size());
+  }
+  else
+    setHidden(true);
+</screen>
+<para
+>Ka vidina enda (kui sul läheb üldse vidinat tarvis - vahest pakub sinu "vidin" kõigest võimalust kasutada andmebaasi vms.) võib luua mõnes funktsioonis, näiteks funktsioonis <emphasis
+>execute</emphasis
+>. Toome näite infodialoogi põhjal: </para>
+<screen
+>QString AboutDialog::handleDCOP(int function, const QStringList&amp; args)
+{
+  switch (function) {
+  ...
+    case DCOP::execute:
+    {
+      if (m_aboutData)
+      {        
+        KAboutApplication dialog(m_aboutData, this);
+        dialog.exec();
+      }
+      break;
+    }
+   ...
+}  
+</screen>
+<para
+>Nüüd ongi &kommander;i vidin valmis. Jääb üle vaid muuta see &kommander;ile kättesaadavaks pluginate abil. </para>
+
+</sect2>
+
+<sect2 id="create-plugin">
+<title
+>&kommander;i plugina loomine</title>
+<para
+>Kõiki &kommander;i vidinaid pakuvad pluginad. Standardvidinad laaditakse vidinapluginatena, kuid &kommander;i redaktor on samuti lingitud selle teegiga, sest teatud mehhanismid redaktoris on seotud spetsiaalselt standardvidinatega. </para>
+<para
+>&kommander;i plugin on lihtsalt ühisteek sümboliga 'kommander_plugin'. See sümbol on funktsioon, mis tagastab viida klassi KommanderPlugin isendile. </para>
+<para
+>&kommander; võimaldab väga lihtsalt luua vidinatele pluginat, nii et kirjeldatud süvateadmiste pärast ei tasu muret tunda. Põhiline on tuletada oma vidinate uus pluginaklass baasklassist KommanderPlugin ja teostada mõned konkreetsed üksikasjad. Mallkoodi saab genereeriga ülalmainitud KDevelopi projektimallist. </para>
+<para
+>Järgnev kood jätkab meie näidet, milles me lõime Kommanderi tekstikasti. </para>
+<screen
+>#include &lt;kommanderplugin.h>
+
+/* WIDGET INCLUDES */
+#include "komlineedit.h"
+
+</screen>
+<para
+>Kõigepealt tuleb kaasata kommanderplugin.h. See sisaldab klassi KommanderPlugin definitsiooni. Samuti tuleb kaasata kõigi vidinate päisefailid, mida antud plugin pakub - praegusel juhul on selleks ainult komlineedit.h. </para>
+<screen
+>class MinuKomPlugin : public KommanderPlugin
+{
+public:
+    MinuKomPlugin();
+    virtual QWidget *create( const QString &amp;className, QWidget *parent = 0, const char *name = 0 );
+};
+</screen>
+<para
+>Seejärel loome KommanderPlugin'i alamklassi <emphasis
+>MyKomPlugin</emphasis
+>. See sisaldab lihtsalt konstruktorit ja tühistavat loomismeetodit. </para>
+<screen
+>MinuKomPlugin::MinuKomPlugin()
+{
+    addWidget( "KomLineEdit", "My Widget Group", i18n("A Kommander line edit widget") new QIconSet(KGlobal::iconLoader()->loadIcon("ikooninimi", KIcon::NoGroup, KIcon::SizeMedium)));
+    //add my other widgets here
+}
+</screen>
+<para
+>Plugina konstruktoris kutsume <emphasis
+>addWidget()</emphasis
+> välja iga vidina puhul, mida plugin meie soovide kohaselt peab pakkuda. <emphasis
+>addWidget()</emphasis
+> võib kasutada kuut argumenti, aga vajalikud on ainult esimesed neli. Argumendid on järgmises järjekorras: vidina klassi nimi, grupp, kohtspikker, redaktori tööriistaribal kasutatava ikooni ikoonirühm, 'Mis see on?' teave ning tõeväärtus, mis osutab, kas vidin on teiste vidinate konteiner või mitte. Seda teavet kasutab redaktor vidinate rühmitamisel menüüs, abiinfo pakkumisel jne. </para>
+<para
+>Mis puutub ikooni, siis toodud näide laadib keskmise suurusega ikooni <emphasis
+>ikooninimi</emphasis
+> &kde; ikoonide standardsest asukohast. </para>
+<screen
+>QWidget *MinuKomPlugin::create( const QString &amp;className, QWidget *parent, const char *name )
+{
+    if( className == "KomLineEdit" )
+    return new KomLineEdit( parent, name );
+    //create my other widgets here
+    return 0;
+}
+</screen>
+<para
+>Just <emphasis
+>create()</emphasis
+> loob tegelikult meie vidinate isendid. Kui &kommander; soovib mõne meie plugina pakutava klassi isendit, kutsub ta välja <emphasis
+>create()</emphasis
+> soovitud klassi nimega, samuti selle eellase nime ja nimega, mida hakatakse kasutama. Kui <emphasis
+>className</emphasis
+> vastab mõnele teadaolevale vidinale, tagastatakse selle uus isend, vastasel juhul 0. </para>
+<para
+>Lõpuks tuleb plugin eksportida. See on meie plugina kättesaamiskoht, mille järel &kommander; oskab teda üles leida. Ilma selleta ei pea &kommander; meie teeki &kommander;i pluginaks. </para>
+<screen
+>KOMMANDER_EXPORT_PLUGIN(MinuKomPlugin)
+</screen>
+<para
+>Uue &kommander;i laiendi kompileerimiseks tuleb kompileerida kõik failid ühisteegina, linkides nad kommanderplugini, kommanderwidgeti ja kõigi vajalike KDE teekidega. Tekstikasti puhul, kus meil on komlineedit.h, komlineedit.cpp ja minukomplugin.cpp, peaks plugina kompileerimine ja paigaldamine käima umbes selliste käskudega: </para>
+<screen
+>libtool --mode=compile g++ -$KDEDIR/include -IQTDIR/include \
+   -I. -fPIC -c komlineedit.cpp
+libtool --mode=compile g++ -$KDEDIR/include -IQTDIR/include \
+   -I. -fPIC -c minukomplugin.cpp
+
+libtool --mode=link g++ -shared -L$KDEDIR/lib -lkdeui -lkommanderwidget \
+   -lkommanderplugin komlineedit.cppkomlineedit.o minukomplugin.o 
+   -o libmykomplugin.so
+</screen>
+<para
+>Kui soovid paigaldada uue plugina süsteemsena, kasuta järgmist käsku: </para>
+<screen
+>su -c "cp libminukomplugin.so $KDEDIR/lib"
+</screen>
+<note
+><para
+>Kui tarvitad KDevelopi projektigeneraatorit, ei ole ülaltoodut vaja, vaid tuleb kohandada Makefile.am-i, linkides selle täiendavate teekidega. Vaikimisi lingitakse &Qt; ja &kde; teekidega ning genereeritakse kõik vajalikud objektfailid. Anna ehitamiseks lihtsalt käsk <command
+>make</command
+> ja paigaldamiseks <command
+>su -c make install</command
+>.</para
+></note>
+</sect2>
+<sect2 id="config-plugin">
+<title
+>Paigaldatud plugina seadistamine</title>
+<para
+>Kui plugin on paigaldatud, käivita programm <command
+>kmdr-plugins</command
+> või vali redaktoris menüükäsk <guimenu
+>Seadistused->Pluginate seadistamine</guimenu
+>. Programmi nimekirjas on parajasti &kommander;is laaditud pluginad. Lisa uus plugin, klõpsates tööriistaribal nupule <guilabel
+>Lisa</guilabel
+> ja valides oma plugina. Programmi sulgemisel salvestatakse muudatused. </para>
+<para
+>Kui nüüd &kommander;i redaktor uuesti käivitada, on uue plugina pakutavad vidinad kättesaadavad menüüdes ja tööriistaribadel. Nüüd saab ka uusi vidinaid kasutada &kommander;i dialoogides. </para>
+</sect2>
+<sect2 id="add-widget">
+<title
+>Vidina lisamine otse &kommander;ile</title>
+<para
+>See osa on mõeldud &kommander;i arendajatele ja kirjeldab, kuidas lisada uus vidin otse &kommander;ile.</para>
+<para
+>Mõneti irooniliselt on see omajagu keerulisem, eriti siis, kui vidin vajab täiendavaid redigeerimismeetodeid. Kõigepealt tuleb luua vidin, nagu eespool kirjeldatud. Seejärel tuleb vidin registreerida redaktoris ja executoris. Redaktoris registreerimiseks tuleb järgnev lisada faili <emphasis
+>editor/widgetdatabase.cpp</emphasis
+>: </para>
+<screen
+>...
+#include "minuvidin.h"
+...
+void WidgetDatabase::setupDataBase( int id )
+{
+  ...
+  r = new WidgetDatabaseRecord;
+  r->name = "MyWidgetName";
+  r->iconName = "icon.png";
+  r->group = widgetGroup( "Kommander" );
+  r->toolTip = i18n("My new widget");
+  append(r);
+  ...
+}
+</screen>
+<para
+>Lisada tuleb ka faili <emphasis
+>editor/widgetfactory.cpp</emphasis
+>: </para>
+<screen
+>...
+#include "minuvidin.h"
+...
+QWidget *WidgetFactory::createWidget( const QString &amp;className, QWidget *parent, const char *name, bool init,
+  const QRect *r, Qt::Orientation orient )
+{
+  ...
+  else if (className == "MyWidgetName")
+    return new MinuVidin(parent, name);    
+  ...
+}
+</screen>
+<para
+>Registreerimiseks executoris (sisuliselt pluginasüsteemis) tuleb järgnev lisada failile <emphasis
+>widgets/plugin.cpp</emphasis
+>: </para>
+<screen
+>KomStdPlugin::KomStdPlugin()
+{
+  ...
+  addWidget("MyWidgetName", group, "", new QIconSet(KGlobal::iconLoader()->loadIcon("iconname", KIcon::NoGroup, KIcon::SizeMedium)));
+  ...
+}
+</screen>
+<para
+>See sarnaneb sellele, kuidas vidin registreeriti pluginasüsteemis esimesel juhul. </para>
+</sect2>
+</sect1>
+
+</chapter>

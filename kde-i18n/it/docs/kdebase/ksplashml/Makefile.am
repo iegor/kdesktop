@@ -1,0 +1,4 @@
+KDE_LANG = it
+SUBDIRS = $(AUTODIRS)
+KDE_DOCS = ksplashml
+KDE_MANS = AUTO

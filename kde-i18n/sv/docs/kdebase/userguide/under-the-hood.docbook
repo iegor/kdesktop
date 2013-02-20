@@ -1,0 +1,650 @@
+<chapter id="tinkering-under-the-hood">
+<!-- Uncomment the <*info
+> below and add your name to be -->
+<!-- credited for writing this section. -->
+
+<!--
+<chapterinfo>
+<authorgroup>
+<author>
+<firstname
+>Your First Name here</firstname>
+<surname
+>Your Surname here </surname>
+</author>
+</authorgroup>
+</chapterinfo>
+-->
+
+<title
+>Meka under huven på &kde;</title>
+
+<sect1 id="hand-editing-config-files">
+
+<sect1info>
+<author
+><personname
+> <firstname
+>Nicolas</firstname
+> <surname
+>Goutte</surname
+> </personname
+> <email
+>goutte@kde.org</email
+> </author>
+</sect1info>
+
+<title
+>Redigera inställningsfiler för hand</title>
+
+<sect2 id="hand-editing-intro">
+<title
+>Inledning</title>
+<para
+>Inställningsfilerna i &kde; är enkla att redigera med en vanlig editor som &kate;, eftersom inställningsfilerna är textfiler.</para>
+
+<para
+>Ett exempel på en textfil:</para>
+
+<programlisting
+>[General]
+AutoSave=1
+LastFile=/var/tmp/test.txt</programlisting>
+
+<para
+>Användarspecifika inställningsfiler lagras i <filename class="directory"
+>.kde/share/config</filename
+> (ersätt <filename
+>.kde</filename
+> med din inställning av $<envar
+>KDEHOME</envar
+>) och de globala finns i underkatalogen <filename class="directory"
+>share/config</filename
+> i &kde;:s installationssökväg. (Du kan hitta sökvägen genom att köra kommandot <command
+>kde-config --prefix</command
+>.) Filnamnen slutar typiskt med rc (utan inledande punkt), till exempel <filename
+>kopeterc</filename
+>.</para>
+
+<warning
+><para
+>Att redigera inställningsfiler för hand kan utgöra en risk för stabiliteten hos din installation av &kde;. Program kontrollerar oftast inte vad de läser i inställningsfiler. Det betyder att de kan störas av vad de får som inställningar, och kan till och med krascha.</para
+></warning>
+
+</sect2>
+
+<sect2 id="hand-editing-backups">
+<title
+>Säkerhetskopior</title>
+
+<para
+>Den första regeln är alltså att göra en säkerhetskopia av filen innan du ändrar den. Det är bäst att lagra säkerhetskopian utanför någon underkatalog i <filename class="directory"
+>.kde</filename
+> (eller motsvarande $<envar
+>KDEHOME</envar
+> katalog). Säkerhetskopior är hur som helst en god idé i händelse av ett större fel i &kde; som skulle förstöra viktiga inställningsfiler (till exempel dina inställningar av &kmail;, som finns i filen <filename
+>kmailrc</filename
+>). Ett sådant större fel ska inte inträffa, men det kan ändå ske.</para>
+</sect2>
+
+<sect2 id="hand-editing">
+<title
+>Redigering</title>
+
+<para
+>Varför skulle du vilja röra inställningsfilerna över huvudtaget? Ja, först och främst behöver du det om du vill upprätta ett kioskläge. Kanske har en utvecklare bett dig att lägga till en post för att hjälpa till att lösa ett problem i programmet. Kanske vill du återhämta dig från ett problem utan att behöva ta bort hela <filename class="directory"
+>.kde</filename
+> katalogen. Kanske vill du lära dig mer om interna funktioner i &kde;.</para>
+
+<para
+>Hur som helst, vilken anledning du än har, vill du ändra en inställningsfil för hand.</para>
+
+<para
+>När du tänker dig att redigera en sådan fil, försäkra dig om att programmet som använder den inte kör. Om det är en av de grundläggande inställningsfilerna, fundera på att redigera filen när &kde; inte alls kör.</para>
+
+<para
+>Klar? Gör då en säkerhetskopia av filen (det har vi väl redan talat om?). Starta din favoriteditor (låt oss anta att det är &kate;), ladda filen (Var noggrann med att ladda den som UTF-8, som &kate; visar som <quote
+>utf8</quote
+>).</para>
+
+<para
+>Nu har du en fil som ser ut så här:</para>
+
+<programlisting
+>[Group]
+Key1=Value1
+Key2=Value2
+Key3=Value3</programlisting>
+
+<para
+>Du kan nu ändra den (med försiktighet) och därefter spara den (Försäkra dig igen om att det är som <acronym
+>UTF-8</acronym
+>).</para>
+
+<para
+>Nu kan du testa programmet och om det inte lägre kör som det ska, stänga programmet och återställa inställningsfilens säkerhetskopia.</para>
+
+<itemizedlist>
+<title
+>Relaterad information</title>
+
+
+<listitem
+><para
+><xref linkend="kde-for-administrators"/> har mer information om &kde;:s katalogstruktur, för att hjälpa dig hitta filen du behöver redigera.</para>
+</listitem>
+
+</itemizedlist>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="scripting-the-desktop">
+<title
+>Använda skript med skrivbordet</title>
+
+<para
+>&kde; tillhandahåller ett kraftfullt kommunikationssystem mellan processer med &DCOP;, Desktop COmmunication Protocol. Genom att använda &DCOP; kan du styra ett stort antal funktioner i &kde; från kommandoraden eller från ett skript skrivet i ditt favoritskriptspråk. Du kan också få information från &kde;-program: till exempel tillhandahåller flera mediaspelare i &kde; metoder för att fråga spelaren efter information om spåret som för närvarande spelas.</para>
+
+<para
+>Generellt sett tillhandahåller varje &kde;-program ett eller flera &DCOP; <firstterm
+>gränssnitt</firstterm
+>, som i sin tur tillhandahåller metoder (eller om du föredrar det, funktioner) som andra program kan anropa. Det första steget i att skriva vårt skript är alltså att hitta lämplig metod för att ändra skrivbordsunderläggets bakgrundsfärg. Det enklaste sättet att göra det är att använda gränssnittet <application
+>kdcop</application
+> för att se tillgängliga &DCOP;-metoder.</para>
+
+<para
+>Kör <application
+>kdcop</application
+> från en terminal eller Kör program (fönstret som dyker upp med <keycombo action="simul"
+>&Alt;<keycap
+>F2</keycap
+></keycombo
+>). Fönstret <application
+>kdcop</application
+> visar programmen som för närvarande kör och tillhandahåller &DCOP;-gränssnitt, med en trädvy. I allmänhet krävs en viss sökning genom trädvyn för att hitta rätt metod, men ett användbart tips är att gränssnittet markerat <quote
+>(default)</quote
+> vanligtvis innehåller de oftast använda funktionerna.</para>
+
+
+
+<para
+>För att testa att funktionen gör det vi förväntar oss, dubbelklicka på posten <guilabel
+>setColor</guilabel
+>. För att ange färgen <varname
+>c</varname
+>, klicka på färgväljarknappen och välj en färg. Ange om färgen ska vara färg A med kryssrutan. Klicka på <guilabel
+>Ok</guilabel
+>, så ändras skrivbordsunderläggets färg.</para>
+
+<para
+>För att komma åt &DCOP;-metoden från ditt favoritskriptspråk, kan du antingen använda &DCOP;-bindningar, om de är tillgängliga i modulen kdebindings, eller anropa kommandoradsprogrammet <command
+>dcop</command
+>. För enkel användning är det tillräckligt att anropa kommandoradsprogrammet <command
+>dcop</command
+>. För att anropa en &DCOP;-metod på kommandoraden, måste vi ange programmet och gränssnittet som metoden tillhör, själva metoden och argumenten på en form som är lämplig för skalet.</para>
+
+<para
+>Vi anger program, gränssnitt och metod i denna ordning, följt av argumenten i samma ordning som de visas i <application
+>kdcop</application
+>. <command
+>dcop</command
+> har många andra väljare: Ta en titt på utmatningen från <userinput
+><command
+>dcop</command
+> <option
+>--help</option
+></userinput
+>.</para>
+
+<para
+>Det är nog med teori. Tid för ett exempel:</para>
+
+<example>
+<title
+>Ett skript för att ändra skrivbordsunderläggets färg med &DCOP;</title>
+
+<para
+>Med hjälp av kommandoradsprogrammet <command
+>dcop</command
+> och lite kod i Perl, ska vi göra ett enkelt skript som långsamt låter skrivbordets bakgrund gå igenom spektrum cykliskt.</para>
+
+<para
+>Först tittar vi efter lämplig medod med <application
+>kdcop</application
+>. I det här exemplet går vi förbi sökningen, och går direkt till den: Metoden vi vill ha är <menuchoice
+><guimenu
+>kdesktop</guimenu
+><guisubmenu
+>KBackgroundIface</guisubmenu
+><guimenuitem
+>setColor</guimenuitem
+></menuchoice
+>. Funktionens argument och returtyp visas med stilen i språket C++. För <methodname
+>setColor</methodname
+>, är argumenten en färg, <varname
+>c</varname
+>, som anger den nya bakgrundsfärgen, och ett Booleskt värde, <varname
+>isColorA</varname
+> som anger om färgen är den första eller andra (det är användbart för att ange toningar med mera).</para>
+
+<para
+>För att använda metoden <methodname
+>setColor</methodname
+> på kommandoraden, använder vi följande: <screen
+><prompt
+>%</prompt
+> <userinput
+><command
+>dcop</command
+> kdesktop KBackgroundIface setColor '#ffffff' false</userinput
+>
+</screen>
+</para>
+
+<para
+>För att ange färgen använder vi det hexadecimala RGB-värdet, som används av &HTML;. Observera att det är omgivet av enkla citationstecken, för att skydda <token
+>#</token
+> från skalet.</para>
+
+<para
+>För att hitta det hexadecimala RGB värdet för en färg, öppna en färgvalsdialogruta i ett &kde;-program (till exempel i inställningscentralen, <menuchoice
+><guimenu
+>Utseende och teman</guimenu
+> <guimenuitem
+>Färger</guimenuitem
+> </menuchoice
+>), välj färgen du vill ha, och använd värdet som anges i textrutan <guilabel
+>HTML</guilabel
+>.</para>
+
+
+<para
+>Det är alltså allt vi behöver från &DCOP;. Nu är det bara frågan om att skriva ett skript omkring det. Här är en (mycket) grov implementering: <programlisting
+><![CDATA[
+$min=49;  # Minimalt värde på färgen R, G eller B
+$max=174; # Maximalt värde på färgen R, G eller B
+$step=5;  # Värde att stega färgen för varje steg
+$sleeptime=15; # Intervall i sekunder mellan varje steg
+
+@start = ($max, $min, $min);
+@colour = @start;
+
+while (1) {
+        foreach (0..5) {
+                my $which = $_ % 3; # Vilken färg (R, G eller B) som ska ändras
+                my $updown = $_ % 2; # Om färgens värde ska ökas ellerminskas
+                do {
+                        if ($updown == 0) { $colour[$which]+=$step; }
+                        if ($updown == 1) { $colour[$which]-=$step; }
+                        my $dcopcall=sprintf "dcop kdesktop KBackgroundIface setColor '#%x%x%x' true\n", @colour;
+                        system($dcopcall);
+                        sleep $sleeptime;
+                        } while (($colour[$which] 
+>= $min) and ($colour[$which] <= $max));
+                }
+}
+]]>
+</programlisting>
+</para>
+
+<para
+>Kör bara skriptet utan argument så går det cykliskt igenom bakgrundsfärger i ett något begränsat spektrum ända tills det avbryts. <foreignphrase
+>Voil&agrave;</foreignphrase
+>!</para>
+
+</example>
+
+<para
+>Perl är förstås inte det enda språk du kan använda för att skriva skript med &DCOP;. Om du föredrar skalskript, är det också tillgängligt:</para>
+
+<example>
+<title
+>Hämta en bakgrund från Internet</title>
+
+<para
+>Följande skript hämtar huvudbilden från serien <quote
+>User Friendly</quote
+> och använder den som skrivbordsunderlägg, med allmänt tillgängliga verktyg och lite grand &DCOP;:</para>
+
+<programlisting
+><![CDATA[
+#!/bin/sh
+COMICURL=`wget -qO - http://www.userfriendly.org/static/index.html | \
+          grep Latest | sed -e "s,.*SRC=\",," -e "s,\"
+>.*,,"`
+TMPFILE=`mktemp /tmp/$0.XXXXXX` || exit 1
+wget -q -O $TMPFILE $COMICURL
+dcop kdesktop KBackgroundIface setWallpaper $TMPFILE 1
+]]>
+</programlisting>
+
+<para
+>Den första raden efter #!/bin/sh använder <command
+>wget</command
+> och lite magi med reguljära uttryck för att plocka ut bildens plats från huvudsidans &HTML;-kod. Den andra och tredje raden laddar ner bilden, och till sist ställer <command
+>dcop</command
+> in den nerladdade bilden som skrivbordsunderlägg.</para>
+
+</example>
+
+
+<!-- <itemizedlist>
+<title
+>Related Information</title>
+<listitem
+><para
+>to be written</para>
+</listitem>
+</itemizedlist
+> -->
+
+
+</sect1>
+
+
+<sect1 id="adding-extra-keys">
+<title
+>Lägga till extra tangentbindningar till &kde;</title>
+
+<para
+>Många moderna tangentbord har extra tangenter som normalt inte är tilldelade till någon åtgärd.</para>
+
+<para
+><quote
+>Multimediatangenter</quote
+> skapar ofta en signal, och kan helt enkelt väljas som en snabbtangent i ett program precis som att välja vilken annan tangent som helst. Vissa tangenter detekteras dock inte, och att trycka på dem i <guilabel
+>Anpassa genvägar</guilabel
+> får ingen effekt.</para>
+
+<para
+>Till exempel har vissa bärbara datorer från IBM extra tangenter omkring vänster- och högerpilarna, som ser ut som <guiicon
+>sida vänster</guiicon
+> och <guiicon
+>sida höger</guiicon
+>.</para>
+
+<procedure>
+<step
+><para
+>Använd <command
+>xev</command
+> för att hitta tangenternas koder. I det här fallet är de 233 och 234. </para
+></step>
+<step
+><para
+>Välj tangentsymboler. Det finns en hel uppsättning sådana som inte normalt används, alltså är många lediga. Du hittar listan i <filename
+>/usr/X11R6/include/X11/keysymdef.h</filename
+> (eller motsvarigheten på ditt system).</para
+></step>
+<step
+><para
+>Skapa en fil i din hemkatalog som heter <filename
+>.Xmodmap</filename
+>, och lägg till följande:</para>
+<screen
+>keycode 233 = Next_Virtual_Screen
+keycode 234 = Prev_Virtual_Screen</screen>
+</step>
+<step
+><para
+>Kör kommandot <userinput
+><command
+>xmodmap</command
+> <filename
+>~/.Xmodmap</filename
+></userinput
+></para
+></step>
+</procedure>
+
+<para
+>Nu ska du kunna köra <command
+>xev</command
+> igen och se att tangenterna nu genererar tangentsymbolen som du tilldelade dem. Du kan nu helt enkelt tilldela dem till vilken åtgärd som helst som vanligt.</para>
+
+<itemizedlist>
+<title
+>Relaterad information</title>
+<listitem
+><para
+>Manualsidan för <command
+>xev</command
+>. Du kan titta på den genom att skriva <userinput
+>man:/xev</userinput
+> i ett &konqueror;-fönster eller genom att skriva <userinput
+><command
+>man</command
+> xev</userinput
+> i en terminal.</para
+></listitem>
+</itemizedlist>
+
+</sect1>
+
+<sect1 id="keys-for-scripts">
+<title
+>Lägga till tangentbindningar för nya åtgärder</title>
+
+<para
+>De flesta åtgärder antingen på skrivbordet eller i program är enkelt tillgängliga att tilldela en tangentbindning till. Om åtgärden du vill ha en snabbtangent för är något du skrivit själv, eller på annat sätt inte är tillgänglig, kan du ändå tilldela den en snabbtangent.</para>
+
+<para
+>För att knyta ihop de två föregående avsnitten, vill du kanske tilldela en tangent på tangentbordet som annars är oanvänd till ett skript eller ett DCOP-kommando. Vårt exempel här är att tilldela de två tangenter vi har lagt till i <xref linkend="adding-extra-keys"/> för att gå till föregående eller nästa virtuella skrivbord, vilket man behöver DCOP för att göra (som beskrevs i <xref linkend="scripting-the-desktop"/>).</para>
+
+<para
+>Det kan enkelt åstadkommas med följande metod:</para>
+
+<procedure>
+<step>
+<para
+>Öppna inställningscentralen och välj <guilabel
+>Inmatningsåtgärder</guilabel
+> under avdelningen <guilabel
+>Region och handikappstöd</guilabel
+></para>
+</step>
+<step>
+<para
+>Välj <guibutton
+>Ny åtgärd</guibutton
+></para>
+</step>
+<step>
+<para
+>Namnge den nya åtgärden, t.ex. <userinput
+>Nästa virtuella skärm</userinput
+></para>
+</step>
+<step>
+<para
+>Välj <guilabel
+>Tangentbordsgenväg -> Kommando/webbadress (enkel)</guilabel
+> som <guilabel
+>Åtgärdstyp:</guilabel
+></para>
+</step>
+<step>
+<para
+>Under fliken <guilabel
+>Tangentbordsgenväg</guilabel
+>, klicka på knappen som du vill använda för att utföra kommandot. I det här exemplet, skulle du trycka på den med ikonen <guiicon
+>Nästa sida</guiicon
+>, Då visas <keysym
+>Next_Virtual_Screen</keysym
+> som tangentbild.</para>
+</step>
+<step>
+<para
+>Under fliken <guilabel
+>Inställningar för kommando/webbadress</guilabel
+>, skriv in kommandot att köra i fältet: <userinput
+><command
+>dcop kwin default nextDesktop</command
+></userinput
+></para>
+</step>
+</procedure>
+
+<para
+>Upprepa ovanstående med tangenten <keysym
+>Prev_Virtual_Screen</keysym
+> och <userinput
+><command
+>dcop kwin default previousDesktop</command
+></userinput
+>.</para>
+
+<para
+>Genom att nu trycka på <keysym
+>Prev_Virtual_Screen</keysym
+> eller <keysym
+>Next_Virtual_Screen</keysym
+> byter du till föregående eller nästa virtuella skrivbord.</para>
+
+<para
+>Uppenbarligen kan du tilldela vilken ledig tangent som helst till en åtgärd.</para>
+
+<itemizedlist>
+<title
+>Relaterad information</title
+> 
+<listitem
+><para
+>Se dokumentationen för <application
+>Khotkeys</application
+> genom att slå upp den i hjälpcentralen, eller skriva <userinput
+>help:/khotkeys</userinput
+> i ett &konqueror;-fönster.</para
+></listitem
+> 
+<listitem
+><para
+><xref linkend="adding-extra-keys"/></para
+></listitem>
+<listitem
+><para
+><xref linkend="scripting-the-desktop"/></para
+></listitem>
+</itemizedlist>
+
+</sect1>
+
+<sect1 id="kdebugdialog">
+<sect1info>
+<authorgroup>
+<author
+><personname
+> <firstname
+>Adriaan</firstname
+> <surname
+>de Groot</surname
+> </personname
+> <email
+>groot@kde.org</email
+> </author>
+</authorgroup>
+</sect1info>
+
+<title
+>&kdebugdialog;: Styra &kde;:s avlusningsutmatning</title>
+
+<sect2 id="kdebugdialog-basic-usage">
+<title
+>Grundläggande användning</title>
+
+<para
+>&kdebugdialog; syns inte normalt i K-menyn. Du måste starta det från ett skal eller från Kör program med kommandot <userinput
+><command
+>kdebugdialog</command
+></userinput
+>. &kdebugdialog; visar ett fönster med en lång lista över avlusningsytor. Varje yta har en kryssruta som du kan markera eller avmarkera för att aktivera eller inaktivera felsökningsutmatning för den delen av &kde;.</para>
+
+<para
+>Listan med felsökningsytor är sorterad i nummerordning, inte alfabetiskt, så kio (127) kommer före artskde (400). Numren går upp till omkring 200000, men det finns egentligen bara 400 ytor. Du behöver dock inte söka igenom hela listan för att hitta ytan du vill ha. Det finns en radeditorruta längst upp i dialogrutan där du kan skriva in en del av namnet på ytan du vill ha. Listan med poster som visas filtreras så att bara de felsökningsytor som innehåller texten du har skrivit in. Genom att t.ex. skriva in <userinput
+>k</userinput
+> filtreras inte särskilt mycket, men skrivs <userinput
+>kont</userinput
+> in visas bara felsökningsytor för &kontact;. Som ett ännu snabbare sätt att aktivera eller inaktivera felsökningsutmatning, finns också knapparna <guibutton
+>Markera alla</guibutton
+> och <guibutton
+>Avmarkera alla</guibutton
+>, som gör att &kde; skapar enorma mängder felsökningsutmatning, eller mycket lite.</para>
+</sect2>
+
+<sect2 id="kdebugdialog-fullmode">
+<title
+>Kdebugdialog i fullständigt läge</title>
+
+<!-- this text partly taken from the kdebugdialog handbook -->
+
+<para
+>I fullständig läge, som du får när du startar kdebugdialog som <userinput
+><command
+>kdebugdialog</command
+> <option
+>--fullmode</option
+></userinput
+>, är samma lista med felsökningsytor tillgängliga som i enkelt läge, men du kan bara välja en åt gången i en kombinationsruta. Nu kan du oberoende ställa in utmatningen för olika typer av meddelanden: Information, Varning, Fel och Allvarligt fel. För var och en av dessa typer kan du välja vart meddelandet skickas. Alternativen är:</para>
+
+<para
+>Arkiv, då du kan skriva in ett filnamn. Filen skrivs i katalogen $<envar
+>HOME</envar
+>.</para>
+
+<para
+>Meddelanderuta. Varje felsökningsmeddelande visas i en informationsdialogruta, som du måste klicka <guibutton
+>Ok</guibutton
+> i för att fortsätta med programmet.</para>
+
+<para
+>Skal, förvalt alternativ. Meddelanden skrivs ut med standardfelutmatningen, och syns antingen i skalfönstret där programmet startades eller i <filename
+>.xsession-errors</filename
+>.</para>
+
+<para
+>Systemlogg. Detta skickar varje felsökningsmeddelande till systemets syslog-funktion, som kan utföra sin egen behandling av meddelandet.</para>
+
+<para
+>Ingen. Det undertrycker utmatning av den här sortens meddelande.</para>
+
+<para
+>För meddelanden som skapas av allvarliga fel är det i allmänhet en dålig idé att välja Ingen eller Syslog, eftersom du i båda fallen inte ser meddelandet och programmet som stöter på det allvarliga felet försvinner utan att lämna någon ledtråd om varför det försvann. Om programmet försvinner eller inte vid ett allvarligt fel, kan styras med kryssrutan <guilabel
+>Avbryt vid allvarligt fel</guilabel
+>, som normalt är markerad, men du kan ändå förvänta dig att ett program kraschar (på ett osnyggt sätt) om det stöter på ett allvarligt fel.</para>
+
+<!-- Add links to "further reading" here -->
+<!-- <itemizedlist>
+<title
+>Related Information</title>
+<listitem
+><para
+>to be written</para>
+</listitem>
+</itemizedlist
+>-->
+
+
+
+</sect2>
+</sect1>
+</chapter>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: xml
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:0
+sgml-indent-data:true
+sgml-parent-document:("index.docbook" "book" "chapter")
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

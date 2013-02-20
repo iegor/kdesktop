@@ -1,0 +1,1295 @@
+<chapter id="project-management">
+
+<chapterinfo>
+  <authorgroup>
+    <author
+><firstname
+>Bernd</firstname
+><surname
+>Pol</surname
+></author>
+    <author
+><firstname
+>Ian</firstname
+><surname
+>Wadham</surname
+></author>
+    <!-- ROLES_OF_TRANSLATORS -->
+  </authorgroup>
+</chapterinfo>
+
+<title
+>Ehitamine ja projektihaldus</title>
+
+<para
+>Käesolev peatükk tegeleb ainult kompileeritud projektidega, näiteks C++, C&Java; ja Fortrani projektidega. Skriptikeelte (nt. Python ja PHP) projektid käituvad märgatavalt teistmoodi. </para>
+
+<para
+>Siin leiab järgmist infot:</para>
+<itemizedlist>
+  <listitem
+><para
+><link linkend="automake-manager-summary"
+>&automanag;i kokkuvõte</link
+>, mis sisaldab &automanag;i üldist ülevaadet, </para
+></listitem>
+  <listitem
+><para
+><link linkend="automake-manager-operation"
+>Automake'i halduri kasutamine</link
+>, mis kirjeldab &automanag;i kasutamise põhitõdesid. </para
+></listitem>
+</itemizedlist>
+
+<sect1 id="automake-manager-summary">
+<title
+>&automanag;i kokkuvõte</title>
+
+<para
+><link linkend="unixdev-buildsystems"
+>Ehitamissüsteemide</link
+> peatükis andsime kerge ülevaate ehitamissüsteemidest, mis on levinud &UNIX; süsteemides. Nüüd vaatleme kõike seda veidi lähemalt. </para>
+<para
+>Valitseb mõningane segadus, kuidas selliseid asju üldse nimetada. &GNU; kasutab väljendit <quote
+>ehitamissüsteemid</quote
+> (inglise keeles 'build systems'), kui kõne all on Automake, Autoconf ja Libtool. QMake nimetab ennast <quote
+>tööriistaks Makefilde'ide loomiseks erinevatele kompilaatoritele ja platvormidele</quote
+>. &kde; pruugib tihti mõistet <quote
+>projektihalduse süsteemid</quote
+>. Me kasutame seda mõistet laiemas tähenduses kirjeldamaks &kdevelop;i sisseehitatud keskkondi, mida kasutatakse sinu projektide korraldamiseks ja ehitamiseks. Käesolevas osas on aga vaatluse all ennekõike <quote
+>automatiseeritud ehitussüsteemid</quote
+>. </para>
+
+<sect2 id="automake-manager-summary-buildsys">
+<title
+>Automatiseeritud ehitussüsteemi vajadus</title>
+
+<para
+>Kui sul on lihtne C-keeles kirjutatud <quote
+>Hello World</quote
+> programm, võid selle kompileerida ja linkida &gcc; käsuga <parameter
+>-o hello hello.c</parameter
+> ning käivitada käsuga <command
+>./hello</command
+>, nii et <filename
+>Makefile</filename
+> pole üldse vajalik. </para>
+<para
+>Kui sul on mitme mooduli ja päisefailiga C rakendus, mida sa kasutad ainult enda masinas (&ie; tegemist on nii-öelda koduse rakendusega), on vaja ainult väga lihtne <filename
+>Makefile</filename
+>, mille saab hõlpsasti ka käsitsi kirja panna (täpsemat infot annab käsk <userinput
+>info make</userinput
+>). </para>
+<para
+>Raskused algavad siis, kui: </para>
+<itemizedlist>
+  <listitem
+><para
+>sinu lähtekood, dokumentatsioon, graafika, helid, tõlked, andmefailid &etc; asuvad mitmes erinevas kataloogis, </para
+></listitem>
+  <listitem
+><para
+>sul on kataloogide ja alamkataloogide hierarhia, </para
+></listitem>
+  <listitem
+><para
+>sa kasutad teeke, mis ei kuulu traditsiooniliselt &UNIX; koosseisu, näiteks &Qt; objektiteek või &kde; teegid, </para
+></listitem>
+  <listitem
+><para
+>sa kasutad eelprotsessorit teatud osa lähtekoodi genereerimiseks, näiteks Qt MOC-i eelkompilaatorit, </para
+></listitem>
+  <listitem
+><para
+>sa kavatsed levitada oma rakendust üle kogu maailma, ka inimestele, kel ei pruugi olla sama &UNIX;/&Linux; süsteem, tarkvara ja riistvara nagu sul, </para
+></listitem>
+  <listitem
+><para
+>sa eeldad automatiseeritud paigaldamis- ja eemaldamistööriista, </para
+></listitem>
+  <listitem
+><para
+>sinu siht on muuta oma rakendus &kde; töökeskkonna osaks. </para
+></listitem>
+</itemizedlist>
+
+<para
+>Kui sinu ees seisab mõni või ka kõik mainitud probleemidest, läheb sul arvatavasti vaja <emphasis
+>ehitussüsteemi</emphasis
+>. Toodud näiteks kasutasime &gcc;-d programmi <quote
+>Hello World</quote
+> kompileerimiseks ja ehitamiseks, kuid mitte kõik C kompilaatorid ei kanna nime <quote
+>&gcc;</quote
+>. See tähendab, et kui levitad oma rakendust ka kellelegi, kes kasutab mõnda muud C kompilaatorit, peab sinu Makefile kuidagi oskama toda kompilaatorit ära kasutada, sest muidu sinu rakendus lihtsalt ei kompileeru &mdash; ja see oli veel väga lihtne näide raskustest. </para>
+<para
+>Ehitussüsteem selgitab need erinevused sinu eest ise välja: </para>
+<itemizedlist>
+  <listitem
+><para
+>see kontrollib, et teegid, mida vajad, oleksid saadaval kõigis sihtmasinates, </para
+></listitem>
+  <listitem
+><para
+>uurib automaatselt läbi kõiki sinu rakenduse kataloogid, et leida failid, mida on vaja eeltöödelda, kompileerida ja paigaldada, </para
+></listitem>
+  <listitem
+><para
+>paigaldab sinu rakenduse komponendid korrektsetesse sihtkataloogidesse, tagades muu hulgas, et </para
+></listitem>
+  <listitem
+><para
+>vajaduse korral luuakse sihtmasinas puuduvad kataloogid. </para
+></listitem>
+</itemizedlist>
+
+<para
+>Lühidalt öeldes pakub ehitussüsteem kindlad ja turvalised meetodid, et sinu rakendust oleks võimalik kompileerida ja paigaldada mis tahes masinas. Nagu juba <link linkend="makesystems"
+>projektihalduse süsteemide</link
+> tutvustuses mainitud, pakub &kdevelop; kolme automatiseeritud ehitussüsteemi ning võimalust luua ise enda Makefile (projekti nimele klõpsates näed rohkem infot): </para>
+<itemizedlist>
+  <listitem
+><para
+><link linkend="automake-project"
+>Automake'i projektid</link
+>, mis kasutavad &GNU; standardseid arendustööriistu. </para
+></listitem>
+  <listitem
+><para
+><link linkend="qmake-project"
+>QMake'i projektid</link
+>, mis kasutavad Trolltechi QMake'i projektihaldurit. </para
+></listitem>
+  <listitem
+><para
+><link linkend="ant-project"
+>ANT projektid</link
+>, mis kasutavad Apache'i ANT projektihaldurit &Java; arenduseks. </para
+></listitem>
+  <listitem
+><para
+><link linkend="custom-project"
+>Kohandatud projektid</link
+>, mille korral pead ise <filename
+>Makefile</filename
+>'ide eest hoolt kandma. </para
+></listitem>
+</itemizedlist>
+
+<important>
+<para
+>Üks neist neljast võimalusest tuleb valida projekti loomise ajal ja et <emphasis
+>valikut on hiljem raske muuta</emphasis
+>, tasuks neid kaaluda juba enne projekti loomaasumist. </para>
+</important>
+
+</sect2
+> <!--  automake-manager-summary-buildsys -->
+
+<sect2 id="automake-references">
+<title
+>Autoconf/Automake/Libtool'i õppevahendid</title>
+<para
+>&GNU; ehitussüsteemi (<command
+>Autoconf</command
+>, <command
+>Automake</command
+> ja <command
+>Libtool</command
+>) kohta, mida &automanag; kasutab, on mitu õppematerjali. </para>
+<itemizedlist>
+  <listitem
+><para
+>Lühike <ulink url="http://www.kdevelop.org/index.html?filename=tutorial_autoconf.html"
+>autoconfi õppematerjal</ulink
+> Christopher W. Curtise sulest on saadaval &kdevelop;i koduleheküljel. See põhiteemaks on peamised sammud <filename
+>Makefile</filename
+>'i muutmisel. </para
+></listitem>
+  <listitem
+><para
+>Põhjalikuma õppematerjali leiab suures õppematerjalide kogumikus<ulink url="http://www.amath.washington.edu/~lf/tutorials/autoconf/toolsmanual_toc.html"
+><quote
+>Developing software with GNU</quote
+></ulink
+>. </para
+></listitem>
+  <listitem
+><para
+>Mõistagi on ka kuulus <ulink url="http://sources.redhat.com/autobook"
+><quote
+>Goat Book</quote
+></ulink
+> pealkirjaga <quote
+>Autoconf, Automake, and Libtool</quote
+>. See on väga hästi kirjutatud kokkuvõtlik sissejuhatus &GNU; 'auto'-tööriistade kasutamisel. </para
+></listitem>
+</itemizedlist>
+
+</sect2
+> <!--  automake-references -->
+
+<sect2 id="automake-manager-basics">
+<title
+>Mida &automanag; teeb?</title>
+
+<para
+><link linkend="applicationwizard"
+>&appwizard;</link
+> loob mõned esialgsed failid <filename
+>Makefile.am</filename
+>, kui lood sellist tüüpi <guilabel
+>uue projekt</guilabel
+>i, mis kasutab &GNU; ehitussüsteemi, näiteks <menuchoice
+><guimenuitem
+>C++</guimenuitem
+> <guimenuitem
+>KDE</guimenuitem
+> <guimenuitem
+>Rakenduse raamistik</guimenuitem
+></menuchoice
+>. Arendustegevuse käigus loob &automanag; kõik muud failid <filename
+>Makefile.am</filename
+> projektidele, mis kasutavad &GNU; ehitussüsteemi, ja haldab neid kõiki, olgu nende loojaks siis &appwizard; või &automanag;. </para>
+<para
+>Üks <filename
+>Makefile.am</filename
+> luuakse iga sinu projekti kataloogi kohta, kus leidub kompileeritavaid või paigaldatavaid faile. See sisaldab sinu määratlusi failide kompileerimiseks, ehitamiseks ja paigaldamiseks ning viiteid kõigile alamkataloogidele, kus on samuti oma <filename
+>Makefile.am</filename
+> ning failid, mida on vaja kompileerida, ehitada ja paigaldada. </para>
+
+<note
+><para
+>Sinu projekti kataloogid ja lähtefailid võivad olla mis tahes sügavuseni struktureeritud, kuid sa võid muidugi eelistada ka nii-öelda lamedat struktuuri, kus kõik alamkataloogid asuvad tipptasemel. </para
+></note>
+
+<para
+>&GNU; ehitussüsteemi eesmärk on luua lähtekoodifailide struktuurid, mida saab kompileerida, ehitada ja paigaldada mis tahes &UNIX; või &Linux; süsteemis järgmiste lihtsate käskudega: </para>
+
+<screen
+>./configure
+make
+make install    # Tavaliselt administraatori ("root") õigustes.
+</screen>
+
+<para
+>ja eemaldada käsuga <command
+>make uninstall</command
+> (tavaliselt administraatori (root) õigustes). </para>
+
+<para
+>Kuidas see käib? <command
+>configure</command
+> on õieti skript, mis <itemizedlist>
+  <listitem
+><para
+>selgitab välja selle süsteemi iseärasused, kus ta tööle pannakse (nt. kasutatava kompilaatori ja teegid ning nende asukoha), ja seejärel </para
+></listitem>
+  <listitem
+><para
+>loob rekursiivsed <filename
+>Makefile</filename
+>'id, täites asendused vastavates <filename
+>Makefile.in</filename
+> failides. </para
+></listitem>
+</itemizedlist>
+</para>
+<para
+><filename
+>Makefile.in</filename
+> on <quote
+>sisendfailid</quote
+> (inglise keeles on sisend 'input') &mdash; mallid, mis annavad loodavatele <filename
+>Makefile</filename
+>'idele teatud infot süsteemi kohta. Neid genereerib tööriist <command
+>Automake</command
+> failidest <filename
+>Makefile.am</filename
+>. </para>
+<para
+>Protsessi <filename
+>Makefile.am</filename
+>'ist (<filename
+>.am</filename
+> tähendabki <quote
+>Automake'i</quote
+> mallifaili) <filename
+>Makefile</filename
+>'ini korraldab automaatselt &kdevelop;i &promanag;, kasutades selleks tööriista <command
+>autoconf</command
+>, <command
+>M4</command
+> makrosid ja muid salapäraseid asju, mida me siinkohal pikemalt ei puuduta. </para>
+<para
+>Käsk <command
+>make</command
+> võtab töölehakkamisel niisiis kasutusele aktiivses keskkonnas saadaolevad komponendid (kompilaator, teegid jne.). Samuti paigutab <command
+>make install</command
+> sinu rakenduse komponendid (käivitatavad failid, dokumentatsioon, andmefailid jne.) antud keskkonnale sobivatesse asukohtadesse. </para>
+
+<para
+>Kui levitad oma rakendust <quote
+>tarball'ina</quote
+> (üks tihendatud fail, mille &kdevelop; sinu eest loob), sisaldab see faile <filename
+>Makefile.in</filename
+> ja skriptifaili <filename
+>configure</filename
+>, nii et selle hankija võib sinu rakenduse kompileerida, ehitada ja paigaldada, ilma et tema masinas oleks olmeas <command
+>Automake</command
+>, <command
+>Autoconf</command
+> või &kdevelop;. Kaasatud on ka failid <filename
+>Makefile.am</filename
+>, kui hankija peaks soovima mingil põhjusel midagi lähtekoodis muuta. </para>
+<note
+><para
+>Reeglid on tublisti teistsugused, kui levitad rakendust veebipõhise lähtekoodihoidla vahendusel (näiteks &kde; &cvs;). </para
+></note>
+
+</sect2
+> <!--  automake-manager-basics -->
+
+<sect2 id="automake-manager-basics-summary">
+<title
+>Automake'i halduri tegevuse kokkuvõte</title>
+
+<itemizedlist>
+  <listitem
+><para
+>Tekitab failid <filename
+>Makefile.am</filename
+> alamkataloogides ehk <quote
+>alamprojektides</quote
+>. </para
+></listitem>
+  <listitem
+><para
+>Uuendab projekti struktuuri muutumisel faile <filename
+>Makefile.am</filename
+>. </para
+></listitem>
+  <listitem
+><para
+>Uuendab failide lisamisel projekti või nende eemaldamisel faile <filename
+>Makefile.am</filename
+>. </para
+></listitem>
+  <listitem
+><para
+>Tuvastab definitsioonid, kuidas erinevaid faile ehitada või paigaldada ning muudab vastavalt faile <filename
+>Makefile.am</filename
+>. </para
+></listitem>
+  <listitem
+><para
+>Tuvastab ehitamisel või paigaldamisel kasutatavad parameetrid (&eg; teekide nimed) ning tagab, et neid kasutatakse vajalikes kompileerimis- ja ehitamisetappides. </para
+></listitem>
+</itemizedlist>
+
+</sect2
+> <!--  automake-manager-basics-summary -->
+
+<sect2 id="automake-file-contents">
+<title
+>Automake'i failide sisu</title>
+
+<para
+><filename
+>Makefile.am</filename
+> sisaldab ridu muutujate nimedega, millele järgneb võrdusmärk ja failide või parameetrite väärtuste nimekiri. <quote
+>Muutujad</quote
+> on kaheosalised nimetused, näiteks <varname
+>bin_PROGRAMS</varname
+>, <varname
+>minurakendus_SOURCES</varname
+> või <varname
+>kdelnk_DATA</varname
+>. Teist osa nimetatakse <emphasis
+>põhiosaks</emphasis
+> ning see tähistab midagi, mida ehitada või paigaldada. Esimene osa on <emphasis
+>prefiks</emphasis
+>, mis tähistab: </para>
+<itemizedlist>
+  <listitem
+><para
+><emphasis
+>kataloogi</emphasis
+>, kus paigaldus sooritada (&eg; <filename
+>bin</filename
+>), </para
+></listitem>
+  <listitem
+><para
+><emphasis
+>täpsustit</emphasis
+> põhiosale (&eg; <varname
+>minurakendus</varname
+> <varname
+>SOURCES</varname
+> korral annab märku, et lähtekoodifailid, mis on toodud muutuja <varname
+>minurakendus_SOURCES</varname
+> järel, on vajalikud <filename
+>minurakendus</filename
+>'e ehitamiseks), </para
+></listitem>
+  <listitem
+><para
+>spetsiaalne <emphasis
+>prefiks</emphasis
+> <varname
+>noinst</varname
+> (lühend sõnadest <quote
+>no installation</quote
+> ehk 'paigaldamine puudub') loetleb tavaliselt programmi päisefaile (<filename
+>.h</filename
+>), </para
+></listitem>
+  <listitem
+><para
+>samuti spetsiaalne prefiks <varname
+>EXTRA</varname
+> loetleb <emphasis
+>konfiguratsioonist sõltuvaid</emphasis
+> asju. </para
+></listitem>
+</itemizedlist>
+
+<para
+>Täpsemat infot tööriista <command
+>Automake</command
+> ja failide <filename
+>Makefile.am</filename
+> kohta annab <userinput
+>info Automake</userinput
+>. </para>
+<para
+>Põhimõtteliselt loob ja uuendab &automanag; muutujate nimesid ja failide või parameetrite nimekirju. Vaatame näiteks järgmist faili <filename
+>Makefile.am</filename
+>, mis käib tüüpilise rakenduse <filename
+>minurakendus</filename
+> kohta (kommentaarid on eestikeelsed). </para>
+
+<screen
+>## minurakendus'e Makefile.am
+
+# see on paigaldatav programm.  Seda nime kasutatakse
+# kõigis Makefile.am muutujates
+bin_PROGRAMS = minurakendus
+
+# määrab X, qt ja KDE kaasamise asukoha
+INCLUDES = $(all_includes)
+
+# teekide otsingutee.
+minurakendus_LDFLAGS = $(KDE_RPATH) $(all_libraries)
+
+# teegid, millega lingitakse.
+minurakendus_LDADD   = $(LIB_KFILE) $(LIB_KDEPRINT)
+
+# milline lähtekood minurakendus'e jaoks kompileerida
+minurakendus_SOURCES = main.cpp minurakendus.cpp minurakendusview.cpp
+
+# projekti päisefailid
+noinst_HEADERS = minurakendus.h minurakendusview.h
+
+# automoc tegeleb kõigi metalähtekoodifailidega (moc)
+METASOURCES = AUTO
+
+KDE_ICON = minurakendus
+
+# siia läheb kdelnk-fail
+kdelnkdir = $(kde_appsdir)/Utilities
+kdelnk_DATA = minurakendus.desktop
+
+# siia läheb XML-GUI resssursifail
+rcdir = $(kde_datadir)/minurakendus
+rc_DATA = minurakendusui.rc
+
+AM_CXXFLAGS = -DMY_C++_PREPROCESSOR_OPTION
+</screen>
+
+<para
+>Nagu näed, seisab sageli võrduse paremal poolel <varname
+>$(xxx)</varname
+>. Need on <emphasis
+>keskkonnamuutujad</emphasis
+>, mis on defineeritud tegelikus &kde; keskkonnas ja asendatakse tegelike väärtustega, kui <command
+>./configure</command
+> genereerib sihtmasinas lõpliku <filename
+>Makefile</filename
+>'i. </para>
+
+<para
+>Mõttekas oleks mõni aeg pärast seda, kui oled alustanud tegevust &kdevelop;is, käivitada käsk <command
+>./configure --help</command
+>, mis näitab paljusid asju, mida saad muuta ehitamise ja paigaldamise ajal (näiteks testkeskkond). Eriti just käsk <screen>
+./configure --prefix=/koht/mida/sa/vaid/soovid
+</screen
+> suunab terve paigalduse sinu valitud kataloogistruktuuri, andes seesmisele muutujale <varname
+>$(prefix)</varname
+> väärtuse <filename class="directory"
+>/koht/mida/sa/vaid/soovid</filename
+>. </para>
+
+</sect2
+> <!-- automake-file-contents -->
+
+</sect1
+> <!--  automake-manager-summary -->
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+<sect1 id="automake-manager-operation">
+<title
+>Automake'i halduri kasutamine</title>
+
+<para
+>Käesolevas osas leiad &automanag;i elementide üldise kirjelduse ja nende kasutamise juhiseid, sealhulgas: <itemizedlist>
+  <listitem
+><para
+><link linkend="automake-manager-operation-window"
+>&automanag;i aken</link
+> kirjeldab &automanag;i peaakna ülesehitust. </para
+></listitem>
+  <listitem
+><para
+><link linkend="automake-manager-operation-survey-window"
+>Üldvaate aken</link
+> kirjeldab ülemise alamakna elemente. </para
+></listitem>
+  <listitem
+><para
+><link linkend="automake-manager-operation-detail-window"
+>Detailivaate aken</link
+> kirjeldab alumise alamakna elemente. </para
+></listitem>
+  <listitem
+><para
+><link linkend="automake-manager-operation-navigate"
+>&automanag;is liikumine</link
+> kirjeldab mõningaid põhitoiminguid, mida saad &automanag;is ette võtta. </para
+></listitem>
+  <listitem
+><para
+><link linkend="automake-manager-operation-popups"
+>&automanag;i kontekstimenüüd</link
+> kirjeldab aknaid, mis avanevad &automanag;is toiminguid valides. </para
+></listitem>
+</itemizedlist>
+</para>
+
+<sect2 id="automake-manager-operation-window">
+<title
+>&automanag;i aken</title>
+
+<informaltable frame="none">
+<tgroup cols="2"
+><tbody
+><row>
+  <entry
+><inlinemediaobject>
+    <imageobject>
+      <imagedata fileref="automakemanager.png" format="PNG"/>
+    </imageobject>
+  </inlinemediaobject
+></entry>
+  <entry valign="top"
+><itemizedlist>
+    <listitem
+><para
+>&automanag; töötab kaheks jagatud aknas. Ülemist osa nimetatakse <emphasis
+>üldvaateks</emphasis
+>, alumist <emphasis
+>detailivaateks</emphasis
+>. Nende vahel asub peen riba, mida hiirega lohistades saab vaadete suurust muuta. IDEAl aknarežiimi korral saab lohistada ka akende külgi, et nende laiust muuta. </para
+></listitem>
+    <listitem
+><para
+>Mõlema vaate ülaosas asub <emphasis
+>tööriistariba</emphasis
+> nuppudega, mis aktiveeruvad siis, kui vaates valitakse mõni element. Nupud võimaldavad kasutada antud elemendi puhul vaates võimalikke toiminguid. Lisaks sellele saab kasutada kontekstimenüüsid, mis avanevad elementidele hiire parema nupuga klõpsates (neist tuleb juttu allpool). </para
+></listitem>
+    <listitem
+><para
+>IDEAl aknarežiimis on &automanag;i tiitliribal veel kaks nuppu &ndash; kolmnurkne nool paremale ja punktikujuline nupp. Noolenupuga saab <emphasis
+>akna sulgeda</emphasis
+>. Punktinupuga aga saab <emphasis
+>akna avatuna hoida</emphasis
+> isegi siis, kui valitakse mõni muu &kdevelop;i aken (vastasel juhul suletakse &automanag;i aken automaatselt, kui fookusesse satub mõni muu aken). </para
+></listitem>
+  </itemizedlist
+></entry>
+</row
+></tbody
+></tgroup>
+</informaltable>
+
+</sect2
+> <!-- automake-manager-operation-window -->
+
+<sect2 id="automake-manager-operation-survey-window">
+<title
+>Üldvaate aken</title>
+
+<para
+>Üldvaate aken sisaldab puukujuliselt kõiki sinu projekti katalooge, mis sisaldavad programmifaile, dokumentatsiooni või andmefaile. Igas sellises kataloogis on oma <filename
+>Makefile.am</filename
+> ning &automanag; peab seda <emphasis
+>alamprojektiks</emphasis
+>. &kde;-põhises projektis on kolm tüüpilist alamprojekti: </para>
+
+<itemizedlist>
+  <listitem
+><para
+><filename
+>src</filename
+> &ndash; rakenduse lähtekoodifailid, </para
+></listitem>
+  <listitem
+><para
+><filename
+>doc</filename
+> &ndash; rakenduse käsiraamat, </para
+></listitem>
+  <listitem
+><para
+><filename
+>po</filename
+> &ndash; ekstraktib sinu lähtekoodifailidest stringid, mida saab tõlkida muudesse inimkeeltesse (&eg; akende tiitlid, menüüde nimed, nuputekstid, dialoogide tekstid ja mitmesugused teated). </para
+></listitem>
+</itemizedlist>
+
+<para
+>Pane tähele, et alamprojektil <filename
+>doc</filename
+> on alati alamprojekt <filename
+>en</filename
+>, mida näed, kui klõpsad märgile <symbol
+>+</symbol
+> sõna <filename
+>doc</filename
+> ees. Selle põhjuseks on asjaolu, et &kde; kogu dokumentatsiooni baaskeeleks on Ameerika inglise keel (en). Kui sinu rakendusest saab &kde; osa, võivad &kde; tõlkijate meeskonnad tõlkida sinu dokumentatsiooni teistesse keeltesse ning tõlked suunduvad muudesse alamprojektidesse, mille nimeks on näiteks <filename
+>de</filename
+> (saksa keel) või <filename
+>et</filename
+> (eesti keel). Alamprojekti <filename
+>po</filename
+> stringe saab samuti tõlkida ning salvestada teistesse failidesse kataloogis <filename
+>po</filename
+>, mis tagab, et sinu rakendus on arusaadav ka neile inimestele, kes ei valda inglise keelt. </para>
+
+<note
+><para
+>Alamprojektidel <filename
+>doc</filename
+> ja <filename
+>po</filename
+> on erinev eesmärk. <filename
+>doc</filename
+> sisaldab <emphasis
+>dokumentatsiooni</emphasis
+>, näiteks rakenduse käsiraamatut, <filename
+>po</filename
+> aga <emphasis
+>kasutajaliidese</emphasis
+> tõlgitavaid stringe, mis on integreeritud rakenduse lähtekoodi. </para
+></note>
+
+<para
+>Üldvaate aken on &mdash; muu hulgas &mdash; ka liikumisvahend. Kui valid üldvaate aknas alamprojekti, näidatakse selle üksikasju detailivaate aknas. </para>
+
+</sect2
+> <!-- automake-manager-operation-survey-window -->
+
+<sect2 id="automake-manager-operation-detail-window">
+<title
+>Detailivaate aken</title>
+
+<para
+>Detailivaade sisaldab puukujuliselt kõiki parajasti üldvaates valitud alamprojekti faile ning antud alamprojekti kompileerimis-, ehitamis- ja paigaldamisreegleid. Nii tagavad kaks vaadet koos sulle ligipääsu oma rakenduse kõigile komponentidele ja kogu infole, kuidas seda kompileerida, ehitada ja paigaldada. </para>
+
+<sect3>
+<title
+>Sihtmärgid</title>
+
+<para
+>Detailivaate nimekirjapuul on kaks tasandit. Ülemine tasand koosneb niinimetatud &automanag;i <emphasis
+>sihtmärkidest</emphasis
+>, teine tasand aga sisaldab iga sihtmärgi failide nimekirja. </para>
+
+<para
+>Sihtmärgi mõiste &automanag;is erineb mõnevõrra sihtmärgi mõistest sellisel kujul, nagu seda <filename
+>Makefile</filename
+> enamasti mõistab. Lühidalt:</para>
+<itemizedlist>
+  <listitem
+><para
+>Definitsioon, kuidas teatud failikogum kompileerida, ehitada või paigaldada, tähendab <emphasis
+>sihtmärki</emphasis
+> &automanag;is, kuid <command
+>Automake</command
+> tunneb seda <emphasis
+>muutuja</emphasis
+> nime all. </para
+></listitem>
+  <listitem
+><para
+><emphasis
+>Sihtmärk</emphasis
+> <command
+>make</command
+>'is on midagi hoopis muud: käsu <command
+>make</command
+> parameeter (&eg; <userinput
+>make install</userinput
+> või <userinput
+>make clean</userinput
+>). </para>
+  <para
+>Siiski tähistavad mõned <filename
+>Makefile.am</filename
+> muutujad <emphasis
+>alamsihtmärki</emphasis
+> <command
+>make</command
+>'is. </para
+></listitem>
+</itemizedlist>
+
+</sect3>
+</sect2
+> <!-- automake-manager-operation-detail-window -->
+
+<sect2 id="automake-manager-operation-navigate">
+<title
+>&automanag;is liikumine</title>
+
+<para
+>Nii üld- kui detailivaates saab klõpsuga sümbolile <symbol
+>+</symbol
+> või <symbol
+>-</symbol
+> alamprojekti või sihtmärgi nime ees puuvaate avada või sulgeda. Üldvaates <emphasis
+>alamprojekti</emphasis
+> korral näitab või peidab see järgmise taseme alamprojektid (kui neid on). Detailivaates <emphasis
+>sihtmärgi</emphasis
+> korral näitab või peidab see antud sihtmärgi failide nimekirja. </para>
+
+<variablelist>
+<varlistentry>
+<term
+>Faili avamine redigeerimiseks</term>
+<listitem>
+<para
+><emphasis
+>Klõps &HVN;ga</emphasis
+> detailivaates faili nimel avab vastava faili &kdevelop;i redaktoriaknas.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>&automanag;i tööriistariba nuppude aktiveerimine</term>
+<listitem>
+<para
+>Kui <emphasis
+>klõpsad &HVN;ga</emphasis
+> üldvaates alamprojekti või detailivaates sihtmärgi nimel, tõstetakse see nimi esile ning vaate ülaosas muutuvad aktiivseks mõned tööriistariba nupud.</para>
+
+<note>
+  <para
+>Soovitatav on kasutada <emphasis
+>klõpsamist hiire parema nupuga ja kontekstimenüüsid</emphasis
+>, mitte aga tööriistariba nuppe, sest esimeste korral on märksa lihtsam täpselt aru saada, mis mida teeb. </para>
+  <para
+>Alamprojektide ja sihtmärkidega ettevõetavatel toimingutel on väga suur mõju sinu rakenduse struktuurile, kompileerimisele, ehitamisele ja paigaldamisele. </para>
+</note>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Toimingute valimine ja kontekstimenüüd</term>
+<listitem>
+<para
+>Kui <emphasis
+>klõpsad &HPN;ga</emphasis
+> alamprojekti, sihtmärgi või faili nimel, avaneb kontekstimenüü, kus saad valida mõne alamprojektiga, sihtmärgiga või failiga ettevõetava toimingu, näiteks sihtmärgi lisamise alamprojekti, faili lisamise sihtmärgile või ka valitud faili eemaldamise sihtmärgist. </para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</sect2
+> <!-- automake-manager-operation-navigate -->
+
+<sect2 id="automake-manager-operation-popups">
+<title
+>&automanag;i kontekstimenüüd</title>
+
+<para
+>Järgnevalt selgitame lühidalt, millised toimingud on saadaval, kui klõpsata hiire parema nupuga &automanag;i aknas. Need käivad ainult üldvaate kohta. Täpsemalt kirjeldame kõiki toiminguid veidi hiljem. </para>
+<!-- ### add a link to this chapter when ready -->
+
+<sect3 id="automake-manager-operation-popups-file">
+<title
+>Faili kontekstimenüü</title>
+
+<para
+>Klõpsates &HPN;ga <emphasis
+>faili nimel</emphasis
+> detailivaates, ilmub kontekstimenüü, kus saab valida mitu failiga sooritatavat toimingut. Meie näites on valitud alamprojekti <guilabel
+>minurakendus/src</guilabel
+> sihtmärgi <guilabel
+>minurakendus'e ikooniandmed</guilabel
+> ikooifail <filename
+>hi-16app-minurakendus.png</filename
+>. </para>
+
+<informaltable frame="none">
+<tgroup cols="2"
+><tbody
+><row>
+  <entry
+><inlinemediaobject>
+    <imageobject>
+      <imagedata fileref="automake-file-popup.png" format="PNG"/>
+    </imageobject>
+  </inlinemediaobject
+></entry>
+  <entry valign="bottom"
+><itemizedlist>
+    <listitem
+><para
+>Faili kontekstimenüü põhikirje on <guimenuitem
+>Eemalda</guimenuitem
+>, mis tähendab faili eemaldamist sihtmärgist (&ie; seda enam selle sihtmärgi korral ei kompileerita, ehitata ega paigaldata). </para
+></listitem>
+    <listitem
+><para
+>Alammenüü <guimenuitem
+>CVS</guimenuitem
+> võimaldab failiga ette võtta mitmesuguseid CVS-i toiminguid. </para
+></listitem>
+    <listitem
+><para
+>Kirje <guimenuitem
+>Ava kasutades</guimenuitem
+> võimaldab faili avada mitmesugustes redaktorites või rakendustes (&eg; meie näite ikoonifaili saab avada rakenduses <application
+>KIcon</application
+>). </para
+></listitem>
+    <listitem
+><para
+>Alammenüü <guimenuitem
+>Perforce</guimenuitem
+> võimaldab samasuguseid toiminguid nagu CVS, ainult et kommerts-versioonikonrollisüsteemiga <quote
+><application
+>Perforce</application
+></quote
+>. </para
+></listitem>
+  </itemizedlist
+></entry>
+</row
+></tbody
+></tgroup>
+</informaltable>
+
+</sect3
+> <!-- automake-manager-operation-popups-file -->
+
+<sect3 id="automake-manager-operation-popups-target">
+<title
+>Sihtmärgi kontekstimenüü</title>
+
+<para
+>Klõpsates hiire parema nupuga <emphasis
+>sihtmärgile</emphasis
+> detailivaates, ilmub kontekstimenüü, kus saab sihtmärgiga mitmeid toiminguid ette võtta. Meie näites on valitud alamprojekti <guilabel
+>minurakendus/src</guilabel
+> sihtmärk <guilabel
+>minurakendus (Rakendus bin-s)</guilabel
+>. </para>
+
+<informaltable frame="none">
+<tgroup cols="2"
+><tbody
+><row>
+  <entry
+><inlinemediaobject>
+    <imageobject>
+      <imagedata fileref="automake-target-popup.png" format="PNG"/>
+    </imageobject>
+  </inlinemediaobject
+></entry>
+  <entry valign="bottom"
+><itemizedlist>
+    <listitem
+><para
+>Kirje <guimenuitem
+>Seadistused</guimenuitem
+> on kasutatav ainult lähtekoodifailide korral. Ilmuvas dialoogis saab määrata linkuri lipud ja teekide asukohad ning näha, millised teegid tegelikult sinu rakendusega lingitakse. </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Loo uus fail</guimenuitem
+> avab dialoogi, kus saab määrata loodava faili nime ja tüübi (rippmenüüst). </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Lisa olemasolevaid faile</guimenuitem
+> avab dialoogi, kus saab sihtmärgile lisada juba olemasoleva faili. </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Eemalda</guimenuitem
+> lubab eemaldada projekti struktuurist nii sihtmärgi kui ka selle failid. </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Muuda sihtmärk aktiivseks</guimenuitem
+> on kasutatav ainult lähtekoodifaile sisaldava sihtmärgi korral. Uued failid lisatakse alati aktiivsesse sihtmärki. </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Ehita sihtmärk</guimenuitem
+> kutsub välja vajalikud kompileerimis- ja ehitamistoimingud, millega ehitada ainult antud sihtmärgi kood. </para
+></listitem>
+  </itemizedlist
+></entry>
+</row
+></tbody
+></tgroup>
+</informaltable>
+
+</sect3
+> <!-- automake-manager-operation-popups-target -->
+
+<sect3 id="automake-manager-operation-popups-subproject">
+<title
+>Alamprojekti kontekstimenüü</title>
+
+<para
+>Klõpsates &HPN;ga <emphasis
+>alamprojektile</emphasis
+> üldvaates, ilmub kontekstimenüü, mis võimaldab ette võtta olulisi muutusi projekti struktuuris ning selle kompileerimise, ehitamise ja paigaldamise viisis. Nii saab laiendada või muuta projekti põhistruktuuri, mis on loodud &appwizard; abil. </para>
+
+
+<informaltable frame="none">
+<tgroup cols="2"
+><tbody
+><row>
+  <entry
+><inlinemediaobject>
+    <imageobject>
+      <imagedata fileref="automake-subproject-popup.png" format="PNG"/>
+    </imageobject>
+  </inlinemediaobject
+></entry>
+  <entry valign="bottom"
+><itemizedlist>
+    <listitem
+><para
+>Kirje <guimenuitem
+>Seadistused</guimenuitem
+> võimaldab määrata, kuidas alamprojekt kompileeritakse, ehitatakse ja paigaldatakse. Ilmuvas dialoogis on kaardid Kompilaator, Kaasatud, Prefiksid ja Ehitamise järjekord. </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Lisa alamprojekt</guimenuitem
+> lisab uue kataloogi ja faili Makefile.am malli. </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Lisa sihtmärk</guimenuitem
+> avab dialoogi, kus saab määrata, kuidas sinu alamprojektis teatud failidekogum kompileeritakse, ehitatakse ja paigaldatakse. </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Lisa teenus</guimenuitem
+> (... veel kirjutamata ...) </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Lisa rakendus</guimenuitem
+> (... veel kirjutamata ...) </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Lisa olemasolevaid alamprojekte</guimenuitem
+> (... veel kirjutamata ...) </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Eemalda alamprojekt</guimenuitem
+> võimaldab korrektselt eemaldada alamprojekti. Sel juhul muudetakse vastavalt ka faile <filename
+>Makefile.am</filename
+>. Samuti saad võimaluse kustutada vastavas alamkataloogis kõik failid (või lingid). Mõistagi tuleb seda käsku kasutada äärmise ettevaatusega. </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Ehita</guimenuitem
+> kutsub välja vajalikud kompileerimis- ja ehitamistoimingud, millega ehitada ainult antud alamprojekti kood. </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Regenereeri</guimenuitem
+> (... veel kirjutamata ...) </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Puhasta</guimenuitem
+> (... veel kirjutamata ...) </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Paigalda</guimenuitem
+> (... veel kirjutamata ...) </para
+></listitem>
+    <listitem
+><para
+><guimenuitem
+>Paigalda (administraatorina)</guimenuitem
+> (... veel kirjutamata ...) </para
+></listitem>
+  </itemizedlist
+></entry>
+</row
+></tbody
+></tgroup>
+</informaltable>
+
+</sect3
+> <!-- automake-manager-operation-popups-subproject -->
+
+</sect2
+> <!-- automake-manager-operation-popups -->
+
+</sect1
+> <!-- automake-manager-operation -->
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+<sect1 id="autoproject">
+<title
+>Automake'i projektid</title>
+<indexterm zone="autoproject"
+><primary
+><command
+>autoproject</command
+></primary
+></indexterm>
+<indexterm zone="autoproject"
+><primary
+>&automake;</primary
+></indexterm>
+<indexterm zone="autoproject"
+><primary
+>&autoconf;</primary
+></indexterm>
+<indexterm zone="autoproject"
+><primary
+>&libtool;</primary
+></indexterm>
+
+<para
+>(... veel kirjutamata ...) </para>
+
+
+<sect2 id="autoconf">
+<title
+>Autoconf</title>
+<indexterm zone="autoconf"
+><primary
+><filename
+>configure</filename
+> skript</primary
+></indexterm>
+<indexterm zone="autoconf"
+><primary
+><filename
+>config.status</filename
+> skript</primary
+></indexterm>
+<indexterm zone="autoconf"
+><primary
+><filename
+>Makefile.in</filename
+></primary
+></indexterm>
+<indexterm zone="autoconf"
+><primary
+><filename
+>config.h.in</filename
+></primary
+></indexterm>
+
+<para
+><filename
+>Makefile.in</filename
+> -> <filename
+>Makefile</filename
+> </para>
+
+<programlisting
+>prefix = @prefix@
+INSTALL = @INSTALL@
+build_triplet = @build@
+CXX = @CXX@
+</programlisting>
+
+<programlisting
+>prefix = /home/bernd/kde3
+INSTALL = /usr/bin/ginstall -c -p
+build_triplet = i686-pc-linux-gnu
+CXX = g++
+</programlisting>
+
+<para
+><filename
+>config.h.in</filename
+> -> <filename
+>config.h</filename
+> </para>
+
+<programlisting
+>/* Define if you have libz */
+#undef HAVE_LIBZ
+/* The size of a `int', as computed by sizeof. */
+#undef SIZEOF_INT
+</programlisting>
+
+<programlisting
+>/* Define if you have libz */
+#define HAVE_LIBZ 1
+/* The size of a `int', as computed by sizeof. */
+#define SIZEOF_INT 4
+</programlisting>
+
+</sect2
+> <!-- autoconf -->
+
+
+<sect2 id="automake">
+<title
+>Automake</title>
+
+<para
+>(... veel kirjutamata ...) </para>
+
+</sect2
+> <!--automake  -->
+
+
+<sect2 id="automake-manager">
+<title
+>&kdevelop;i &automanag;</title>
+
+<figure id="screenshot-automake-manager" float="1">
+<title
+>Automake'i halduri pilt</title>
+<mediaobject>
+<imageobject
+><imagedata fileref="automake-manager.png"/></imageobject>
+</mediaobject>
+</figure>
+
+</sect2
+> <!-- automake-manager -->
+
+
+<sect2 id="automakelibrary">
+<title
+>Teekide ehitamine ja paigaldamine</title>
+
+<para>
+<itemizedlist>
+<listitem
+><para
+>-rpath </para
+></listitem>
+<listitem
+><para
+>PIC </para
+></listitem>
+<listitem
+><para
+>static </para
+></listitem>
+<listitem
+><para
+>plugins: no-undefined </para
+></listitem>
+</itemizedlist>
+</para>
+
+</sect2
+> <!-- automakelibrary -->
+
+</sect1
+> <!-- autoproject -->
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+<sect1 id="customproject">
+<title
+>Kohandatud Makefile'id ja ehitamisskriptid</title>
+<indexterm zone="customproject"
+><primary
+><filename
+>Makefile</filename
+></primary
+></indexterm>
+<indexterm zone="customproject"
+><primary
+><filename
+>build.xml</filename
+></primary
+></indexterm>
+
+<para
+>(... veel kirjutamata ...) </para>
+
+</sect1
+> <!-- customproject -->
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+<sect1 id="compileroptions">
+<title
+>Kompilaatori võtmed</title>
+
+<para
+>(... veel kirjutamata ...) </para>
+
+</sect1
+> <!-- compileroptions -->
+
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+<sect1 id="makeoptions">
+<title
+>Make'i võtmed</title>
+
+<para
+>(... veel kirjutamata ...) </para>
+
+</sect1
+> <!-- makeoptions -->
+
+</chapter
+> <!-- project-management -->

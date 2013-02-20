@@ -1,0 +1,824 @@
+<chapter id="faq">
+<title
+>Domande e risposte</title>
+&reporting.bugs; <qandaset id="faqlist">
+
+<qandadiv id="faq-dialing">
+<title
+>Domande sulla chiamata</title>
+<qandaentry>
+<question
+><para
+>Non riesco a far funzionare &kppp;. &kppp; mi dice che <application
+>pppd</application
+> ha interrotto la connessione in modo inaspettato o che si è verificato un timeout. Cosa sta succedendo?</para
+></question>
+
+<answer
+><para
+>Hai letto attentamente questo manuale? Ancora una volta, qui vi sono i trabocchetti più comuni:</para>
+
+<itemizedlist>
+
+<listitem
+><para
+>Premi il pulsante <guibutton
+>Dettagli</guibutton
+>. &kppp; ti mostrerà un estratto dai messaggi di log di <acronym
+>PPP</acronym
+> (potrebbe non funzionare su sistemi diversi da &Linux;, o anche su alcune distribuzioni &Linux;). Il log ti aiuterà a scovare il bug.</para
+></listitem>
+
+<listitem
+><para
+>Assicurati che <application
+>pppd</application
+> sia in realtà l'eseguibile di <application
+>pppd</application
+> e non uno script.</para
+></listitem>
+
+<listitem
+><para
+>Assicurati che <application
+>pppd</application
+> abbia il bit setuid attivo per <systemitem
+>root</systemitem
+>. Puoi impostare questa modalità eseguendo <userinput
+><command
+>chmod</command
+> <option
+>u+s pppd</option
+></userinput
+> come <systemitem
+>root</systemitem
+>. </para
+></listitem>
+
+<listitem
+><para
+>Assicurati che esista il file <filename
+>/etc/ppp/options</filename
+> e che non contenga voci in conflitto. In caso di dubbio: lascia questo file vuoto. </para
+></listitem>
+
+<listitem
+><para
+>Assicurati di <emphasis
+>non</emphasis
+> usare l'opzione <option
+>lock</option
+> come argomento per <application
+>pppd</application
+> (&kppp; si prende cura di bloccare il dispositivo).</para
+></listitem>
+
+<listitem
+><para
+>Rimuovi l'opzione <option
+>lock</option
+> da <emphasis
+>entrambi</emphasis
+> i file <filename
+>/etc/ppp/options</filename
+> <emphasis
+>e</emphasis
+> <filename
+>&tilde;/.ppprc</filename
+>!</para
+></listitem>
+<listitem
+><para
+>Usare il collegamento simbolico <filename class="symlink"
+>/dev/modem</filename
+> può causare alcuni conflitti. Elimina questa fonte di problemi usando il dispositivo vero, &ie; <filename
+>/dev/cuaX</filename
+> o <filename
+>/dev/ttySX</filename
+>. </para>
+<note
+><para
+><hardware
+>COM1</hardware
+> equivale a <filename
+>ttyS0</filename
+>, <hardware
+>COM2</hardware
+> è <filename
+>ttyS1</filename
+> e così via. </para
+></note
+></listitem>
+
+<listitem
+><para
+>Assicurati di aver impostato i permessi corretti. In caso di problemi dovresti eseguirlo prima come root e dopo, quando tutto funziona bene, dagli i permessi meno dannosi se non puoi permetterti di avviare  &kppp; setuid <systemitem
+>root</systemitem
+>. Il modo corretto di procedere probabilmente dovrebbe essere quello di creare un gruppo <systemitem
+>modem</systemitem
+>.</para
+></listitem>
+
+<listitem
+><para
+>Potresti aver eseguito <application
+>pppd</application
+> troppo presto, &ie; prima che il server remoto sia pronto a negoziare una connessione <acronym
+>PPP</acronym
+>. Se stai usando uno script di accesso, dovresti usare il terminale integrato per verificate la tua procedura di accesso. Alcuni provider richiedono che tu usi <command
+>Send</command
+> o <command
+>Send ppp</command
+> per avviare il <acronym
+>PPP</acronym
+>. Alcuni utenti hanno anche segnalato che devono aggiungere <command
+>Pause 1</command
+> o <command
+>Pause 2</command
+> ai loro script per risolvere conflitti di sincronizzazione.</para
+></listitem>
+
+</itemizedlist>
+
+<para
+>Se non ti aiuta niente, puoi ottenere alcune informazioni per il debug dai log di sistema scrivendo:</para>
+
+<screen
+><prompt
+>#</prompt
+> <userinput
+><command
+>tail</command
+> <filename
+>/var/log/messages</filename
+></userinput
+></screen>
+
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>pppd ha interrotto la connessione - The remote system is required to authenticate itself ...</para
+></question>
+
+<answer>
+<para
+>Tipico messaggio di errore nel log di sistema:</para>
+<screen
+>pppd[699]: The remote system is required to authenticate itself
+pppd[699]: but I couldn't find any suitable secret (password) for it to use to do so.
+pppd[699]: (None of the available passwords would let it use an IP address.)
+</screen>
+<para
+>Tutto ciò che posso dire è che ci sono due cause per questo problema: </para>
+<itemizedlist>
+<listitem
+><para
+><filename
+>/etc/ppp/options</filename
+> contiene l'opzione <option
+>auth</option
+>. Inserisci semplicemente un carattere di commento (<prompt
+>#</prompt
+>) all'inizio della riga e riprova. </para
+></listitem
+> <listitem
+><para
+>Il sistema ha già un route predefinito. Hai impostato una rete locale? In questo caso le versioni più recenti di pppd si comporteranno che se fosse stata specificata l'opzione <option
+>auth</option
+>. Per evitare questo comportamento puoi aggiungere <option
+>noauth</option
+> agli argomenti di pppd nella finestra di dialogo di configurazione di &kppp;. Alternativamente potresti disattivare la rete locale prima di una chiamata. Sarei grato se qualcuno potesse fornire le istruzioni su come combinare pacificamente le due connessioni di rete. </para
+></listitem>
+</itemizedlist>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>pppd interrompe la connessione con un kernel Linux 2.4.x</para
+></question>
+<answer>
+<para
+>Tipici messaggi di errore nel log di sistema:</para>
+
+<screen
+>pppd[1182]: pppd 2.3.11 started by user, uid 500 
+pppd[1182]: ioctl(PPPIOCGFLAGS): Invalid argument 
+pppd[1182]: tcsetattr: Invalid argument 
+pppd[1182]: Exit. 
+</screen>
+<para
+>Installa pppd 2.4.0b1 o successivo. Per maggiori informazioni leggi il file <filename
+>Documentation/Changes</filename
+> nei sorgenti del kernel.</para
+> 
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Perché &kppp; mi dice <errorname
+>Impossibile accedere al modem</errorname
+>?</para
+></question>
+
+<answer
+><para
+>Ciò significa che &kppp; non ha i permessi per aprire il dispositivo del modem o che hai selezionato un dispositivo non valido di modem nella scheda <guilabel
+>Modem</guilabel
+>. Prima assicurati di aver selezionato il dispositivo corretto del modem. Una volta che hai selezionato il dispositivo corretto del modem, devi dare a &kppp; i permessi corretti per accedere al dispositivo del modem e per poter modificare <filename
+>/etc/resolv.conf</filename
+> nel caso che tu voglia che &kppp; configuri correttamente il <acronym
+>DNS</acronym
+>. Se non puoi permetterti di avviare &kppp; setuid <systemitem
+>root</systemitem
+> ciò dovrebbe risolverti tutti i problemi di accesso, altrimenti dovrai scoprire quali sono i permessi corretti per i tuoi scopi. Per poter dare a &kppp; i permessi setuid <systemitem
+>root</systemitem
+> esegui i comandi seguenti:</para>
+
+<screen
+><prompt
+>%</prompt
+> <userinput
+><command
+>su</command
+> <option
+>root</option
+></userinput>
+<prompt
+>#</prompt
+> <userinput
+><command
+>chown</command
+> <option
+>root:root &dollar;KDEDIR/bin/kppp</option
+></userinput>
+<prompt
+>#</prompt
+> <userinput
+><command
+>chmod</command
+> <option
+>+s &dollar;KDEDIR/bin/kppp</option
+></userinput>
+<prompt
+>#</prompt
+> <userinput
+><command
+>exit</command
+></userinput
+>
+</screen>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Perché &kppp; mi dice che non può creare un file di lock per il modem?</para
+></question>
+
+<answer
+><para
+>Ciò nella maggior parte dei casi significa che hai installato &kppp; senza il bit SETUID attivo mentre tu, la persona che esegue &kppp;, non hai l'accesso in scrittura alla cartella dei file di lock che in maniera predefinita è <filename class="directory"
+>/var/lock</filename
+>. Questo per esempio è il caso dei sistemi &RedHat;. Controlla la finestra di dialogo del modem per il percorso preciso che hai scelto. La soluzione è semplice -- o eseguire &kppp; con il bit SETUID se puoi permetterti di farlo, o dare agli utenti normali l'accesso in scrittura a <filename class="directory"
+>/var/lock</filename
+> o creare un gruppo per il modem che avrà l'accesso al file <filename class="directory"
+>/var/lock</filename
+>.</para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Perché &kppp; è installato con il bit SETUID attivo?</para
+></question>
+
+<answer
+><para
+>Non c'è alcun bisogno del bit SETUID, se te ne intendi un po' di amministrazione di sistemi &UNIX;. Crea semplicemente un gruppo <systemitem
+>modem</systemitem
+>, e aggiungi al quel gruppo tutti gli utenti che vuoi che possano accedere al modem e rendi il dispositivo del modem leggibile e scrivibile per quel gruppo. Inoltre se vuoi che la configurazione <acronym
+>DNS</acronym
+> funzioni con &kppp;, allora il file <filename
+>/etc/resolv.conf</filename
+> deve essere leggibile e scrivibile dai membri di quel gruppo. Lo stesso vale per <filename
+>/etc/ppp/pap-secrets</filename
+> e <filename
+>/etc/ppp/chap-secrets</filename
+> se vuoi usare il supporto incluso per, rispettivamente, <acronym
+>PAP</acronym
+> o <acronym
+>CHAP</acronym
+>.</para>
+
+<para
+>La squadra di &kppp; recentemente ha fatto molto lavoro per rendere &kppp; sicuro riguardo al bit setuid. Ma sta a te decidere se e come installarlo.</para>
+
+<para
+>Puoi anche leggere la sezione sulla <link linkend="security"
+>Sicurezza</link
+>.</para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Cosa faccio quando &kppp; si ferma e si mette in attesa con il messaggio: <computeroutput
+>In attesa di OK</computeroutput
+></para
+></question>
+
+<answer
+><para
+>Hai modificato l'impostazione CR/LF? Prova CR, LF o CR/LF.</para>
+
+<para
+>In alternativa, il modem potrebbe richiedere del tempo per rispondere alla sua inizializzazione. Apri la finestra di dialogo <guilabel
+>Comandi modem...</guilabel
+> nella scheda <guilabel
+>Modem</guilabel
+> e regola i ritardi <guilabel
+>Prima dell'inizializzazione</guilabel
+> e <guilabel
+>Dopo l'inizializzazione</guilabel
+>. Vedi se hai successo quando incrementi drasticamente questi valori, e in seguito fai regolazioni più precise.</para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>La connessione funziona bene, ma non posso avviare alcuna applicazione!</para
+></question>
+
+<answer
+><para
+>Hai probabilmente attivato l'opzione <link linkend="auto-configure-hostname"
+>Configura automaticamente il nome host</link
+>, e il server X ha problemi connettendosi al tuo nuovo host. Se hai realmente bisogno di questa opzione (ed è molto probabile di no), sfortunatamente devi impostare tu stesso le autorizzazioni appropriate. Eseguire <userinput
+><command
+>xhost</command
+> <option
+>+</option
+></userinput
+> prima di avviare la connessione farà il lavoro, ma attenzione ai rischi di sicurezza che si vengono a creare, dato che ciò garantisce effettivamente a tutti l'accesso al tuo server X.</para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>&kppp; segnala una connessione riuscita, ma &konqueror; dice <errorname
+>Host <replaceable
+>nomehost</replaceable
+> sconosciuto</errorname
+>, e &Netscape; segnala <errorname
+>Il server non ha una voce DNS</errorname
+>.</para
+></question>
+
+<answer
+><para
+>Prova eseguire il ping usando il suo numero <acronym
+>IP</acronym
+>, &eg; <userinput
+><command
+>ping</command
+> <option
+>195.0.254.76</option
+></userinput
+>. Se ciò funziona, puoi provare le seguenti cose:</para>
+
+<itemizedlist>
+<listitem
+><para
+>Controllare se hai fornito a &kppp; almeno un indirizzo <acronym
+>DNS</acronym
+>.</para
+></listitem>
+
+<listitem
+><para
+>Controlla i contenuti del file <filename
+>/etc/host.conf</filename
+>. Lì vi dovrebbe essere una linea simile a <literal
+>order hosts, bind</literal
+>. La parola chiave <option
+>bind</option
+> avvisa la libreria di risoluzione di includere una interrogazione del server durante una ricerca di un indirizzo. Se non vi è una linea simile, prova ad aggiungerla.</para
+></listitem>
+</itemizedlist
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Come posso far sì che &kppp; invii <keysym
+>\n</keysym
+> o <keysym
+>\r</keysym
+></para
+></question>
+
+<answer
+><para
+>Invia solamente una stringa vuota come nel seguente script:</para>
+
+<informalexample>
+<screen
+>Send                            # invia una stringa vuota
+Expect           ID:            
+Send             itsme
+Expect           word:
+Send             forgot
+Expect           granted
+Send             ppp
+</screen>
+</informalexample>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Come posso fermare &kppp; dal lamentarsi: <errorname
+>Impossibile creare il file di lock</errorname
+>?</para
+></question>
+<answer
+><para
+>Ciò accade poiché non hai i permessi per creare un file di lock. Se hai scelto di usare un file di lock, devi avere i permessi di scrittura nella cartella (in genere <filename class="directory"
+>/var/lock</filename
+>). Ciò ovviamente non è un problema se hai dato a &kppp; i permessi di setuid. Leggi la sezione sui <link linkend="lock-files"
+>file di lock</link
+>.</para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Perché il mio modem fa così tanto rumore durante una chiamata?</para
+></question>
+
+<answer
+><para
+>Premi <guibutton
+>Configura...</guibutton
+>, quindi <guilabel
+>Modem</guilabel
+>. Qui puoi controllare il volume del modem in tre passi: spento, medio e alto. Per la maggior parte dei modem, medio e alto rappresentano lo stesso volume. Se la modifica di questa opzione non produce alcun risultato, assicurati che siano specificate le impostazioni corrette per il tuo modem in <guibutton
+>Configura...</guibutton
+>, <guilabel
+>Modem</guilabel
+>, <guibutton
+>Comandi modem...</guibutton
+>.</para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Ho disattivato il volume del modem e ho verificato i comandi del modem, ma ancora sento quell'orribile rumore durante una chiamata. Perché?</para
+></question>
+
+<answer
+><para
+>La stringa di inizializzazione del volume può perdersi se il tuo modem non riesce a stare al pari della velocità con cui riceve comandi da &kppp;. Incrementa il valore di <guilabel
+>Attesa dopo l'inizializzazione</guilabel
+> in <guibutton
+>Configura...</guibutton
+>, <guilabel
+>Modem</guilabel
+>, <guibutton
+>Comandi modem</guibutton
+>.</para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>&kppp; continua a segnalare strane velocità del modem come <quote
+>115200</quote
+> o <quote
+>57600</quote
+></para
+></question>
+
+<answer
+><para
+>Molti modem in maniera predefinita segnalano solo la velocità della linea seriale e non la velocità sulla linea telefonica. Devi configurare questi modem affinché segnalino la vera velocità della linea aggiungendo alcuni comandi alle stringhe di inizializzazione o di chiamata. Per molti modem questo comando è <command
+>ATW2</command
+>. Se vuoi aggiungerlo alla stringa di chiamata (che di solito inizia con <command
+>ATD</command
+>), la nuova stringa di chiamata sarà <command
+>ATW2D</command
+>.</para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Perché &kppp; segnala <quote
+>Velocità sconosciuta</quote
+></para
+></question>
+
+<answer
+><para
+>I nuovi modem hanno spesso messaggi di connessione molto complessi come <computeroutput
+>CONNECT LAP.M/V42.bis/115000:RX/31200:TX</computeroutput
+>, e &kppp; non può analizzare questo messaggio correttamente. Attiva il pulsante <guibutton
+>Log</guibutton
+> e vedrai la velocità di connessione.</para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Ho una connessione lenta</para
+></question>
+
+<answer
+><para
+>Se non sei soddisfatto della velocità del modem, assicurati di aver impostato la velocità di connessione (puoi trovarla facendo clic su <guibutton
+>Configura...</guibutton
+>, <guilabel
+>Dispositivo</guilabel
+>, <guibutton
+>Velocità di connessione</guibutton
+>) a 57600 o ad un valore più alto. Assicurati che le porte seriali supportino velocità più alte. Molti sistemi più vecchi basati su i486 non funzionano correttamente se hai impostato la velocità a 115200. Se hai un vecchio chip <hardware
+>UART 8250</hardware
+>, non funzionerà. Se hai un <hardware
+>16550</hardware
+> o <hardware
+>16550A</hardware
+> dovrebbe funzionare perfettamente.</para>
+
+<para
+>In aggiunta, dovresti consultare il manuale del modem cercando stringhe di inizializzazione che abilitano un'alta velocità.</para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Ho una connessione <emphasis
+>PARECCHIO</emphasis
+> lenta!</para
+></question>
+
+<answer
+><para
+>Se i dati arrivano ad un tasso di pochi byte per secondo, dovresti controllare le impostazioni hardware. Se muovendo il mouse la velocità di trasmissione aumenta, questo è chiaramente un problema hardware!</para>
+
+<para
+>Puoi ottenere alcune informazioni sulla porta seriale con <userinput
+><command
+>setserial</command
+> <option
+>-a <replaceable
+>/dev/ttySx</replaceable
+></option
+></userinput
+> e cercare conflitti di interrupt con altri componenti del sistema. Il modulo di &kcontrol; <guilabel
+>Informazioni</guilabel
+> può anche esser qui d'aiuto.</para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>La mia linea telefonica richiede una chiamata a impulsi invece di una chiamata a toni (o viceversa). Come posso cambiare ciò?</para
+></question>
+<answer
+><para
+>Devi modificare la stringa di chiamata del tuo modem. Quasi tutti i modem supportano i seguenti comandi AT:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><command
+>ATDT</command
+></term>
+<listitem
+><para
+><action
+>Seleziona la chiamata a toni</action
+></para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><command
+>ATDP</command
+></term>
+<listitem
+><para
+><action
+>Seleziona la chiamata a impulsi</action
+></para
+></listitem>
+</varlistentry>
+</variablelist>
+</answer>
+
+</qandaentry>
+
+</qandadiv>
+
+<qandadiv id="faq-telephone-cost-rules">
+<title
+>Domande sulle regole dei costi telefonici</title>
+<qandaentry>
+<question
+><para
+>Come posso scrivere un file di regole di costi telefonici?</para
+></question>
+<answer
+><para
+>Segui il file di regole <filename
+>MODELLO</filename
+> fornito con &kppp;. Potrai trovarne una copia in <filename class="directory"
+>$KDEDIR/doc/HTML/<replaceable
+>tualingua</replaceable
+>/kppp/</filename
+>. Usa l'opzione <option
+>-r</option
+> di &kppp; a riga di comando per controllare la sintassi del tuo file di regole.</para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Ho scritto un file di regole di costi telefonici per la mia regione. Dove posso inviarlo affinché gli altri possano usarlo?</para
+></question>
+<answer
+><!-- LW: Find out -->
+<!-- lukas: the answer is: send it to the kppp maintainer, Harri Porten --></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Il mio file di regole di costi telefonici può contenere unità frazionarie di tempo come "(0.17, 45.5)"?</para
+></question>
+<answer
+><para
+>Sì, è possibile. Ma non dovresti usare unità di tempo piccole e insolite sotto una decina di secondo, poiché ciò avrà come risultato un alto carico <acronym
+>CPU</acronym
+>, sebbene non lo noterai su una moderna <acronym
+>CPU</acronym
+>.</para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Il mio paese osserva altre festività <quote
+>mobili</quote
+> oltre alla Pasqua.</para
+></question>
+<answer
+><para
+>In quel caso, devi scrivere nuovo codice che permette il calcolo di quella festività. Dai un'occhiata a <filename
+>ruleset.cpp</filename
+> e scrivi un codice simile a quello usato per la Pasqua. Quindi fai pervenire a noi le patch!</para
+></answer>
+</qandaentry>
+</qandadiv>
+
+<qandadiv id="faq-system-logs">
+<title
+>Domande sui log di sistema</title>
+<qandaentry>
+<question
+><para
+>Vedo un messaggio che dice <errorname
+>Serial line is looped back</errorname
+>. Che significa?</para
+></question>
+
+<answer
+><para
+>Risposta breve: non hai avviato il <acronym
+>PPP</acronym
+> sul sistema remoto.</para>
+
+<!-- this doc doesn't exist.. help -->
+<!-- http://www.dejanews.com/getdoc.xp?AN="184945314" -->
+
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>I log mostrano <errorname
+>Signal 15</errorname
+></para
+></question>
+<answer
+><para
+>Se vedi le linee seguenti, hai probabilmente ricevuto un errore di timeout da &kppp;. &kppp; ha atteso che venisse attivata l'interfaccia <acronym
+>PPP</acronym
+> e dopo il timeout specificato vi ha rinunciato. <application
+>pppd</application
+> ha ricevuto un segnale di chiusura con il numero 15, &ie; <errorcode
+>SIGTERM</errorcode
+>.</para>
+
+<informalexample>
+<screen
+><computeroutput>
+pppd[26921]: pppd 2.3.5 started by me, uid 500
+pppd[26921]: Using interface ppp0
+pppd[26921]: Connect: ppp0 &lt;--&gt; /dev/ttyS0
+pppd[26921]: Terminating on signal 15.
+pppd[26921]: Connection terminated.
+pppd[26921]: Exit.
+</computeroutput
+></screen>
+</informalexample>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>Che cosa mi dici di <errorname
+>Receive serial link is not 8-bit clean</errorname
+></para
+></question>
+<answer
+><para
+>Il demone <acronym
+>PPP</acronym
+> è allarmato dal fatto che tutti i dati che riceve hanno il bit 8 impostato a zero. Nella maggior parte dei casi ciò indica semplicemente che il server <acronym
+>PPP</acronym
+> remoto non è ancora attivo. Potresti ancora trovarti di fronte ad un prompt di login che stampa tutti i dati inviati dal tuo <application
+>pppd</application
+>.</para
+></answer>
+</qandaentry>
+
+<qandaentry>
+<question
+><para
+>E <errorname
+>can't locate module ppp-compress</errorname
+>? Che cos'è?</para
+></question>
+<answer
+><para
+>Vedi i messaggi seguenti?</para>
+
+<informalexample>
+<screen
+><computeroutput>
+modprobe: can't locate module ppp-compress-21 
+modprobe: can't locate module ppp-compress-26 
+modprobe: can't locate module ppp-compress-24
+</computeroutput
+></screen>
+</informalexample>
+
+<para
+>Aggiungi semplicemente le righe:</para>
+
+<screen
+><userinput>
+alias ppp-compress-21 bsd_comp 
+alias ppp-compress-24 ppp_deflate 
+alias ppp-compress-26 ppp_deflate </userinput
+></screen>
+
+<para
+>al file <filename
+>/etc/conf.modules</filename
+>.</para>
+</answer>
+</qandaentry>
+
+</qandadiv>
+
+</qandaset>
+
+</chapter>

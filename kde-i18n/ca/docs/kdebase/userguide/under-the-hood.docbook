@@ -1,0 +1,652 @@
+<chapter id="tinkering-under-the-hood">
+<!-- Uncomment the <*info
+> below and add your name to be -->
+<!-- credited for writing this section. -->
+
+<!--
+<chapterinfo>
+<authorgroup>
+<author>
+<firstname
+>Your First Name here</firstname>
+<surname
+>Your Surname here </surname>
+</author>
+</authorgroup>
+</chapterinfo>
+-->
+
+<title
+>Jugar sota la capa de &kde;</title>
+
+<sect1 id="hand-editing-config-files">
+
+<sect1info>
+<author
+><personname
+> <firstname
+>Nicolas</firstname
+> <surname
+>Goutte</surname
+> </personname
+> <email
+>goutte@kde.org</email
+> </author>
+</sect1info>
+
+<title
+>Editar manualment els fitxers de configuració</title>
+
+<sect2 id="hand-editing-intro">
+<title
+>Introducció</title>
+<para
+>En &kde;, els fitxers de configuració són fàcils d'editar amb un simple editor com &kate; atès que els fitxers de configuració són fitxers de text.</para>
+
+<para
+>Un exemple d'un fitxer de text:</para>
+
+<programlisting
+>[General]
+AutoSave=1
+LastFile=/var/tmp/prova.txt</programlisting>
+
+<para
+>La configuració especifica de cada usuari es desa en <filename class="directory"
+>./kde/share/config</filename
+> (canvieu <filename
+>.kde</filename
+> amb el contingut de la vostra $<envar
+>KDEHOME</envar
+>) i la global en el subdirectori <filename class="directory"
+>share/config</filename
+> de la ruta d'instal·lació de &kde;. (podeu trobar aquesta ruta executant el comandament <command
+>kde-config --prefix</command
+>). Usualment els noms de fitxer acaben en rc (sense punt inicial), per exemple <filename
+>kopeterc</filename
+></para>
+
+<warning
+><para
+>Editar els fitxers de configuració manualment pot posar en perill la estabilitat de la vostra instal·lació &kde;. Les aplicacions no solen verificar qui llegeix els fitxers de configuració. Això vol dir que hi poden haver problemes quan carregueu la vostra configuració, fins i tot poden petar.</para
+></warning>
+
+</sect2>
+
+<sect2 id="hand-editing-backups">
+<title
+>Còpies de seguretat</title>
+
+<para
+>De manera que la primera regla és fer una còpia de seguretat del vostre fitxer abans de modificar-lo. És aconsellable desar la còpia de seguretat fora de qualsevol subdirectori dins de <filename class="directory"
+>.kde</filename
+> (o del directori corresponent $<envar
+>KDEHOME</envar
+>). Les còpies de seguretat són sempre una bona idea, atès que en el cas de produir-se una errada important de &kde; es podrien destruir fitxers de configuració importants (per exemple les vostres preferències de &kmail;, que estan en el fitxer <filename
+>kmailrc</filename
+>). (No s'hauria de produir cap errada important però podria succeir).</para>
+</sect2>
+
+<sect2 id="hand-editing">
+<title
+>Edició</title>
+
+<para
+>Per què podria voler modificar els fitxers de configuració? Bé, en primer lloc us caldrà per a poder complir les directives del mode KIOSK. És possible que un desenvolupador us demani que afegiu una entrada per a resoldre un problema amb una aplicació. És possible que vulgueu resoldre un problema sense tenir que eliminar tot el directori <filename class="directory"
+>.kde</filename
+>. És possible que vulgueu aprendre més sobre les interioritats de &kde;.</para>
+
+<para
+>De tota manera, siguin quins siguin els vostres motius, voleu modificar de forma manual un fitxer de configuració.</para>
+
+<para
+>Quan planegeu editar un fitxer, assegureu-vos que l'aplicació a la que l'usa no s'està executant. Si és un dels fitxers amb la configuració bàsica, penseu en editar el fitxer sense que el &kde; estigui en execució.</para>
+
+<para
+>Llestos? Creeu una còpia de seguretat del fitxer (Si l'heu fet abans?), inicieu el vostre editor favorit (assumirem que és &kate;), carregueu el fitxer (assegureu-vos de carregar-lo amb UTF-8, &kate; el mostrarà com a <quote
+>utf8</quote
+>).</para>
+
+<para
+>Ara teniu un fitxer com aquest:</para>
+
+<programlisting
+>[Grup]
+Clau1=Valor1
+Clau2=Valor2
+Clau3=Valor3</programlisting>
+
+<para
+>Podeu modificar-lo (amb cura!) i desar-lo (assegureu-vos altra vegada que està en <acronym
+>UTF-8</acronym
+>).</para>
+
+<para
+>Ara podeu provar l'aplicació i si l'aplicació no funciona correctament, tanqueu-la i restaureu la còpia de seguretat del fitxer de configuració.</para>
+
+<itemizedlist>
+<title
+>Informació relacionada</title>
+
+
+<listitem
+><para
+><xref linkend="kde-for-administrators"/> conté més informació sobre la estructura de directoris de &kde;, per ajudar-vos a trobar el fitxer que us cal editar.</para>
+</listitem>
+
+</itemizedlist>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="scripting-the-desktop">
+<title
+>Crear scripts de l'escriptori</title>
+
+<para
+>&kde; proveeix un potent sistema de comunicació entre processos amb &DCOP;, el protocol de comunicació de l'escriptori. Usant &DCOP; podreu controlar un ampli nombre de funcions en &kde; des de la línia de comandaments o des d'un script escrit en el vostre llenguatge d'script favorit. També podreu obtenir informació de les aplicacions &kde;: Per exemple, alguns reproductors de &kde; proveeixen mètodes per a demanar al reproductor informació sobre la pista que s'està reproduint.</para>
+
+<para
+>Parlant en termes generals, cada aplicació de &kde; proveeix una o més <firstterm
+>interfaces</firstterm
+> &DCOP;, que proveeixen mètodes (o, si ho preferiu, funcions) que poden ser cridades per una altra aplicació. De manera que, la primera passa per usar &DCOP; és trobar el mètode apropiat per a la tasca. La manera més senzilla és usar la interfície <application
+>kdcop</application
+> per obtenir els mètodes &DCOP; disponibles.</para>
+
+<para
+>Executeu <application
+>kdcop</application
+> des d'una &konsole; o des del mini-<acronym
+>CLI</acronym
+> (la finestra que apareix al prémer <keycombo action="simul"
+>&Alt;<keycap
+>F2</keycap
+> </keycombo
+>). La finestra <application
+>kdcop</application
+> mostrarà les aplicacions que s'estiguin executant i que proveeixen interfícies &DCOP;, usant una vista en arbre. En general, trobar el mètode correcte requereix cercar una mica al llarg de l'arbre, però un consell pràctic és usar la interfície marcada amb <quote
+>(omissió)</quote
+> la qual sol contenir les funcions d'ús més freqüent.</para>
+
+
+
+<para
+>Per a comprovar que la funció és la que esperàveu, feu doble clic sobre l'entrada <guilabel
+>setColor</guilabel
+>. Per establir el color <varname
+>c</varname
+>, feu clic sobre el botó selector de color, i escolliu-ne un. Decidiu si el color hauria de ser un color A amb la caixa de selecció. Feu clic a <guilabel
+>Bé</guilabel
+> i s'assignarà el color al fons.</para>
+
+<para
+>Per accedir al mètode &DCOP; des del vostre llenguatge d'script favorit, podeu usar les dreceres &DCOP;, si el mòdul kdebindings està disponible, o cridar a <command
+>dcop</command
+> des de la línia de comandaments. Per a un ús simple, cridar a <command
+>dcop</command
+> des de la línia de comandaments és suficient. Per a cridar a &DCOP; des de la línia de comandaments, us caldrà especificar l'aplicació i la pròpia interfície del mètode, el mètode en si mateix, i els arguments, en una manera adequada per a l'intèrpret de comandaments.</para>
+
+<para
+>Especificarem l'aplicació, interfície i mètode en aquest ordre, seguit pels arguments en el mateix ordre en que es mostren en <application
+>kdcop</application
+>. <command
+>dcop</command
+> te moltes més opcions: Feu un cop d'ull a la sortida de <userinput
+><command
+>dcop</command
+> <option
+>--help</option
+></userinput
+>.</para>
+
+<para
+>Prou de teoria: Veiem un exemple:</para>
+
+<example>
+<title
+>Un script per a canviar el color del fons amb &DCOP;</title>
+
+<para
+>Amb el línia de comandament <command
+>dcop</command
+> de l'aplicació i una mica de Perl, crearem un simple script que canviarà el color del fons de l'escriptori a través de l'espectre en cicles curts.</para>
+
+<para
+>En primer lloc, buscarem el mètode adequat amb <application
+>kdcop</application
+>. Per a aquest exemple, acurtarem la recerca, i anirem al gra: El mètode que ens cal és <menuchoice
+><guimenu
+>kdesktop</guimenu
+><guisubmenu
+>KBackgroundIface</guisubmenu
+><guimenuitem
+>setColor</guimenuitem
+> </menuchoice
+>. Els arguments i el tipus retornat per la funció es mostraran en l'estil del llenguatge C++. Per a <methodname
+>setColor</methodname
+>, els arguments són, <varname
+>c</varname
+>, que especifica el nou color de fons, i un valor lògic (verdader o fals), <varname
+>isColorA</varname
+>, que especifica si el color és el primer o el segon (és pràctic per a configurar gradients).</para>
+
+<para
+>Per usar el nostre mètode <methodname
+>setColor</methodname
+> en la línia de comandaments, usarem el següent: <screen
+><prompt
+>%</prompt
+> <userinput
+><command
+>dcop</command
+> kdesktop KBackgroundIface setColor '#ffffff' false</userinput
+>
+</screen>
+</para>
+
+<para
+>Per especificar el color, usarem el valor RGB hexadecimal, tal i com s'usa en &HTML;. Tingueu present que haurà d'estar tancat entre cometes per a protegir la <token
+>#</token
+> des de l'intèrpret.</para>
+
+<para
+>Per a trobar el valor hexadecimal del color RGB, obriu qualsevol diàleg selector de color en una aplicació &kde; (per exemple, en &centrecontrol;, <menuchoice
+><guimenu
+>Aparença i temes</guimenu
+><guimenuitem
+>Colors</guimenuitem
+> </menuchoice
+>), seleccioneu el color desitjat, i useu el valor obtingut en la caixa de text <guilabel
+>HTML</guilabel
+>.</para>
+
+
+<para
+>I això es tot el que ens cal de &DCOP;; ara tan sols és qüestió d'escriure un script basat en això. Veiem una (molt!) rudimentària implementació: <programlisting
+><![CDATA[
+$min=49;  # Valor mínim de color R, G o B
+$max=174; # Valor màxim de color R, G o B
+$step=5;  # Increment a cada passa de color
+$sleeptime=15; # Interval en segons entre cada passa
+
+@start = ($max, $min, $min);
+@colour = @start;
+
+while (1) {
+        foreach (0..5) {
+                my $which = $_ % 3; # Quin color (R, G o B) canviar
+                my $updown = $_ % 2; # Indica si s'incrementa o decrementa el valor de color
+                do {
+                        if ($updown == 0) { $colour[$which]+=$step; }
+                        if ($updown == 1) { $colour[$which]-=$step; }
+                        my $dcopcall=sprintf "dcop kdesktop KBackgroundIface setColor '#%x%x%x' true\n", @colour;
+                        system($dcopcall);
+                        sleep $sleeptime;
+                        } while (($colour[$which] 
+>= $min) and ($colour[$which] <= $max));
+                }
+}
+]]>
+</programlisting>
+</para>
+
+<para
+>Ara executeu l'script sense arguments, i començarà un cicle de canvis de color del fons a través del espectre fins que sigui matat. <foreignphrase
+>Voil&agrave;</foreignphrase
+>!</para>
+
+</example>
+
+<para
+>Per descomptat, Perl no és l'únic llenguatge que podeu usar per escriure scripts amb &DCOP; &mdash;si preferiu fer scripts per a un intèrpret de comandaments, també està disponible:</para>
+
+<example>
+<title
+>Establir un fons des de Internet</title>
+
+<para
+>El següent script obtindrà la imatge principal des de la tira còmica <quote
+>User Friendly</quote
+> i la col·loca com a fons de l'escriptori, usant les eines normalment disponibles i una mica de &DCOP;:</para>
+
+<programlisting
+><![CDATA[
+#!/bin/sh
+COMICURL=`wget -qO - http://www.userfriendly.org/static/index.html | \
+          grep Latest | sed -e "s,.*SRC=\",," -e "s,\"
+>.*,,"`
+TMPFILE=`mktemp /tmp/$0.XXXXXX` || exit 1
+wget -q -O $TMPFILE $COMICURL
+dcop kdesktop KBackgroundIface setWallpaper $TMPFILE 1
+]]>
+</programlisting>
+
+<para
+>La primera línia després de #!/bin/sh usa <command
+>wget</command
+> i alguna expressió regular per extraure la localització de la imatge a partir de les fonts de la pàgina &HTML;. La segona i tercera línies descarreguen la imatge, i finalment, <command
+>dcop</command
+> col·loca la imatge descarregada com a fons de l'escriptori.</para>
+
+</example>
+
+
+<!-- <itemizedlist>
+<title
+>Related Information</title>
+<listitem
+><para
+>to be written</para>
+</listitem>
+</itemizedlist
+> -->
+
+
+</sect1>
+
+
+<sect1 id="adding-extra-keys">
+<title
+>Afegir dreceres extra a &kde;</title>
+
+<para
+>Alguns teclats moderns tenen tecles extra que per omissió no tenen assignada cap acció.</para>
+
+<para
+>Algunes vegades les tecles <quote
+>multimèdia</quote
+> generen una senyal, i es poden assignar en una aplicació com qualsevol altra tecla. Tot i que algunes tecles, no es detecten i prémer-les en <guilabel
+>Configura dreceres</guilabel
+> no tindrà cap efecte.</para>
+
+<para
+>Alguns portàtils IBM, per exemple, tenen tecles extra sobre les fletxes esquerra i dreta, que són similars a <guiicon
+>pàgina esquerra</guiicon
+> i <guiicon
+>pàgina dreta</guiicon
+>.</para>
+
+<procedure>
+<step
+><para
+>Useu <command
+>xev</command
+> per a trobar el codi d'aquestes tecles. En aquest cas, són 233 i 234 </para
+></step>
+<step
+><para
+>Escolliu els símbols de tecla. Hi ha un rang d'aquests que per omissió no s'usen, i per tant, estan lliures. Podeu trobar la llista en <filename
+>/usr/X11R6/include/X11/keysymdef.h</filename
+> (o el seu equivalent en el vostre sistema).</para
+></step>
+<step
+><para
+>Crea un fitxer en el vostre directori inicial anomenat <filename
+>.Xmodmap</filename
+>, i afegiu-hi el següent:</para>
+<screen
+>keycode 233 = Next_Virtual_Screen
+keycode 234 = Prev_Virtual_Screen</screen>
+</step>
+<step
+><para
+>Executeu el comandament <userinput
+><command
+>xmodmap</command
+> <filename
+>~/.Xmodmap</filename
+></userinput
+></para
+></step>
+</procedure>
+
+<para
+>En aquest punt, hauríeu de poder executar <command
+>xev</command
+> altra vegada i veureu com les tecles generades per keysym són les que heu assignat. Ara les podreu associar a una acció de la forma habitual.</para>
+
+<itemizedlist>
+<title
+>Informació relacionada</title>
+<listitem
+><para
+>La pàgina de manual de <command
+>xev</command
+>. La podeu veure escrivint <userinput
+>man:/xev</userinput
+> en una finestra de &konqueror; o escrivint <userinput
+><command
+>man</command
+> xev</userinput
+> en un terminal.</para
+></listitem>
+</itemizedlist>
+
+</sect1>
+
+<sect1 id="keys-for-scripts">
+<title
+>Afegir dreceres per a accions noves</title>
+
+<para
+>La majoria de les accions tant a l'escriptori com en les aplicacions se'ls hi pot assignar una drecera. Si l'acció per a la que voleu una drecera és alguna cosa escrita per vos mateix , o és una que no en te de disponible, encara li podeu assignar una.</para>
+
+<para
+>D'igual manera a com passa en les dues seccions anteriors, potser voleu assignar tecles no usades en el vostre teclat a un script o a un comandament dcop. El següent exemple assignarà les dues tecles afegides en <xref linkend="adding-extra-keys"/> per anar als escriptoris virtuals anterior o següent, per al qual us caldran dues funcions DCOP (tal i com es discuteix en <xref linkend="scripting-the-desktop"/>).</para>
+
+<para
+>Això es pot aconseguir fàcilment usant el següent mètode:</para>
+
+<procedure>
+<step>
+<para
+>Obriu &kcontrol;, i en la secció <guilabel
+>Regional i accessibilitat</guilabel
+>, seleccioneu <guilabel
+>Accions d'entrada</guilabel
+></para>
+</step>
+<step>
+<para
+>Escolliu <guibutton
+>Acció nova</guibutton
+></para>
+</step>
+<step>
+<para
+>Anomeneu la nova acció, &pex; <userinput
+>Pantalla virtual següent</userinput
+></para>
+</step>
+<step>
+<para
+>Seleccioneu <guilabel
+>Drecera de teclat -> Comandament/URL (simple)</guilabel
+> per al <guilabel
+>Tipus de l'acció</guilabel
+></para>
+</step>
+<step>
+<para
+>En la pestanya <guilabel
+>Drecera de teclat</guilabel
+>, feu clic al botó que voleu usar per a commutador el comandament. Per a aquest exemple, hauríeu de prémer la tecla que te el dibuix <guiicon
+>Pàgina següent</guiicon
+>. Apareixerà <keysym
+>Next_Virtual_Screen</keysym
+> en la imatge de la tecla.</para>
+</step>
+<step>
+<para
+>En la pestanya <guilabel
+>Arranjament de comandament/URL</guilabel
+>, introduïu el comandament que s'haurà d'executar en el camp: <userinput
+><command
+>dcop kwin default nextDesktop</command
+></userinput
+></para>
+</step>
+</procedure>
+
+<para
+>Repetiu el procediment anterior amb la tecla <keysym
+>Prev_Virtual_Screen</keysym
+> i <userinput
+><command
+>dcop kwin default previousDesktop</command
+></userinput
+>.</para>
+
+<para
+>Ara premeu <keysym
+>Prev_Virtual_Screen</keysym
+> o <keysym
+>Next_Virtual_Screen</keysym
+> per anar a l'escriptori anterior i següent, respectivament.</para>
+
+<para
+>Òbviament, podeu assignar qualsevol tecla lliure a qualsevol acció.</para>
+
+<itemizedlist>
+<title
+>Informació relacionada</title
+> 
+<listitem
+><para
+>Mireu la documentació de <application
+>KHotKeys</application
+> usant &khelpcenter;, o escriviu <userinput
+>help:/khotkeys</userinput
+> en una finestra de &konqueror;.</para
+></listitem
+> 
+<listitem
+><para
+><xref linkend="adding-extra-keys"/></para
+></listitem>
+<listitem
+><para
+><xref linkend="scripting-the-desktop"/></para
+></listitem>
+</itemizedlist>
+
+</sect1>
+
+<sect1 id="kdebugdialog">
+<sect1info>
+<authorgroup>
+<author
+><personname
+> <firstname
+>Adriaan</firstname
+> <surname
+>de Groot</surname
+> </personname
+> <email
+>groot@kde.org</email
+> </author>
+</authorgroup>
+</sect1info>
+
+<title
+>&kdebugdialog; - Controlar la sortida de depuració de &kde;</title>
+
+<sect2 id="kdebugdialog-basic-usage">
+<title
+>Ús bàsic</title>
+
+<para
+>&kdebugdialog; no apareix en el &kmenu; per omissió. Us caldrà executar-lo des d'un intèrpret de comandaments o des del mini-client amb el comandament <userinput
+><command
+>kdebugdialog</command
+></userinput
+>. &kdebugdialog; mostrarà una finestra amb una llarga llista de les àrees de depuració. Cada àrea te una caixa de selecció que podeu marcar o desmarcar, habilitar o deshabilitar la depuració per a aquesta part de &kde;.</para>
+
+<para
+>La llista de les àrees de depuració s'ordena numèricament, no alfabèticament, de manera que kio (127) apareixerà abans que artskde (400). Els números van fins el 20000 aproximadament, però en realitat tan sols hi ha 400 àrees. No necessiteu desplaçar-vos a través de tota la pantalla per a trobar l'àrea que us cal. Hi ha una caixa d'edició en la part superior del diàleg en la que podreu introduir una part del nom de l'àrea que voleu. La llista d'entrades es filtrarà per a tan sols mostrar aquelles àrees de depuració que contenen el text introduït. &pex; introduir <userinput
+>k</userinput
+> no filtrarà gaire, però introduir <userinput
+>kont</userinput
+> tan sols mostrarà les àrees de depuració de &kontact;. Com a manera ràpida d'habilitar o deshabilitar la sortida de depuració, podreu usar els botons <guibutton
+>selecciona-ho tot</guibutton
+> i <guibutton
+>deselecciona-ho tot</guibutton
+> que causaran que el &kde; produeixi una sortida de depuració enorme, o una molt petita.</para>
+</sect2>
+
+<sect2 id="kdebugdialog-fullmode">
+<title
+>KDebugDialog en el mode complet</title>
+
+<!-- this text partly taken from the kdebugdialog handbook -->
+
+<para
+>En el mode complet, que és el que s'obté quan inicieu kdebugdialog amb <userinput
+><command
+>kdebugdialog</command
+> <option
+>--fullmode</option
+></userinput
+>, estarà disponible la mateixa llista d'àrees de depuració que en el mode senzill, però tan sols podreu seleccionar una cada vegada des d'una caixa desplegable. Podeu establir de forma independent la sortida de varis tipus de missatges: Informació, avis, error i error fatal. Per a cadascun d'aquests tipus, podeu escollir a on s'envien aquests missatges. Les eleccions són:</para>
+
+<para
+>Fitxer, en el qual podeu introduir un nom de fitxer. Aquest fitxer serà escrit en el vostre directori $<envar
+>HOME</envar
+>.</para>
+
+<para
+>Caixa de missatge. Cada missatge de depuració serà mostrat en un diàleg d'informació, sobre el que haureu de prémer <guibutton
+>Bé</guibutton
+> per a continuar amb l'aplicació.</para>
+
+<para
+>L'intèrpret de comandaments, l'entrada per omissió. Els missatges seran impresos en la sortida estàndard, i apareixeran en la finestra de l'intèrpret de comandaments des del que s'inicià l'aplicació, o en <filename
+>.xsession-errors</filename
+>.</para>
+
+<para
+>Registre del sistema. Això envia cada missatge de depuració a la utilitat de registre del sistema, que podeu usar per al seu propi processat del missatge.</para>
+
+<para
+>Cap. Això suprimeix la sortida d'aquest tipus de missatges.</para>
+
+<para
+>Per als missatges generats pels errors fatals, sol ser una mala idea escollir cap o registre del sistema, tot i que és possible que en ambdós casos no pugueu veure el missatge i l'aplicació que hagi sofert l'error fatal desaparegui sense deixar pistes de perquè ha desaparegut. El que desaparegui o no l'aplicació en els errors fatals pot ser controlat per la caixa de selecció <guilabel
+>Cancel·la al produir-se errors fatals</guilabel
+>, que per omissió està marcat &mdash;però és possible esperar que una aplicació peti (de manera desordenada) si es produeix un error fatal.</para>
+
+<!-- Add links to "further reading" here -->
+<!-- <itemizedlist>
+<title
+>Related Information</title>
+<listitem
+><para
+>to be written</para>
+</listitem>
+</itemizedlist
+>-->
+
+
+
+</sect2>
+</sect1>
+</chapter>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: xml
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:0
+sgml-indent-data:true
+sgml-parent-document:("index.docbook" "book" "chapter")
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

@@ -1,0 +1,317 @@
+<chapter id="callback">
+<title
+>Nastavitev &kppp; za povratni klic</title>
+
+<para
+>To poglavje je zasnovan materialu, ki ga je pripravil Martin H&auml;fner, <email
+>mh@ap-dec717c.physik.uni-karlsruhe.de</email
+></para>
+
+<sect1 id="unix-callback-server">
+<title
+>&UNIX; ali &Linux; strežnik za povratni klic</title>
+
+<para
+>To poglavje predstavlja povratno klicanje &UNIX; (&Linux;)  in postopek nastavljanja &kppp; da se bo lahko povezal na strežnik za povratno klicanje &UNIX; še posebej za na skriptah temelječ <link linkend="callback-resources"
+>strežnik za povratni klic</link
+> &Linux;.</para>
+
+<sect2>
+<title
+>Uvod k povratnemu klicanju</title>
+
+<para
+>Za uporabo povratnega klicanja obstaja kar nakaj razlogov. Ti so:</para>
+
+<itemizedlist
+> <listitem
+> <para
+>Večja varnost vašega krajevnega omrežja</para
+> </listitem
+> <listitem
+> <para
+>Zmanjšanje stroškov zunanjih sodelavcev</para
+> </listitem
+> <listitem
+> <para
+>Nadzor nad telefonskimi stroški kjer se klici obravnavajo kot poslovni strošek</para
+> </listitem
+> </itemizedlist>
+
+<para
+>Pomislite na nekoga, ki kliče številko vašega strežnika na klic in nato ugane geslo. Zakaj bi si delali skrbi s požanim zidom, do vaše Internetnepovezave, ko pa je do vašega omrežja tako lahko dostopati?</para>
+
+<para
+>Programje za povratni klic v splošnem prosi za vaše ime in nato prekine zvezo. Nato vas pokliče nazaj, ponavadi na številko, ki je shranjena <emphasis
+>na strežniku</emphasis
+> v podatkovni zbirki. Odjemnik nato spet nadaljuje s klicanjem, kot da se ni zgodilo nič. Strežnik nato prosi za vaše uporabniško ime in geslo in pri tem ve, da ste kar ste rekli, da ste, ko ste prvič poklicali, ali vsaj da ste kjer ste rekli, da ste. Povezava se vzpostavi kot ponavadi in program <application
+>pppd</application
+> se zažene.</para>
+
+<para
+>Vprašanje je, kako odjemniku dopovedati, da naj dvigne slušalko ko strežnik pokliče nazaj. Potrebujete poseben program kot je <application
+>mgetty</application
+>? Odgovor je, <emphasis
+>ne</emphasis
+>, ne potrebujete posebnega odjemnega programa. V splošnem lahko za povratno-klicne povezave karteregakoli odjemnika, za povezavo bi lahko uporabili celo navaden terminalski program kot je <application
+>minicom</application
+>.</para>
+
+<para
+>Edino kar je treba storiti je, da modemu naročite, da naj telefonu ob <computeroutput
+>ZVONENJU</computeroutput
+><command
+>samodejno odgovori</command
+>, če modem zazna klic. To je narejeno z naslednjimi modemskimi ukazi:</para>
+
+<screen>
+<userinput
+><command
+>AT&amp;SO=1</command
+></userinput>
+</screen>
+
+<para
+>To modemu pove, da naj skušalko dvigne po enem zvonenju <computeroutput
+>RING</computeroutput
+>.</para>
+
+<para
+>Kot veliko drugih programov, tudi &kppp; prever ali je strežnik zaprl povezavo in nato prekine trenutno sejo, če zazna signal <computeroutput
+>NO CARRIER</computeroutput
+> (ni nosilca). To pri nastavljanju povratnega klica nastane resničen problem. <computeroutput
+>NO CARRIER</computeroutput
+> bo seveda zaznan takoj, ko strežnik za povraten klic prekine povezavo. Zato nekateri strežniki uporabljajo posebne programe za prijavo. Kako naj se torej te težave lotite? Modemu naročite naj ves čas prikazuje <computeroutput
+>CARRIER UP</computeroutput
+>(kar ne povzroča težav, če odjemniku naročite naj prekine povezavo). To lahko storite z naslednjim ukazom:</para>
+
+<screen>
+<userinput
+><command
+>AT&amp;C0</command
+></userinput>
+</screen>
+
+<para
+>Če želite to preizkusiti, lahko najprej uporabite navaden terminalski program kot na primer <application
+>minicom</application
+>, in poklčete strežnik za povratno klicanje, da boste videli kaj se bo zgodilo.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Nastavitev &kppp;</title>
+
+<para
+>Sedaj, ko ste videli postopek v teoriji, kako torej &kppp; nastaviti, da bo s takšno povezavo deloval? </para>
+
+<para
+>Postopek je dokaj enostaven:</para>
+
+<procedure
+> <step
+> <para
+>Najprej modemu povejte naj sprejme povezave in naj pogajanja ne zaustavi,ko strežnik za povratno klicanje prvič povezavo prekine prvič. Obe nastavitvi lahko nastavite na jezičku  <guilabel
+>Modem</guilabel
+> v nastavitvah &kppp; in sicer tako, da izbiri <guilabel
+>Klicni niz</guilabel
+> dodate ukazni niz <command
+>AT&amp;C0S0=1DT</command
+></para
+> <para
+>V nastavitvah  &kppp; vam drugih sprememb ni treba delati. Če med pripravo modema na klic in ponastavljanjem pride do težav, si za več informacij oglejte poglavje <link linkend="callback-troubleshooting"
+>Odpravljanje težav</link
+>.</para
+> </step
+> <step
+> <para
+>Za trenutek pomislite na vaš strežnik. Seveda veste, da imajo operacijski sistemi &UNIX;, &Windows; in Macintosh različna mnenja o tem kako vrstico končati v besedilni datoteki, torej tudi v prijavnih postopkih. Če se povezujete na strežnik &Windows;. uporabite <userinput
+>CR/LF</userinput
+>, če se povezujete na strežnik &UNIX; uporabite <userinput
+>CR</userinput
+>, in če se povezujete na strežnik Macintosh, uporabite<userinput
+>LF</userinput
+> </para
+> </step
+> <step
+> <para
+>V tem primeru se domneva, da kličete povratno-kličoči paket &Linux;, ki uporablja navadeno prijavo (ne <acronym
+>PAP</acronym
+> ali podobne).</para
+> <para
+>Slog <guilabel
+>identifikacije</guilabel
+> na jezičku<guilabel
+>Pokliči</guilabel
+> v nastavitvah računa nastavite na<guilabel
+>Na skripti temelječ</guilabel
+></para
+> </step
+> <step
+> <para
+>Sedaj morate izdelati skripto za prijavo. Urejanje prjavnih skript je ena od odlik &kppp; To lahko najdete na jezičku<guilabel
+>Prijavna skripta</guilabel
+> v pogovornem oknu <guilabel
+>Uredi račun</guilabel
+>.</para
+> <para
+>V tem primeru mora uporabnik <systemitem
+>uporabnikčžš</systemitem
+> poklicati naslednjo skripto. Strežnik za povraten klic že pozna seznam imen in pripadajočih telefonskih številk, zato telefonsko številko iz varnostnih razlogov izberete s pomočjo nadomestnega imena.</para
+> <para
+>Za vsako vrstico iz padajoćega seznama na levi strani pogovornega okna izberite kriterij, in v vnosno polje na desni vnesite dejanje. Da bi dejanje skripti dodali, izberite gumb <guibutton
+>Dodaj</guibutton
+> Da bi vrstico dodali na sredini skripte uporabite gumb<guibutton
+>Vstavi</guibutton
+>, da pa bi vrstico, če ste naredili napako izbrisali, uporabite gumb <guibutton
+>Odstrani</guibutton
+>.</para
+> <para
+>Celotna skripta naj bi izgledala nekako takole (brez komentarjev, ki se začenjajo z #)</para
+> <screen
+> 
+Expect       ogin:           <lineannotation
+># remember, we do ordinary terminal login</lineannotation>
+ID           ""              <lineannotation
+># kppp sends the id you configured in
+the main dialog</lineannotation>
+Expect       for userxyz:    <lineannotation
+># a list of available numbers is
+shown, the user should choose one</lineannotation
+> 
+Send         userxyz-home    <lineannotation
+># the user wants to be called back
+on their home number</lineannotation>
+Expect       ogin:           <lineannotation
+># The callback process is now
+running, a new connection, and so a new login.</lineannotation>
+ID
+Expect       assword:        <lineannotation
+># Now send your password</lineannotation>
+Expect       &gt;            <lineannotation
+># Wait for the command prompt (the
+prompt may vary)</lineannotation>
+Send         start_ppp       <lineannotation
+># this command starts the pppd</lineannotation>
+</screen
+> <para
+>Po čakanju na zahtevo za prijavo, uporabnik pošlje svojo ID in počaka na seznam telefonskih številk, ki so na voljo za to uporabniško ime. Nato strežniku pove na katere od ponujenih številk bi se rad odzival. &kppp; lahko za to odpre pogovorno okno, če se vaša lokacija pogosto spreminja &npr; ste potnik in se selite iz hotela v hotel. Sedaj strežnik pričakuje uporabniško ime in geslo za identifikacijo, vendar medtem strežnik povezavo prekine in uporabnika pokliče nazaj. Nato pošlje podatke o identifikaciji in &kppp; počaka na poziv in požene majhno skripto (ki se tu imenuje<filename
+>start_ppp</filename
+>), ki na strežniku požene program <application
+>pppd</application
+>.</para
+> <para
+>Skripta <filename
+>start_ppp</filename
+> je lahko na primer takšna:</para
+> <programlisting>
+#!/bin/sh
+stty -echo
+exec /usr/sbin/pppd -detach silent modem
+</programlisting
+> <para
+>Seveda nastavljanje strežnika <acronym
+>PPP</acronym
+> ta dokument ne obsega. Za podrobne informacije si oglejte priročnik man programa <application
+>pppd</application
+>. Odličen opis strežnika za povraten klic lahko najdete na <ulink url="http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback"
+> http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback</ulink
+></para
+> </step
+> </procedure>
+
+<para
+>Vse druge težave pri nastavljanju kot na primer nastavljanje <application
+>pppd</application
+> ali nastavitve <acronym
+>IP</acronym
+> delujejo kot ponavadi in za vzpostavitev povezave niso potrebni nobeni dodatni programi.</para>
+
+<note
+> <para
+>Povratno klicanje &kppp; in druge programe kot na primer <application
+>mgetty</application
+> ali katerikoli drug program faxgetty lahko poganjate na istih zaporednih vratih. S klicanjem ni nobenih težav, saj &kppp;  ustvari datotečno ključavnico, ki bo programu getty povedala, linijo trenutno uporablja nek drug program (v tem primeru je to seveda &kppp;).</para
+> </note>
+
+</sect2>
+
+<sect2 id="callback-troubleshooting">
+<title
+>Odpravljanje težav</title>
+
+<para
+>V načinu povratnega klicanja so s &kppp; znane naslednje težave:</para>
+
+<itemizedlist
+> <listitem
+> <para
+>Ko modem nastavite za samodejno odgovarjanje, morate po prekinitvi povezave modem ponastaviti. V nasprotnem primeru bo modem ponovno hotel vzpostaviti povezavo, kar ni dobra ideja, če je linija o kateri govorimo vaša glavna telefonska linija.</para
+> </listitem
+> <listitem
+> <para
+>&kppp; ima nekaj manjših težav z deljenjem linije z nekim drugim programom kot na primer <application
+>mgetty</application
+>. Če <application
+>mgetty</application
+> teče na isti modemski liniji, &kppp; modema ne bo mogel pravilno nastaviti. </para
+> </listitem
+> <listitem
+> <para
+>&kppp; med na skripti temelječim prijavljanjem včasih ne more prositi za vnos s strani uporabnika. Na žalost pri uporabi zgornje skripte, &kppp; za uporabniško ime prosi tudi, ko ga strežnik za povraten klic zahteva drugič. Tega se lahko znebite tako, da v prijavno skripto vpišete vaš id uporabnika (ni ravno lepo in prenosljivo, vendar deluje).</para
+> </listitem
+> </itemizedlist>
+
+</sect2>
+
+<sect2 id="callback-resources">
+<title
+>Spletne strani za strežniško programje</title>
+
+<para
+>Paketi s strežnikom za povratno klicanje za &Linux; so na voljo na več mestih.</para>
+
+<para
+>Dobro znan <application
+>mgetty</application
+> je zelo močan program in pravtako lahko upravlja s povratno-klicnimi povezavami. Opis kako za ta namen<application
+>mgetty</application
+> je vzdrževan na <ulink url="http://www.dyer.demon.co.uk/slug/tipscrip.htm"
+> http://www.dyer.demon.co.uk/slug/tipscrip.htm</ulink
+>, stran pa vzdržuje Colin McKinnon, <email
+>colin@wew.co.uk</email
+>.</para>
+
+<para
+>Za &Linux; je na voljo tudi paket na <ulink url="http://www.icce.rug.nl/docs/programs/callback/callback.html"
+> http://www.icce.rug.nl/docs/programs/callback/callback.html</ulink
+>. Ta paket vzdržuje  Frank B. Brokken, <email
+>frank@icce.rug.nl</email
+>. Čeprav je nastavljanje dokaj očitno, pa ni enostavno. Zato sem na <ulink url="http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback"
+>http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback/</ulink
+> napisal kratko predstavitev, ki vključuje tudi splošno predstavirtev povratnega klicanja.</para>
+
+</sect2>
+</sect1>
+
+<sect1 id="nt-callback">
+<title
+>Povratno klicanje &Windows; NT <acronym
+>RAS</acronym
+></title>
+
+<para
+>&Windows; NT uporablja popolnoma drugačen postopek od zgoraj opisanega. NT zahteva razširitev protokola <acronym
+>PPP</acronym
+> samega, ki se imenuje <acronym
+>CBCP</acronym
+> (Call Back Control Protocol). <application
+>pppd</application
+> vsebuje podporo za ta protokol,vendar morate <application
+>pppd</application
+> ponovno prevesti. Če ima kdorkoli z uspešnim povezovanjem na strežnik za povratni klic NT izkušnje, naj nam prosim pove o tem.</para>
+
+</sect1>
+</chapter>
+

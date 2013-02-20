@@ -1,0 +1,560 @@
+<?xml version="1.0" ?>
+<!DOCTYPE book PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" "dtd/kdex.dtd" [
+ <!ENTITY kappname "kompmgr">
+ <!ENTITY package "kwin">
+ <!ENTITY % Danish "INCLUDE">
+ <!ENTITY % addindex "IGNORE">
+]>
+
+<book lang="&language;">
+<bookinfo>
+<title
+>Information om &kappname;</title>
+
+<authorgroup>
+<author
+><personname
+><firstname
+>Thomas</firstname
+><surname
+>Luebking</surname
+></personname
+> <email
+>thomas.luebking@web.de</email
+> </author>
+
+&erik.kjaer.pedersen.role; 
+</authorgroup>
+
+<copyright>
+<year
+>2005</year>
+<holder
+>Thomas Luebking</holder>
+</copyright>
+
+<legalnotice
+>&FDLNotice;</legalnotice>
+
+<date
+>2005-01-15</date>
+<releaseinfo
+>2.0.1</releaseinfo>
+
+<abstract>
+<para
+>&kappname; er en optegningsmaskine for sammensætninger som bruges af &kwin;.</para>
+<para
+>Dette dokument er mere en relativt generel forklaring af hvad den gør, hvordan den virker og hvilke begrænsninger den har, end en dokumentation af hvordan den bruges (eftersom den virker automatisk i baggrunden).</para
+> 
+</abstract>
+
+<keywordset>
+<keyword
+>KDE</keyword>
+<keyword
+>kwin</keyword>
+<keyword
+>optegningsmaskine</keyword>
+</keywordset>
+</bookinfo>
+
+<chapter id="introduction">
+<title
+>Indledning</title>
+
+<para
+>&kappname; er baseret på <application
+>xcompmgr</application
+>, Keith Packards referenceimplementering til at bruge de nye funktionerne i X.</para>
+
+<para
+>Sammensætningshåndteringen fanger uddata fra X-windows og tegner dem op i et enkelt billede som vises på skærmen. Fordelen ved at gøre dette er at man kan gøre stort set hvad som helst med vinduets indhold, inklusive at sammensætte dem (gennemsigtighed) eller tilføje skygger. Man kan også tone dem, tilføje ubehagelige reklamer på hvert vindue, klemme dem sammen, fragmentere dem, tilføje spor eller hvad som helst andet du kan forestille dig, kun begrænset af hardware.</para>
+
+</chapter>
+
+<chapter id="xorg">
+<title
+>Xorg</title>
+
+<para
+>Det er nødvendigt at have <emphasis
+>X.org 6.8 eller senere</emphasis
+> for at få &kappname; til at fungere. X.org 6.7 eller ældre eller XFree86 virker ikke.</para>
+
+<sect1 id="xsetup">
+<title
+>Opsætning</title>
+<para
+>Du skal eksplicit aktivere sammensætningsudvidelsen. Tilføj et nyt afsnit i X.org indstillingsfil.</para>
+
+<programlisting
+>Section "Extensions"
+    Option "Composite" "Enable"
+EndSection
+</programlisting>
+
+<para
+>Hvis det understøttes af din grafikprocessor, <acronym
+>GPU</acronym
+> (den komplekse kreds som styrer moderne grafikkort), aktiveres acceleration med Render. Dette understøttes bedst af <trademark
+>NVIDIA</trademark
+>, og mindre fuldstændigt af ATI-kort.</para>
+
+<programlisting
+>Section "Device"
+....
+....
+    Option     "RenderAccel" "true"
+....
+....
+EndSection</programlisting>
+
+<para
+>&kappname; skulle nu være tilgængelig. For mere information, se <link linkend="problems"
+>OSS</link
+>.</para>
+
+</sect1>
+
+</chapter>
+
+<chapter id="settings">
+<title
+>Opsætning</title>
+
+<para
+>Dette kapitel beskriver de parametre du kan finjustere, hvad deres synlige resultat bliver og deres påvirkning på ydelsen.</para>
+
+<sect1 id="translucency">
+<title
+>Gennemsigtighed</title>
+
+<para
+>Et gennemsigtigt objekt er et som lader lys passere gennem. Når det gælder vinduer på desktoppen, betyder det at indholdet i vinduet ses gennem det som er øverst.</para>
+
+<para
+>Gennemsigtighed lader dig betone visse vinduer, få en tredimensionel visning af desktoppen, holde styr på dækkede vinduer og blot se sødt ud. Prisen er at det koster noget systemkapacitet at sammensætte ting og sager.</para>
+
+<para
+>Du kan indstille gennemsigtighed uafhængigt for følgende punkter:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Aktive vinduer</guilabel
+></term>
+<listitem
+><para
+>Det foreslås at du deaktiverer gennemsigtighed for det aktive vinduet. Den hovedsagelige grund er ydelse, og dernæst at når du kigger på indholdet i et gennemsigtigt vindue skal hjernen bortfiltrere den irriterende information som lyser gennem, hvilket er trættende.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Inaktive vinduer</guilabel
+></term>
+<listitem
+><para
+>Hvis du stæller in inaktive vindue at være gennemsigtige, synes aktive vinduer at være betonede og er nemmere at fokusere på. Hvis du alligevel vælger en lavere værdi, kan du have svært ved at finde et inaktivt vindue. Hvis du vælger meget lave værdier (&lt; 20 &percnt;) kan du måske ikke skelne rækkefølgen vinduer ligger ovenpå hinanden, så du kan klikke på knappen <guibutton
+>O.k.</guibutton
+> ved en fejl i en dialog, når du blot ville aktivere et vindue. De bedste værdier er mellem 60 &percnt; og 80 &percnt;.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Flyttende vinduer</guilabel
+></term>
+<listitem
+><para
+>Selvom det er en pæn effekt med meget gennemsigtighed (med værdien &lt; 20 &percnt;) når vinduer flyttes, bliver prisen at betale i ydelse høj, især hvis du ikke deaktiverer skygger (se nedenfor). Prøv det og hvis du føler at systemet er langsomt, så behold vinduer som flyttes ugennemsigtige. Denne værdi gælder også vinduer hvor størrelsen er ved at ændres.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Dokkede vinduer</guilabel
+></term>
+<listitem
+><para
+>Eftersom statusfelter såsom Kicker sjældent eller aldrig flyttes, og oftest har begrænset størrelse, er dette kun visuelt og påvirker ikke systemets ydelse negativt.</para
+>  
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Behandl vinduer med "Behold over andre" som aktive</guilabel
+></term>
+<listitem
+><para
+>Hvis du indstiller et vindue at være ovenfor andre, vil du ofte have fokus på det, så det kan give mening at give det samme betoning.</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Deaktivér ARGB-vindue</guilabel
+></term>
+<listitem
+><para
+>XRender understøtter vindue med alfamaske, dvs. gennemsigtige dele. For øjeblikket findes der ingen eller meget få programmer som benytter sig af denne funktion, eftersom den ikke giver mening uden at bruge sammensætningshåndtering. Dette kan ændres i fremtiden.</para>
+<para
+>På den anden side, indstiller de fleste GTK 1.x-programmer (f.eks. <application
+>xmms</application
+>) en sådan alfamaske, hvilket resulterer i næsten obrugelige vinduer (så længe vinduet som ligger under ikke er sort), så du kan deaktivere understøttelse for ARGB-vinduer her for at kunne bruge GTK-programmer. Det kommer forhåbentlig til at blive rettet for GTK i en nær fremtid.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</sect1>
+
+<sect1 id="shadows">
+<title
+>Skygger</title>
+<para
+>Hvorfor skulle nogen ville at vindue kaster skygger? Ja, måske kun fordi det ser pænt ud, eller for at det tillader bedre separation af vinduer, eller... for at det ser pænt ud!</para
+> 
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Brug skygger</guilabel
+></term>
+<listitem
+><para
+>En skygge koster en vis ekstra ydelse for processoren og grafikprocessoren, så de kan deaktiveres mens en generel alfakanalmulighed beholdes.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Aktivt vindues størrelse</guilabel
+></term>
+<term
+><guilabel
+>Inaktivt vindues størrelse</guilabel
+></term>
+<term
+><guilabel
+>Dokket vindues størrelse</guilabel
+></term>
+<listitem
+><para
+>Du kan vælge flere forskellige skyggestørrelser for forskellige vinduestilstande eller -typer. Værdierne er ikke absolutte, men gælder skærmens opløsning.</para>
+<para
+>I princippet kan du indstille alle de værdier du vil (hvis du redigerer indstillingsfilen med en teksteditor, langt mere end <quote
+>32</quote
+> som tilbydes), men større skygger koster mere ydelse for processoren og grafikprocessoren.</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Lodret position</guilabel
+></term>
+<term
+><guilabel
+>Vandret position</guilabel
+></term>
+<listitem
+><para
+>Normalt ville vinduet kaste en skygge <quote
+>ens rundt omkring</quote
+>, som svarer til en lyskilde ligefrem. Brugere bekendte med &MacOS; vil måske have en lodret forskydning, mens brugere af &Windows; kan foretrække en vis forskydning mod sydøst. Eksperimentér med værdier indtil du er tilfreds.</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Skyggefarve</guilabel
+></term>
+<listitem
+><para
+>Oftest ses skygger som fravær af lys i grå nuancer (så den maksimale skygge er sort, eller slet intet lys). Men dette er minsandten en virtuel verden, og hvis du til og med vil have lyserøde skygger, så hvorfor ikke?</para
+> 
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Fjern skygger ved bevægelse</guilabel
+></term>
+<listitem
+><para
+>Markér dette hvis du behøver mere ydelse (især når du bruger  gennemsigtige vinduer ved forflytning).</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Fjern skygger ved ændring af størrelse</guilabel
+></term>
+<listitem
+><para
+>Det er en god idé at markere dette hvad enten gennemsigtige vinduer bruges ved størrelsesændring (og forflyttning) eller ej. Punktafbildningerne af vinduernes skygger skal laves om hele tiden under størrelsesændring, hvilket giver stor påvirkning på systemydelsen.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</sect1>
+
+<sect1 id="effects">
+<title
+>Effekter</title>
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Indtoning af vindue</guilabel
+></term>
+<term
+><guilabel
+>Svind hen mellem opacitetsændringer</guilabel
+></term>
+<listitem
+><para
+>I stedet for kun at lade et nyt vindue dukke op, kan du ville tone det langsomt ind. Selv om det ser imponerende ud, har det en lige så imponerede pris i ydelse, og det er sært at bruge vinduer som er ved at tones på en meningsfuld måde. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><guilabel
+>Indtoningshastighed</guilabel
+></term>
+<term
+><guilabel
+>Udtoningshastighed</guilabel
+></term>
+<listitem
+><para
+>På grund af brugbarhedsgrundene som nævnes under <guilabel
+>Ton vindue ind</guilabel
+>, er det mest praktisk at bruge en hurtig indtoningshastighed og (for mere øjegodter) en langsom udtoningshastighed. Det giver behagelige effekter og et system som føles blødt, samt lav latenstid inden information vises.</para
+> 
+</listitem>
+</varlistentry>
+</variablelist>
+</sect1>
+
+</chapter>
+
+<chapter id="problems">
+<title
+>Problemer</title>
+
+<para
+>Hele sammensætningsudvidelsen er meget ny. Den kan forårsage alvorlige problemer, og til og med få X til at bryde sammen, så <emphasis
+>du advares stærkt mod at aktivere sammensætningsudvidelsen i Xorg.conf for kritiske produktionssystemer</emphasis
+>. Hvis du alligevel vil tage risikoen med et noget mindre stabilt system, er det virkelig dejligt at se en del øjengodter.</para>
+
+<para
+>I følgende tilfælde vil du måske mærke nogle problemer. Her er nogle populære måder at komme forbi dem: </para>
+
+<qandaset>
+<qandaentry>
+<question>
+<para
+>Jeg har X.org 6.8.x, men &kappname; starter ikke</para>
+</question>
+<answer>
+<para
+>Du skal eksplicit aktivere udvidelsen Composite. Tilføj en ny sektion i  /etc/X11/XorgConfig:</para>
+<programlisting
+>Section "Extensions"
+   Option "Composite" "Enable"
+EndSection</programlisting>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>O.k., &kappname; virker, men det er forfærdelig langsom</para>
+</question>
+<answer>
+<para
+>Hvis det understøttes af din grafikprocessor, <acronym
+>GPU</acronym
+>, (i hovedsagen <trademark
+>NVIDIA</trademark
+>-kort, og i et vist mål ATI-kort), så sørg først for at undersøge om du har aktiveret acceleration med Render.</para>
+<programlisting
+>Section "Device"
+....
+....
+Option     "RenderAccel" "true"
+....
+....
+EndSection
+</programlisting>
+
+<para
+>Hvis den stadigvæk er langsom kan du forsøge at justere hukommelsesforbruget. Mindsk enten skærmdybden (f.eks. fra 24 til 16) eller mindsk opløsningen (f.eks. fra 1280x1024 til 1024x768).</para
+> 
+
+<para
+>Bemærk at den begrænsende faktor for sammensætningsudvidelsen for øjeblikket synes at være processorens cachestørrelse.</para>
+
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Efter at have aktiveret sammensætningshåndteringen kan jeg ikke længere køre nogen <acronym
+>GLX</acronym
+>-programmer. Jeg har et <trademark
+>NVIDIA</trademark
+>-kort.</para>
+</question>
+<answer>
+<para
+>For at forhindre nogle problemer deaktiverede <trademark
+>NVIDIA</trademark
+> støtte  for GLX når sammensætningshåndteringen er aktiv. At aktivere det igen er muligt, men kan forårsage problemer for visse kombinationer af kerne og grafikprocessor.</para
+> 
+<programlisting
+>Section "Device"
+....
+....
+Option  "AllowGLXWithComposite" "true"
+....
+....
+EndSection
+</programlisting>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Jeg ville spille et spil med <acronym
+>SDL</acronym
+> (men ikke <acronym
+>GL</acronym
+>), såsom <application
+>scummvm</application
+>, men når sammensætningshåndtereren er aktiveret kan jeg kun se en skygge.</para>
+</question>
+<answer>
+<para
+>Dette er et problem med PictType som rapporteres af SDL.</para>
+
+<para
+>En måde at komme forbi problemet er:</para>
+<screen
+>I stedet for direkte at kalde <command
+>scummvm</command
+>, kald
+<command
+>SDL_VIDEO_X11_VISUALID=0x24 scummvm</command
+>. Dette beder SDL om at
+bruge et format som understøttes og du kan spille som sædvanligt. </screen>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Program XXX nægter at starte efter sammensætningshåndteringen er aktiveret.</para>
+<para
+>Program YYY forstyrrer X efter sammensætningshåndteringen er aktiveret.</para>
+<para
+>Program ZZZ ser mærkeligt ud efter sammensætningshåndteringen er aktiveret.</para>
+</question>
+<answer>
+<para
+>Sammensætningsudvidelsen er stadigvæk eksperimentel.</para>
+<para
+>En måde at komme forbi problemet er:</para>
+<para
+>I stedet for at kalde <command
+>programnavn</command
+> direkte, kald <command
+>XLIB_SKIP_ARGB_VISUALS=1 programnavn</command
+></para>
+<para
+>Programmer som er kendte for at give problemer:</para>
+<itemizedlist>
+<listitem
+><para
+>Alle GTK 1-program (t.ex. <application
+>gmplayer</application
+>, <application
+>xmms</application
+>, <application
+>gaim</application
+>): Mislykkes at starte, ser unyttigt mærkelige ud, eller får X til at bryde sammen.</para
+></listitem>
+<listitem
+><para
+>&kuickshow;: Viser kun en sort ramme</para
+></listitem>
+<listitem
+><para
+>&Qt; <application
+>Designer</application
+>: Får X til at bryde sammen</para
+></listitem>
+<listitem
+><para
+>&kopete;: Får X til at bryde sammen</para
+></listitem>
+<listitem
+><para
+>&kolf;: Får X til at bryde sammen</para
+></listitem>
+</itemizedlist>
+</answer>
+</qandaentry>
+
+<qandaentry>
+<question>
+<para
+>Jeg forsøger at kigge på en video, men ser kun artefakter i videovinduet.</para>
+</question>
+<answer>
+<para
+>Du bruger <quote
+>xv</quote
+> som videogrænseflade. Det er overlay-tilstanden, hvor videoindholdet skrives direkte til videokortets hukommelse, og går forbi X. Derfor synes vinduet at være statisk (farvet baggrund) og opdateres ikke af skadeudvidelsen.</para>
+<para
+>Det kommer forhåbentligt til at blive rettet i fremtiden. For øjeblikket fik jeg de bedste resultater ved brug af <application
+>Xine</application
+>, men at vise gennemsigtige vinduer er alligevel ikke hurtigt.</para>
+</answer>
+</qandaentry>
+
+</qandaset>
+</chapter>
+
+<chapter id="credits-and-licenses">
+<title
+>Medvirkende og licenser</title>
+
+<sect1 id="authors">
+<title
+>Forfattere</title>
+<para
+>Thomas Luebking <email
+>baghira-style@gmx.net</email
+>: Redaktør</para>
+&underFDL; &underGPL; </sect1>
+
+
+</chapter>
+
+</book>
+<!--
+Local Variables:
+mode: sgml
+sgml-omittag: nil
+sgml-shorttag: t
+End:
+-->
+

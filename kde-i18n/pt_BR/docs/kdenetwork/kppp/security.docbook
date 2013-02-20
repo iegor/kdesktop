@@ -1,0 +1,140 @@
+<chapter id="security">
+<title
+>O &kppp; e recomendações de segurança</title>
+
+<para
+>Esta seção é principalmente para super-usuários (<systemitem
+>root</systemitem
+>), pessoas com grande necessidade de segurança, ou simplesmente pessoas interessadas tecnicamente. Não é necessário ler isto se você somente usa o &Linux; em sua casa para uso pessoal, apesar de sempre ser bom aprender algumas coisinhas a mais sobre o seu sistema.</para>
+
+<sect1 id="security-restricting-access">
+<title
+>Restringindo o acesso ao &kppp;</title>
+
+<para
+>Um administrador de sistema deve querer restringir o acesso como quem tem permissão de usar o &kppp;. Existem duas maneiras de realizar isto.</para>
+
+<sect2 id="security-group-permissions">
+<title
+>Restringindo o acesso com permissões de grupo</title>
+
+<para
+>Crie um novo grupo (você pode desejar nomeá-lo como <systemitem
+>discagem</systemitem
+> ou similar), e coloque cada usuário que deve ter permissão para usar o &kppp; neste grupo. Então digite em um terminal:</para>
+
+<screen
+><prompt
+>#</prompt
+> <userinput
+><command
+>chown</command
+> <option
+>root.discagem</option
+> <filename
+>/opt/kde/bin/kppp</filename
+></userinput>
+<prompt
+>#</prompt
+> <userinput
+><command
+>chmod</command
+> <option
+>4750</option
+> <filename
+>/opt/kde/bin/kppp</filename
+></userinput
+>
+</screen>
+
+<para
+>Isto considera que o &kde; foi instalado em <filename class="directory"
+> /opt/kde/</filename
+> e que seu novo grupo foi nomeado <systemitem
+>discagem</systemitem
+>.</para>
+
+</sect2>
+
+<sect2 id="security-kppps-way">
+<title
+>Restringindo o acesso através do &kppp;</title>
+
+<para
+>Antes de fazer qualquer coisa, o &kppp; verifica se existe um arquivo nomeado <filename
+>/etc/kppp.allow</filename
+>. Se este arquivo existir, somente os usuários nomeados neste arquivo terão permissão de discar. Este arquivo deve ser legível para todos (mas é claro <emphasis
+>NÃO</emphasis
+> gravável). Somente nomes de login são reconhecidos, logo você não pode usar <acronym
+>UID</acronym
+>s neste arquivo. Aqui está um exemplo simples:</para>
+
+<screen
+># /etc/kppp.allow
+# linhas de comentário como esta são ignoradas
+# bem como linhas vazias
+
+frederico
+carlos
+diana
+</screen>
+
+<para
+>No exemplo acima, somente os usuários <systemitem
+>frederico</systemitem
+>, <systemitem
+>carlos</systemitem
+> e <systemitem
+>diana</systemitem
+> tem permissão de discagem, bem como cada usuário com uma <acronym
+>UID</acronym
+> de 0 (assim você não precisa listar o root explicitamente neste arquivo).</para>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="security-why-suid">
+<title
+>O &kppp; possui o bit <acronym
+>SUID</acronym
+> ligado? Qual a implicação para segurança?</title>
+
+<para
+>É virtualmente impossível escrever um discador sem o bit <acronym
+>SUID</acronym
+> que seja tanto seguro como fácil de usar para usuários inexperientes. O &kppp; lida com os riscos de segurança com a estratégia a seguir.</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Imediatamente após o programa iniciar, o &kppp; se bifurca.</para>
+</listitem>
+<listitem>
+<para
+>O processo mestre, que manipula todas as operações da <acronym
+>GUI</acronym
+> (como a interação com o usuário), desliga o estado do <acronym
+>SUID</acronym
+> após a bifurcação, e se executa com privilégios normais do usuário.</para>
+</listitem>
+<listitem>
+<para
+>O processo escravo mantém estes privilégios, e é responsável por todas as ações que precisam de privilégios de <systemitem
+>root</systemitem
+>. Para manter esta parte segura, nenhuma chamada de biblioteca do &kde; ou &Qt; são usadas aqui, apenas chamadas de bibliotecas simples. O código fonte para este processo é curto (cerca de 500 linhas) e bem documentado, assim é fácil para você verificar por falhas de segurança.</para>
+</listitem>
+<listitem>
+<para
+>Os processos mestre e escravo comunicam-se com o padrão &UNIX; <acronym
+>IPC</acronym
+>.</para>
+</listitem>
+</itemizedlist>
+
+<para
+>Agradecimentos especiais para Harri Porten por escrever este excelente pedaço de código. Pensava-se que seria impossível, mas ele dominou-o em uma semana.</para>
+
+</sect1>
+
+</chapter>

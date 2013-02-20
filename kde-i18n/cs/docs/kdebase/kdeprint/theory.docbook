@@ -1,0 +1,675 @@
+<chapter id="theory">
+<title
+>Trochu teorie: &CUPS;, <acronym
+>IPP</acronym
+>, &PostScript; a <application
+>Ghostscript</application
+></title>
+
+<para
+>Tato kapitola poskytuje všeobecný teoretický popis tisku se zaměřením na &CUPS;. Pokud tyto informace nepotřebujete, můžete ji <link linkend="getting-started"
+>přeskočit</link
+>. Věřím, že se k této kapitole vrátíte, protože někdy to chce trochu teorie pro řešení praktických problémů.</para>
+
+<sect1 id="basics-of-printing">
+<title
+>Základy o tisku</title>
+
+<para
+>Tisk je jedna ze složitějších kapitol v technologiích <acronym
+>IT</acronym
+>.</para>
+
+
+<para
+>Kdysi dávno musel vývojář programu, který měl podporovat tisk, vyvinout svoje vlastní tiskové ovladače. To bylo dost složité, protože různé programy měli různé formáty souborů. Dokonce ani programy ze stejné oblasti, například textové procesory, nepodporovali své formáty navzájem. Takže neexistovalo žádné společné rozhraní pro tiskárny a proto programy podporovali pouze několik málo vybraných modelů.</para>
+
+<para
+>Jak se objevovali nové modely, autoři programů museli psát nové ovladače. Ani výrobci nemohli zajistit, aby jejich tiskárny byly podporované každým programem, který existoval (i když jich bylo výrazně méně než dnes).</para>
+
+<para
+>Starat se o deset aplikací a 12 tiskáren znamenalo pro správce systému, že se musí starat o 120 ovladačů. Proto se zvyšoval tlak na vývoj jednotného rozhraní mezi programy a tiskárnami.</para>
+
+<para
+>Vznik <quote
+>jazyků pro popis stránky PDL</quote
+>, které standardním způsobem popisovali grafickou reprezentaci čar na papíru (nebo na jiném zařízení, například monitoru, sázecím stroji apod) byla událost, která vyplnila jednu z velkých mezer. </para>
+
+<para
+>Jedním z nich byl &PostScript; od firmy Adobe. Znamenal, že se programátor aplikace mohl zaměřit na svůj program a jako výstup vygenerovat popis stránky v jazyce &PostScript;. A vývojáři tiskáren se mohli zaměřit na to, aby jejich zařízení &PostScript; podporovali.</para>
+
+<para
+>Samozřejmě se objevili další metody popisu. Nejdůležitější protivníci pro &PostScript; byli <acronym
+>PCL</acronym
+> (<quote
+>Print Control Language</quote
+> od &Hewlett-Packard;), <quote
+>ESC/P</quote
+> (od firmy Epson) a <acronym
+>GDI</acronym
+> (<quote
+>Graphical Device Interface</quote
+> of firmy &Microsoft;.</para>
+
+<para
+>To, že se tyto jazyky objevili, zjednodušilo život a podpořilo další rozvoj. Ale skutečnost, že stále ještě existují různé nekompatibilní a konkurující si jazyky, stále dost komplikuje život uživatelům, administrátorům, vývojářům a výrobcům.</para>
+
+<sect2>
+<title
+>&PostScript; v paměti - bitmapa na papíru</title>
+
+<para
+>&PostScript; je nejčastěji používaný v profesionálním prostředí, jako je PrePress a tiskové služby. V doménách operačních systémů &UNIX; a &Linux; je &PostScript; standardem v oblasti <acronym
+>PDL</acronym
+>. Skoro každý program zde generuje reprezentaci stránek v &PostScript; hned po aktivování akce <quote
+>Tisk</quote
+>. Podívejme se na jednoduchý (ručně napsaný) příklad kódu &PostScript;. Následující výpis popisuje dvě jednoduché kresby:</para>
+
+<example id="coded-postscript"
+> <title
+>Kód &PostScript;</title
+> <screen
+>%!PS
+100 100 moveto
+0 50 rlineto
+50 0 rlineto
+0 -50 rlineto
+closepath
+.7 setgray fill
+% first box over; next
+160 100 moveto
+0 60 rlineto
+45 10 rlineto
+0 -40 rlineto
+closepath
+.2 setgray fill</screen
+> </example>
+
+<para
+>Tento kód sděluje imaginárnímu &PostScript; <quote
+>peru</quote
+>, aby nakreslilo daný tvar a potom ho vyplnilo různými odstíny šedé. První část se dá přeložit jako <quote
+>Přejdi na souřadnice (100, 100) a nakresli čáru dlouhou 50 nahoru, potom další odtud doprava, potom zase dolů a celý tvar uzavři. Teď ho vyplň 70% šedou.</quote
+></para>
+
+<example id="rendered-postscript"
+> <title
+>Renderovaný &PostScript;</title
+> <mediaobject
+> <imageobject
+> <imagedata fileref="ps-boxes.png" format="PNG"/> </imageobject
+> <textobject
+> <phrase
+><xref linkend="coded-postscript"/> příklad renderování jako obrázek.</phrase
+> </textobject
+> </mediaobject
+> </example>
+
+<para
+>Samozřejmě, kód v jazyku &PostScript; může být daleko složitější než je tento jednoduchý příklad. Je to úplný programovací jazyk s různými operátory a funkcemi. Můžete dokonce napsat &PostScript; program, který bude počítat hodnotu Pí, zformátuje pevný disk, nebo vytvoří soubor. Hlavní síla jazyka &PostScript; je v oblasti popisu rozložení grafických objektů na stránce: dokáže je i zvětšit, převrátit, otočit, transformovat a rozdělit - všechno, co si jen dokážete na kuse papíru představit -- písmena v různých řezech, obrázky, tvary, odstíny, barvy, čáry, body, ...</para>
+
+<para
+>Soubor &PostScript; je relativně abstraktní reprezentace jedné nebo více tisknutých stránek. Ideálně by měl popisovat stránky nezávisle na zařízení. &PostScript; není přímo <quote
+>viditelný</quote
+>, žije pouze na pevných discích a v <acronym
+>RAM</acronym
+> jako kódová reprezentace vytištěných stran.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Rastrové obrázky na listech papíru</title>
+
+<para
+>To, co vidíte na papíru, je skoro vždy <quote
+>rastrový obrázek</quote
+>. I když vám mozek říká, že vaše oči vidí čáru, pomocí kvalitní lupy zjistíte, že je tam hromada malých teček... (Jedním z protipříkladů jsou čáry nakreslené <quote
+>plotry s perem</quote
+>). A toto je jediná věc, kterou dnešní tiskárny dokážou: jednoduché body v různých velikostech, barvách a rozlišení tak, aby vytvořili <quote
+>obraz stránky</quote
+> z různých bodových vzorů.</para>
+
+<para
+>Různé tiskárny vyžadují přípravu rastrových obrázků různě. Například takové inkoustové tiskárny: v závislosti na rozlišení, počtu použitých barev (ty nejkvalitnější mají až 7, lacinější používají 3), počtu dostupných trysek (některé tiskové hlavy jich mají víc jak 100), použitém algoritmu pro <quote
+>dithering</quote
+> a dalších jiných parametrech je výsledný rastrový formát a způsob přenosu velmi závislý na tom daném modelu.</para>
+
+<para
+>Vraťme se zpět k tiskárnám pro <quote
+>Line Printer Daemon</quote
+>, které chrlili řádky <acronym
+>ASCII</acronym
+> textu mechanicky na dlouhý spojitý papír poskládaný cik-cak jako <acronym
+>had</acronym
+>, který si tahali z kartónových krabic pod stolem... To je ale rozdíl oproti dnešku!</para>
+
+</sect2>
+
+
+<sect2>
+<title
+><acronym
+>RIP</acronym
+>: Od &PostScript; k rastru</title>
+
+<para
+>Před přenosem finálního rastrového obrázku na papír je nutné ho nějak spočítat z reprezentace &PostScript;. Je to velmi náročné na výpočet. Nazývá se to <quote
+>Raster Imaging Process</quote
+>, zkráceně <quote
+><acronym
+>RIP</acronym
+></quote
+>.</para>
+
+<para
+>Tiskárny &PostScript; se o <acronym
+>RIP</acronym
+> postarají samy. Jednoduše jim pošlete soubor &PostScript;. <quote
+>Raster Imaging Processor</quote
+> (též zvaný <acronym
+>RIP</acronym
+>) v tiskárně je zodpovědný (a specializovaný) za kvalitní vykonání interpretování popisu &PostScript; a vytvoření rastrového obrazu pro tisk na papír.</para>
+
+<para
+>Menší zařízení &PostScript; mají hardwarový <acronym
+>RIP</acronym
+> ve speciálním čipu. Velké profesionální tiskárny často mají <acronym
+>RIP</acronym
+> implementovaný jako softwarový <acronym
+>RIP</acronym
+> ve speciálním rychlém počítači se systémem &UNIX;, často na Sun SPARC Solaris nebo &SGI; &IRIX;.</para>
+
+</sect2>
+
+<sect2>
+<title
+><application
+>Ghostscript</application
+> jako softwarový <acronym
+>RIP</acronym
+></title>
+
+<para
+>Ale co se stane, pokud nemáte dost štěstí a nemáte tiskárnu pro &PostScript;?</para>
+
+<para
+>Potřebujete před posláním tiskových dat udělat <acronym
+>RIP</acronym
+>. Musíte zpracovat vygenerovaný &PostScript; ještě na vašem počítači (tiskovém klientovi). Musíte vytvořit přesný rastrový formát cílové tiskárny.</para>
+
+<para
+>Jinými slovy, protože se nemůžete spoléhat na to, že tiskárna rozumí jazyku &PostScript;, je tento problém dost komplikovaný. Potřebujete software, který se o to pokusí a vyřeší všechny problémy, které s tím souvisí.</para>
+
+<para
+>To je přesně to, co dělá známý balík &ghostscript; pro hodně operačních systémů &Linux;, *BSD a &UNIX;, které potřebují tisknout na tiskárnách, které nepodporují &PostScript;. &ghostscript; je interpret jazyka &PostScript;, softwarový <acronym
+>RIP</acronym
+>, který dokáže fungovat pro více různých zařízení.</para>
+
+</sect2>
+
+<sect2>
+<title
+><quote
+>Ovladače</quote
+> a <quote
+>filtry</quote
+> všeobecně</title>
+
+<para
+>Pro vytvoření rastrových obrázků ze vstupu &PostScript; používá &ghostscript; koncept <quote
+>filtrů</quote
+>. &ghostscript; obsahuje hodně různých filtrů, některé specializované pouze pro jeden model tiskárny. Tyto specializované filtry pro &ghostscript; byly často vyvinuty bez podpory a souhlasu výrobců tiskáren. Bez přístupu k dokumentaci a specifikacím to byl bolestivý proces zpětného inženýrství při zjišťování protokolů a formátů dat.</para>
+
+<para
+>Ne všechny &ghostscript; filtry fungují stejně dobře. Některé novější, jako například filtr <application
+>stp</application
+> z projektu <application
+>Gimp</application
+> Print, generují výborné výsledky vedoucí k fotografické kvalitě porovnatelné dokonce i s ovladači z &Microsoft; &Windows;.</para>
+
+<para
+>V prostředí &UNIX; a &Linux; většina aplikací generuje pro tisk &PostScript;. Filtry jsou ty skutečné nástroje každého tiskového systému. Vlastně generují správné bitové mapy pro každý vstup &PostScript; pro cílové tiskárny, které &PostScript; nepodporují.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Ovladače a filtry a backendy v CUPS</title>
+
+<para
+>&CUPS; používá svoje vlastní filtry, i když je filtrovací systém založen na Ghostscript. Hlavní filtry pstoraster a imagetoraster jsou přímo odvozeny z kódu Ghostscript. &CUPS; je upravil a vylepšil a převedl do jasných a oddělených modulů.</para>
+
+<para
+>Následující obrázek (vytvořený v &kivio;) poskytuje přehled filtrů a backendů v &CUPS; jak spolu souvisí. <quote
+>Tok</quote
+> dat je shora dolů. Backendy jsou speciální filtry: nepřevádějí data do jiného formátu ale posílají už připravené soubory na tiskárnu. Pro různé protokoly přenosu existují různé backendy.</para>
+
+<screenshot id="architecture-diagram"
+> <screeninfo
+>Spuštěný dialog &kprinter; (náhled kresby &kivio;) </screeninfo
+> <mediaobject
+> <imageobject
+> <imagedata fileref="cups-filterarchitecture-kivio-70Percent-scaled.png" format="PNG"/></imageobject
+> <textobject
+> <phrase
+>Spuštěný dialog &kprinter; (náhled kresby &kivio;)</phrase
+></textobject
+> </mediaobject
+> </screenshot>
+
+</sect2>
+<sect2>
+<title
+>Správa front a tiskových démonů</title>
+
+<para
+>Kromě velké části filtrování při generování bitových map pro tisk potřebuje tiskový systém i mechanizmus pro správu front. To znamená zařazení různých úloh od různých uživatelů pro různé tiskárny a různé filtry a poslat je správně na místo určení. O to se stará tiskový démon.</para>
+
+<para
+>Tento démon udržuje pořádek. Je zodpovědný za správu úloh: uživatelé by měli mít možnost zrušit, zastavit, restartovat, atd. svoje úlohy (ale ne úlohy jiných lidí) a podobně.</para>
+
+</sect2>
+
+</sect1>
+
+
+
+<sect1 id="cups-and-ppd">
+<title
+>Exkurze: Jak <quote
+>CUPS</quote
+> používá sílu &PPD;</title>
+
+<para
+>Teď, když už víte, jak se soubor v jazyku &PostScript; převádí na rastrový obrázek, možná se ptáte: <quote
+>No když je tedy tak moc různých druhů výstupních zařízení: liší se v rozlišení, používají se různé papíry, existují různá dokončovací zařízení (oboustranný tisk, brožury, svazování, první strany s jinou barvou apod), jako to funguje s tím, že je &PostScript; nezávislý na zařízení?</quote
+></para>
+
+<para
+>Odpověď přišla s formátem &PostScript; Printer Description (soubory &PPD;). &PPD; popisuje všechny funkce, které závisí na zařízení a daná tiskárna je dokáže využít. Obsahuje i příkazy, které se mají použít pro volání některých funkcí zařízení. Ale &PPD; není uzavřená kniha, jsou to jednoduché textové <acronym
+>ASCII</acronym
+> soubory.</para>
+
+<para
+>&PPD; <quote
+>vymyslela</quote
+> firma Adobe, aby zjednodušila výrobcům implementaci svých vlastních funkcí v &PostScript; tiskárnách, ale aby zůstal standardní způsob, jako to dělat. &PPD; jsou dobře popsané a dobře zdokumentované. Jejich specifikace je vlastně otevřený standard.</para>
+
+<sect2 id="ppd-files">
+<title
+>Tiskové možnosti závislé na zařízení</title>
+
+<para
+>Nezapomínejte, že pokročilý &PostScript; tisk byl původně vyvinut pro &Microsoft; &Windows; a Apple &Mac;. Dlouho byly tyto moderní tiskárny jednoduše nedostupné pro systémy &Linux; a &UNIX;. &CUPS; to úplně změnil. &CUPS; má velmi dobrý vztah k &PPD; a proto dokáže existující &PPD; použít naplno ve všech systémech, které &CUPS; používají.</para>
+
+<para
+>Pomocí &PPD; mohli výrobci tiskáren přidat do svých produktů specializované funkce, jako je oboustranný tisk, třídění, vázání, dokončování apod. Tiskové ovladače načítají &PPD; stejně jako jiné konfigurační soubory. Proto se ovladač dozví o dostupných volbách a ví, jak je použít, takže je může poskytnout i pomocí &GUI; uživateli. Pomocí tohoto mechanizmu stále můžete tisknout &PostScript; stránky <quote
+>nezávisle na zařízení</quote
+>  a nad ním určit dokončovací možnosti na zařízení závislé, které se přidají do souboru &PostScript; vytvořeného aplikací.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Kde získat &PPD; pro &PostScript; tiskárny </title>
+
+<para
+></para>
+
+<para
+>&CUPS; dokáže použít originální &PPD; z &Windows; distribuované výrobci &PostScript; tiskáren .Obvykle jsou zadarmo a můžete si je stáhnout z každého počítače s &Windows;, který má pro váš model nainstalovaný ovladač &PostScript;, nebo z disket, které se dodávají s vaší tiskárnou. Existuje i několik míst na webu, kde je můžete získat.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Jak se používají speciální &PPD; i pro tiskárny bez &PostScript; podpory</title>
+
+<para
+>Už víte, že tiskárny &PostScript; dokáží používat &PPD;. Ale co s ostatními, které &PostScript; nepodporují? &CUPS; udělal další výborný trik: pomocí stejného formátu a struktury dat jako mají &PPD; v &PostScript; světě dokáže popsat dostupné možnosti tisku stejně i pro tiskárny, které &PostScript; nepodporují. Pro tyto speciální případy &CUPS; přidal několik speciálních možností (přesněji řádek, který určuje, jaký filtr se má pro další zpracování souboru &PostScript; použít).</para>
+
+<para
+>Takže vývojáři mohou používat stejný způsob zpracování souborů Printer Description Files pro dostupné formáty pro všechny druhy tiskáren. Samozřejmě vývojáři &CUPS; se nemohou spoléhat na to, že výrobci tiskáren nepodporujících &PostScript; začnou naráz vyvíjet &PPD;. Museli začít sami a vytvořit je od začátku. V komerční verzi &CUPS; nazvané <application
+>ESP PrintPro</application
+> je podporovaných více jak 1000 takových tiskáren.</para>
+
+<para
+>Mezitím vzniklo hodně &PPD; určených speciálně pro &CUPS;. Ani dnes většina z nich nepochází od výrobců tiskáren, ale od nadšenců. &CUPS; ukázal, že to jde a ostatní se přidali: tam, kde byl tisk na &Linux; a &UNIX; před dvěma roky problém, dnes existuje podpora pro velké množství tiskáren včetně 7-barevných inkoustových tiskáren podporujících fotografickou kvalitu.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Různé způsoby jak získat &PPD; pro tiskárny bez &PostScript; podpory</title>
+
+<para
+>&PPD; pro &CUPS; a tiskárny bez &PostScript; podpory můžete získat z různých míst na webu:</para>
+
+<itemizedlist
+> <listitem
+> <para
+> za prvé, na <ulink url="http://www.linuxprinting.org"
+>www.linuxprinting.org</ulink
+> existuje databáze, která umožňuje generovat &PPD; soubory on-line pomocí <quote
+>CUPS-O-Matic</quote
+> pro každou tiskárnu podporovanou tradičním systémem &ghostscript;. To zjednodušuje přechod na &CUPS;. Pokud vaše tiskárna funguje s &ghostscript; dobře, použijte CUPS-O-Matic pro přizpůsobení vašeho ovladače v systému &CUPS; a získáte to nejlepší z obou systémů.</para
+> </listitem
+> <listitem
+> <para
+>za druhé, pro &CUPS; existují &PPD; pro více jak 120 modelů tiskáren, které podporují nový univerzální ovladač <application
+>stp</application
+>. <application
+>stp</application
+> (původně znamenal Stylus Photo) teď vyvíjí projekt gimp-print. Začal ho vytvářet Mike Sweet, hlavní vývojář &CUPS;, a nyní je dostupný na <ulink url="http://gimp-print.sourceforge.net"
+>gimp-print.sourceforge.net</ulink
+>. Tento ovladač podporuje fotografickou kvalitu na mnohých moderních inkoustových tiskárnách a dokáže podporovat až 120 &CUPS; &PPD; souborů. Podporuje i tiskárny &HP; LaserJet a DeskJet, <trademark class="registered"
+>Epson</trademark
+> Stylus a Photo Color a i některé tiskárny <trademark class="registered"
+>Canon</trademark
+> a <trademark class="registered"
+>Lexmark</trademark
+>.</para
+> </listitem
+> <listitem
+> <para
+>za třetí, existuje komerční rozšíření &CUPS; od vývojářů &CUPS;: jmenuje se <application
+>ESP PrintPro</application
+> a obsahuje ovladače pro více jak 2300 tiskáren. Obsahuje i vylepšené verze filtrů imagetoraster a pstoraster.</para
+> </listitem
+> </itemizedlist>
+
+<para
+>Díky &CUPS; je opravdu jednoduché, aby výrobci začali podporovat systémy &Linux; a &UNIX; ve svých modelech za nízkou cenu. Modulární rámec &CUPS; podporuje připojení každého filtru (=ovladače) s minimální námahou a &CUPS; tak umožňuje přístup ke všem svým funkcím.</para>
+
+<para
+>Více se o &CUPS; dozvíte z &CUPS; dokumentace dostupné na <ulink url="http://www.cups.org/documentation.html"
+>http://www.cups.org/documentation.html</ulink
+> a <ulink url="http://wwww.danka.de/printpro/faq.html"
+>http://www.danka.de/printpro/faq.html</ulink
+>. Další databáze pro všechny otázky kolem tisku na systémech &Linux; a &UNIX; je na <ulink url="http://www.linuxprinting.org"
+>http://www.linuxprinting.org/</ulink
+>.</para>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="cups-ipp-support">
+<title
+>Jak podpora &IPP; dělá z &CUPS; nejlepší volbu</title>
+
+<sect2>
+<title
+><quote
+><acronym
+>LPD</acronym
+> musí zemřít!</quote
+></title>
+
+<para
+>Dlouhou dobu bylo hodně vývojářů nespokojených se starým <acronym
+>LPD</acronym
+>. Vzniklo několik nových projektů na vylepšení tisku: <application
+>LPRng</application
+> je asi nejznámější příklad. Dalšími jsou například <acronym
+>PDQ</acronym
+>, <acronym
+>PPR</acronym
+>, <acronym
+>PLP</acronym
+>, <acronym
+>GNUlpr</acronym
+> a <acronym
+>RLPR</acronym
+>. Ale žádný z nich nebyl nikdy chápán jako <quote
+>něco velké</quote
+>, většina jednoduše znovu implementuje starou specifikaci <acronym
+>LPD</acronym
+> s některými rozšířeními, které jsou zase navzájem nekompatibilní.</para>
+
+<para
+>Když takovýto vývoj několika alternativ ke klasickému <acronym
+>LPD</acronym
+> ve stylu <acronym
+>BSD</acronym
+> viděl Grant Taylor, autor <citetitle
+>Linux Printing HOWTO</citetitle
+>, zakřičel ve své kampani <quote
+>Campaing To Abolish The Line Printer Daemon</quote
+> <citetitle
+>LPD musí zemřít!</citetitle
+> .</para>
+
+<!-- FIXME: look up URLs for the above -->
+
+</sect2>
+
+<sect2>
+<title
+>Jak vznikl &IPP;</title>
+
+<para
+>Na straně firem též vznikala snaha o překonání známých slabostí <acronym
+>LPD</acronym
+>. Vznikala jako proprietární rozšíření starého <acronym
+>LPD</acronym
+> a došlo to až tak daleko, že se &Hewlett-Packard; pokusil prosadit &HP; JetDirect jako nový standard pro tisk na síti. Výsledkem byla pouze nová nekompatibilita.</para>
+
+<para
+>Nakonec se zrodila iniciativa pro definování nového standardu s podporou <acronym
+>IETF</acronym
+>. <quote
+>Printer Working Group</quote
+>, čili <acronym
+>PWG</acronym
+>, skupina výrobců hardware, software a operačních systémů, vytvořila nový <quote
+>Internet Printing Protocol</quote
+>, &IPP;. &IPP; v1.1. byl schválený <acronym
+>IETF</acronym
+> (Internet Engineering Task Force) jako navrhovaný standard a teď si užívá širokou podporu mezi firmami v Evropě, USA i Japonsku. Nejnovější síťové modely tiskáren mají kromě tradičního <acronym
+>LPR</acronym
+>/<acronym
+>LPD</acronym
+> nebo JetDirect zabudovanou podporu pro &IPP; .</para>
+
+</sect2>
+
+<sect2>
+<title
+>Proč &IPP; řeší mnoho problémů</title>
+
+<para
+>&IPP; slibuje vyřešení množství problémů administrátorů sítí. Obvykle se to týká heterogenních sítí, kde se stráví polovina času řešením problémů s tiskem.</para>
+
+<para
+>Dosažení vytvoření jednotné množiny funkcí pro zjišťování v tiskárnách a serverech podporujících &IPP; pro přenos souborů a nastavení ovládání úloh atd. má být &IPP; nezávislý na &OS;. Jeho zavedení se ale nestane hned, protože se stále ještě používá hodně starších tiskáren. Proto je v &IPP; podpora pro zpětnou kompatibilitu všech jeho implementací. &CUPS; dokazuje schopnosti tisku &IPP; ve všech prostředích.</para>
+
+<para
+>Nejvýznamnější výhodou je jeho integrace s existujícím protokolem <acronym
+>IP</acronym
+>. Je to rozšíření ověřeného a robustního protokolu <acronym
+>HTTP</acronym
+> 1.1 pro speciální úkol zpracování tiskových souborů a souvisejících dat, je ho velmi jednoduché zapojit do ostatních standardů, které se vyvíjejí a používají:</para>
+
+<itemizedlist
+> <listitem
+> <para
+>základní, digest a certifikátové ověření uživatelů při přístupu k tiskárnám.</para
+> </listitem
+> <listitem
+> <para
+>šifrování SSL3 a <acronym
+>TLS</acronym
+> pro přenos dat.</para
+> </listitem
+> <listitem
+> <para
+>obousměrná komunikace s klienty a tiskovými zařízeními pomocí příkazů <acronym
+>HTTP</acronym
+>/&IPP; <command
+>GET</command
+> a <command
+>POST</command
+>.</para
+> </listitem
+> <listitem
+> <para
+>integrace adresářových služeb LDAP pro udržování konzistence databáze dostupných tiskáren, jejich schopností, ceny stránek atd. společně s hesly, <acronym
+>ACL</acronym
+> atd.</para
+> </listitem
+> <listitem
+> <para
+>tisk ve stylu <quote
+>pull</quote
+> (a ne klasickým systémem <quote
+>push</quote
+>), kde se serveru nebo tiskárně pošle pouze &URL; dokumentu a on si tiskovou úlohu odtud sám stáhne a vytiskne.</para
+> </listitem
+> </itemizedlist>
+
+</sect2>
+
+<!--
+<sect2>
+<title
+>&CUPS;, &IPP; and &kde;</title>
+
+<para
+>&CUPS; is the most advanced implementation of &IPP; on all &OS;
+platforms.  That makes &CUPS; a crucial ally to help "conquer the
+desktop" for projects like &kde;. &kdeprint; is the best utility to
+make &CUPS; core functionality available to &kde; Desktop
+users.</para>
+
+</sect2
+> -->
+
+<sect2>
+<title
+><quote
+>Plug'n'play</quote
+> tiskárny pro klienty</title>
+
+<para
+>Viděli jste už někdy demonstraci schopností &CUPS; v síti? Určitě by vás ohromila, pokud by jste nevěděli, co máte očekávat.</para>
+
+<para
+>Představte si, že jste administrátor <quote
+>LAN</quote
+>. Pro testování jste nainstalovali jeden počítač s &kde;/&CUPS;, spolu s několika funkčními a nastavenými tiskárnami: &PostScript;, LaserJet, InkJet a BubbleJet atd. Vaši uživatelé &kde; na tomto počítači jsou spokojení, protože mohou tisknout tak, jako nikdy předtím, Trvalo to 2 hodiny, než všechno fungovalo správně... a teď chtějí všichni ostatní v síti to samé. 2 hodiny pro každý počítač?</para>
+
+<para
+>Chyba. Změníte jedno nastavení na původním počítači s &CUPS;, aby se stal z něho <quote
+>server</quote
+>. Nainstalujete &CUPS; na pěti jiných počítačích jako <quote
+>klienta</quote
+>. Když se vrátíte k prvnímu klientovi, jeho uživatelé si již hrají s nastavením tiskáren, které jste definovali na <quote
+>serveru</quote
+>. Magicky se tiskárny objevili v jejich dialozích pro <quote
+>tisk</quote
+> na všech pěti nových klientech &CUPS;.</para>
+
+<para
+>Vaše uživatelé tisknou, ale nikdo z nich si nemusel nainstalovat žádný ovladač, ani tiskovou frontu.</para>
+
+<para
+>Takže, jako ta magie funguje?</para>
+
+</sect2>
+
+<sect2>
+<title
+><quote
+>Vidění</quote
+>tiskáren nenainstalovaných lokálně?</title>
+
+<para
+>Odpověď není vůbec složitá.</para>
+
+<para
+>Pokud je server &CUPS; na síti <acronym
+>LAN</acronym
+>, vysílá jména dostupných tiskáren do sítě <acronym
+>LAN</acronym
+> pomocí protokolu <acronym
+>UDP</acronym
+> a portu 631. Tento port je rezervovaný jako <quote
+>známý port</quote
+> u <acronym
+>IANA</acronym
+> (<quote
+>Internet Assigning Numbers Authority</quote
+>) právě pro &IPP;. Všichni klienti &CUPS; poslouchají informace poslané serverem &CUPS; na jejich port 631. A tak se dozvěděli o <quote
+>cestě</quote
+> k tiskárnám.</para>
+
+<para
+>Pomocí &IPP;, který je opravdu šikovné rozšíření <acronym
+>HTTP</acronym
+> v1.1, dokáže &CUPS; adresovat všechny objekty související s tiskovým systémem pomocí <acronym
+>URL</acronym
+>. Tiskové úlohy se odstraňují nebo restartují, tiskárny je možné zjistit a upravit, administrátorské úlohy je možné udělat na serveru, s &IPP; a &CUPS; je všechno dostupné pomocí <acronym
+>URL</acronym
+>. Hodně důležitých věcí je možné udělat přes webové rozhraní &CUPS; dostupné například z okna &konqueror;.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Tisk bez instalace ovladače</title>
+
+<para
+>A dále klienti mohou <quote
+>administrovat</quote
+> a <quote
+>používat</quote
+> každou tiskárnu, kterou vidí stejně, jako by byla nainstalována lokálně. Samozřejmě můžete její použití omezit, takže ne každý klient může používat každou tiskárnu.</para>
+
+<para
+>Klienti dokonce mohou tisknout bez vhodného filtru (nebo ovladače) nainstalovaného lokálně.</para>
+
+<para
+>Jak to může fungovat? Pokud klient chce nastavit možnosti pro danou tiskárnu, pošle požadavek (nazvaný <command
+>CUPS-get-ppd</command
+>) serveru. Server oznámí klientovi všechny dostupné možnosti tak, jak je zjistil ze souboru &PPD;. Uživatel na klientovi vidí možnosti a může je použít. Potom pošle tiskový soubor, obvykle jako <quote
+>raw</quote
+> &PostScript; s přidanými možnostmi tiskárny na server pomocí protokolu &IPP;. Další zpracování, hlavně filtrování a vytvoření finálního formátu pro tiskárnu už udělá server. Server obsahuje programy (<quote
+>ovladače</quote
+> nebo <quote
+>filtry</quote
+>), aby to dokázal.</para>
+
+<para
+>Takto mohou klienti tisknout bez potřeby lokálně instalovat ovladač.</para>
+
+<para
+>Každá změna na serveru, jako je přidání nebo změna tiskárny je bez další konfigurace <quote
+>neustále</quote
+> známá klientům.</para>
+
+</sect2>
+
+<sect2>
+<title
+><quote
+>Nulová administrace</quote
+>, vyrovnávání zátěže a <quote
+>přepínání při selhání</quote
+></title>
+
+<para
+>Některé další pokročilé funkce zabudované v &CUPS; podporují <quote
+>vyrovnávání zátěže</quote
+>.</para>
+
+<para
+>Pokud nadefinujete stejné tiskové fronty na jednom nebo více serverech, klient bude posílat své úlohy na první dostupný server. Tím vzniká automatické vyvažování zátěže mezi servery. Pokud musíte jeden ze serverů ze sítě odstranit, ostatní se o úlohy budou starat dále tak, že si to uživatel vůbec nevšimne.</para>
+
+</sect2>
+
+</sect1>
+
+</chapter>
+

@@ -1,0 +1,326 @@
+<chapter id="callback">
+<title
+>Configurando o &kppp; para chamada de retorno</title>
+
+<para
+>Este capítulo é baseado no material fornecido por Martin J&auml;fner, <email
+>mh@ap-dec717c.physik.uni-karlsruhe.de</email
+></para>
+
+<sect1 id="unix-callback-server">
+<title
+>Servidor de chamada de retorno &UNIX; ou &Linux;</title>
+
+<para
+>Esta seção apresenta a chamada de retorno do &UNIX; (&Linux;), e como o &kppp; pode ser configurado para conectar-se a um servidor de chamada de retorno &UNIX;, especialmente com um script baseado em <link linkend="callback-resources"
+>servidor de chamada de retorno</link
+> &Linux;</para>
+
+<sect2>
+<title
+>Uma introdução à chamada de retorno</title>
+
+<para
+>Existem diversas razões para considerar o uso de chamadas de retorno. Algumas delas são:</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Para aumentar a segurança de sua rede local</para>
+</listitem>
+<listitem>
+<para
+>Para reduzir os gastos de co-trabalhadores externos</para>
+</listitem>
+<listitem>
+<para
+>Para controlar os custos telefônicos onde as chamadas são computadas como custos dos negócios</para>
+</listitem>
+</itemizedlist>
+
+<para
+>Pense em alguém chamando um número de seu servidor de conexão, e quebrando uma senha. Porque o incômodo de manter um firewall para sua conexão internet, se o acesso a sua rede é tão fácil?</para>
+
+<para
+>Programas de chamadas de retorno em termos gerais pedem pelo seu nome, e então encerram a ligação. Ele então liga de volta, normalmente em um número que é armazenado <emphasis
+>no servidor</emphasis
+> em um banco de dados. O cliente então atende o telefone e continua com a conexão como se nada tivesse acontecido. O servidor agora solicita seu nome de usuário e senha, sabendo quem você é com base na primeira ligação, ou pelo menos quem você disse que é. A conexão é estabelecida normalmente, e o <application
+>pppd</application
+> é iniciado.</para>
+
+<para
+>Agora a grande questão é, como dizer ao cliente para atender o telefone quando o servidor chama de volta. Você precisa de um programa especial, como o <application
+>mgetty</application
+>? A resposta é <emphasis
+>não</emphasis
+>, você não precisa de um programa cliente especial. Em termos gerais, qualquer cliente pode ser usada para conexões de chamada de retorno, você pode usar tanto um programa de terminal simples como o <application
+>minicom</application
+> para conectar-se.</para>
+
+<para
+>A única coisa que você deve fazer é dizer ao seu modem para <command
+>AutoAnswer</command
+> (ou seja, responder automaticamente) ao telefone quando um <computeroutput
+>RING</computeroutput
+> for detectado pelo modem. Isto é feito com o seguinte comando de modem:</para>
+
+<screen
+><userinput
+><command
+>AT&amp;SO=1</command
+></userinput
+>
+</screen>
+
+<para
+>Isto diz ao modem para atender o telefone após um <computeroutput
+>RING</computeroutput
+>.</para>
+
+<para
+>Como muitos outros programas cliente, o &kppp; monitora para ver se a conexão é fechada pelo servidor, e então interrompe a sessão atual se um <computeroutput
+>NO CARRIER</computeroutput
+> é detectado. Isto, então, é o problema real ao configurar uma chamada de retorno. É claro que o <computeroutput
+>NO CARRIER</computeroutput
+> será detectado no momento que o servidor de chamada de retorno interromper a ligação. Logo alguns servidores usam um programa especial de login. Assim como resolver este problema? Você diz ao seu modem para mostrar <computeroutput
+>CARRIER UP</computeroutput
+> sempre (o que não causa problemas se você disser ao cliente para interromper a ligação). Você pode fazer isto com o seguinte comando de modem:</para>
+
+<screen
+><userinput
+><command
+>AT&amp;C0</command
+></userinput
+>
+</screen>
+
+<para
+>Se você deseja testar isto, você pode primeiro usar um programa de terminal simples como o <application
+>minicom</application
+>, e chamar seu servidor de chamada de retorno para ver o que acontece.</para>
+
+</sect2>
+
+<sect2>
+<title
+>A configuração do &kppp;</title>
+
+<para
+>Assim, agora que você viu a teoria em ação, como você deve configurar o &kppp; para lidar com a conexão? </para>
+
+<para
+>O procedimento é simples e direto, como mostrado a seguir.</para>
+
+<procedure>
+<step>
+<para
+>Primeiro diga ao modem para aceitar conexões, e não interromper a negociação quando o servidor de chamada de retorno finalizar a ligação pela primeira vez. Você pode adicionar estas opções na aba <guilabel
+>Modem</guilabel
+> da configuração do &kppp;, adicionando na opção <guilabel
+>String de Discagem</guilabel
+> o string <command
+>AT&amp;C0S0=1DT</command
+></para>
+<para
+>Nenhuma outra mudança na configuração do &kppp; é necessária. Se você experimentar problemas na inicialização do modem e reinicialização, verifique a seção <link linkend="callback-troubleshooting"
+>Problemas</link
+> para mais informações.</para>
+</step>
+<step>
+<para
+>Pense sobre o seu servidor por um instante. Lembre-se que o &UNIX;, o &Windows; e o Macintosh são sistemas operacionais que possuem opiniões diferentes sobre como terminar uma linha em um arquivo de texto, e consequentemente, nos procedimentos de login também. Se você estiver conectando-se a um servidor &Windows;, use <userinput
+>CR/LF</userinput
+>, se for um servidor &UNIX;, use <userinput
+>CR</userinput
+>, e se for um servidor Macintosh, use <userinput
+>LF</userinput
+> </para>
+</step>
+<step>
+<para
+>Nós estamos considerando para estas instruções que você está discando para um servidor de chamada de retorno &Linux; que usa um login ordinário (não <acronym
+>PAP</acronym
+> ou semelhante).</para>
+<para
+>Configure o estilo de <guilabel
+>Autenticação</guilabel
+> na aba <guilabel
+>Ligar</guilabel
+> da configuração de conta para <guilabel
+>Baseado em script</guilabel
+></para>
+</step>
+<step>
+<para
+>Agora você terá que construir um script de login. Editar scripts de login é um dos recursos mais legais do &kppp;. Você pode encontrá-lo na aba <guilabel
+>Script de Login</guilabel
+> do diálogo <guilabel
+>Editar Conta</guilabel
+>.</para>
+
+<para
+>Neste exemplo, o usuário <systemitem
+>usuarioxyz</systemitem
+> precisa seguir o script para ser chamado. O servidor de chamada de retorno já conhece a tabela de nomes e seus números de telefone aplicáveis, logo você selecione o número de telefone a ser usado com um apelido, por medida de segurança;</para>
+
+<para
+>Para cada linha, selecione o critério na lista de caixa combinada à esquerda do diálogo, e digite a ação na caixa de texto à sua direita. Selecione <guibutton
+>Adicionar</guibutton
+> para adicionar cada linha ao script. Você pode usar <guibutton
+>Inserir</guibutton
+> para adicionar uma linha no meio do script, e <guibutton
+>Remover</guibutton
+> para excluir uma linha inserida por engano.</para>
+
+<para
+>O script como um todo deve parecer algo como isto (sem os comentários, mostrados aqui iniciando com um #)</para>
+
+<screen
+>Expect       ogin:           <lineannotation
+># lembre-se, estamos logando em um terminal ordinário</lineannotation>
+ID           ""              <lineannotation
+># o kppp envia o id que você configurou no
+diálogo principal</lineannotation>
+Expect       for usuarioxyz:    <lineannotation
+># uma lista de números disponíveis é
+mostrada, o usuário deve escolher um</lineannotation
+> 
+Send         usuarioxyz-home    <lineannotation
+># o usuário deseja ser chamado de volta
+no número de sua casa</lineannotation>
+Expect       ogin:           <lineannotation
+># O processo de chamada de retorno está agora
+rodando, uma nova conexão, e logo um novo login.</lineannotation>
+ID
+Expect       assword:        <lineannotation
+># Agora envia sua senha</lineannotation>
+Expect       &gt;            <lineannotation
+># Espera pelo prompt de comandos (o
+prompt pode variar)</lineannotation>
+Send         start_ppp       <lineannotation
+># este comando inicia o pppd</lineannotation
+>
+</screen>
+
+<para
+>Após esperar pela solicitação de login, o usuário envia seu ID e espera por uma lista de números de telefones disponíveis para aquele usuário. Então ele diz ao servidor em qual dos números oferecidos ele gostaria de receber a chamada de retorno. O &kppp; pode abrir um diálogo para isto, se sua localização muda frequentemente, &eg; você é um representante de vendas e move-se de hotel para hotel. Agora o servidor espera por um login e senha para autenticação, mas neste meio tempo, o servidor desliga e chama o usuário de volta. As informações de autenticação são enviadas, e o &kppp; espera por um prompt de comandos, e então inicia um pequeno script (aqui chamado <filename
+>start_ppp</filename
+> que aciona o <application
+>pppd</application
+> no servidor.</para>
+					      
+<para
+>O script <filename
+>start_ppp</filename
+> deve se parecer com algo como:</para>
+					      
+<programlisting
+>#!/bin/sh
+stty -echo
+exec /usr/sbin/pppd -detach silent modem
+</programlisting>
+					      
+<para
+>É claro, configurar um servidor <acronym
+>PPP</acronym
+> não está dentro do escopo deste documento. Para informações detalhadas, veja as páginas de manual do <application
+>pppd</application
+>. Uma excelente descrição de um servidor de chamada de retorno pode ser encontrado em <ulink url="http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback"
+>http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback</ulink
+></para>
+</step>
+</procedure>
+
+<para
+>Todas as outras opções de configuração, como a configuração do <application
+>pppd</application
+> ou configurações de <acronym
+>IP</acronym
+> funcionam normalmente, e nenhum programa especial é necessário para obter a linha.</para>
+
+<note>
+<para
+>A chamada de retorno do &kppp; e outros programas como o <application
+>mgetty</application
+> ou qualquer outro faxgetty podem ser rodados na mesma porta serial. Não existem problemas com conexão, uma vez que o &kppp; cria um arquivo de trava que dirá ao programa getty que outro aplicativos (neste caso o &kppp;, é claro) está usando a linha no momento.</para>
+</note>
+
+</sect2>
+
+<sect2 id="callback-troubleshooting">
+<title
+>Problemas</title>
+
+<para
+>Existem alguns problemas conhecidos com o &kppp; no modo de chamada de retorno:</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Quando você inicializa o modem para resposta automática, você precisa reiniciar o modem após seu conexão for fechada. Caso contrário, seu modem continuará a manter a linha para você, o que não é uma boa idéia se a linha em questão é sua linha telefônica principal.</para>
+</listitem>
+<listitem>
+<para
+>O &kppp; apresenta alguns pequenos problemas ao compartilhar uma linha com outro programa, como o <application
+>mgetty</application
+>. Se o <application
+>mgetty</application
+> estiver rodando na mesma linha de modem, o &kppp; não será capaz de inicializar o modem corretamente. </para>
+</listitem>
+<listitem>
+<para
+>O &kppp; é incapaz de pedir uma determinada entrada do usuário durante um login baseado em script. Infelizmente, ao usar o script exemplo acima, o &kppp; também pede pelo nome de usuário na segundo vez que o servidor de chamada de retorno o solicita. Você pode obter evitar isto inserindo seu id de usuário no login de script (não muito portável ou bonito, mais funciona.</para>
+</listitem>
+</itemizedlist>
+
+</sect2>
+
+<sect2 id="callback-resources">
+<title
+>Recursos da Internet para programa servidor</title>
+
+<para
+>Os pacotes de programas servidores de chamada de retorno do &Linux; estão disponíveis em diversos lugares.</para>
+
+<para
+>O bem conhecido <application
+>mgetty</application
+> é um programa muito poderoso, e também é capaz de manipular conexões de chamada de retorno. Um descrição de como configurar o <application
+>mgetty</application
+> para este fim é mantida em <ulink url="http://www.dyer.demon.co.uk/slug/tipscrip.htm"
+> http://www.dyer.demon.co.uk/slug/tipscrip.htm</ulink
+>, po Colin McKinnon, <email
+>colin@wew.co.uk</email
+>.</para>
+
+<para
+>Existe tamém um pacote pronto para uso para o &Linux; em <ulink url="http://www.icce.rug.nl/docs/programs/callback/callback.html"
+> http://www.icce.rug.nl/docs/programs/callback/callback.html</ulink
+>. Este pacote é mantido por Frank B. Brokken, <email
+>frank@icce.rug.nl</email
+>. Como a configuração, apesar de bem direta, não é muito simples, eu escrevi uma pequena introdução para ele em <ulink url="http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback"
+> http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback/</ulink
+>, que também contém uma introdução mais geral para chamada de retorno.</para>
+
+</sect2>
+</sect1>
+
+<sect1 id="nt-callback">
+<title
+>Chamada de retorno <acronym
+>RAS</acronym
+> do &Windows; NT</title>
+
+<para
+>O &Windows; NT usa uma abordagem completamente diferente da descrita acima. O NT necessita de uma extensão para o protocolo <acronym
+>PPP</acronym
+> propriamente dito, chamada <acronym
+>CBCP</acronym
+> (do inglês, Protocolo de Controle de Chamada de Retorno). O <application
+>pppd</application
+> tem suporte a este protocolo, mas você deve recompilar o <application
+>pppd</application
+>. Se alguém tiver uma experiência bem sucedida de conexão com um servidor de chamada de retorno do NT, por favor nos informe.</para>
+
+</sect1>
+</chapter>

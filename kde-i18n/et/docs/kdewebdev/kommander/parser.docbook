@@ -1,0 +1,1567 @@
+<?xml version="1.0"  encoding="UTF-8" ?>
+
+<chapter id="new_parserdocs">
+<chapterinfo>
+<title
+>&kommander;i uus parser</title>
+<authorgroup>
+<author
+><firstname
+>Michal</firstname
+> <othername
+></othername
+> <surname
+>Rudolf</surname
+> <affiliation
+> <address
+><email
+>mrudolf@kdewebdev.org</email
+></address>
+</affiliation>
+</author>
+<author
+><firstname
+>Eric</firstname
+> <othername
+></othername
+> <surname
+>Laffoon</surname
+> <affiliation
+> <address
+><email
+>eric@kdewebdev.org</email
+></address>
+</affiliation>
+</author>
+<othercredit role="translator"
+><firstname
+>Marek</firstname
+><surname
+>Laane</surname
+><affiliation
+><address
+><email
+>bald@smail.ee</email
+></address
+></affiliation
+><contrib
+>Tõlge eesti keelde</contrib
+></othercredit
+> 
+</authorgroup>
+<copyright
+> <year
+>2005-2008</year
+> <holder
+>Michal Rudolf</holder
+> <holder
+>Eric Laffoon</holder
+> </copyright
+> <legalnotice
+>&FDLNotice;</legalnotice
+> </chapterinfo>
+
+<title
+>Uue parseri dokumentatsioon</title>
+<para
+>Uus parser lisati &kommander;isse versioonis 1.2, mis nägi ilmavalgust KDE 3.4 koosseisus. Käesolev dokument pidi algselt kirjeldama kõiki uue parseri omadusi. Nüüd, kus KDE 3.5.9 koosseisus on välja lastud &kommander; 1.3, on uus parser juba vaikimisi kasutusel, välja arvatud peaaknaga (MainWindow) rakenduste puhul, mis luuakse &Qt; Disaineris. Et uus parser on tunduvalt võimekam, ilma vanale parserile omase pesastamise piiranguta ning väga paljude uute omadustega, soovitame tungivalt seda kasutada. </para>
+<para
+>&kommander;ist endast siin juttu ei tule. Kui soovid teada saada, mis on &kommander;, kuidas luua dialooge ja kuidas manipuleerida käitusajal vidinatega, uuri käsiraamatu teisi osi. </para>
+<!--
+</chapter>
+
+
+
+<chapter id="two_parsers">
+<title
+>New parser vs. old parser</title>
+-->
+<sect1 id="two_parsers">
+<title
+>Vana parser</title>
+<para
+>Alljärgnevalt võrdleme kaht parserit. Kuigi me soovitame üldjuhul uut parserit, on ka vana endiselt toetatud ja kasulikki, eriti kui asi puudutab teiste skriptikeelte kasutamist. </para>
+
+<sect2 id="old_parser">
+<title
+>Vana parser</title>
+<para
+>Vana parser oli tegelikult makroparser. Tunnustati ainult stringe, mille alguses seisis &#064;, mida siis parsiti loogiliselt ja laiendati. <screen
+>@LineEdit1.setText(@ListBox.selection)
+</screen>
+</para>
+
+<para
+>Kõige selle aluseks olev funktsionaalsus (kohalikud muutujad, avaldised,failide manipuleerimine) tuli teha mõnes teises skriptikeeles, näiteks Bash. Ehkki &kommander;i eesmärk on toetada kõiki skriptikeeli, mis on juba praegu teatud määral võimalik, oli vaja kiirest ja natiivset skriptikeelt, mis oleks kindlasti porditav. Vana parseri suurim probleem oli see, et &kommander;i erisid hinnati <emphasis
+>enne</emphasis
+> koodi edastamist skriptikeelel, mis muutis võimatuks nende kasutamise silmustes ja tingimustes.</para>
+<para
+>Arendajate meelest ei ole bash kuigi kiire ega uutele kasutajatele mõistetav, vana parser aga oli algselt just bash, mis kutsus välja DCOP-i. Et &kommander; tahab olla programmeerimiskeeltest sõltumatu, tekkis vajadus muudki kui funktsioonid ise teostada. </para>
+</sect2>
+
+<sect2 id="new_parser">
+<title
+>Uus parser</title>
+<para
+>Uus parser on täielik parser. See parsib kogu skripti, mitte ainult funktsioone. Et meid huvitab eelkõige graafiline kasutajaliides, mitte aga skriptikeeled ise, tuli teha kompromisse. Seepärast leiad kindlasti, et &kommander;i skriptid suudavad toime tulla kõigi peamiste ülesannetega ning neid on lihtne ja hõlpus kasutada. Kõike sinu loodut koondab endasse <emphasis
+>Funktsioonisirvija</emphasis
+>. Funktsioonisirvija mõte on võimaldada &kommander;i uustulnukatest kasutajatel ligi pääseda kõigele, mida vaid vaja. Põhimõtteliselt sarnaneb see mõnevõrra näiteks tabelarvutusrakenduses KSpread kasutatava sirvijaga, mis aitab valida funktsioone ja sisestada neisse vajalikke parameetreid. <tip
+><para
+>Kui soovid ära kasutada mõne teise skriptikeele funktsionaalsust, saab neid kaasa &kommander;i skriptiobjektidesse vastava päisekirjega. Funktsioonisirvija aitab sisestada viited vidinatele. Tuleb lihtsalt meeles pidada, et parser uurib ühe käigu ajal vana parseri funktsioone ja teise käigu ajal sinu skripti. Nii et kui püüad vidinas midagi muuta ja loed seda keset skripti, ei pruugi tulemus olla just selline, nagu ootasid.</para
+></tip>
+<screen
+>#!/usr/bin/php
+</screen>
+</para>
+<para
+>Järgnevad on versiooni 1.2 omadused</para>
+<itemizedlist>
+<listitem
+><para
+>kohalikud ja globaalsed muutujad ning assotsiatiivsed massiivid</para
+></listitem>
+<listitem
+><para
+>arvavaldised</para
+></listitem>
+<listitem
+><para
+>stringide manipuleerimine</para
+></listitem>
+<listitem
+><para
+>mitmesugused struktuurikäsud: if, while, for, foreach</para
+></listitem>
+<listitem
+><para
+>enamik vana parseri funktsioone</para
+></listitem>
+<listitem
+><para
+>vidinate otsene manipuleerimine</para
+></listitem>
+<listitem
+><para
+>palju lisafunktsioone</para
+></listitem>
+<listitem
+><para
+>korralik käivitamisaeg</para
+></listitem>
+<listitem
+><para
+>parameetrite saamine signaalidelt skripti pesades</para
+></listitem>
+</itemizedlist>
+<para
+>Järgnevad on versiooni 1.3 omadused</para>
+<itemizedlist>
+<listitem
+><para
+>parameetrite edastamine ja saamine skripti käivitamise väljakutsetega</para
+></listitem>
+<listitem
+><para
+>väärtuse tagastamine skriptist</para
+></listitem>
+<listitem
+><para
+>vidinate loomine lennult</para
+></listitem>
+<listitem
+><para
+>signaalide ja pesade ühendamine lennult</para
+></listitem>
+<listitem
+><para
+>muutuja aliase kasutamine vidina nimeks</para
+></listitem>
+<listitem
+><para
+>lihtsad indekseeritud massiivi funktsioonid</para
+></listitem>
+<listitem
+><para
+>otsene ligipääs vidinate pesadele</para
+></listitem>
+</itemizedlist>
+</sect2>
+
+<sect2 id="invoking">
+<title
+>Uue parseri kasutamine</title>
+<para
+>Uue parseri lubamiseks anna dialoogi omadusele <command
+>useInternalParser</command
+> property väärtus <command
+>tõene</command
+>. Samuti saab uue parseri lubada konkreetses skriptis, lisades <screen>
+#!kommander
+</screen
+> skripti esimesele reale. Pane tähele ka seda, et kui kasutad skriptis mõnda muud skriptikeelt, siis jõustab &kommander; automaatselt vana parseri, et skript ja dialoog ikka korralikult koostööd teeksid. <screen
+>#!/bin/bash
+echo @Self.item(0)
+# returns first parameter passed to script
+# echo $returnvalue passes back to calling script
+</screen>
+</para>
+</sect2>
+</sect1>
+<!--
+</chapter>
+<chapter id="features">
+-->
+<sect1 id="features">
+<title
+>Uue parseri omadused</title>
+
+<sect2 id="types">
+<title
+>Tüübid</title>
+<para
+>Iga väärtuse tüüp on kas string, täisarv või double. Tüübiteisendus on automaatne ning alati valitakse kõige sobivam tüüp (kui näiteks lisad täisarvule double'i, on tulemuseks double). Kui üks väärtus on string, on ka tulemus string. </para>
+<para
+>Raskustesse võib sattuda arvväärtuse hankimisel vidinast ja sellega matemaatilise tehte sooritamise puhul. Kuna &kommander; kasutab kahe tekstistringi ühendamiseks tehet <command
+>+</command
+>, võib ta tõlgendada <command
+>LineEdit1.text + 2</command
+> kui <command
+>22</command
+>, aga mitte kui <command
+>2</command
+>. Probleemide vältimiseks uuri osa <link linkend="string_functions"
+>Stringifunktsioonid</link
+>. </para>
+</sect2>
+
+<sect2 id="expressions">
+<title
+>Avaldised</title>
+<para
+>Toetatud on järgmised matemaatilised tehted: <command
+>+, -, *, mod, </command
+>. Enesestmõistetavalt on toetatud ka tavalised sulud. </para>
+
+<para
+>Toetatud on kõik võrdlused: <command
+>&lt;</command
+>, <command
+>&gt;</command
+>, <command
+>&lt;=</command
+>, <command
+>&gt;=</command
+>, <command
+>==</command
+>, <command
+>!=</command
+>. <command
+>!=</command
+> asemel võib kasutada ka <command
+>&lt;&gt;</command
+>. Samuti on toetatud loogilised tehted <command
+>and</command
+>, <command
+>or</command
+> ja <command
+>not</command
+>, samuti nende C ekvivalendid (<command
+>&amp;&amp;</command
+>, <command
+>||</command
+>, <command
+>!</command
+>). </para>
+
+<para
+>Stringide puhul võib nende liitmiseks kasutada tehet <command
+>+</command
+>. </para>
+
+<para
+>Mõned korrektsete avaldiste näited: <screen
+>2+3
+-5 * (2 - 13 mod 3)
+"Loendil on " + 12 + "elementi."
+</screen>
+</para>
+</sect2>
+
+<sect2 id="variables">
+<title
+>Muutujad</title>
+<para
+>Muutujaid ei ole vaja deklareerida. Kui kasutad muutujat, võetakse seda kui deklareeritut. Muutuja <link linkend="types"
+>tüüp</link
+> tuvastatakseautomaatselt, seda võib hiljem muuta. </para>
+
+<para
+>Toetatud on ka assotsiatiivsed massiivid. Need seostavad stringivõtmed suvalist tüüpi väärtustega. Massiivi deklareerimiseks lisa sellesse lihtsalt mõni element, näiteks: <command
+>A["Quanta"] = "Web editor"</command
+>. Massiive saab käsitleda ka käsuga <link linkend="foreach"
+>foreach</link
+> ja <link linkend="array_functions"
+>massiivifunktsioonidega</link
+>. </para>
+
+<para
+>Toetatud on kohalikud ja globaalsed muutujad. Globaalsed muutujad on tähistatud alustava alakriipsuga. See tähendab, et <command
+>minuMuutuja</command
+> on kohalik, aga <command
+>_minuMuutuja</command
+> globaalne. Sama kehtib massiivide kohta. </para>
+
+<screen
+>a = 5
+b = 2 * 5 - (a + 1)
+c = "[Item " + b + "]"
+d["MyKey"] = "MyValue"
+d["MyKey2"] = 5
+</screen>
+
+<para
+>Muutujate kasutamine vidinates on üsna tavapärane. See tuleb kasuks näiteks vidinate silmuste puhul tabelis. </para>
+
+<screen
+>for i=0 to 10 do
+  mycombo = "ComboTable"+i
+  createWidget(mycombo, "ComboBox", "Form1")
+end
+</screen>
+</sect2>
+
+<sect2 id="comments">
+<title
+>Kommentaarid</title>
+<para
+>Kommentaare saab &kommander;is kasutada kahe programmeerimiskeelte traditsioonilise kommentaarivormi kujul. Kes ei ole programmeerimisega tuttavad, heitku pilk allapoole, kus on näha, mida tähendab <quote
+>traditsiooniline vorm</quote
+>. Soovi korral võid alloleva teksti kopeerida ja asetada nupu või dialoogi initsialiseerimisse, et näha, kuidas kommentaarid tegelikult toimivad. </para>
+<screen
+>// this is a comment for one line
+message_info("Hello World") //traditional first program
+// the above comment also ignored - the messagebox is not
+# this is also a comment
+message_info("This message will show")
+</screen>
+<para
+>Järgnev mitmerealine kommentaar <emphasis
+>ei</emphasis
+> toimi ja selle kasutamine põhjustab ülejäänud vidina käivitamise nurjumise. </para>
+<screen
+>/*
+Hei, mina siin tahtsin olla üks kommentaarike 
+Pärast mind skripti enam edasi ei käivitata
+ÄRA KASUTA SELLISEID KOMMENTAARE KOMMANDERIS!
+*/
+</screen>
+</sect2>
+
+<sect2 id="globals">
+<title
+>Sisseehitatud globaalsed muutujad</title>
+<para
+>&kommander; pakub mitmeid käepäraseid sisseehitatud globaalseid muutujaid. </para>
+<itemizedlist>
+<listitem>
+<para
+><command
+>_ARGS</command
+> - dialoogile avamisel edastatav argumendistring </para
+></listitem>
+<listitem>
+<para
+><command
+>_ARGCOUNT</command
+> - edastatavate argumentide arv. Need hangitakse argumentidest <command
+>ARG1</command
+> kuni <command
+>ARGn</command
+>, kus n on edastatavate argumentide koguarv </para
+></listitem>
+<listitem>
+<para
+><command
+>_KDDIR</command
+> - kataloog, millest dialoog käivitatakse. &kommander; kasutab vaikimisi sinu kodukataloogi, aga seda võib muidugi muuta. See on kasulik failide salvestamiseks ja lugemiseks &kommander;i failiga. </para
+></listitem>
+<listitem>
+<para
+><command
+>_NAME</command
+> - seda ei ole põhjust kasutada, nii et ära siis seda kasuta </para
+></listitem>
+<listitem>
+<para
+><command
+>_PID</command
+> - aktiivse dialoogi protsessi ID, põhimõtteliselt sama mis <emphasis
+>pid</emphasis
+>. Seda nime ei tasuks oma muutujates kasutada! </para
+></listitem>
+<listitem>
+<para
+><command
+>_VERSION</command
+> - see on abiks, kui soovid lasta näidata töötava &kommander;i versiooni </para
+></listitem>
+</itemizedlist>
+</sect2>
+<sect2 id="passargs">
+<title
+>Argumentide edastamine &kommander;is</title>
+<para
+>Argumente saab edastada skripti parameetritega, signaalide ja pesadega, käsurea parameetritega ja DCOP-iga. Vaatame skripte. Kutsu oma skript välja nii: <screen
+>result = ScriptObject1.execute("Hello World")
+debug(result)</screen
+> Skriptis leiad midagi sellist: <screen
+>var = str_upper(Self.Item(0))
+return(var)</screen
+> Nüüd tagastatakse teatelogis <emphasis
+>Stderr</emphasis
+> <emphasis
+>HELLO WORLD</emphasis
+>. </para>
+<para
+>Skripti pesaga ühendatud signaali vastuvõtmine käib samamoodi. <emphasis
+>Self.Item(0)</emphasis
+> on esimene parameeter jne. Edastatud argumentide arvu hankimiseks on mõeldud <emphasis
+>ScriptObject.count</emphasis
+>. </para>
+<para
+>Käserea parameetrid lubavad nii nimega kui ka nimeta argumente. Nimeta argument näeb välja selline: <screen
+>kmdr-executor myprog.kmdr 100 red</screen
+> kus _ARG1 = 100 ja _ARG2 = red. Tühikutega stringide edastamisel argumendina tuleb nad panna jutumärkidesse. Dialoogikäsu kasutamine muudab asjad keerulisemaks, sest kogu argumendistring tuleb edastada tervikuna, mis tähendab selle asetamist jutumärkidesse. <screen
+>dialog("mydialog.kmdr", 100+" \"Hello World\"")</screen
+> See tagastab <emphasis
+>_ARG1 = 100</emphasis
+> ja <emphasis
+>_ARG2 = Hello World</emphasis
+>. Ilma jutumärkideta saaksid <emphasis
+>_ARG2 = Hello</emphasis
+> ja <emphasis
+>_ARG3 = World</emphasis
+>. Nimega parameetrite kasutamine on kenam ja mitte nii segadusseajav. <screen
+>dialog("mydialog.kmdr", "xcount=100 xquote=Hello world")</screen
+> Nüüd saad neid kasutada globaalsete muutujatega <emphasis
+>_xcount</emphasis
+> ja <emphasis
+>_xquote</emphasis
+>. </para>
+<para
+>DCOP võib olla päris keeruline, mistõttu me soovitame kasutada meie tööriistu DCOP-i lubamiseks &kommander;i võrgudialoogides näiteks funktsioonisirvijaga. Toome näite DCOP-i väljakutse kohta dialoogist, mis on avatud &kommander;i eellasaknast. Kuna ta teab oma eellast, võib ta saata teabe tagasi ajal, mil ta on avatud, ning vabalt kasutada kõiki oma eellase funktsioone, välja arvatud pesad. Loomulikult saab seda teha ka seesmiselt skriptiga, mis kutstutakse välja väliselt, nii et praktikas ei ole sisuliselt mingeid piire. <screen
+>dcop("kmdr-executor-"+parentPid, "KommanderIf", "setText(QString,QString)", "StatusBar8", "Hello")</screen
+> Vaatame seda osade kaupa. Kõigepealt lisame <emphasis
+>parentPid</emphasis
+> "kmdr-ececutor-"-ile, sest me ei saa eeldada, et väljakutsuja on &kommander;i aken. Seda võib kasutada Quanta või KSpreadi või millega tahes. Seejärel adresseerime <emphasis
+>KommanderIf</emphasis
+>'i, mis on <emphasis
+>kena</emphasis
+> ja puhastatud liides lõppkasutajale. Me loodame, et kui KDE lõpuks KDE4 ajal vahetab DCOP-i välja D-Busi vastu, võtab aina enam rakendusi omaks selle kena lõimimist soodustava liidese. Järgmine parameeter <emphasis
+>"setText(QString,QString)"</emphasis
+> on oluline, sest see muudab lubatud parameetrid <emphasis
+>prototüübiks</emphasis
+>. Vastasel juhul ei suudaks &kommander; väljakutset valideerida. Niisiis ilma DCOP-väljakutse definitsioonita on tulemuseks viga. Ülejäänud on mõistagi edastatavad parameetrid. Me soovitame uurida rakendusi, mis kasutavad <command
+>kdcop</command
+>'i, kui soovid näha, kuidas see töötab, ning harjutada DCOP-väljakutsetega shellis, kuni omandad õige süntaksi. </para>
+</sect2>
+</sect1>
+<!--
+</chapter>
+-->
+<sect1 id="parser_commands">
+
+<title
+>Käsud</title>
+<para
+>Toetatud on mitmesugused struktuurikäsud. Neid võib igati pesastada. </para>
+
+<para
+>Samuti on olemas kolm erikäsku: <command
+>exit</command
+>, <command
+>break</command
+> ja <command
+>continue</command
+>. Esimene lõpetab skripti täitmise ja pöördub tagasi. Teine väljub aktiivsest plokist (<link linkend="while"
+>while</link
+>, <link linkend="for"
+>for</link
+> või <link linkend="foreach"
+>foreach</link
+>) ning kolmas väljub aktiivsest sammust, taasalustades silmuse algusest. </para>
+
+
+<sect2 id="if">
+<title
+>if</title>
+<para
+>Käsul <command
+>if</command
+> on järgmine süntaks: </para>
+ 
+<para
+><command
+>if</command
+> <emphasis
+>tingimus</emphasis
+> <command
+>then</command
+> <emphasis
+>kood</emphasis
+> <command
+>elseif</command
+> <emphasis
+>tingimus</emphasis
+> <command
+>then</command
+> <emphasis
+>kood</emphasis
+> <command
+>else</command
+> <emphasis
+>kood</emphasis
+> <command
+>endif</command
+> </para>
+
+<para
+>Nii <command
+>elseif</command
+> kui ka <command
+>else</command
+> on mittekohustuslikud. <emphasis
+>Tingimus</emphasis
+> võib olla suvaline avaldis. <emphasis
+>Kood</emphasis
+> täidetakse, kui tingimus on tõene. See tähendab: <itemizedlist>
+<listitem
+><para
+>nullist erinev täisarvu ja double korral</para
+></listitem>
+<listitem
+><para
+>mittetühi stringi korral</para
+></listitem>
+</itemizedlist>
+</para>
+
+<screen
+>if a * 2 &gt; 7 then
+   b = 1
+elseif a &lt; 0 then
+   b = 2
+elseif 
+   b = 0
+endif
+</screen>
+</sect2>
+
+<sect2 id="while">
+<title
+>while</title>
+<para
+><command
+>while</command
+> <emphasis
+>tingimus</emphasis
+> <command
+>do</command
+> <emphasis
+>kood</emphasis
+> <command
+>end</command
+> </para>
+
+<para
+><emphasis
+>Tingimus</emphasis
+> arvutatakse uuesti iga silmuse täitmise ajal. <screen
+>while i &lt; 15 do
+  i = i + a
+end  
+</screen>
+</para>
+
+
+</sect2>
+
+<sect2 id="for">
+<title
+>for</title>
+<para
+>Käsul <command
+>for</command
+> on järgmine süntaks: </para>
+ 
+<para
+><command
+>for</command
+> <emphasis
+>muutuja</emphasis
+> <command
+>=</command
+> <emphasis
+>algväärtus</emphasis
+> <command
+>to</command
+> <emphasis
+>lõppväärtus</emphasis
+> <command
+>step</command
+> <emphasis
+>avaldis</emphasis
+> <command
+>do</command
+> <emphasis
+>kood</emphasis
+> <command
+>end</command
+> </para>
+
+<para
+>Silmus täidetakse alates <emphasis
+>algväärtusest</emphasis
+> ja lõpetatakse siis, kui muutuja väärtus on suurem kui <emphasis
+>lõppväärtus</emphasis
+>. Kui määratud on <command
+>step</command
+>, siis igal sammul suurendatakse muutuja väärtust määratud väärtuse, mitte aga <command
+>1</command
+> võrra. <screen
+>foreach i = 1 to 20 step 5 do
+  a = a + 2 * i
+end  
+</screen>
+</para>
+</sect2>
+
+<sect2 id="foreach">
+<title
+>foreach</title>
+<para
+>Käsul <command
+>foreach</command
+> on järgmine süntaks: </para>
+ 
+<para
+><command
+>for</command
+> <emphasis
+>muutuja</emphasis
+> <command
+>in</command
+> <emphasis
+>massiiv</emphasis
+> <command
+>do</command
+> <emphasis
+>kood</emphasis
+> <command
+>end</command
+> </para>
+
+<para
+>Silmus täidetakse iga määratud massiivi võtme puhul. Igal sammul omistatakse muutujale massiivi järgmine võti. <screen
+>sum = 0
+foreach i in myArray do 
+  sum = sum + myArray[i]
+end  
+</screen>
+</para>
+</sect2>
+</sect1>
+<!--
+</chapter>
+-->
+<sect1 id="functions">
+
+<title
+>Funktsioonid</title>
+<para
+>Uus parser toetab enamikku vana parseri funktsioone, aga lisatud on ka mõned uued funktsioonid. </para>
+
+
+<sect2 id="string_functions">
+<title
+>Stringifunktsioonid</title>
+<para
+>Stringifunktsioonid on samad, mis vanas parseris, ainult et nende nimedele eelneb <command
+>str_</command
+>, mitte <command
+>@String</command
+>. <itemizedlist>
+<listitem>
+<para
+><command
+>str_length(<parameter
+>string</parameter
+>)</command
+> - tagastab <emphasis
+>stringi</emphasis
+> pikkuse </para
+></listitem>
+<listitem>
+<para
+><command
+>str_contains(<parameter
+>string</parameter
+>, <parameter
+>tekst</parameter
+>)</command
+> - tagastab 1, kui <emphasis
+>string</emphasis
+> sisaldab <emphasis
+>teksti</emphasis
+> </para
+></listitem>
+<listitem>
+<para
+><command
+>str_find(<parameter
+>string</parameter
+>, <parameter
+>tekst</parameter
+>, <parameter
+>algus</parameter
+>)</command
+> - tagastab <emphasis
+>teksti</emphasis
+> esimese esinemiskoha <emphasis
+>stringis</emphasis
+>; mittekohustuslik <emphasis
+>algus</emphasis
+> määrab otsingu alguskoha </para
+></listitem>
+<listitem>
+<para
+><command
+>str_find(<parameter
+>string</parameter
+>, <parameter
+>tekst</parameter
+>, <parameter
+>algus</parameter
+>)</command
+> - tagastab <emphasis
+>teksti</emphasis
+> viimase esinemiskoha <emphasis
+>stringis</emphasis
+>; mittekohustuslik <emphasis
+>algus</emphasis
+> määrab otsingu alguskoha </para
+></listitem>
+<listitem>
+<para
+><command
+>str_left(<parameter
+>string</parameter
+>, <parameter
+>arv</parameter
+>)</command
+> - tagastab määratud <emphasis
+>arvu</emphasis
+> märke alates <emphasis
+>stringi</emphasis
+> algusest </para
+></listitem>
+<listitem>
+<para
+><command
+>str_right(<parameter
+>string</parameter
+>, <parameter
+>arv</parameter
+>)</command
+> - tagastab määratud <emphasis
+>arvu</emphasis
+> märke alates <emphasis
+>stringi</emphasis
+> lõpust </para
+></listitem>
+<listitem>
+<para
+><command
+>str_right(<parameter
+>string</parameter
+>, <parameter
+>algus</parameter
+>, <parameter
+>arv</parameter
+>)</command
+> - tagastab <emphasis
+>stringi</emphasis
+>  alamstringi alates <emphasis
+>algusest</emphasis
+>, mis sisaldab määratud <emphasis
+>arvu</emphasis
+> märke (või kõik kuni stringi lõpuni, kui viimast parameetrit ei ole antud) </para
+></listitem>
+<listitem>
+<para
+><command
+>str_remove(<parameter
+>string</parameter
+>, <parameter
+>tekst</parameter
+>)</command
+> - tagastab <emphasis
+>stringi</emphasis
+> koos kõigi alamstringidega, mis on võrdsed eemaldatava <emphasis
+>tekstiga</emphasis
+> </para
+></listitem>
+<listitem>
+<para
+><command
+>str_replace(<parameter
+>string</parameter
+>, <parameter
+>tekst</parameter
+>, <parameter
+>tekst2</parameter
+>)</command
+> - tagastab <emphasis
+>stringi</emphasis
+> koos kõigi alamstringidega, mis vastavad <emphasis
+>tekstile</emphasis
+>, mis asendatakse <emphasis
+>tekst2</emphasis
+>-ga </para
+></listitem>
+<listitem>
+<para
+><command
+>str_lower(<parameter
+>string</parameter
+>)</command
+> - tagastab <emphasis
+>stringi</emphasis
+>, mis teisendatakse väiketäheliseks </para
+></listitem>
+<listitem>
+<para
+><command
+>str_upper(<parameter
+>string</parameter
+>)</command
+> - tagastab <emphasis
+>stringi</emphasis
+>, mis teisendatakse suurtäheliseks </para
+></listitem>
+<listitem>
+<para
+><command
+>str_section(<parameter
+>string</parameter
+>, <parameter
+>eraldaja</parameter
+>, <parameter
+>algus</parameter
+>, <parameter
+>lõpp</parameter
+>)</command
+> - tagastab alamstringi, mis sisaldab <emphasis
+>stringi</emphasis
+> neid osasid, mis on määratud <emphasis
+>eraldajaga</emphasis
+>; kui pole määratud <emphasis
+>lõppu</emphasis
+>, tagastatakse kogu <emphasis
+>alguse</emphasis
+> sektsioon </para
+></listitem>
+<listitem>
+<para
+><command
+>str_args(<parameter
+>string</parameter
+>, <parameter
+>...</parameter
+>)</command
+> - tagastab <emphasis
+>stringi</emphasis
+> koos <command
+>%1</command
+>, <command
+>%2</command
+>, <command
+>%3</command
+>-ga, mis asendatakse järgnevate parameetritega. </para
+></listitem>
+<listitem>
+<para
+><command
+>str_isnumber(<parameter
+>string</parameter
+>)</command
+> - tagastab 1, kui <emphasis
+>string</emphasis
+> on korrektne arv </para
+></listitem>
+<listitem>
+<para
+><command
+>str_isempty(<parameter
+>string</parameter
+>)</command
+> - tagastab 1, kui <emphasis
+>string</emphasis
+> on tühi </para
+></listitem>
+<listitem>
+<para
+><command
+>str_toint(<parameter
+>string</parameter
+>, <parameter
+>default</parameter
+>)</command
+> - tagastab täisarvuks teisendatud <emphasis
+>stringi</emphasis
+>; kui teisendamine ei ole võimalik, tagastatakse vaikeväärtus (<emphasis
+>default</emphasis
+>) </para
+></listitem>
+<listitem>
+<para
+><command
+>str_todouble(<parameter
+>string</parameter
+>, <parameter
+>default</parameter
+>)</command
+> - tagastab double'iks teisendatud <emphasis
+>stringi</emphasis
+>; kui teisendamine ei ole võimalik, tagastatakse vaikeväärtus (<emphasis
+>default</emphasis
+>) </para
+></listitem>
+</itemizedlist
+></para>
+</sect2>
+
+<sect2 id="kommander_functions">
+<title
+>&kommander;ri funktsioonid</title>
+<para
+>Toetatud on enamik &kommander;i funktsioone; mõned küll (nt. <command
+>expr</command
+>) on uues parseris iganenud ega ole kasutatavad. </para>
+
+<itemizedlist>
+<listitem>
+<para
+><command
+>debug(<parameter
+>string</parameter
+>, <parameter
+>...</parameter
+>)</command
+> - kirjutab kõik parameetrid standardveaväljundisse stderr </para
+></listitem>
+<listitem>
+<para
+><command
+>echo(<parameter
+>string</parameter
+>, <parameter
+>...</parameter
+>)</command
+> - kirjutab kõik parameetrid standardväljundisse stdout </para
+></listitem>
+<listitem>
+<para
+><command
+>dcop(<parameter
+>string</parameter
+>, <parameter
+>...</parameter
+>)</command
+> - kutsub välja DCOP-funktsiooni</para>
+</listitem>
+<listitem>
+<para
+><command
+>exec(<parameter
+>string</parameter
+>, <parameter
+>shell</parameter
+>)</command
+> - käivitab välise programmi (kasutades vajaduse korral mittekohustuslikku <emphasis
+>shelli</emphasis
+>); blokeerib aktiivse dialoogi täitmise, kuni parameetrina antud programm on töö lõpetanud; tagastab selle programmi väljundi </para
+></listitem>
+<listitem>
+<para
+><command
+>i18n(<parameter
+>string</parameter
+>)</command
+> - märgib <emphasis
+>stringi</emphasis
+> tõlgitavaks </para
+></listitem>
+<listitem>
+<para
+><command
+>env(<parameter
+>string</parameter
+>)</command
+> - tagastab keskkonnamuutuja väärtuse </para
+></listitem>
+<listitem>
+<para
+><command
+>readSetting(<parameter
+>võti</parameter
+>, <parameter
+>default</parameter
+>)</command
+> - tagastab määratud <emphasis
+>võtmega</emphasis
+> seadistustefaili salvestatud väärtuse; kui sellist väärtust ei ole, tagastatakse vaikeväärtus (<emphasis
+>default</emphasis
+>) </para
+></listitem>
+<listitem
+><para
+><command
+>writeSetting(<parameter
+>võti</parameter
+>, <parameter
+>väärtus</parameter
+>)</command
+> - kirjutab <emphasis
+>võtme</emphasis
+> ja <emphasis
+>väärtuse</emphasis
+> paari seadistustefaili </para
+></listitem>
+</itemizedlist>
+<para
+>&kommander; 1.3 uued omadused</para>
+<itemizedlist>
+<listitem>
+<para
+><command
+>execBackground(<parameter
+>string</parameter
+>, <parameter
+>shell</parameter
+>)</command
+> - käivitab välise programmi (kasutades vajaduse korral mittekohustuslikku <emphasis
+>shelli</emphasis
+>) taustal, blokeerimata aktiivset dialoogi; vastupidi eespool kirjeldatud funktsioonile <command
+>exec</command
+> ei tagasta programmi väljundit </para
+></listitem>
+<listitem>
+<para
+><command
+>return(<parameter
+>value</parameter
+>)</command
+> - tagastab väärtuse väljakutsuvale objektile (skript, nupp...) </para
+></listitem>
+<listitem>
+<para
+><command
+>createWidget(<parameter
+>vidinanimi</parameter
+>, <parameter
+>vidinatüüp</parameter
+>, <parameter
+>eellane</parameter
+>)</command
+> - loob uue vidina. Seejärel võib selle asetada näiteks tabelisse või tööriistakasti ja muuta <command
+>minuvidin.show(true)</command
+> abil nähtavaks. Kui asetad uue vidina vormi, pead mõtlema ka paigutusele. &kommander; ei loo paigutusi lennult ega muuda pikslikaupa positsioneerimist (enamasti). See on veidi häiriv isegi C++ arenduse korral. Me soovitame kasutada rühmakasti ja tegelda paigutusega dialoogis, mis võimaldab parima kontrolli asjade käigu üle. </para
+></listitem>
+<listitem>
+<para
+><command
+>connect(<parameter
+>saatja</parameter
+>, <parameter
+>signaal</parameter
+>, <parameter
+>saaja</parameter
+>, <parameter
+>pesa</parameter
+>)</command
+> - ühendab vidina signaali vidina pesaga. Uuri ühenduse dialoogi ja vali sarnased vidinad võimaluste selgitamiseks. Kui näiteks signaal näeb välja nagu <command
+>execute(const QString&amp;)</command
+>, siis peabki just see siin jutumärkides olema. </para
+></listitem>
+<listitem>
+<para
+><command
+>disconnect(<parameter
+>saatja</parameter
+>, <parameter
+>signaal</parameter
+>, <parameter
+>saaja</parameter
+>, <parameter
+>pesa</parameter
+>)</command
+> - tühistab eeltoodud ühenduse. Ka siin on oluline täpne süntaks. </para
+></listitem>
+<listitem>
+<para
+><command
+>widgetExists(<parameter
+>vidinanimi</parameter
+>)</command
+> - tuletab meelde, et võid kasutada muutuja nime viitena vidinale. Seda võib kasutada näiteks loodud vidinate kasutamisel, et kontrollida nende olemasolu. Olematu vidina väljakutsumine toob enesestmõistetavalt kaasa vea. </para
+></listitem>
+</itemizedlist>
+</sect2
+>  
+
+<sect2 id="array_functions">
+<title
+>Massiivifunktsioonid</title>
+<para
+>Toetatud on enamik massiivifunktsioone, kuigi mõned (nt. <command
+>value</command
+>) on uues parseris iganenud ega ole enam kasutatavad. Ainuke erinevus on see, et nende nimele eelne nüüd <command
+>array_</command
+>, mitte <command
+>@Array</command
+>. </para>
+
+<warning
+><para
+>Parseri piirangute tõttu tuleb massiivi nimi määrata stringina, näiteks <command
+>array_count("MinuMassiiv")</command
+>.</para
+></warning>
+
+<itemizedlist>
+<listitem>
+<para
+><command
+>array_clear(<parameter
+>massiiv</parameter
+>)</command
+> - eemaldab kõik elemendid <emphasis
+>massiivist</emphasis
+> </para
+></listitem>
+<listitem>
+<para
+><command
+>array_count(<parameter
+>massiiv</parameter
+>)</command
+> - tagastab elementide arvu <emphasis
+>massiivis</emphasis
+> </para
+></listitem>
+<listitem>
+<para
+><command
+>array_keys(<parameter
+>massiiv</parameter
+>)</command
+> - tagastab stringi, mis sisaldab <emphasis
+>massiivi</emphasis
+> realõpuga (EOL) eraldatud võtmeid; pane tähele, et kui oled importinud massiivi skalaari (võtmed ilma väärtusteta, vt. allpool näidet) &kommander;i abil, ei saa seda kasutada <command
+>array_values("minumassiiv")</command
+> abil, nagu vahest võisid oletada (sest see tundub ju sisaldavat ainult väärtusi), vaid kasutada tuleb <command
+>array_keys("minumassiiv")</command
+>. Aga võib-olla on veel parem mõte kasutada allpool kirjeldatud uusi <emphasis
+>indekseeritud massiive</emphasis
+>. </para
+></listitem>
+<listitem>
+<para
+><command
+>array_values(<parameter
+>massiiv</parameter
+>)</command
+> - tagastab stringi, mis sisaldab <emphasis
+>massiivi</emphasis
+> realõpuga (EOL) eraldatud võtmeid </para
+></listitem>
+<listitem>
+<para
+><command
+>array_tostring(<parameter
+>massiiv</parameter
+>)</command
+> - tagastab stringi, mis sisaldab kogu <emphasis
+>massiivi</emphasis
+> realõpuga (EOL) eraldatud võtme ja väärtuse paaridena (mida ennast eraldab tabeldusmärk) </para
+></listitem>
+<listitem>
+<para
+><command
+>array_fromstring(<parameter
+>massiiv</parameter
+>, <parameter
+>string</parameter
+>)</command
+> - loeb massiivi <emphasis
+>stringist</emphasis
+> (tavaliselt pakub seda funktsioon <command
+>array_tostring</command
+>) </para
+></listitem>
+<listitem>
+<para
+><command
+>array_remove(<parameter
+>massiiv</parameter
+>, <parameter
+>võti</parameter
+>)</command
+> - eemaldab võtmega <emphasis
+>võti</emphasis
+> elemendi <emphasis
+>massiivist</emphasis
+> </para
+></listitem>
+</itemizedlist>
+<para
+>Toome näite massiivi kasutamisest:</para>
+<screen
+>array_fromstring("myArray", "1\tA\nsecond\tB\n3\tC")
+foreach key in myArray do
+  debug("myArray[" + key + "]= " + myArray[key])
+end
+</screen>
+<para
+>See näitab standardveaväljundis stderr järgnevat teksti. Siin on näha, et massiivi elementide järjekorras ei saa kindel olla, sest võtmed on stringid, mitte arvud.</para>
+<screen
+>myArray[1]= A
+myArray[3]= C
+myArray[second]= B
+</screen>
+<para
+>Teine näide võtmeta massiivi kohta:</para>
+<screen
+>array_fromstring("myArray", "A\nB\nC")
+foreach key in myArray do
+  debug(key)
+end
+debug("Massiivi elemendid:\n" + array_keys("myArray"))
+</screen>
+<para
+>See annab tulemuseks:</para>
+<screen
+>A
+B
+C
+Massiivi elemendid:
+A
+B
+C
+</screen>
+
+<para
+>&kommander; 1.3 uued omadused</para>
+<itemizedlist>
+<listitem>
+<para
+><command
+>array_indexedFromString(<parameter
+>massiiv</parameter
+>, <parameter
+>string</parameter
+>, <parameter
+>eraldaja</parameter
+>)</command
+> - see kompenseerib tõiga, et &kommander;il puuduvad indekseeritud massiivid. See loob massiivi nullipõhise järjestikindeksiga. Massiivinimes ja kõigis stringides, mida ei väljenda muutuja, tuleb kasutada jutumärke. Eraldaja argument ei ole kohustuslik, vaikimisi on selleks  "\t" [tabeldusmärk], mida kasutatakse väljade eraldamiseks tabelite, massiivide või detailividinate lugemisel ja kirjutamisel. <emphasis
+>Pane tähele, et see massiivi indeks ei kehtesta iseenesest mingeid reegleid. Samahästi võiks selle luua silmusega, ainult et nii on mugavam.</emphasis
+> </para
+></listitem>
+<listitem>
+<para
+><command
+>array_indexedInsertElements(<parameter
+>massiiv</parameter
+>, <parameter
+>võti</parameter
+>, <parameter
+>string</parameter
+>, <parameter
+>eraldaja</parameter
+>)</command
+> - see funktsioon on osa indekseeritud massiivide komplektist ning võimaldab lisada elemente massiivi, hooldades samal ajal järjestikut unikaalset indeksit. Määra alustav indeksi võti, tekstistring ja eraldamise viis. Elemendid lisatakse aina kasvava indeksinumbriga. </para
+></listitem>
+<listitem>
+<para
+><command
+>array_indexedRemoveElements(<parameter
+>massiiv</parameter
+>, <parameter
+>alustav võti</parameter
+>, <parameter
+>arv</parameter
+>)</command
+> - see võimaldab eemalda elemente indekseeritud massiivist ja vältida indeksis lünki. Määra alustav võti ja lisavõimalusena eemaldatavate elementide arv. Vaikeväärtus on üks. Tulemuseks on ümberindekseeritud massiiv, millest on vajalikud elemendid eemaldatud. </para
+></listitem>
+<listitem>
+<para
+><command
+>array_indexedToString(<parameter
+>massiiv</parameter
+>, <parameter
+>eraldaja</parameter
+>)</command
+> - see võimaldab teisendada indekseeritud massiivi taas stringiks, mis on eriti kasulik detailividinate puhul. Kui näiteks näitad andmebaasipäringu tulemust TreeWidget1 kujul, millel on kuus veergu, võid kasutada valitud rea saamiseks <command
+>TreeWidget1.selection</command
+>. See on eraldatud tabeldusmärkidega ning sa võid vaadata näiteks selle viiendat elementi, kui kasutad <command
+>str_section(TreeWidget1.selection, "\t", 4)</command
+> (pea meeles, et see on nullipõhine). See on väätuse lugemiseks päris hea, aga kui soovid seda muuta, näed, et see pole veel kõik. Kui oled stringi lõhkunud, saad selle uuesti kokku panna, kui kasutad <command
+>val1+"\t"+val2...</command
+> Indekseeritud massiivide kasutamisel võid redigeerida viiendat elementi järgmiselt: <screen>
+idx = TreeWidget1.currentItem
+array_indexedFromString("z", TreeWidget1.selection)
+z[4] = "new value"
+TreeWidget1.removeItem(idx)
+TreeWidget1.insertItem(array_indexedToString("z"), idx)
+</screen
+> Pane tähele, et selleks tuli lisada ainult kaks lühikest rida! See on andmebaasi kasutamisel väga tulus. </para
+></listitem>
+</itemizedlist>
+</sect2
+>  
+
+
+<sect2 id="file_functions">
+<title
+>Failifunktsioonid</title>
+<para
+>Toetatud on kõik failifunktsioonid, ainuke erinevus on see, et nimede ees seisab <command
+>file_</command
+>, mitte <command
+>@File</command
+>. </para>
+
+<itemizedlist>
+<listitem>
+<para
+><command
+>file_read(<parameter
+>nimi</parameter
+>)</command
+> - tagastab faili <emphasis
+>nimi</emphasis
+> sisu </para
+></listitem>
+<listitem>
+<para
+><command
+>file_write(<parameter
+>nimi</parameter
+>, <parameter
+>...</parameter
+>)</command
+> - kirjutab kõik argumendid faili <emphasis
+>nimi</emphasis
+> </para
+></listitem>
+<listitem>
+<para
+><command
+>file_append(<parameter
+>nimi</parameter
+>, <parameter
+>...</parameter
+>)</command
+> - lisab kõik argumendid faili <emphasis
+>nimi</emphasis
+> </para
+></listitem>
+</itemizedlist>
+</sect2
+>  
+
+  
+<sect2 id="input_functions">
+<title
+>Sisendifunktsioonid</title>
+<para
+>Need funktsioonid näitavad mõnda dialoogi, mis võimaldab kasutajal sisestada teatud väärtuse. Vanas parseris oli nende kasutamiseks mõeldud <command
+>@Input</command
+>. Enamiku funktsioonide puhul on kõik parameetrid mittekohustuslikud, erand on <command
+>input_text</command
+>, mis nõuab 2 parameetrit, ja <command
+>input_value</command
+>, mis nõuab 5 parameetrit. </para>
+
+<itemizedlist>
+<listitem>
+<para
+><command
+>input_color(<parameter
+>nimetus</parameter
+>, <parameter
+>default</parameter
+>)</command
+> - tagastab värvi #RRGGBB vormingus </para
+></listitem>
+<listitem>
+<para
+><command
+>input_text(<parameter
+>nimetus</parameter
+>, <parameter
+>pealdis</parameter
+>, <parameter
+>default</parameter
+>)</command
+> - tagastab kasutaja sisestatud teksti </para
+></listitem>
+<listitem>
+<para
+><command
+>input_value(<parameter
+>nimetus</parameter
+>, <parameter
+>pealdis</parameter
+>, <parameter
+>default</parameter
+>, <parameter
+>min</parameter
+>, <parameter
+>maks</parameter
+>, <parameter
+>samm</parameter
+>)</command
+> - tagastab kasutaja sisestatud väärtuse </para
+></listitem>
+<listitem>
+<para
+><command
+>input_directory(<parameter
+>alguskataloog</parameter
+>, <parameter
+>filter</parameter
+>, <parameter
+>nimetus</parameter
+>)</command
+> - tagastab kasutaja valitud kataloogi </para
+></listitem>
+<listitem>
+<para
+><command
+>input_openfile(<parameter
+>nimetus</parameter
+>, <parameter
+>pealdis</parameter
+>, <parameter
+>default</parameter
+>)</command
+> - tagastab kasutaja sisestatud olemasoleva faili </para
+></listitem>
+<listitem>
+<para
+><command
+>input_savefile(<parameter
+>nimetus</parameter
+>, <parameter
+>pealdis</parameter
+>, <parameter
+>default</parameter
+>)</command
+> - tagastab kasutaja sisestatud faili (kui see on olemas, on vajalik kinnitus) </para
+></listitem>
+<listitem>
+<para
+><command
+>input_openfiles(<parameter
+>nimetus</parameter
+>, <parameter
+>pealdis</parameter
+>, <parameter
+>default</parameter
+>)</command
+> - tagastab kasutaja sisestatud olemasolevate failide realõppudega (EOL) eraldatud stringi </para
+></listitem>
+</itemizedlist>
+</sect2
+>  
+
+
+<sect2 id="message_functions">
+<title
+>Teatefunktsioonid</title>
+<para
+>Need funktsioonid näitavad kasutajale teatud teadet või paluvad kinnitada mõne toimingu. Vanas parseris oli kasutusel <command
+>@Message</command
+>. </para>
+
+<itemizedlist>
+<listitem>
+<para
+><command
+>message_info(<parameter
+>tekst</parameter
+>, <parameter
+>nimetus</parameter
+>)</command
+> - näitab infoteksti </para
+></listitem>
+<listitem>
+<para
+><command
+>message_error(<parameter
+>tekst</parameter
+>, <parameter
+>nimetus</parameter
+>)</command
+> - näitab veateksti </para
+></listitem>
+<listitem>
+<para
+><command
+>message_warning(<parameter
+>tekst</parameter
+>, <parameter
+>nimetus</parameter
+>, <parameter
+>nupp1</parameter
+>, <parameter
+>nupp2</parameter
+>, <parameter
+>nupp3</parameter
+>)</command
+> - näitab küsimust koos hoiatuse ja kuni kolme nupuga; tagastatakse valitud nuppude arv; kui nuppude nimesid pole määratud, näidatakse nuppe <command
+>Yes</command
+> ja <command
+>No</command
+> </para
+></listitem>
+<listitem>
+<para
+><command
+>message_question(<parameter
+>tekst</parameter
+>, <parameter
+>nimetus</parameter
+>, <parameter
+>nupp1</parameter
+>, <parameter
+>nupp2</parameter
+>, <parameter
+>nupp3</parameter
+>)</command
+> - näitab küsimust ja kuni kolme nuppu; tagastatakse valitud nuppude arv; kui nuppude nimesid pole määratud, näidatakse nuppe <command
+>Yes</command
+> ja <command
+>No</command
+> </para
+></listitem>
+</itemizedlist>
+</sect2
+>  
+</sect1>
+</chapter>
+
+
+

@@ -1,0 +1,1216 @@
+<appendix id="regular-expressions">
+<appendixinfo>
+<authorgroup>
+<author
+>&Anders.Lund; &Anders.Lund.mail;</author>
+<othercredit role="translator"
+><firstname
+>Krzysztof</firstname
+><surname
+>Woźniak</surname
+><affiliation
+><address
+><email
+>wozniakk@ceti.pl</email
+></address
+></affiliation
+><contrib
+>Polskie tłumaczenie</contrib
+></othercredit
+>  
+</authorgroup>
+</appendixinfo>
+
+<title
+>Wyrażenia regularne</title>
+
+<synopsis
+>Dodatek niniejszy zawiera krótkie, ale obejmujące większość zagadnień wprowadzenie do tajemniczego świata <emphasis
+>wyrażeń regularnych</emphasis
+>. Dokumentacja oparta jest na formacie wyrażeń regularnych stosowanych przez &kate;, która nie jest w pełni kompatybilna z wyrażeniami z języka perl lub polecenia  <command
+>grep</command
+>.</synopsis>
+
+<sect1>
+
+<title
+>Wprowadzenie</title>
+
+<para
+><emphasis
+>Wyrażenia regularne</emphasis
+> pozwalają na takie określenie możliwej zawartości przeszukiwanego tekstu, iż stosunkowo prosty program może określić, czy dany fragment pasuje, czy też nie, do poszukiwanego wzorca. Bardziej zaawansowane zastosowania wyrażeń regularnych pozwalają na przechowywanie i późniejsze wykorzystanie dopasowanych wzorców.</para>
+
+<para
+>Przykładowo, załóżmy, że chcemy znaleźć wszystkie zdania w tekście, rozpoczynające się od słów: <quote
+>Henrik</quote
+> lub <quote
+>Pernille</quote
+>, po których następuje czasownik <quote
+>say</quote
+>.</para>
+
+<para
+>Wykorzystując tradycyjny mechanizm wyszukiwania należałoby zacząć od znalezienia napisu <quote
+>Henrik</quote
+> z następującym po nim fragmentem <quote
+>sa</quote
+> czyli np: <userinput
+>Henrik sa</userinput
+>. Przeglądając znalezione teksty należałoby odrzucić te nie będące początkiem zdania oraz te, gdzie napis <quote
+>sa</quote
+> nie jest początkiem słów <quote
+>says</quote
+>, <quote
+>said</quote
+> itd. Następnie trzeba oczywiście powtórzyć te działania dla kolejnego nazwiska...</para>
+
+<para
+>Za pomocą wyrażeń regularnych zadanie to może być wykonane za pomocą jednej operacji szukania i z dużo większą precyzją.</para>
+
+<para
+>W wyrażeniu regularnym definiowane są reguły generalizujące poszukiwany fragment tekstu. W podanym przykładzie pożądany rezultat szukania można słownie opisać tak: <quote
+>Wyszukaj wiersz rozpoczynający się albo od słowa <quote
+>Henrik</quote
+> albo <quote
+>Pernille</quote
+> (przed którym występuje do 4 spacji lub znaków tabulacji), i następujący po nim tekst <quote
+>sa</quote
+> z końcówkami <quote
+>ys</quote
+> lub <quote
+>id</quote
+></quote
+>. Można to osiągnąć za pomocą następującego wyrażenia regularnego:</para
+> <para
+><userinput
+>^[ \t]{0,4}(Henrik|Pernille) sa(ys|id)</userinput
+></para>
+
+<para
+>Powyższy przykład przedstawia cztery główne mechanizmy współczesnych wyrażeń regularnych:</para>
+
+<itemizedlist>
+<listitem
+><para
+>Wzorce</para
+></listitem>
+<listitem
+><para
+>Zakotwiczenia</para
+></listitem>
+<listitem
+><para
+>Kwantyfikatory</para
+></listitem>
+<listitem
+><para
+>Odwołania zwrotne</para
+></listitem>
+</itemizedlist>
+
+<para
+>Znak karetki (<literal
+>^</literal
+>), rozpoczynający wyrażenie jest zakotwiczeniem oznaczającym, iż dopasowanie będzie możliwe tylko wtedy, jeżeli podany wzorzec znajdzie się na początku wiersza.</para>
+
+<para
+>Napisy <literal
+>[ \t]</literal
+> oraz <literal
+>(Henrik|Pernille) sa(ys|id)</literal
+> to tzw. wzorce. Pierwszy określa <emphasis
+>klasę znaków</emphasis
+>, która będzie dopasowana do spacji lub tabulatora, drugi zawiera wzorzec składający się z podwzorca pasującego do napisu <literal
+>Henrik</literal
+> <emphasis
+>albo</emphasis
+> <literal
+>Pernille</literal
+>. Następnie poszukiwany jest fragment <literal
+> sa</literal
+>, a potem podwzorzec pasujący do napisów <literal
+>ys</literal
+> <emphasis
+> lub </emphasis
+> <literal
+>id</literal
+>.</para>
+
+<para
+>Zapis <literal
+>{0,4}</literal
+> jest kwantyfikatorem oznaczającym, iż dopasowane zostaną <quote
+>co najmniej 0 lecz nie więcej niż 4 wystąpienia określonego wzorca</quote
+>.</para>
+
+<para
+>Ponieważ oprogramowanie obsługi wyrażeń regularnych zawiera mechanizm <emphasis
+>odwołań zwrotnych</emphasis
+>, możliwe jest zachowanie całego dopasowanego fragmentu tekstu (określonego jako podwzorzec w nawiasach okrągłych), a następnie wykorzystanie tego fragmentu w dalszej części wyrażenia (w podanym przykładzie może to być dopasowane nazwisko lub ostatnia część czasownika).</para>
+
+<para
+>Podsumowując, wprowadzone wyrażenie regularne będzie pasować do tekstu tam, i tylko tam, gdzie użytkownik tego wymaga.</para>
+
+<para
+>Poniższe sekcje zawierają szczegółowe informacje o wykorzystaniu wzorców, klas znaków, zakotwiczeń, kwantyfikatorów i odwołań zwrotnych. W ostatniej części przedstawiono kilka pożytecznych przykładów wykorzystania wyrażeń regularnych.</para>
+
+</sect1>
+
+<sect1 id="regex-patterns">
+
+<title
+>Wzorce</title>
+
+<para
+>Wzorce mogą się składać ze znaków i klas znaków. Wzorce mogą zawierać podwzorce, czyli wzorce zamknięte w nawiasach okrągłych.</para>
+
+<sect2>
+<title
+>Sekwencje specjalne</title>
+
+<para
+>W definicji zarówno wzorców, jak i klas znaków, niektóre znaki mają specjalne znaczenie. Aby wyszukać te znaki w tekście, muszą być zapisane w postaci <emphasis
+>sekwencji specjalnej</emphasis
+>, tak aby program obsługi wyrażeń regularnych interpretował je jako znaki tekstu, a nie znaki sterujące procesem wyszukiwania.</para>
+
+<para
+>Aby tego dokonać należy poprzedzić znak specjalny znakiem odwrotnego ukośnika (<literal
+>\</literal
+>).</para>
+
+
+<para
+>Program obsługujący wyrażenia regularne pozwala zapisywać każdy znak w postaci sekwencji specjalnej, nawet taki, który nie ma żadnego specjalnego znaczenia. Na przykład zapisanie litery <quote
+>j</quote
+> w postaci sekwencji <userinput
+>\j</userinput
+> jest całkowicie poprawne i oznacza literę <quote
+>j</quote
+>. Jeżeli więc użytkownik nie jest pewny czy dany znak ma znaczenie specjalne czy też nie, to może go dla bezpieczeństwa zapisać w postaci sekwencji specjalnej.</para>
+
+<para
+>Istnieje oczywiście również sekwencja specjalna dla określenia znaku odwrotnego ukośnika i jest to: <userinput
+>\\</userinput
+>.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Skróty i klasy znaków</title>
+
+<para
+><emphasis
+>Klasa znaków</emphasis
+> to wyrażenie pasujące do jednego znaku wybranego z określonego zbioru znaków. W wyrażeniach regularnych klasy znaków są definiowane poprzez podanie zbioru znaków wewnątrz nawiasów kwadratowych <literal
+>[]</literal
+> lub poprzez użycie jednego ze skrótowych predefiniowanych klas znaków opisanych poniżej.</para>
+
+<para
+>Proste klasy znaków zawierają listę znaków np.: <userinput
+>[abc]</userinput
+> (klasa pasuje do każdej z liter: <quote
+>a</quote
+>, <quote
+>b</quote
+> lub <quote
+>c</quote
+>) albo <userinput
+>[0123456789]</userinput
+> (klasa znaków pasująca do dowolnej cyfry).</para>
+
+<para
+>Ponieważ litery i cyfry można ustawić w logicznym porządku, to możliwe jest zapisanie klas znaków w postaci zakresów znaków np.: <userinput
+>[a-c]</userinput
+> jest równoważne zapisowi <userinput
+>[abc]</userinput
+>, zaś <userinput
+>[0-9]</userinput
+> jest tożsame z zapisem <userinput
+>[0123456789]</userinput
+>. Dopuszczalne są różne kombinacje zakresów w definicji klas znaków np. <userinput
+>[a-fynot1-38]</userinput
+> jest całkowicie poprawne, i będzie pasować do jednego następujących znaków: <quote
+>a</quote
+>,<quote
+>b</quote
+>,<quote
+>c</quote
+>,<quote
+>d</quote
+>, <quote
+>e</quote
+>,<quote
+>f</quote
+>,<quote
+>y</quote
+>,<quote
+>n</quote
+>,<quote
+>o</quote
+>,<quote
+>t</quote
+>, <quote
+>1</quote
+>,<quote
+>2</quote
+>,<quote
+>3</quote
+> lub <quote
+>8</quote
+>).</para>
+
+<para
+>Duże litery i małe litery są różnymi znakami dla oprogramowania obsługi wyrażeń regularnych, aby więc określić wzorzec nie uwzględniający wielkości liter: <quote
+>a</quote
+> lub <quote
+>b</quote
+> należy zapisać go następująco: <userinput
+>[aAbB]</userinput
+>.</para>
+
+<para
+>Możliwe jest zastosowanie <quote
+>negacji</quote
+> klasy znaków, która oznacza dopasowanie do <quote
+>wszystkich znaków oprócz</quote
+> tych określonych w klasie. Negacji klasy dokonuje się za pomocą znaku (<literal
+>^</literal
+>), który musi stanowić pierwszy znak jej definicji: </para>
+
+<para
+><userinput
+>[^abc]</userinput
+> pasuje do każdego znaku <emphasis
+>z wyjątkiem liter </emphasis
+>:<quote
+>a</quote
+>, <quote
+>b</quote
+> lub <quote
+>c</quote
+>.</para>
+
+<para
+>Oprócz znaków alfabetu zdefiniowane zostały skróty dla pewnych znaków specjalnych oraz najczęściej używanych klas znaków: <variablelist>
+
+<varlistentry>
+<term
+><userinput
+>\a</userinput
+></term>
+<listitem
+><para
+>Pasuje do znaku <acronym
+>ASCII</acronym
+> dzwonka (BEL, 0x07).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\f</userinput
+></term>
+<listitem
+><para
+>Pasuje do znaku <acronym
+>ASCII</acronym
+> form feed (FF, 0x0C).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\n</userinput
+></term>
+<listitem
+><para
+>Pasuje do znaku <acronym
+>ASCII</acronym
+> line feed (LF, 0x0A, nowy wiersz w systemach UNIX).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\r</userinput
+></term>
+<listitem
+><para
+>Pasuje do znaku <acronym
+>ASCII</acronym
+> carriage return (CR, 0x0D).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\t</userinput
+></term>
+<listitem
+><para
+>Pasuje do znaku  <acronym
+>ASCII</acronym
+> - tabulacja pozioma (HT, 0x09).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\v</userinput
+></term>
+<listitem
+><para
+>Pasuje do znaku <acronym
+>ASCII</acronym
+> tabulacja pionowa (VT, 0x0B).</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><userinput
+>\xhhhh</userinput
+></term>
+
+<listitem
+><para
+>Pasuje do znaku Unicode o numerze "hhhh" zapisanym w formacie szesnastkowym (w zakresie od 0x0000 do 0xFFFF). \0ooo (tzn.: \zero ooo) pasuje do znaku <acronym
+>ASCII</acronym
+>/Latin-1 o kodzie "ooo" w systemie ósemkowym (z zakresu od 0 do 0377).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>.</userinput
+> (kropka)</term>
+<listitem
+><para
+>Pasuje do każdego znaku (także do znaku końca wiersza).</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\d</userinput
+></term>
+<listitem
+><para
+>Pasuje do cyfry, co jest tożsame z zapisem: <literal
+>[0-9]</literal
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\D</userinput
+></term>
+<listitem
+><para
+>Pasuje do znaku nie będącego cyfrą, co jest równoważne zapisom: <literal
+>[^0-9]</literal
+> lub <literal
+>[^\d]</literal
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\s</userinput
+></term>
+<listitem
+><para
+>Pasuje do znaku spacji lub innego tzw. białego znaku. Tożsame z: <literal
+>[ \t\n\r]</literal
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\S</userinput
+></term>
+<listitem
+><para
+>Dopasowuje znak nie będący spacją lub innym tzw. białym znakiem. Tożsame z: <literal
+>[^ \t\n\r]</literal
+> lub <literal
+>[^\s]</literal
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\w</userinput
+></term>
+<listitem
+><para
+>Pasuje do dowolnego <quote
+>elementu słowa</quote
+> - tzn. do dowolnej litery lub cyfry. Należy zwrócić uwagę, iż znak podkreślenia (<literal
+>_</literal
+>) nie zostanie dopasowany (co dzieje się np. w wyrażeniach regularnych Perl-a). Zapis ten równoważny jest klasie znaków: <literal
+>[a-zA-Z0-9]</literal
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\W</userinput
+></term>
+<listitem
+><para
+>Pasuje do wszystkich znaków nie będących literami bądź cyframi, co jest równoważne wyrażeniom <literal
+>[^a-zA-Z0-9]</literal
+> lub <literal
+>[^\w]</literal
+></para
+></listitem>
+</varlistentry>
+
+
+</variablelist>
+
+</para>
+
+<para
+>Skróty można wykorzystywać we własnych definicjach klas np. aby dopasować znak alfabetu, spację oraz kropkę można użyć wyrażenia: <userinput
+>[\w \.]</userinput
+></para
+> 
+
+<note
+> <para
+>Zapis klas znaków w notacji POSIX <userinput
+>[:&lt;class name&gt;:]</userinput
+> nie jest obecnie obsługiwany przez &kate;.</para
+> </note>
+
+<sect3>
+<title
+>Znaki o specjalnym znaczeniu dla klas znaków</title>
+
+<para
+>Następujące znaki mają specjalne znaczenie wewnątrz definicji klasy znaków <quote
+>[]</quote
+>. Muszą one być zapisane w postaci sekwencji specjalnej, jeżeli użytkownik chce je umieścić jako element klasy:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><userinput
+>]</userinput
+></term>
+<listitem
+><para
+>Znak kończący definicję klasy znaków. Musi być zapisany w postaci sekwencji specjalnej, jeżeli nie jest pierwszym znakiem klasy (może nastąpić po daszku ^ tzn. negacji klasy).</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><userinput
+>^</userinput
+> (daszek)</term>
+<listitem
+><para
+>Oznacza negację klasy w przypadku, jeżeli jest na pierwszym miejscu jej definicji. Musi być zapisany w postaci sekwencji specjalnej w przypadku występowania jako pierwszy znak klasy.</para
+></listitem
+> 
+</varlistentry>
+<varlistentry>
+<term
+><userinput
+>-</userinput
+> (minus)</term>
+<listitem
+><para
+>Oznacza zakres znaków w klasie. Zawsze musi być zapisany w postaci sekwencji specjalnej.</para
+></listitem>
+</varlistentry>
+<varlistentry>
+<term
+><userinput
+>\</userinput
+> (odwrotny ukośnik)</term>
+<listitem
+><para
+>Występuje tylko pod postacią sekwencji specjalnej.</para
+></listitem>
+</varlistentry>
+
+</variablelist>
+
+</sect3>
+
+</sect2>
+
+<sect2>
+
+<title
+>Alternatywa, czyli dopasowanie <quote
+>jednego z kilku</quote
+> wzorców</title>
+
+<para
+>Jeżeli konieczne jest dopasowanie wyrażenia do jednego ze zbioru kilku alternatywnych wzorców, to należy je zapisać rozdzielając znakiem <literal
+>|</literal
+> (pionowej kreski).</para>
+
+<para
+>Na przykład w celu odszukania w tekście słów <quote
+>John</quote
+> lub <quote
+>Harry</quote
+> należy użyć wyrażenia <userinput
+>John|Harry</userinput
+>.</para>
+
+</sect2>
+
+<sect2>
+
+<title
+>Podwzorce</title>
+
+<para
+><emphasis
+>Podwzorce</emphasis
+>, czyli wzorce zamknięte w nawiasach okrągłych, wykorzystywane są w wielu sytuacjach przy tworzeniu wyrażeń regularnych.</para>
+
+<sect3>
+
+<title
+>Definiowanie alternatyw</title>
+
+<para
+>Można skorzystać z podwzorców do grupowania zbioru wzorców alternatywnych, składających się na inny wzorzec. Wzorce alternatywne rozdzielane są znakiem <quote
+>|</quote
+> (pionowej kreski).</para>
+
+<para
+>Na przykład aby wyszukać jeden z trzech wyrazów: <quote
+>int</quote
+>, <quote
+>float</quote
+> lub <quote
+>double</quote
+> można użyć wzorca <userinput
+>int|float|double</userinput
+>. Jeżeli dodatkowo po każdym z tych wyrazów ma występować spacja i pewna liczba innych znaków to należy to wyrażenie zapisać jako podwzorzec w nawiasach okrągłych: <userinput
+>(int|float|double)\s+\w+</userinput
+>.</para>
+
+</sect3>
+
+<sect3>
+
+<title
+>Przechwytywanie dopasowanego tekstu (odwołania zwrotne)</title>
+
+<para
+>Wykorzystanie odwołań zwrotnych wymaga użycia podwzorca dla określenia części wzorca, którą system wyrażeń regularnych powinien przechwycić.</para>
+
+<para
+>Przykładowo, jeżeli poszukiwane są dwa następujące po przecinku (i ew. spacji) powtórzenia tego samego słowa, to wyrażenie będzie miało postać <userinput
+>(\w+),\s*\1</userinput
+>. Podwzorzec <literal
+>\w+</literal
+> pasuje do zbitki liter lub cyfr zaś całe wyrażenie będzie dopasowane, jeżeli po tym podwzorcu wystąpi przecinek (spacja - 0 lub więcej), a następnie identyczna zbitka liter lub cyfr (zapis <literal
+>\1</literal
+> odwołuje się do przechwyconego <emphasis
+>pierwszego zapisanego w nawiasach podwzorca wyrażenia</emphasis
+>).</para>
+
+<!-- <para
+>See also <link linkend="backreferences"
+>Back references</link
+>.</para
+> -->
+
+</sect3>
+
+<sect3 id="lookahead-assertions">
+<title
+>Zakotwiczenia w przód</title>
+
+<para
+>Zakotwiczenie w przód to podwzorzec rozpoczynający się od znaków <literal
+>?=</literal
+> lub <literal
+>?!</literal
+>.</para>
+
+<para
+>Na przykład, aby dopasować napis <quote
+>Bill</quote
+>, ale tylko wtedy, gdy nie następuje po nim napis <quote
+> Gates</quote
+>, można użyć wyrażenia: <userinput
+>Bill(?! Gates)</userinput
+>. Pasuje ono do napisów <quote
+>Bill Clinton</quote
+> oraz <quote
+>Billy the kid</quote
+>, ale ignoruje inne wystąpienia.</para>
+
+<para
+>Podwzorce wykorzystane przy zakotwiczeniach nie są przechwytywane.</para>
+
+<para
+>Więcej informacji w sekcji <link linkend="assertions"
+>Zakotwiczenia</link
+></para>
+
+</sect3>
+
+</sect2>
+
+<sect2 id="special-characters-in-patterns">
+<title
+>Znaki specjalnego znaczenia wewnątrz wzorców</title>
+
+<para
+>Następujące znaki mają specjalne znaczenie wewnątrz definicji wzorca. Muszą one być zapisane w postaci sekwencji specjalnej w przypadku ich wyszukiwania w tekście: <variablelist>
+
+<varlistentry>
+<term
+><userinput
+>\</userinput
+> (odwrotny ukośnik)</term>
+<listitem
+><para
+>Odwrotny ukośnik.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>^</userinput
+> (daszek)</term>
+<listitem
+><para
+>Zakotwiczenie do początku tekstu.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>$</userinput
+></term>
+<listitem
+><para
+>Zakotwiczenie do końca tekstu.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>()</userinput
+> (lewy i prawy nawias)</term>
+<listitem
+><para
+>Oznaczenie podwzorca.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>{}</userinput
+> (lewy i prawy nawias klamrowy)</term>
+<listitem
+><para
+>Oznaczenie kwantyfikatora.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>[]</userinput
+> (lewy i prawy nawias kwadratowy)</term>
+<listitem
+><para
+>Oznaczenie klasy znaków.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>|</userinput
+> (pionowa kreska)</term>
+<listitem
+><para
+>Logiczne LUB. Rozdziela wzorce alternatywne.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>+</userinput
+> (znak plusa)</term>
+<listitem
+><para
+>Kwantyfikator, oznacza: "1 lub więcej" wystąpień.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>*</userinput
+> (gwiazdka)</term>
+<listitem
+><para
+>Kwantyfikator, oznacza: "0 lub więcej" wystąpień.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>?</userinput
+> (znak zapytania)</term>
+<listitem
+><para
+>Oznacza opcjonalność wzorca. Może być interpretowany jako kwantyfikator: 0 lub 1.</para
+></listitem>
+</varlistentry>
+
+</variablelist>
+
+</para>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="quantifiers">
+<title
+>Kwantyfikatory</title>
+
+<para
+><emphasis
+>Kwantyfikatory</emphasis
+> umożliwiają definiowanie wyrażeń regularnych, które dopasowują się do określonej liczby (zakresu) znaków, wzorców lub klas znaków.</para>
+
+<para
+>Kwantyfikatory zapisywane są w nawiasach klamrowych (<literal
+>{</literal
+> oraz <literal
+>}</literal
+>) i mają postać: <literal
+>{[minimalna liczba wystąpień][,[maksymalna liczba wystąpień]]}</literal
+> </para>
+
+<para
+>Wykorzystanie kwantyfikatorów zaprezentowano w poniższych przykładach: <variablelist>
+
+<varlistentry>
+<term
+><userinput
+>{1}</userinput
+></term>
+<listitem
+><para
+>Dokładnie jedno wystąpienie</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>{0,1}</userinput
+></term>
+<listitem
+><para
+>Brak wystąpienia lub jedno wystąpienie</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>{,1}</userinput
+></term>
+<listitem
+><para
+>To co powyżej ale mniej pisania ;-)</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>{5,10}</userinput
+></term>
+<listitem
+><para
+>Co najmniej 5, ale nie więcej niż 10 wystąpień.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>{5,}</userinput
+></term>
+<listitem
+><para
+>Co najmniej 5 wystąpień (brak górnego ograniczenia).</para
+></listitem>
+</varlistentry>
+
+</variablelist>
+
+</para>
+
+<para
+>Dodatkowo możliwe jest wykorzystanie kilku skrótów: <variablelist>
+
+<varlistentry>
+<term
+><userinput
+>*</userinput
+> (gwiazdka)</term>
+<listitem
+><para
+>podobnie jak <literal
+>{0,}</literal
+>, wyszukuje dowolną liczbę wystąpień.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>+</userinput
+> (znak plusa)</term>
+<listitem
+><para
+>podobnie jak <literal
+>{1,}</literal
+>, wyszukuje co najmniej jedno wystąpienie.</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>?</userinput
+> (znak zapytania)</term>
+<listitem
+><para
+>podobnie jak <literal
+>{0,1}</literal
+>, dopasowuje brak lub dokładnie jedno wystąpienie.</para
+></listitem>
+</varlistentry>
+
+</variablelist>
+
+</para>
+
+<sect2>
+
+<title
+>Zachłanność</title>
+
+<para
+>Jeżeli kwantyfikatory nie mają określonej maksymalnej liczby wystąpień, to wyrażenie jest dopasowywane do maksymalnej możliwej liczby wyszukiwanych wzorców. Zachowanie takie nazywane jest <emphasis
+>zachłannością</emphasis
+> kwantyfikatorów.</para>
+
+<para
+>Współczesne oprogramowanie obsługujące wyrażenia regularne pozwala na <quote
+>wyłączenie zachłanności</quote
+>. W środowisku graficznym możliwość ta może być dostępna albo nie. Przykładowo, w oknie wyszukiwania pozwalającym na użycie wyrażeń regularnych, może znaleźć się pole wyboru o nazwie: <quote
+>Minimalne dopasowanie</quote
+>. Powinna też znaleźć się tam informacja, iż zachłanność jest zachowaniem domyślnym dla wyrażeń regularnych.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Przykłady</title>
+
+<para
+>Poniżej znajduje się kilka przykładów użycia kwantyfikatorów</para>
+
+<variablelist>
+
+<varlistentry>
+<term
+><userinput
+>^\d{4,5}\s</userinput
+></term>
+<listitem
+><para
+>Pasuje do cyfr napisu <quote
+>1234 go</quote
+> oraz <quote
+>12345 now</quote
+> ale nie pasuje do napisów <quote
+>567 eleven</quote
+> albo <quote
+>223459 somewhere</quote
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\s+</userinput
+></term>
+<listitem
+><para
+>Pasuje do jednej lub więcej spacji lub innych tzw. białych znaków</para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>(bla){1,}</userinput
+></term>
+<listitem
+><para
+>Pasuje do wszystkich <quote
+>blablabla</quote
+> oraz <quote
+>bla</quote
+> w słowach <quote
+>blackbird</quote
+> lub <quote
+>tabla</quote
+></para
+></listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>/?&gt;</userinput
+></term>
+<listitem
+><para
+>Pasuje do <quote
+>/&gt;</quote
+> w <quote
+>&lt;closeditem/&gt;</quote
+> jak również do <quote
+>&gt;</quote
+> w <quote
+>&lt;openitem&gt;</quote
+>.</para
+></listitem>
+</varlistentry>
+
+</variablelist>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="assertions">
+<title
+>Zakotwiczenia</title>
+
+<para
+><emphasis
+>Zakotwiczenia</emphasis
+> pozwalają dopasowywać wzorce wyrażenia regularnego tylko wtedy, gdy spełnione są określone warunki.</para>
+
+<para
+>Zakotwiczenie nie musi określać żadnego znaku do dopasowania. Bada ono raczej otoczenie potencjalnego dopasowania przed jego zatwierdzeniem. Na przykład zakotwiczenie <emphasis
+>granica słowa</emphasis
+> nie działa na zasadzie wyszukiwania znaków nie pasujących do słowa, ale zamiast tego sprawdza, czy kolejny znak nie jest znakim składającym się na słowo. Oznacza to, iż zakotwiczenie może zostać dopasowane tam, gdzie nie ma żadnego znaku (np. na końcu przeszukiwanego napisu).</para>
+
+<para
+>Część zakotwiczeń właściwie nie posiada wzorca dopasowania, lecz zamiast tego wskazują  część napisu nie stanowiącą rezultatu dopasowania całego wyrażenia.</para>
+
+<para
+>Wyrażenia regularne opisane w tej dokumentacji pozwalają na użycie następujących zakotwiczeń: <variablelist>
+
+<varlistentry
+> 
+<term
+><userinput
+>^</userinput
+> (daszek: początek tekstu)</term
+> 
+<listitem
+><para
+>Określa początek przeszukiwanego tekstu.</para
+> <para
+>Wyrażenie <userinput
+>^Peter</userinput
+> spowoduje dopasowanie wzorca <quote
+>Peter</quote
+> dla tekstu <quote
+>Peter, hey!</quote
+> ale już nie dla tekstu: <quote
+>Hey, Peter!</quote
+> </para
+> </listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>$</userinput
+> (koniec tekstu)</term>
+<listitem
+><para
+>Określa koniec przeszukiwanego tekstu.</para>
+
+<para
+>Wyrażenie <userinput
+>you\?$</userinput
+> będzie dopasowane do ostatniego "you" w tekście <quote
+>You didn't do that, did you?</quote
+>, ale już nie dla tekstu: <quote
+>You didn't do that, right?</quote
+></para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\b</userinput
+> (granica słowa)</term>
+<listitem
+><para
+>Określa sytuację gdy po jednej stronie jest element słowa, a po drugiej inny znak (nie będący elementem słowa).</para>
+<para
+>Funkcja przydatna do wykrywania końca słów. Jej użycie po dwóch stronach wzorca spowoduje dopasowanie tylko całych wyrazów. Wyrażenie <userinput
+>\bin\b</userinput
+> będzie dopasowane do <quote
+>in</quote
+> w tekście <quote
+>He came in through the window</quote
+>, ale nie do napisu <quote
+>in</quote
+> w słowie <quote
+>window</quote
+>.</para
+></listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>\B</userinput
+> (przeciwieństwo granicy słowa)</term>
+<listitem
+><para
+>Dopasowuje wzorzec wszędzie tam, gdzie <quote
+>\b</quote
+> nie spowoduje dopasowania.</para>
+<para
+>Oznacza to, iż będą wyszukiwane wzorce znajdujące się np. wewnątrz dłuższych wyrazów. Wyrażenie <userinput
+>\Bin\B</userinput
+> będzie dopasowane do "in" w słowie <quote
+>window</quote
+>, ale już nie do "in" w wyrazie <quote
+>integer</quote
+>, czy też napisie <quote
+>I'm in love</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>(?=PATTERN)</userinput
+> (Zakotwiczenie w przód)</term>
+<listitem
+><para
+>Zakotwiczenie w przód analizuje część napisu następującą po potencjalnym dopasowaniu. Zakotwiczenie w przód nie spowoduje dopasowania wzorca, jeżeli tekst następujący po nim nie pasuje do <emphasis
+>PATTERN</emphasis
+> (wzorca) zakotwiczenia. Należy podkreślić iż tekst, który pasuje do wzorca zakotwiczenia, nie będzie częścią rezultatu wyszukiwania.</para>
+<para
+>Wyrażenie <userinput
+>handy(?=\w)</userinput
+> dopasowane będzie do <quote
+>handy</quote
+> w słowie <quote
+>handyman</quote
+> ale już nie do napisu: <quote
+>That came in handy!</quote
+></para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><userinput
+>(?!PATTERN)</userinput
+> (Negacja zakotwiczenia w przód)</term>
+
+<listitem
+><para
+>Zanegowane zakotwiczenie w przód nie dopuści dopasowania wzorca, jeżeli tekst następujący po nim pasuje do <emphasis
+>PATTERN</emphasis
+> (wzorca) zakotwiczenia.</para>
+<para
+>Wyrażenie <userinput
+>const \w+\b(?!\s*&amp;)</userinput
+> pasuje do tekstu <quote
+>const char</quote
+> w napisie <quote
+>const char* foo</quote
+> ale już nie będzie pasować do <quote
+>const QString</quote
+> w <quote
+>const QString&amp; bar</quote
+> ponieważ znak <quote
+>&amp;</quote
+> pasuje do negacji zakotwiczenia w przód.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+</para>
+
+</sect1>
+
+<!-- TODO sect1 id="backreferences">
+
+<title
+>Back References</title>
+
+<para
+></para>
+
+</sect1 -->
+
+</appendix>

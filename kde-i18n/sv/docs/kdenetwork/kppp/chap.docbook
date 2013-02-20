@@ -1,0 +1,303 @@
+<chapter id="chap-and-pap">
+<title
+><acronym
+>PAP</acronym
+> och <acronym
+>CHAP</acronym
+></title>
+
+<para
+>Från version 0.9.1, har &kppp; direktstöd för de vanligaste typerna av <acronym
+>PAP</acronym
+>-autentisering. </para>
+
+<sect1 id="pap-with-kppp">
+<title
+><acronym
+>PAP</acronym
+> med &kppp;</title>
+
+<para
+>Det finns två olika sätt att använda <acronym
+>PAP</acronym
+>.</para>
+
+<sect2 id="client-side-authentication">
+<title
+>Autentisering på klientsidan</title>
+
+<para
+>Det här sättet används av många kommersiella Internetleverantörer. Det betyder egentligen att du (eller i själva verket din dator) måste autentisera dig på Internetleverantörens <acronym
+>PPP</acronym
+>-server. <acronym
+>PPP</acronym
+>-servern behöver inte autentisera sig på din dator. Det här är inte en säkerhetsfråga, eftersom du borde veta vilken dator som du precis försökt ringa upp.</para>
+
+<para
+>Om din Internetleverantör ger dig ett användarnamn och lösenord, och anger att du ska använda <acronym
+>PAP</acronym
+>-autentisering, är det här det sätt som du ska välja.</para>
+
+</sect2>
+
+<sect2 id="two-way-authentication">
+<title
+>Tvåvägsautentisering</title>
+
+<para
+>Som ovan, men i det här fallet kräver din dator att Internetleverantörens <acronym
+>PPP</acronym
+>-server ska autentisera sig. För att kunna upprätta en förbindelse, måste du välja autentiseringsmetoden <guilabel
+>Skriptbaserad</guilabel
+>, inte <guilabel
+>PAP</guilabel
+>, och du måste redigera <filename
+>/etc/ppp/pap-secrets</filename
+> för hand. Även om &kppp; inte tillhandahåller inbyggt stöd för det här sättet, är det ändå lätt att upprätta en förbindelse.</para>
+
+</sect2>
+
+<sect2 id="preparing-kppp-for-pap">
+<title
+>Att förbereda &kppp; för <acronym
+>PAP</acronym
+></title>
+
+<procedure>
+<step>
+<para
+>Försäkra dig om att filen <filename
+>/etc/ppp/options</filename
+> (och <filename
+>&tilde;/.ppprc</filename
+> om den finns) <emphasis
+>inte</emphasis
+> innehåller något av följande argument:</para>
+
+<itemizedlist>
+<listitem>
+<para
+><option
+>+pap</option
+></para>
+</listitem>
+<listitem>
+<para
+><option
+>-pap</option
+></para>
+</listitem>
+<listitem>
+<para
+><option
+>papcrypt</option
+></para>
+</listitem>
+<listitem>
+<para
+><option
+>+chap</option
+></para>
+</listitem>
+<listitem>
+<para
+><option
+>+chap</option
+></para>
+</listitem>
+<listitem>
+<para
+><option
+>+ua</option
+></para>
+</listitem>
+<listitem>
+<para
+><option
+>fjärrnamn</option
+></para>
+</listitem>
+</itemizedlist>
+
+<para
+>Det är inte alls troligt att några av de här alternativen redan finns, men bara för att vara på den säkra sidan, kontrollera det.</para>
+</step>
+<step>
+<para
+>Starta &kppp;</para>
+</step>
+<step>
+<para
+>Klicka på <guibutton
+>Inställningar</guibutton
+></para>
+</step>
+<step>
+<para
+>Välj abonnemanget som du vill använda <acronym
+>PAP</acronym
+> tillsammans med och klicka <guibutton
+>Redigera</guibutton
+></para>
+</step>
+<step>
+<para
+>Välj fliken <guilabel
+>Uppringning</guilabel
+></para>
+</step>
+<step>
+<para
+>Välj <acronym
+>PAP</acronym
+> i kombinationsrutan <guilabel
+>Autentisering</guilabel
+>.</para>
+</step>
+<step>
+<para
+>Om du inte vill skriva in ditt lösenord varje gång du ringer upp, välj <guilabel
+>Spara lösenordet</guilabel
+>. Det här sparar ditt lösenord i en fil, så försäkra dig om att ingen annan har tillgång till ditt konto.</para>
+</step>
+<step>
+<para
+>Det är allt. Stäng dialogrutorna, skriv in användarnamnet och lösenordet som din Internetleverantör har tillhandahållit, och klicka på <guibutton
+>Anslut</guibutton
+>.</para>
+</step>
+</procedure>
+
+
+</sect2>
+
+</sect1>
+
+<sect1 id="pap-and-chap-alternate-method">
+<title
+>Ett alternativt sätt att använda <acronym
+>PAP</acronym
+> och <acronym
+>CHAP</acronym
+> med &kppp;</title>
+
+<para
+>Det här avsnittet är baserat på e-post från Keith Brown <email
+>kbrown@pdq.net</email
+> och förklarar hur man får &kppp; att fungera med ett generellt <acronym
+>PAP</acronym
+>- eller <acronym
+>CHAP</acronym
+>-abonnemang. Om din Internetleverantör precis gav dig ett användarnamn och lösenord för ett konto, kan du förmodligen hoppa över det här avsnittet, eftersom instruktionerna i det föregående är allt du kommer att behöva.</para>
+
+<para
+><acronym
+>PAP</acronym
+> verkar mycket mer komplicerat vid första anblicken än det verkligen är. Servern (maskinen som du ansluter till) talar egentligen bara om för klienten (din maskin) att autentisera med <acronym
+>PAP</acronym
+>. Klienten (<application
+>pppd</application
+>) tittar in en speciell fil efter en post som innehåller ett servernamn som passar och ett klientnamn för den här anslutningen, och skickar sedan lösenordet som den hittar där. Det är egentligen allt!</para>
+
+<para
+>Här följer hur man får det här att ske. Jag antar en <acronym
+>pppd</acronym
+> version 2.2.x eller senare och en standardinstallation med konfigurationsfiler på <filename class="directory"
+>/etc/ppp</filename
+>.</para>
+
+<para
+>För syftet med det här exemplet, antag att du har ett Internetkonto med <systemitem
+>glob.net</systemitem
+> med användarnamnet <systemitem
+>anvbaz</systemitem
+> och lösenordet <literal
+>foobar</literal
+></para>
+
+<para
+>Först måste du lägga till allt det här till en fil som heter <filename
+>/etc/ppp/pap-secrets</filename
+>. Formatet för en rad som passar vårt syfte är:</para>
+
+<screen
+><userinput
+>ANVÄNDARNAMN    SERVERNAMN     LÖSENORD</userinput
+></screen>
+
+<para
+>Så du skulle lägga till följande rad i filen <filename
+>/etc/ppp/pap-secrets</filename
+> och sedan spara den:</para>
+
+<screen
+><userinput
+>anvbaz     glob           foobar</userinput
+></screen>
+
+<note>
+<para
+>Du kan använda vilket namn som du vill för servern, om du bara använder samma namn i parametern till <application
+>pppd</application
+>, som du snart kommer att se. Här har det förkortats till <userinput
+>glob</userinput
+>, men namnet används bara för att hitta det rätta lösenordet.</para>
+</note>
+
+<para
+>Därefter måste du ställa in anslutningen i &kppp;. Grundinställningen är samma som för alla andra anslutningar, så vi går inte in på detaljerna här, utom att tala om att du nog vill försäkra dig om att <filename
+>/etc/ppp/options</filename
+> är tom, och att du inte heller ska skapa ett inloggningsskript.</para>
+
+<para
+>I &kppp;s inställningsdialogruta, längst ner under fliken <guilabel
+>Uppringning</guilabel
+>, finns knappen <guibutton
+>Ändra parametrar till pppd...</guibutton
+>. Den här visar en redigeringsdialogruta. Här kan du antingen skriva in värden som skickas till <application
+>pppd</application
+> som kommandoradsparametrar, och i fallet med parametrar som har flera värden, måste du ange varje värde som en särskild post i listrutan, i den riktiga ordningen.</para>
+
+<para
+>Du kan skriva in alla övriga parametrar som du vill ha först. Lägg sedan till parametrarna som <application
+>pppd</application
+> använder för att hantera <acronym
+>PAP</acronym
+>-autentisering. Med det här exemplet, ska vi lägga till <userinput
+>user</userinput
+>, <userinput
+>anvbaz</userinput
+>, <userinput
+>remotename</userinput
+> och <userinput
+>glob</userinput
+> i den ordningen.</para>
+
+<para
+>Parametern <option
+>user</option
+> talar om för <application
+>pppd</application
+> vilket användarnamn den ska leta efter i filen <filename
+>pap-secrets</filename
+> och sedan skicka till servern. Parametern remotename används av <application
+>pppd</application
+> för att passa ihop med posten i filen <filename
+>pap-secrets</filename
+>, så återigen, den kan vara vad som helst som du vill, så länge den är samma som posten i filen <filename
+>pap-secrets</filename
+>.</para>
+
+<para
+>Det här är allt som krävs, och du ska nu kunna ställa in din egen anslutning till servern med <acronym
+>PAP</acronym
+>-autentisering. <acronym
+>CHAP</acronym
+> är inte särskilt annorlunda. Du kan titta i &Linux; guide för nätverksadministratörer efter filformatet för <filename
+>chap-secrets</filename
+>, och parametrarna som används för <application
+>pppd</application
+>, och resten bör vara enkelt.</para>
+
+</sect1>
+</chapter>

@@ -1,0 +1,4 @@
+KDE_LANG = sk
+SUBDIRS = $(AUTODIRS)
+KDE_DOCS = kinfocenter/pci
+KDE_MANS = AUTO

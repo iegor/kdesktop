@@ -1,0 +1,907 @@
+<?xml version="1.0" ?>
+<!DOCTYPE book PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" "dtd/kdex.dtd" [
+  <!ENTITY lisa "<application
+>LISa</application
+>">
+  <!ENTITY package "kdenetwork">
+  <!ENTITY reslisa "<application
+>resLISa</application
+>">
+  <!ENTITY kappname "&lisa;"
+><!-- replace kapp here -->
+  <!ENTITY % addindex "IGNORE">
+  <!ENTITY % Estonian  "INCLUDE"
+><!-- change language only here -->
+]>
+
+<book lang="&language;">
+
+<bookinfo>
+
+<title
+>&lisa; käsiraamat</title>
+
+<authorgroup>
+<author
+><firstname
+>Alexander</firstname
+> <surname
+>Neundorf</surname
+> <affiliation
+> <address
+><email
+>neundorf@kde.org</email
+></address>
+</affiliation>
+</author>
+
+<othercredit role="translator"
+><firstname
+>Marek</firstname
+><surname
+>Laane</surname
+><affiliation
+><address
+><email
+>bald@starman.ee</email
+></address
+></affiliation
+><contrib
+>Tõlge eesti keelde</contrib
+></othercredit
+> 
+
+</authorgroup>
+
+<copyright>
+<year
+>2001</year>
+<holder
+>Alexander Neundorf</holder>
+</copyright>
+
+<date
+>2001-07-07</date>
+<releaseinfo
+>0.01.00</releaseinfo>
+
+<abstract>
+<para
+>&lisa; eesmärk on pakkuda omamoodi <quote
+>võrgunaabrust</quote
+>, kuid seda ainult TCP/IP protokollile toetudes, ilma igasuguse vajaduseta <acronym
+>SMB</acronym
+> või mille tahes järele.</para>
+
+<para
+>See on nii <acronym
+>LAN</acronym
+> infoserveri (&lisa;) kui ka piirangutega <acronym
+>LAN</acronym
+> infoserveri (&reslisa;) käsiraamat</para>
+
+</abstract>
+
+<keywordset>
+<keyword
+>KDE</keyword>
+<keyword
+>kdenetwork</keyword>
+<keyword
+>LAN</keyword>
+<keyword
+>võrk</keyword>
+<keyword
+>võrgunaabrus</keyword>
+</keywordset>
+
+</bookinfo>
+
+<chapter id="introduction">
+<title
+>Sissejuhatus</title>
+
+<para
+>&lisa; eesmärk on pakkuda omamoodi <quote
+>võrgunaabrust</quote
+>, kuid seda ainult TCP/IP protokollile toetudes, ilma igasuguse vajaduseta Samba või mille tahes järele.</para>
+
+<para
+>See on täiesti sõltumatu &kde;/&Qt;-st.</para>
+
+<para
+>Töötavate masinate nimekirja pakutakse <acronym
+>TCP</acronym
+> pordi 7741 vahendusel.</para>
+
+<para
+>&lisa; toetab masinate leidmist kahel viisil:</para>
+
+<orderedlist>
+<listitem>
+<para
+>&lisa;le võib anda <acronym
+>IP</acronym
+> aadresside vahemiku, misjärel &lisa; saadab <acronym
+>ICMP</acronym
+> echo nõuded kõigile määratud <acronym
+>IP</acronym
+> aadressidele ja ootab neilt vastust.</para>
+</listitem>
+<listitem>
+<para
+>&lisa;le võib anda korralduse käivitada <command
+>nmblookup</command
+> <option
+>"*"</option
+>. Käsureavahend <command
+>nmblookup</command
+> peab olema paigaldatud koos Samba paketiga. Käsk <command
+>nmblookup</command
+> <option
+>"*"</option
+> saadab ühendatud võrkudele leviteate ning kõik masinad, kus töötab <acronym
+>SMB</acronym
+> teenus, vastavad sellele.</para>
+</listitem>
+
+</orderedlist>
+
+</chapter>
+
+<chapter id="how-it-works">
+<title
+>Kuidas see töötab</title>
+
+<para
+>Konfiguratsioonifailis määratakse IP aadresside vahemik, mida &lisa; kontrollib tuvastamaks, kas nad töötavad.</para>
+
+<para
+>Kõige lihtsamal juhul on selleks sinu enda võrguaadress/alamvõrgumask, millisel juhul &lisa; kontrollib iga võimalikku masinat sinu võrgus tuvastamaks, kas see töötab.</para>
+
+<para
+>Masinaid kontrollitakse <acronym
+>ICMP</acronym
+> echo nõuetega. Et olla võimeline saatma ja vastu võtma <acronym
+>ICMP</acronym
+> echo nõudeid ja vastuseid, tuleb avada niinimetatud <quote
+>toorsokkel</quote
+>. Seepärast läheb vaja administraatori (<systemitem class="username"
+>root</systemitem
+>) õigusi. Sokkel tuleb avada kohe pärast rakenduse käivitamist ning pärast sokli edukat avamist loobutakse kohe administraatori õigustest (vaata <filename
+>main.cpp</filename
+> ja <filename
+>strictmain.cpp</filename
+>).</para>
+
+<para
+>Kui &lisa; on seadistatud kasutama ka rakendust <command
+>nmblookup</command
+>, siis ta <literal
+>popen("nmblookup \"*\"")</literal
+> ja seejärel analüüsib tulemusi.</para>
+
+<para
+>Et <acronym
+>ICMP</acronym
+> nõuded ja leviteated võivad põhjustada omajagu võrguliiklust, kui ühes ja samas võrgus töötab mitu sellist serverit, teevad need serverid omavahel koostööd. Enne pingimist (või <command
+>nmblookup</command
+> rakendamist) saadavad nad leviteate porti 7741.</para>
+
+<para
+>Kui keegi leviteatele vastab, saadakse vastajalt <acronym
+>TCP</acronym
+> pordi 7741 vahendusel töötavate masinate täielik nimekiri ning pingimine (või <command
+>nmblookup</command
+>) jäetakse ära.</para>
+
+<para
+>Kui keegi ei vasta, alustab leviteate saatnud masin teiste masinate pingimist (või kasutab <command
+>nmblookup</command
+>-i) ja avab seejärel sokli, mis jälgib mainitud leviteateid. Kui masin saab oma leviteatele vastuse, ei pea ta avama soklit leviteadete kuulamiseks. Seetõttu on tavaliselt vaid ühel serveril see sokkel avatud ja just see üksainus server ka tegelikult pingib (või kasutab <command
+>nmblookup</command
+>-i) teisi masinaid. </para>
+
+<para
+>Teisisõnu - serverid on laisad ja töötavad põhimõttel <quote
+>ma teen midagi ainult siis, kui keegi teine seda minu eest ära ei tee</quote
+>.</para>
+
+<para
+>On veel üks omadus, mis kahandab võrgukoormust.</para>
+
+<para
+>Oletame, et &lisa; on seatud uuendama iga 10 minuti järel. Kuid sa ei kasuta serverit just väga tihti. Kui keegi ei kasuta serverit viimase uuendamisperioodi jooksul, siis server võtab ette uuenduse (kas ise või masina abil, mis seda tegelikult teeb) ning kahekordistab uuendusintervalli, &ie; järgmine uuendus leiab aset 20 minuti pärast.</para>
+
+<para
+>Nii juhtub kuni neli korda, see tähendab, et kui keegi ei kasuta serverit kümneminutilise uuendusperioodi kestel pikka aega, suureneb uuendusperiood lõpuks 160 minuti ehk peaaegu kolme tunnini. Kui keegi siis serveri andmeid kasutab, saab ta vana nimekirja (kuni 160 minutit vana). Serverit kasutades seatakse aga uuendusintervall taas esialgseks, &ie; 10 minutile, ning uuendus algab kohe, kui viimasest uuendusest on möödas enam kui 10 minutit. See tähendab, et kui said vastuseks vana nimekirja, võid mõne hetke pärast uuesti proovida ja vastuseks peaks olema tuttuus versioon.</para>
+
+<para
+>Sellel on otsene mõju serveritele, mis ise ei pingi (või ei kasuta nmblookup-i), sest tavaliselt tarvitab neid vaid üks kasutaja, ning suhteliselt vähene mõju serverile, mis pingib (või kasutab <command
+>nmblookup</command
+>-i), sest seda serverit kasutavad kõik teised võrgu serverid.</para>
+
+<para
+>Nii on võimalik, et paljud masinad võrgus kasutavad antud serverit, kuid võrgukoormus on ometi tagasihoidlik. Kasutaja seisukohalt pole eriti oluline teada, kas võrgus on ka server (&ie; nimeserver või failiserver või mis iganes), millel töötab &lisa;. Ta võib alati panna &lisa; oma masinas tööle ning &lisa; tuvastab ise, kas selline on olemas ja annab sellest ka kasutajale teada.</para>
+
+<para
+> &lisa; esimene klient on &kde; 2 IO moodul, nii et kasutaja võib anda käsu <userinput
+>lan://localhost</userinput
+> või lihtsalt <userinput
+>lan:/</userinput
+>, mis mõlemad võtavad ühendust &lisa;ga samas süsteemis.</para>
+
+<para
+>Kui tegemist on kogu aeg töötava masinaga ja kasutaja teab, et sellel töötab ka &lisa;, võib ta oma &lisa; klienti kasutada otseselt selle serveriga (mainitud IO mooduli puhul <userinput
+>lan://serveri_nimi</userinput
+>).</para>
+
+<para
+>Kui sa ei soovi, et &lisa; osaleks leviteadetes, vaid teeks alati ise pingi, pane ta kasutama mingit muud porti käsureavõtmega <option
+>--port</option
+> või <option
+>-p</option
+>. See ei ole siiski soovitatav!</para>
+
+<para
+>Kui saata &lisa;le <command
+>SIGHUP</command
+>, loeb see oma konfiguratsioonifaili uuesti. Kui saata &lisa;le <command
+>SIGUSR1</command
+>, avaldab ta standardväljundis oma olekuinfo.</para>
+
+<para
+>Üle sokli edastatavate andmete vorming on lihtne: <computeroutput
+>&lt;IP aadress kümnendkujul võrgubaidijärjekorras&gt;&lt;üks tühik 0x20&gt;&lt;masina täisnimi&gt;&lt;lõpetav '\0'&gt;&lt;reavahetus '\n'&gt;</computeroutput
+> ja viimane rida <computeroutput
+>0 succeeded&lt;'\n'&gt;</computeroutput
+> </para>
+
+<para
+>Näide:</para>
+
+<screen
+><computeroutput
+>17302538 mingi_masin.misiganes.ee
+18285834 linux.misiganes.ee
+17827082 nimeserver.misiganes.ee
+0 succeeded</computeroutput
+></screen>
+
+<para
+>Nii on see hõlpsasti analüüsitav.</para>
+
+<para
+>Kui sinu võrgus valitsevad väga ranged turvareeglid, võib osa inimesi pingi pidada potentsiaalseks rünnakuks. Kui sellega tekib probleeme, proovi kasutada piirangutega versiooni &reslisa;.</para
+> 
+
+</chapter>
+
+<chapter id="reslisa">
+<title
+>&reslisa;</title>
+
+<para
+>Kui sinu võrgus valitsevad väga ranged turvareeglid või sa ei soovi avada veel mõnda porti või mis iganes põhjus ka ei oleks, on võimalik kasutada &reslisa;.</para>
+
+<para
+>&reslisa; abil ei saa pingida kogu võrku ega aadressidevahemikku, praegu on võimalik anda &reslisa;le kuni 64 masinat nime kaupa konfiguratsioonifailis. Neid siis pingitaksegi. Siiski saab kasutada ka <command
+>nmblookup</command
+>-i.</para>
+
+<para
+>&reslisa; edastab infot ainult UNIX domeeni sokli kaudu, &ie; mitte üle võrgu. Sokli nimi on <filename
+>/tmp/resLisa-SinuKasutajanimi</filename
+>, nii et &reslisa; on võimalik rahulikult lasta tööle panna ühel ja samal masinal enam kui ühe kasutaja poolt.</para>
+
+<para
+>Et see ei tohi ometi tekitada turvariski, on mõttekas &reslisa; paigaldada setuid <systemitem class="username"
+>root</systemitem
+>. Administraatori (<systemitem class="username"
+>root</systemitem
+>) privileegidest loobutakse kohe pärast käivitamist (vaata <filename
+>strictmain.cpp</filename
+>), neid läheb vaja ainult toorsokli loomiseks, et saata <acronym
+>ICMP</acronym
+> echo nõudeid.</para>
+
+<para
+>Ka leviteateid ei saadeta ega võeta vastu. Ka siin on esimene klient &kde; 2 IO moodul (näiteks <userinput
+>rlan:/</userinput
+> &konqueror;is).</para>
+
+</chapter>
+
+<chapter id="config-file-format">
+<title
+>Seadistustefail</title>
+
+<para
+>Nüüd näide seadistusfailist:</para>
+
+<screen
+>PingAddresses = 192.168.100.0/255.255.255.0;192.168.100.10-192.168.199.19;192.168.200.1;192-192.168-168.100-199.0-9;
+PingNames = bb_mail;
+AllowedAddresses = 192.168.0.0/255.255.0.0
+BroadcastNetwork = 192.168.100.0/255.255.255.0
+SearchUsingNmblookup = 1                #püütakse kasutada ka nmblookup-i
+FirstWait = 30                          #30 sajandiksekundit
+SecondWait = -1                         #ainult üks kord
+#SecondWait = 60                         #proovi kaks korda ning teine kord oota 0,6 sekundit
+UpdatePeriod = 300                      #uuendus 300 sekundi järel
+DeliverUnnamedHosts = 0                 #ei avaldata masinaid ilma nimeta
+MaxPingsAtOnce = 256                    #korraga saadetakse kuni 256 ICMP echo nõuet
+</screen>
+
+<sect1 id="pingaddresses">
+<title
+><option
+>PingAddresses</option
+></title>
+
+<para
+>See on ilmselt kõige tähtsam kirje.</para>
+
+<para
+>Siin määratakse, milliseid aadresse pingitakse. Määrata saab mitu vahemikku, mida eraldavad semikoolonid.</para>
+
+<para
+>Aadresse saab määrata neljal viisil:</para>
+
+<variablelist>
+<varlistentry>
+<term
+>võrguaadress/võrgumask</term>
+<listitem>
+<para
+>192.168.100.0/255.255.255.0, &ie; <acronym
+>IP</acronym
+> aadress ja omistatud võrgumask.</para>
+
+<para
+>See ei pea olema sinu masina võrguaadress ja võrgumask. Kui näiteks sinu enda aadress on 10.0.0.0/255.0.0.0, võid määrata ka ka 10.1.2.0/255.255.255.0, kui tunned huvi ainult nende aadresside vastu. <acronym
+>IP</acronym
+> aadressi ja võrgumaski kombinatsiooni peab eraldama kaldkriips <quote
+>/</quote
+> ning aadress ei pea olema reaalne võrguaadress, see võib olla ka soovitud võrgu masina aadress, &ie; 10.12.34.67/255.0.0.0 on sama, mis 10.0.0.0/255.0.0.0.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><acronym
+>IP</acronym
+> aadresside vahemik</term>
+<listitem>
+<para
+>Näide: 192.168.100.10-192.168.199.19</para>
+
+<para
+><acronym
+>IP</acronym
+> aadress, millest pingimine algab, ja <acronym
+>IP</acronym
+>, millel pingimine lõpeb.</para>
+
+<para
+>Aadresse peab eraldama märk <quote
+>-</quote
+>.</para>
+
+<para
+>Antud näites on tulemuseks 199-100+1=100, 100*256=25 600, 25 600+(19-10+1)=25 590 aadressi</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><acronym
+>IP</acronym
+> aadress iga nelja numbri vahemikuna</term>
+<listitem>
+<para
+><acronym
+>IP</acronym
+> aadressi väljendatakse selle nelja numbriga ning igale neist võib määrata omaette vahemiku: 192-192.169-171.100-199.0-9 </para>
+
+<para
+>Antud näites pingitakse kõiki <acronym
+>IP</acronym
+> aadresse esimese numbriga 192, teise numbriga 168 kuni 168, kolmanda numbriga 100 kuni 199 ja viimase numbriga 0 kuni 9. See teeb kokku 1*1*100*10=1000 aadressi.</para>
+
+<para
+>Sellel on tõenäoliselt mõtet ainult haruharva. Siin tuleb määrata kõigi nelja numbri vahemik, alati eraldajaks <quote
+>-</quote
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Üksikud <acronym
+>IP</acronym
+> aadressid või masinanimed</term>
+<listitem>
+<para
+>Selle masina <acronym
+>IP</acronym
+> aadress või masinanimi, mille vastu sa erilist huvi tunned.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+<para
+>Selle kirje võib aga ka täiesti tühjaks jätta.</para>
+
+</sect1>
+
+<sect1 id="pingnames">
+<title
+><option
+>PingNames</option
+></title>
+
+<para
+>Siin saab täiendavalt nimepidi määrata pingitavaid masinaid. Nimesid peavad eraldama semikoolonid.</para>
+
+<para
+>Selle kirje võib aga ka täiesti tühjaks jätta.</para>
+
+</sect1>
+
+<sect1 id="allowedaddresses">
+<title
+><option
+>AllowedAddresses</option
+></title>
+
+<para
+>See on samuti väga tähtis. &lisa; pingib ainult aadresse, tunnustab kliente ja vastab leviteadetele aadressidelt, mis on antud sellele reale kirjutatud aadressidega. Lisada võib kuni 32 võrguaadressi/võrgumaski või üksikaadressi. Eraldajaks on semikoolon ja kindlasti ei tohi aadresside vahele jätta tühikut!</para>
+
+<para
+>Näide: 192.168.0.0/255.255.0.0;192.169.0.0</para>
+
+<para
+>Kogu võrk ja üks üksikaadress sobivad. Püüa alati teha see nii rangeks kui võimalik, tavaliselt on mõistlik valik sinu võrguaadress/võrgumask.</para>
+
+</sect1>
+
+<sect1 id="broadcastnetwork">
+<title
+><option
+>BroadcastNetwork</option
+></title>
+
+<para
+>Selles kirjes on vaid üks võrguaadress/võrgumask. Sellele saadetakse võrgu leviteated. Tavaliselt peaks see olema sinu võrguaadress/võrgumask, näiteks 192.168.0.0/255.255.0.0</para>
+
+</sect1>
+
+<sect1 id="searchusingnmblookup">
+<title
+><option
+>SearchUsingNmblookup</option
+></title>
+
+<para
+>Siin saab anda parameetri <parameter
+>0</parameter
+> või <parameter
+>1</parameter
+>. Parameeter <parameter
+>1</parameter
+> tähendab, et &lisa; käivitab <command
+>nmblookup</command
+> <option
+>"*"</option
+> ja analüüsib käsu väljundit. See tekitab vähem võrguliiklust kui pingimine, kuid saadakse vaid masinad, millel töötab <acronym
+>SMB</acronym
+> teenus (&Windows; masinad või masinad, millel töötab Samba).</para>
+
+<para
+>Selle lubamisel ning ka pingitavate <acronym
+>IP</acronym
+> aadresside määramisel rakendatakse kõigepealt <command
+>nmblookup</command
+> ja alles seejärel hakatakse pingima. Siis pingitakse ainult aadresse, mida ei ole juba tuvastatud <command
+>nmblookup</command
+>-iga. See kahandab veidi võrgukoormust.</para>
+
+</sect1>
+
+<sect1 id="firstwait">
+<title
+><option
+>FirstWait</option
+></title>
+
+<para
+>Kui &lisa; pingib, &ie; saadab <acronym
+>ICMP</acronym
+> echo nõudeid, saadetakse hulk nõudeid korraga ja jäädakse seejärel vastust ootama siin määratud sajandiksekundiks. Tavaliselt on mõistlik valida 5 ja 50 sajandiksekundi vahel, maksimum on 99 (ehk 0,99 sekundit, mis on juba väga pikk aeg). Püüa hoida see väärtus võimalikult väike, kuid samas piisavalt suur, et leitaks kõik töötavad masinad.</para>
+
+</sect1>
+
+<sect1 id="secondwait">
+<title
+><option
+>SecondWait</option
+></title>
+
+<para
+>Kui &lisa; on echo nõuded esimest korda välja saatnud, võib siiski juhtuda, et mõnda masinat ei leitud. Tulemuse parandamiseks võib &lisa; pingida ka teist korda. Sel korral pingitakse ainult neid masinaid, millelt vastust ei saadud. Kui tavaliselt annab juba esimene ping hea tulemuse, võib teise pingimise keelata, määrates SecondWait väärtuseks <userinput
+>-1</userinput
+>.</para>
+
+<para
+>Üldiselt on mõtet määrata lubamise korral selle väärtus veidi pikemaks kui <option
+>FirstWait</option
+> väärtus, sest masinad, mida esimesel korral ei leitud, on tõenäoliselt aeglasemad või asuvad päris kaugel, nii et nende vastus võib võtta mõni millisekund rohkem aega. Tavaliselt on mõistlik väärtus 5 kuni 50 või ka -1, mis teise pingi keelab. Maksimum on 99 (ehk 0,99 sekundit, mis on väga pikk aeg).</para>
+
+</sect1>
+
+<sect1 id="updateperiod">
+<title
+><option
+>UpdatePeriod</option
+></title>
+
+<para
+>See on ajavahemik, mille järel &lisa; uuenduse ette võtab. Selle aja möödudes pingib &lisa; uuesti või rakendab <command
+>nmblookup</command
+>-i või hangib masinate nimekirja &lisa; serverilt, mis tegelikult pingib.</para>
+
+<para
+>Kehtivad väärtused on 30 ja 1800 sekundi (pool tundi) vahel. Kui võrk on suur, ära määra intervalli liiga väikeseks (muidu kasvab võrgu koormus). Üsna mõistlikud väärtused jäävad 300 ja 900 sekundi ehk 5 ja 15 minuti vahele.</para>
+
+<para
+>Pea meeles, et kui keegi serverit ei kasuta, suureneb intervall kahekordseks ja nii kuni neli korda järjest, mis tähendab, et intervall võib muutuda kuni 16 korda pikemaks siinmääratust, kuid see omandab kohe oma esialgse väärtuse, kui keegi serverit kasutab.</para>
+
+</sect1>
+
+<sect1 id="deliver-unnamed-hosts">
+<title
+><option
+>DeliverUnnamedHosts</option
+></title>
+
+<para
+>Kui saadakse vastus echo nõudele IP aadressilt, mille korral &lisa; ei suuda nime määrata, edastatakse see ainult üle pordi, kui siin on väärtuseks määratud 1.</para>
+
+<para
+>Ma ei ole päris kindel, kas see on väga kasulik võimalus, kuid võib ette tulla mingeid infrastruktuuri seadmeid võrgus, millele ei ole omistatud nime ja mida seetõttu ei avaldata. Määra väärtuseks 0, kui soovid neid varjatuna hoida ;-) Kui sa ei ole kindel, määra väärtuseks 0.</para>
+
+</sect1>
+
+<sect1 id="max-pings-at-once">
+<title
+>MaxPingsAtOnce</title>
+
+<para
+>Pingides ehk echo nõudeid saates saadab &lisa; neid korraga teele terve hulga ja jääb siis vastuseid ootama. Vaikimisi saadetakse korraga 256 pingi ning enamasti ei ole seda väärtust vaja muuta. Kui see on palju suurem, võib echo nõuete vastuste vastuvõtmise sisemine puhver jääda väikeseks, kui see on liiga väike, on uuendamine aeglasem.</para>
+
+</sect1>
+
+<sect1 id="examples">
+<title
+>Veel kolm näidisfaili</title>
+
+<example>
+<title
+>FIXME</title>
+
+<para
+>Oled osa väikesest 24-bitise võrgumaskiga võrgust, &ie; võrgust kuni 256 masinaga:</para>
+
+<screen
+>PingAddresses = 192.168.100.0/255.255.255.0
+AllowedAddresses = 192.168.100.0/255.255.255.0
+BroadcastNetwork = 192.168.100.0/255.255.255.0
+SearchUsingNmblookup = 0                         #nmblookup-i ei kasutata
+FirstWait = 20                                   #20 sajandiksekundit
+SecondWait = 30                                  #30 sajandiksekundit teisel katsel
+UpdatePeriod = 300                               #uuendus iga 300 sekundi järel
+DeliverUnnamedHosts = 0                          #nimeta masinaid ei avaldata
+</screen>
+
+</example>
+
+<example>
+<title
+>Konfiguratsioonifail masinatele, kus töötab ainult <acronym
+>SMB</acronym
+></title>
+
+<para
+>Tunned huvi ainult masinate vastu, kus töötab <acronym
+>SMB</acronym
+> teenus ning võrgus ei ole ruutereid:</para>
+
+<screen
+>AllowedAddresses = 192.168.100.0/255.255.255.0
+BroadcastNetwork = 192.168.100.0/255.255.255.0
+SearchUsingNmblookup = 1                #kasutatakse nmblookup-i
+UpdatePeriod = 300                      #uuendamine iga 300 sekundi järel
+DeliverUnnamedHosts = 0                 #nimeta masinaid ei avaldata
+</screen>
+</example>
+
+<example>
+<title
+>Konfiguratsioonifail nii <command
+>nmblookup</command
+>-i kui pingimise kasutamisel</title>
+
+<para
+>Sama võrk, kuid kasutusel on nii nmblookup kui pingimine.</para>
+
+<screen
+>PingAddresses = 192.168.100.0/255.255.255.0
+PingNames = bb_mail
+AllowedAddresses = 192.168.0.0/255.255.0.0
+BroadcastNetwork = 192.168.100.0/255.255.255.0
+SearchUsingNmblookup = 1                #kasutatakse ka nmblookup-i
+FirstWait = 30                          #30 sajandiksekundit
+SecondWait = -1                         #ainult üks katse
+#SecondWait = 60                         #kaks katset, teisel katsel oodatakse 0,6 sekundit
+UpdatePeriod = 300                      #uuendus iga 300 sekundi järel
+DeliverUnnamedHosts = 0                 #nimeta masinaid ei avaldata
+MaxPingsAtOnce = 256                    #korraga saadetakse kuni 256 ICMP echo nõuet
+</screen>
+
+</example>
+
+<example>
+<title
+>&reslisa; seadistusfail</title>
+
+<para
+>Nüüd siis &reslisa; konfiguratsioonifail. &reslisa; puhul ei ole kasutusel PingAddresses ega ka BroadcastNetwork.</para>
+
+<screen
+>PingNames = bb_mail;mingi_masin;mingi_muu_masin
+AllowedAddresses = 192.168.0.0/255.255.0.0
+SearchUsingNmblookup = 1                # kasutatakse nmblookup-i
+FirstWait = 30                          #30 sajandiksekundit
+SecondWait = -1                         #ainult üks katse
+#SecondWait = 60                         #kaks katset ja teisel katsel oodatakse 0,6 sekundit
+UpdatePeriod = 300                      #uuendatakse iga 300 sekundi järel
+DeliverUnnamedHosts = 1                 #avaldatakse ka nimeta masinad
+MaxPingsAtOnce = 256                    #korraga saadetakse kuni 256 ICMP echo nõuet
+</screen>
+
+</example>
+</sect1>
+</chapter>
+
+<chapter id="command-line-options">
+<title
+>Käsurea võtmed ja muu kasutamisega seonduv</title>
+
+<para
+>Toetatud on järgmised käsurea võtmed:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><option
+>-v</option
+>, <option
+>--version</option
+></term>
+<listitem>
+<para
+>Näitab versiooni lühiinfot.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-h</option
+>, <option
+>--help</option
+></term>
+<listitem>
+<para
+>Näitab ülevaadet käsurea võtmete kohta</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-u</option
+>, <option
+>--unix</option
+></term>
+<listitem>
+<para
+>Otsib esmalt <filename
+>$<envar
+>HOME</envar
+>/.lisarc</filename
+>, seejärel <filename
+>/etc/lisarc</filename
+>. See on vaikekäitumine.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-k</option
+>, <option
+>--kde1</option
+></term>
+<listitem>
+<para
+>Otsib esmalt <filename
+>$<envar
+>HOME</envar
+>/.kde/share/config/lisarc</filename
+>, seejärel <filename
+>$<envar
+>KDEDIR</envar
+>/share/config/lisarc</filename
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-K</option
+>, <option
+>--kde2</option
+></term>
+<listitem>
+<para
+>Otsib <filename
+>lisarc</filename
+> kõigis kataloogides, mis tagastati <userinput
+><command
+>kde-config</command
+> <option
+>--path</option
+> <parameter
+>config</parameter
+></userinput
+> rakendamisel</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-c</option
+>, <option
+>--config=</option
+><parameter
+>FAIL</parameter
+></term>
+<listitem>
+<para
+>Loeb ainult <parameter
+>FAIL</parameter
+>i, mitte muid konfiguratsioonifaile.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-p</option
+>, <option
+>--port</option
+> <parameter
+>PORDINUMBER</parameter
+></term>
+<listitem>
+<para
+>Käivtab serveri antud numbriga pordis. Selle kasutamisel ei pruugi &lisa; olla valmis koostööks teiste võrgus töötavate &lisa;dega. &reslisa; korral ei ole see võti kasutatav.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+     
+<para
+>Kui saadad &lisa;le või &reslisa;le hangup-signaali, loeb see uuesti oma konfiguratsioonifaili (<userinput
+><command
+>killall</command
+> <option
+>-HUP lisa</option
+></userinput
+>).</para>
+
+<para
+>Kui saadad &lisa;le või &reslisa;le User1-signaali, näitab see standardväljundis olekuinfot (<userinput
+><command
+>killall</command
+> <option
+>USR1 lisa</option
+></userinput
+>). Küll aga ei ole midagi näha, kui konsool, millelt &lisa;/&reslisa; käivitati, on töö lõpetanud.</para>
+
+
+
+</chapter>
+
+<chapter id="credits-and-license">
+<title
+>Autorid ja litsents</title>
+
+<para
+>&lisa; ja&reslisa; autoriõigus 2000, 2001: Alexander Neundorf</para>
+
+
+
+<para
+>Tõlge eesti keelde: Marek Laane <email
+>bald@starman.ee</email
+></para
+> 
+
+<para
+>Tundke rõõmu, Alexander Neundorf <email
+>neundorf@kde.org</email
+></para>
+&underFDL; &underGPL; </chapter>
+
+<appendix id="installation">
+<title
+>Paigaldamine</title>
+
+<para
+>&lisa; ja &reslisa; vajavad libstdc++ (sellest kasutatakse ainult string-klassi), kuid <emphasis
+>ei vaja</emphasis
+> ei &Qt; ega &kde;.</para>
+
+&install.compile.documentation;
+
+<sect1 id="other-requirements">
+<title
+>Muud nõuded</title>
+
+<para
+>Nii &reslisa; kui &lisa; avavad niinimetatud <quote
+>toorsokli</quote
+> <acronym
+>ICMP</acronym
+> echo nõuete (pingi) saatmiseks ja vastuvõtmiseks. Avamiseks vajavad nad administraatori (<systemitem class="username"
+>root</systemitem
+>) privileege.</para>
+
+
+<para
+>&lisa; pakub teenust <acronym
+>TCP</acronym
+> pordil 7441 ja peab olema paigaldatud administraatori (<systemitem class="username"
+>root</systemitem
+>) poolt ning käivitatud koos süsteemi käivitamisega. Kuidas see täpselt välja näeb, sõltub suuresti sellest, milline on sinu operatsioonisüsteem.</para>
+
+<para
+>&reslisa; on mõeldud käivitatama kasutajate kaupa, see ei paku midagi võrgule. See peab olema paigaldatud setuid <systemitem class="username"
+>root</systemitem
+>.</para>
+
+<para
+>Kui kasutad &kde; 2 IO moodulit <userinput
+>rlan</userinput
+>, käivitatakse &reslisa; automaatselt.</para>
+
+<para
+>&lisa; loeb faili <filename
+>lisarc</filename
+>, &reslisa; faili <filename
+>reslisarc</filename
+>. Kui soovid neid mõlemat seadistada &juhtimiskeskus;es, tuleb nad käivitada käsureavõtmega <option
+>-K</option
+>.</para>
+
+<para
+>Täpsemat infot selle kohta, kust nad oma konfiguratsioonifaile loevad, annab <xref linkend="command-line-options"/>.</para>
+
+</sect1>
+</appendix>
+</book>

@@ -1,0 +1,1384 @@
+<appendix id="highlight">
+<appendixinfo>
+<authorgroup>
+<author
+><personname
+><firstname
+></firstname
+></personname
+></author>
+<othercredit role="translator"
+><firstname
+>Marek</firstname
+><surname
+>Laane</surname
+><affiliation
+><address
+><email
+>bald@starman.ee</email
+></address
+></affiliation
+><contrib
+>Tõlge eesti keelde</contrib
+></othercredit
+> 
+</authorgroup>
+</appendixinfo>
+<title
+>Süntaksi esiletõstmise kasutamine</title>
+
+<sect1 id="highlight-overview">
+
+<title
+>Ülevaade</title>
+
+<para
+>Süntaksi esiletõstmine paneb redaktori automaatselt näitama teksti erinevates stiilides ja värvides vastavalt stringi funktsioonile failis. Rakenduse lähtetekstis võivad koodi juhtlaused olla näiteks rasvases kirjas, andmetüübid ja kommentaarid aga ülejäänud tekstist erinevat värvi. See hõlbustab märgatavalt teksti redigeerimist ning aitab autoril tõhusamalt ja tootlikumalt töötada.</para>
+
+<mediaobject>
+<imageobject
+><imagedata format="PNG" fileref="highlighted.png"/></imageobject>
+<textobject
+><phrase
+>Perli funktsioon, esitatud süntaksi esiletõstu kasutades.</phrase
+></textobject>
+<caption
+><para
+>Perli funktsioon, esitatud süntaksi esiletõstu kasutades.</para>
+</caption>
+</mediaobject>
+
+<mediaobject>
+<imageobject
+><imagedata format="PNG" fileref="unhighlighted.png"/></imageobject>
+<textobject
+><phrase
+>Sama perli funktsioon ilma esiletõstuta.</phrase
+></textobject>
+<caption
+><para
+>Sama perli funktsioon ilma esiletõstuta.</para
+></caption>
+</mediaobject>
+
+<para
+>Kumba kahest näitest on hõlpsam lugeda?</para>
+
+<para
+>&kate; kasutab paindlikku, seadistatavat ja võimsat süntaksi esiletõstmise süsteemi ning ka tavalise distributsiooniga käib kaasas väga ulatuslik programmeerimis-, märke- ja skriptikeelte ning muude tekstifaili vormingute definitsioonide komplekt. Lisaks võid luua omaenda definitsioonid tavaliste &XML;-failide kujul.</para>
+
+<para
+>&kate; tuvastab faili avamisel selle &MIME; tüübile tuginedes (mille määrab kindlaks faililaiend või kui seda ei ole, siis sisu) automaatselt sobiva süntaksi ja selle reeglid. Kui sinu arvates on valik valesti langetatud, võid kasutatava süntaksi määrata käsitsi menüüst <menuchoice
+><guimenu
+>Tööriistad</guimenu
+><guisubmenu
+>Esiletõstmine</guisubmenu
+></menuchoice
+>.</para>
+
+<para
+>Iga süntaksi esiletõstu määratluse stiilid ja värvid saab ise seada <link linkend="config-dialog"
+>seadistustedialoogi</link
+> leheküljel <link linkend="config-dialog-editor-appearance"
+>Välimus</link
+>, &MIME; tüübid aga, mille puhul esiletõstu kasutada, leheküljel <link linkend="config-dialog-editor-highlighting"
+>Esiletõstmine</link
+>.</para>
+
+<note>
+<para
+>Süntaksi esiletõstmine on mõeldud parandama korrektse teksti lugemist, kuid seda ei peaks kasutama teksti korrektsuse kontrollimiseks. Teksti süntaksi märkimine on sõltuvalt kasutatavast vormingust päris keeruline ettevõtmine ja mõnel juhul on süntaksireeglite autorid väga uhked, kui suudavad korrektselt esitada 98% tekstist, kuigi enamasti läheb sul vaja mõnda päris haruldast stiili, et näha mittekorrektset 2%.</para>
+</note>
+
+<tip>
+<para
+>Uusi või uuendatud süntaksi esiletõstu definitsioone saab alla laadida &kate; veebileheküljelt klõpsuga nupule <guibutton
+>Laadi alla</guibutton
+> <link linkend="config-dialog"
+>seadistustedialoogi</link
+> leheküljel <link linkend="config-dialog-editor-highlighting"
+>Esiletõstmine</link
+>.</para>
+</tip>
+
+</sect1>
+
+<sect1 id="katehighlight-system">
+
+<title
+>&kate; süntaksi esiletõstmise süsteem</title>
+
+<para
+>See sektsioon tutvustab põhjalikumalt &kate; süntaksi esiletõstmise mehhanismi. See on mõeldud neile, kes soovivad sellest rohkem teada saada või tahavad süntaksi definitsioone muuta või uusi luua.</para>
+
+<sect2 id="katehighlight-howitworks">
+
+<title
+>Kuidas see töötab</title>
+
+<para
+>Kui sa faili avad, püüab &kate; redaktor kõigepealt tuvastada, millist süntaksi definitsooni antud faili puhul kasutada. Faili teksti lugedes, samuti ajal, mil sa seda redigeerid, analüüsib süntaksi esiletõstu süsteem teksti, kasutades selleks süntaksi definitsioonis antud määratlusi, ning märgistab erinevad kontekstid ja stiilid vastavalt reeglitele.</para>
+
+<para
+>Dokumenti uue teksti kirjutamise ajal analüüsitakse ja märgistatakse see käigult, nii et kui kustutad märgi, mis tähistas mingi konteksti algust või lõppu, siis muutub vastavalt ka ümbritseva teksti stiil.</para>
+
+<para
+>Süntaksi definitsioonid, mida &kate; kasutab esiletõstu süsteemis, on &XML;-failid, mis sisaldavad endas <itemizedlist>
+<listitem
+><para
+>reegleid kontekstiblokkideks organiseeritud teksti rolli määramiseks</para
+></listitem>
+<listitem
+><para
+>märksõnade nimekirju</para
+></listitem>
+<listitem
+><para
+>stiilielementide definitsioone</para
+></listitem>
+</itemizedlist>
+</para>
+
+<para
+>Teksti analüüsides hinnatakse tuvastusreegleid vastavalt nende defineerimise järjekorrale ja kui mingi stringi algus vastab reeglile, siis kasutatakse vastavat konteksti. Alguspunktist liigutakse punkti, kus reegli kohaselt kontekst lõpeb, ning sealt algab reegli uus osa, mis võib olla erinevalt märgistatud.</para>
+
+</sect2>
+
+<sect2 id="highlight-system-rules">
+<title
+>Reeglid</title>
+
+<para
+>Tuvastusreeglid on esiletõstu tuvastamise tuum. Reegel on string, märk või <link linkend="regular-expressions"
+>regulaaravaldis</link
+>, millega sobivuse osas teksti analüüsitaksegi. Selles sisaldub info, millist stiili kasutada sobiva tekstiosa puhul. Reegel võib lülitada süsteemi töökonteksti kas otseselt mainitud kontekstile või varem tekstis kasutatud kontekstile.</para>
+
+<para
+>Reeglid on rühmitatud kontekstigruppidesse. Kontekstigruppi kasutatakse vormingu peamiste tekstiosiste jaoks, milleks võivad näiteks olla jutumärkides tekstistringid või kommenteeritud tekstiblokid. See tagab, et esiletõstu süsteem ei pea läbi lappama kõiki reegleid, kui seda ei ole vaja, ja et mõningaid järjestikusi märke tekstis võib tõlgendada erinevalt sõltuvalt hetkekontekstist. </para>
+
+<para
+>Konteksti saab genereerida dünaamiliselt, mis lubab reeglites kasutada protsessipõhiseid andmeid.</para>
+
+</sect2>
+
+<sect2 id="highlight-context-styles-keywords">
+<title
+>Kontekstistiilid ja võtmesõnad</title>
+
+<para
+>Mõnes programmeerimiskeeles tõlgendab kompilaator (rakendus, mis teisendab lähtekoodi binaarkoodiks) täisarve teisiti kui ujukomaarve ning mõnikord võib esineda ka märke, mis omandavad eritähenduse, kui nad asuvad jutumärkide vahel. Sellisel juhul on mõttekas käsitleda neid ümbritsevast erinevalt, nii et neid saaks teksti lugedes hõlpsasti eristada. Seepärast võib süntaksi esiletõstmise süsteem käsitleda neid erikontekstina ja vastavalt ka märkida, isegi kui nad seda tegelikult ei ole.</para>
+
+<para
+>Süntaksi definitsioon võib sisaldada nii palju stiile, kui vähegi on vaja katmaks vorminguelemente, mille tuvastamiseks ta mõeldud on.</para>
+
+<para
+>Mitme vormingu puhul esinevad sõnade nimekirjad, mis esindavad erikontseptsiooni. Näiteks programmeerimiskeeltes on juhtlaused, andmetüübid ja keele sisseehitatud funktsioonid erinevad kontseptsioonid. &kate; süntaksi esiletõstu süsteem kasutab selliseid nimekirju tuvastamaks ja märkimaks tekstis sõnu, mis vastavad tekstivormingu kontseptsioonidele.</para>
+
+</sect2>
+
+<sect2 id="kate-highlight-system-default-styles">
+<title
+>Vaikestiilid</title>
+
+<para
+>Kui avad &kate;s C++ lähtetekstifaili, &Java; lähtetekstifaili ja <acronym
+>HTML</acronym
+>-dokumendi, märkad, et kuigi vormingud on erinevad ja seepärast on erikohtlemise osaks saanud erinevad sõnad, on kasutatavad värvid ühesugused. Selle põhjuseks on asjaolu, et &kate; kasutab eelnevalt määratud vaikestiilide nimekirja, mida siis omakorda kasutavad konkreetsed süntaksi määratlused.</para>
+
+<para
+>See võimaldab hõlpsasti tuvastada ühesuguseid kontseptsioone erinevate tekstivormingute puhul. Nii esinevad näiteks kommentaarid peaaegu igas programmeerimis-, skripti- või märkekeeles ja kui nende märkimiseks kasutatakse igas keeles ühesugust värvi, siis ei pea uut faili avades nägema vaeva nende leidmisega.</para>
+
+<tip>
+<para
+>Kõik stiilid süntaksi definitsioonis kasutavad üht vaikestiili. Mõned süntaksi definitsioonid võivad kasutada rohkem stiile, kui neid on vaikimisi määratud, nii et kui kasutad tihti sellist vormingut, võiks olla nutikas tegu avada seadistustedialoog ja järele vaadata, kas mõningad kontseptsioonid kasutavad üht ja sama stiili. Näiteks on ainult üks vaikestiil stringide jaoks, kuid programmeerimiskeel Perl kasutab kaht tüüpi stringe, mistõttu esiletõstu saab parandada neile veidi erinevaid omadusi andes. Kõiki <link linkend="kate-highlight-default-styles"
+>saadaolevaid vaikestiile</link
+> selgitame veidi hiljem.</para>
+</tip>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="katehighlight-xml-format">
+<title
+>Esiletõstu definitsiooni &XML;-vorming</title>
+
+<sect2>
+<title
+>Ülevaade</title>
+
+<para
+>See sektsioon annab ülevaate esiletõstu definitsiooni &XML;-vormingust, kirjeldades põhikomponente, nende tähendust ja kasutamist. Järgmises sektsioonis süüvitakse tuvastusreeglite olemusse.</para>
+
+<para
+>Formaalne määratlus ehk <acronym
+>DTD</acronym
+> on salvestatud faili <filename
+>language.dtd</filename
+>, mis peaks olema paigaldatud kataloogi <filename
+>$<envar
+>KDEDIR</envar
+>/share/apps/katepart/syntax</filename
+>. </para>
+
+<variablelist>
+<title
+>&kate; esiletõstu definitsiooni failide põhisektsioonid</title>
+
+<varlistentry>
+<term
+>Esiletõstu fail sisaldab päist, mis määrab ära XML-i versiooni ja doctype'i:</term>
+<listitem>
+<programlisting
+>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!DOCTYPE language SYSTEM &quot;language.dtd&quot;&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Definitsioonifaili juureks on element <userinput
+>language</userinput
+>. Võimalikud atribuudid on järgmised:</term>
+
+<listitem>
+<para
+>Nõutavad atribuudid:</para>
+<para
+><userinput
+>name</userinput
+> määrab keele nime. Seda näeb ka menüüdes ja dialoogides.</para>
+<para
+><userinput
+>section</userinput
+> määrab kategooria.</para>
+<para
+><userinput
+>extensions</userinput
+> määrab faililaiendid, näiteks &quot;*.cpp;*.h&quot;</para>
+
+<para
+>Lisaatribuudid:</para>
+<para
+><userinput
+>mimetype</userinput
+> seostab failid &MIME; tüübiga.</para>
+<para
+><userinput
+>version</userinput
+> määrab definitsioonifaili versiooni.</para>
+<para
+><userinput
+>kateversion</userinput
+> määrab viimase toetatud &kate; versiooni.</para>
+<para
+><userinput
+>casesensitive</userinput
+> määrab, kas võtmesõnad on tõstutundlikud või mitte.</para>
+<para
+><userinput
+>priority</userinput
+> on vajalik juhul, kui samu laiendeid kasutab mõni muu esiletõstu definitsiooni fail. Sel juhul saab eelistuse kõrgem prioriteet.</para>
+<para
+><userinput
+>author</userinput
+> sisaldab autori nime ja tema e-posti aadressi.</para>
+<para
+><userinput
+>license</userinput
+> sisaldab litsentsi (tavaliselt LGPL, Artistic, GPL vms.).</para>
+<para
+><userinput
+>hidden</userinput
+> määrab, kas nimi esineb &kate; menüüs või mitte.</para>
+<para
+>Niisiis võib järgmine rida näha välja selline:</para>
+<programlisting
+>&lt;language name=&quot;C++&quot; version=&quot;1.00&quot; kateversion=&quot;2.4&quot; section=&quot;Sources&quot; extensions=&quot;*.cpp;*.h&quot; /&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Seejärel tuleb element <userinput
+>highlighting</userinput
+>, mis võib sisaldada endas elementi <userinput
+>list</userinput
+> ja kus peavad leiduma elemendid <userinput
+>contexts</userinput
+> ja <userinput
+>itemDatas</userinput
+>.</term>
+<listitem>
+<para
+>Element <userinput
+>list</userinput
+> sisaldab võtmesõnade nimekirja. Antud juhul on võtmesõnadeks <emphasis
+>class</emphasis
+> ja <emphasis
+>const</emphasis
+>. Nimekirju võib lisada nii palju, kui neid parajasti vaja läheb.</para>
+<para
+>Element <userinput
+>contexts</userinput
+> sisaldab kõiki kontekste. Esimene kontekst on vaikimisi esiletõstu alguses. Kontekstis <emphasis
+>Tavaline tekst</emphasis
+> on kaks reeglit, millest üks sobitab võtmesõnade nimekirja nimega <emphasis
+>minginimi</emphasis
+> ja teine tuvastab jutumärgid ning lülitub kontekstile <emphasis
+>string</emphasis
+>. Reeglitest räägib lähemalt järgmine peatükk.</para>
+<para
+>Kolmas osa on element <userinput
+>itemDatas</userinput
+>. See sisaldab kõiki värvi- ja fondistiile, mida kontekstid ja reeglid vajavad. Antud näites on kasutusel <userinput
+>itemData</userinput
+> <emphasis
+>Tavaline tekst</emphasis
+>, <emphasis
+>String</emphasis
+> ja <emphasis
+>Võtmesõna</emphasis
+>. </para>
+<programlisting
+>&lt;highlighting&gt;
+    &lt;list name=&quot;minginimi&quot;&gt;
+      &lt;item&gt; class &lt;/item&gt;
+      &lt;item&gt; const &lt;/item&gt;
+    &lt;/list&gt;
+    &lt;contexts&gt;
+      &lt;context attribute=&quot;Tavaline tekst&quot; lineEndContext=&quot;#pop&quot; name=&quot;Tavaline tekst&quot; &gt;
+        &lt;keyword attribute=&quot;Võtmesõna&quot; context=&quot;#stay&quot; String=&quot;minginimi&quot; /&gt;
+        &lt;DetectChar attribute=&quot;String&quot; context=&quot;string&quot; char=&quot;&amp;quot;&quot; /&gt;
+      &lt;/context&gt;
+      &lt;context attribute=&quot;String&quot; lineEndContext=&quot;#stay&quot; name=&quot;string&quot; &gt;
+        &lt;DetectChar attribute=&quot;String&quot; context=&quot;#pop&quot; char=&quot;&amp;quot;&quot; /&gt;
+      &lt;/context&gt;
+    &lt;/contexts&gt;
+    &lt;itemDatas&gt;
+      &lt;itemData name=&quot;Tavaline tekst&quot; defStyleNum=&quot;dsNormal&quot; /&gt;
+      &lt;itemData name=&quot;Võtmesõna&quot; defStyleNum=&quot;dsVõtmesõna&quot; /&gt;
+      &lt;itemData name=&quot;String&quot; defStyleNum=&quot;dsString&quot; /&gt;
+    &lt;/itemDatas&gt;
+  &lt;/highlighting&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Esiletõstu definitsiooni viimane osa on mittekohustuslik sektsioon <userinput
+>general</userinput
+>. See võib sisaldada infot võtmesõnade, koodi voltimise, kommentaaride ja treppimise kohta.</term>
+
+<listitem>
+<para
+>Sektsioon <userinput
+>comment</userinput
+> määrab, millise stringiga algab üherealine kommentaar. Määrata võib ka mitmerealise kommentaari, kasutades atribuuti <emphasis
+>multiLine</emphasis
+> koos lisaatribuudiga <emphasis
+>end</emphasis
+>. Seda kasutatakse siis, kui kasutaja tarvitab <emphasis
+>kommentaari lisamise/eemaldamise</emphasis
+> kiirklahvi.</para>
+<para
+>Sektsioon <userinput
+>keywords</userinput
+> määrab, kas võtmesõnade nimekirjad on tõstutundlikud või mitte. Teisi atribuute selgitame hiljem.</para>
+<programlisting
+>&lt;general&gt;
+    &lt;comments&gt;
+      &lt;comment name="singleLine" start="#"/&gt;
+    &lt;/comments&gt;
+    &lt;keywords casesensitive="1"/&gt;
+  &lt;/general&gt;
+&lt;/language&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+
+</sect2>
+
+<sect2 id="kate-highlight-sections">
+<title
+>Sektsioonid üksikasjalikult</title>
+<para
+>Selles osas kirjeldame kõiki saadaolevaid konteksti, 'itemData', võtmesõnade, kommentaaride, koodi voltimise ja treppimise atribuute.</para>
+
+<variablelist>
+<varlistentry>
+<term
+>Element <userinput
+>context</userinput
+> kuulub gruppi <userinput
+>contexts</userinput
+>. Kontekst määrab kontekstispetsiifilised reeglid, näiteks selle, mis juhtub siis, kui esiletõstu süsteem jõuab oma tegevuses rea lõppu. Võimalikud atribuudid on järgmised:</term>
+
+
+<listitem>
+<para
+><userinput
+>name</userinput
+> määrab konteksti nime. Reeglid kasutavad seda määramaks konteksti, millele lülituda, kui reegel sobib.</para>
+<para
+><userinput
+>lineEndContext</userinput
+> määrab konteksti, millele esiletõstu süsteem lülitub rea lõppu jõudes. See võib olla mõne teise konteksti nimi, <userinput
+>#stay</userinput
+>, mis keelab konteksti vahetamise, või <userinput
+>#pop</userinput
+>, mis sunnib kontekstist loobuma. Võimalik on ka kasutada näiteks <userinput
+>#pop#pop#pop</userinput
+>, et kolm korda järjest kontekstist loobuda.</para>
+<para
+><userinput
+>lineBeginContext</userinput
+> määrab konteksti, kui ette tuleb reaalgus. Vaikimisi #stay.</para>
+<para
+><userinput
+>fallthrough</userinput
+> määrab, kas lülituda kontekstile, mille määrab fallthroughContext, kui ühtegi sobivat reeglit ei leita, või mitte. Vaikimisi väär (<emphasis
+>false</emphasis
+>).</para>
+<para
+><userinput
+>fallthroughContext</userinput
+> määrab järgmise konteksti, kui ei leita ühtegi sobivat reeglit.</para>
+<para
+><userinput
+>dynamic</userinput
+>: kui on tõene (<emphasis
+>true</emphasis
+>), jätab kontekst meelde dünaamiliste reeglite salvestatud stringid/kohatäitjad. Seda on vaja näiteks HERE-dokumentide jaoks. Vaikimisi väär (<emphasis
+>false</emphasis
+>).</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Element <userinput
+>itemData</userinput
+> kuulub gruppi <userinput
+>itemDatas</userinput
+>. See määrab fondistiili ja värvid. Nii saab määrata ka omaenda stiilid ja värvid, kuid soovitatav oleks võimaluse korral siiski kasutada vaikestiile, et kasutaja näeks alati ka erinevates keeltes ühesuguseid värve. Vahel on siiski mõttekas ja vajalik värvide ja fontide atribuute muuta. Nõutav on atribuudi nimi ja defStyleNum, ülejäänud pole kohustuslikud. Võimalikud atribuudid on järgmised:</term>
+
+<listitem>
+<para
+><userinput
+>name</userinput
+> määrab itemData nime. Kontekstid ja reeglid kasutavad seda nime oma atribuudis <emphasis
+>atribuut</emphasis
+> itemData'le viidates.</para>
+<para
+><userinput
+>defStyleNum</userinput
+> määrab kasutatava vaikestiili. Saadaolevaid vaikestiile tutvustame edaspidi.</para>
+<para
+><userinput
+>color</userinput
+> määrab värvi. Sobiv vorming on '#rrggbb' või '#rgb'.</para>
+<para
+><userinput
+>selColor</userinput
+> määrab valiku värvi.</para>
+<para
+><userinput
+>italic</userinput
+>: kui on tõene (<emphasis
+>true</emphasis
+>), on tekst kaldkirjas.</para>
+<para
+><userinput
+>bold</userinput
+>: kui on tõene (<emphasis
+>true</emphasis
+>), on tekst rasvases kirjas.</para>
+<para
+><userinput
+>underline</userinput
+>: kui on tõene (<emphasis
+>true</emphasis
+>), on tekst allajoonitud.</para>
+<para
+><userinput
+>strikeout</userinput
+>: kui on tõene (<emphasis
+>true</emphasis
+>), on tekst läbikriipsutatud.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Element <userinput
+>keywords</userinput
+> grupis <userinput
+>general</userinput
+> määrab võtmesõna omadused. Võimalikud atribuudid on järgmised:</term>
+
+<listitem>
+<para
+><userinput
+>casesensitive</userinput
+> võib olla tõene (<emphasis
+>true</emphasis
+>) või väär (<emphasis
+>false</emphasis
+>). Kui see on tõene, on kõik võtmesõnad tõstutundlikud.</para>
+<para
+><userinput
+>weakDeliminator</userinput
+> on märkide nimekiri, mida ei kasutata sõnaeraldajana. Näiteks punkt <userinput
+>'.'</userinput
+> on sõnaeraldaja. Eeldusel, et võtmesõna atribuudis <userinput
+>list</userinput
+> sisaldab punkti, leitakse sobivus ainult siis, kui määrad punkti nõrgaks eraldajaks.</para>
+<para
+><userinput
+>additionalDeliminator</userinput
+> määrab lisaeraldajad.</para>
+<para
+><userinput
+>wordWrapDeliminator</userinput
+> määrab märgid, mille järel võib rida murda.</para>
+<para
+>Vaikimisi on eraldajateks ja sõnamurdmise eraldajateks märgid <userinput
+>.():!+,-&lt;=&gt;%&amp;*/;?[]^{|}~\</userinput
+>, tühikumärk (<userinput
+>' '</userinput
+>) ja tabeldusmärk (<userinput
+>'\t'</userinput
+>).</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Element <userinput
+>comment</userinput
+> grupis <userinput
+>comments</userinput
+> määrab kommentaari omadused, mida kasutatakse menüükäskude <menuchoice
+><guimenu
+>Tööriistad</guimenu
+><guimenuitem
+>Kommentaar</guimenuitem
+></menuchoice
+> ja <menuchoice
+><guimenu
+>Tööriistad</guimenu
+><guimenuitem
+>Kommentaari eemaldamine</guimenuitem
+></menuchoice
+> jaoks. Võimalikud atribuudid on järgmised:</term>
+
+<listitem>
+<para
+><userinput
+>name</userinput
+> on kas <emphasis
+>singleLine</emphasis
+> või <emphasis
+>multiLine</emphasis
+>. Kui valida <emphasis
+>multiLine</emphasis
+>, on vajalikud ka atribuudid <emphasis
+>end</emphasis
+> ja <emphasis
+>region</emphasis
+>.</para>
+<para
+><userinput
+>start</userinput
+> määrab stringi, millega alustatakse kommentaari. C++ korral on see näiteks &quot;/*&quot;.</para>
+<para
+><userinput
+>end</userinput
+> määrab stringi, millega lõpetatakse kommentaar. C++ korral on see näiteks &quot;*/&quot;.</para>
+<para
+><userinput
+>region</userinput
+> on mitmerealise kokkuvolditava kommentaari nimi. Eeldusel, et su reeglites on <emphasis
+>beginRegion="Comment"</emphasis
+> ... <emphasis
+>endRegion="Comment"</emphasis
+>, tuleb kasutada <emphasis
+>region="Comment"</emphasis
+>. Sel juhul toimib kommentaari eemaldamine ka siis, kui sa ei vali kogu mitmerealise kommentaari teksti - lihtsalt kursor peab asuma mitmerealise kommentaari sees.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Element <userinput
+>folding</userinput
+> grupis <userinput
+>general</userinput
+> määrab koodivoltimise omadused. Võimalikud atribuudid on järgmised:</term>
+
+<listitem>
+<para
+><userinput
+>indentationsensitive</userinput
+>: kui see on tõene (<emphasis
+>true</emphasis
+>), lisatakse koodivoltimise markerid vastavalt treppimisele (näiteks skriptikeeles Python). Tavaliselt pole seda vaja ning vaikimisi ongi see väär (<emphasis
+>false</emphasis
+>).</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Element <userinput
+>indentation</userinput
+> grupis <userinput
+>general</userinput
+> määrab, millist treppimist kasutada. Soovitatav on siiski seda elementi vältida, sest treppimine määratakse tavaliselt kas failitüüpi defineerides või režiimirida tekstifailile lisades. Kui see siiski määrata, sunnitakse kasutajale peale konkreetne treppimine, mis aga ei pruugi alati kuigi hästi sobida. Võimalikud atribuudid on järgmised:</term>
+
+<listitem>
+<para
+><userinput
+>mode</userinput
+> on treppimise nimi. Praegu on saada järgmised treppimised: <emphasis
+>tavaline, cstyle, csands, xml, python</emphasis
+> ja <emphasis
+>varindent</emphasis
+>.</para>
+</listitem>
+</varlistentry>
+
+
+</variablelist>
+
+
+</sect2>
+
+<sect2 id="kate-highlight-default-styles">
+<title
+>Saadaolevad vaikestiilid</title>
+<para
+>Vaikestiile me lühidalt <link linkend="kate-highlight-system-default-styles"
+>juba tutvustasime</link
+>: need on eelnevalt määratud fondi- ja värvistiilid.</para>
+<variablelist>
+<varlistentry>
+<term
+>Seepärast loetleme siin lihtsalt saadaolevad vaikestiilid:</term>
+<listitem>
+<para
+><userinput
+>dsNormal</userinput
+> tavalise teksti jaoks.</para>
+<para
+><userinput
+>dsKeyword</userinput
+> võtmesõnade jaoks.</para>
+<para
+><userinput
+>dsDataType</userinput
+> andmetüüpide jaoks.</para>
+<para
+><userinput
+>dsDecVal</userinput
+> murdarvväärtuste jaoks.</para>
+<para
+><userinput
+>dsBaseN</userinput
+> väärtuste jaoks, mille aluseks ei ole 10.</para>
+<para
+><userinput
+>dsFloat</userinput
+> ujukomaväärtuste jaoks.</para>
+<para
+><userinput
+>dsChar</userinput
+> märkide jaoks.</para>
+<para
+><userinput
+>dsString</userinput
+> stringide jaoks.</para>
+<para
+><userinput
+>dsComment</userinput
+> kommentaaride jaoks.</para>
+<para
+><userinput
+>dsOthers</userinput
+> 'muude asjade' jaoks.</para>
+<para
+><userinput
+>dsAlert</userinput
+> hoiatuste jaoks.</para>
+<para
+><userinput
+>dsFunction</userinput
+> funktsiooni väljakutsete jaoks.</para>
+<para
+><userinput
+>dsRegionMarker</userinput
+> regiooni markerite jaoks.</para>
+<para
+><userinput
+>dsError</userinput
+> vigade ja vigase süntaksi esiletõstmiseks.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="kate-highlight-rules-detailled">
+<title
+>Esiletõstu tuvastamise reeglid</title>
+
+<para
+>See sektsioon kirjeldab esiletõstu tuvastamise reegleid.</para>
+
+<para
+>Iga reegel otsib sobivust null või enama märgi osas stringis, mida ta testib. Kui reegel leiab sobivuse, omistatakse sobivatele märkidele reeglis määratud stiil või <emphasis
+>atribuut</emphasis
+> ning reegel võib soovitada konteksti vahetamist.</para>
+
+<para
+>Reegel näeb välja selline:</para>
+
+<programlisting
+>&lt;ReegliNimi atribuut=&quot;(identifikaator)&quot; kontekst=&quot;(identifikaator)&quot; [reegli spetsiifilised atribuudid] /&gt;</programlisting>
+
+<para
+><emphasis
+>Atribuut</emphasis
+> identifitseerib nime või indeksi järgi stiili, mida kasutada sobivate märkide puhul, ning <emphasis
+>kontekst</emphasis
+> identifitseerib vajaliku konteksti.</para>
+
+<para
+><emphasis
+>Konteksti</emphasis
+> saab identifitseerida:</para>
+
+<itemizedlist>
+<listitem>
+<para
+><emphasis
+>identifikaatori</emphasis
+> järgi, mis on mingi teise konteksti nimi.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>korralduse</emphasis
+> järgi, mis annab mootorile käsu jääda praeguse konteksti juurde (<userinput
+>#stay</userinput
+>) või hüpata tagasi eelmisele stringis kasutatud kontekstile (<userinput
+>#pop</userinput
+>).</para>
+<para
+>Minemaks rohkem samme tagasi, võib võtmesõna #pop korrata: <userinput
+>#pop#pop#pop</userinput
+></para>
+</listitem>
+</itemizedlist>
+
+<para
+>Mõnel reeglil võivad olla <emphasis
+>alamreeglid</emphasis
+>, mida kaalutakse siis ja ainult siis, kui põhireegel on sobivuse leidnud. Kogu sobivale stringile antakse põhireeglis määratud atribuut. Alamreegliga reegel näeb välja selline:</para>
+
+<programlisting
+>&lt;ReegliNimi (atribuudid)&gt;
+  &lt;AlamreegliNimi (atribuudid) /&gt;
+  ...
+&lt;/ReegliNimi&gt;
+</programlisting>
+
+
+<para
+>Reegli spetsiifilised atribuudid on mitmekesised ja neid kirjeldatakse järgnevates sektsioonides.</para>
+
+
+<itemizedlist>
+<title
+>Üldatribuudid</title>
+<para
+>Järgmised atribuudid on ühised kõigile reeglitele ja neid kasutatakse alati, kui esinevad <userinput
+>(üldatribuudid)</userinput
+>. Nõutavad atribuudid on <emphasis
+>attribute</emphasis
+> ja <emphasis
+>context</emphasis
+>, teised pole kohustuslikud. </para>
+
+<listitem>
+<para
+><emphasis
+>attribute</emphasis
+>: atribuut on seotud määratud <emphasis
+>itemData</emphasis
+>'ga.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>context</emphasis
+>: määrab konteksti, millele esiletõstu süsteem lülitub, kui reegel sobib.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>beginRegion</emphasis
+>: alustab koodivoltimise plokki. Vaikimisi määramata (unset).</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>endRegion</emphasis
+>: lõpetab koodivoltimise ploki. Vaikimisi määramata (unset).</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>lookAhead</emphasis
+>: kui on tõene (<emphasis
+>true</emphasis
+>), ei arvesta esiletõstu süsteem sobivuse pikkus. Vaikimisi väär (<emphasis
+>false</emphasis
+>).</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>firstNonSpace</emphasis
+>: sobib ainult juhul, kui string on esimene mittetühimärk real. Vaikimisi väär (<emphasis
+>false</emphasis
+>).</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>column</emphasis
+>: sobib ainult siis, kui veerg sobib. Vaikimisi määramata (unset).</para>
+</listitem>
+</itemizedlist>
+
+<itemizedlist>
+<title
+>Dünaamilised reeglid</title>
+<para
+>Mõned reeglid lubavad määrata lisaatribuudi <userinput
+>dynamic</userinput
+>, mis kasutab tõeväärtust (vaikimisi on see väär ehk <emphasis
+>false</emphasis
+>). Kui <userinput
+>dynamic</userinput
+> on tõene (<emphasis
+>true</emphasis
+>), võib reegel kasutada teksti esindavaid kohatäitjaid, mis sobivad <emphasis
+>regulaaravaldise</emphasis
+> reeglile, mis lülitub aktiivsele kontekstile oma atribuudiga <userinput
+>string</userinput
+> või <userinput
+>char</userinput
+>. Atribuudi <userinput
+>string</userinput
+> korral asendatakse kohatäitja <replaceable
+>%N</replaceable
+> (kus N on arv) vastava kohaga <replaceable
+>N</replaceable
+> väljakutsutavast regulaaravaldisest. Atribuudi <userinput
+>char</userinput
+> korra peab kohatäitja olema arv <replaceable
+>N</replaceable
+> ja see asendatakse esimese märgiga vastavas kohas <replaceable
+>N</replaceable
+> väljakutsutavast regulaaravaldisest. Kui reegel vähegi seda atribuuti lubab, sisaldub selles <emphasis
+>(dynamic)</emphasis
+>.</para>
+
+<listitem>
+<para
+><emphasis
+>dynamic</emphasis
+>: võib olla tõene või väär (<emphasis
+>(true|false)</emphasis
+>).</para>
+</listitem>
+</itemizedlist>
+
+<sect2 id="highlighting-rules-in-detail">
+<title
+>Reeglid üksikasjalikult</title>
+
+<variablelist>
+<varlistentry>
+<term
+>DetectChar</term>
+<listitem>
+<para
+>Tuvastab üksikut konkreetset märki. Tavaliselt kasutatakse näiteks jutumärkides stringi alguse ja lõpu leidmiseks.</para>
+<programlisting
+>&lt;DetectChar char=&quot;(märk)&quot; (üldatribuudid) (dynamic) /&gt;</programlisting>
+<para
+>Atribuut <userinput
+>char</userinput
+> määrab otsitava märgi.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Detect2Chars</term>
+<listitem>
+<para
+>Tuvastab kaks konkreetset märki määratud järjekorras.</para>
+<programlisting
+>&lt;Detect2Chars char=&quot;(märk)&quot; char1=&quot;(märk)&quot; (üldatribuudid) (dynamic) /&gt;</programlisting>
+<para
+>Atribuut <userinput
+>char</userinput
+> defineerib esimese otsitava märgi, <userinput
+>char1</userinput
+> teise.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>AnyChar</term>
+<listitem>
+<para
+>Tuvastab ühe märgi konkreetsete märkide hulgast.</para>
+<programlisting
+>&lt;AnyChar String=&quot;(string)&quot; (üldatribuudid) /&gt;</programlisting>
+<para
+>Atribuut <userinput
+>String</userinput
+> määrab märgikogumi.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>StringDetect</term>
+<listitem>
+<para
+>Tuvastab täpse stringi.</para>
+<programlisting
+>&lt;StringDetect String=&quot;(string)&quot; [insensitive=&quot;true|false;&quot;] (üldatribuudid) (dynamic) /&gt;</programlisting>
+<para
+>Atribuut <userinput
+>String</userinput
+> määrab otsitava stringi. Atribuut <userinput
+>insensitive</userinput
+> on vaikimisi <userinput
+>false</userinput
+> ning seda kasutab stringivõrdlusfunktsioon. Kui väärtus on <userinput
+>true</userinput
+>, kasutatakse tõstutundetut võrdlust.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>RegExpr</term>
+<listitem>
+<para
+>Otsib regulaaravaldise sobivust.</para>
+<programlisting
+>&lt;RegExpr String=&quot;(string)&quot; [insensitive=&quot;true|false;&quot;] [minimal=&quot;true|false&quot;] (üldatribuudid) (dynamic) /&gt;</programlisting>
+<para
+>Atribuut <userinput
+>String</userinput
+> määrab regulaaravaldise.</para>
+<para
+><userinput
+>insensitive</userinput
+> on vaikimisi <userinput
+>false</userinput
+> ja seda kasutab regulaaravaldise mootor.</para>
+<para
+><userinput
+>minimal</userinput
+> on vaikimisi <userinput
+>false</userinput
+> ja seda kasutab regulaaravaldise mootor.</para>
+<para
+>Kuna reeglid otsivad sobivust alati aktiivse stringi algusest, siis viitab regulaaravaldis, mille alguses seisab juurdelisamismärk (<literal
+>^</literal
+>), et reegel peab sobivust otsima ainult rea algusest.</para>
+<para
+>Täpsemat infot vaata peatükist <link linkend="regular-expressions"
+>Regulaaravaldised</link
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>keyword</term>
+<listitem>
+<para
+>Tuvastab võtmesõna määratud nimekirjast.</para>
+<programlisting
+>&lt;keyword String=&quot;(nimekirja nimi)&quot; (üldatribuudid) /&gt;</programlisting>
+<para
+>Atribuut <userinput
+>String</userinput
+> identifitseerib võtmesõnade nimekirja nime järgi. Sellise nimega nimekiri peab olemas olema.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Int</term>
+<listitem>
+<para
+>Tuvastab täisarvu.</para>
+<para
+><programlisting
+>&lt;Int (üldatribuudid) (dynamic) /&gt;</programlisting
+></para>
+<para
+>Sellel reeglil ei ole spetsiifilisi atribuute. Tihti kasutatakse alamreegleid, et tuvastada arvu järel <userinput
+>L</userinput
+> ja <userinput
+>U</userinput
+> kombinatsioone, mis osutavad programmikoodis täisarvu tüübile. Õigupoolest on alamreeglina lubatud kõik reeglid, kuid <acronym
+>DTD</acronym
+> lubab siiski ainult alamreeglit <userinput
+>StringDetect</userinput
+>.</para>
+<para
+>Järgnev näide otsib täisarve märgi 'L' järel. <programlisting
+>&lt;Int attribute="Decimal" context="#stay" &gt;
+  &lt;StringDetect attribute="Decimal" context="#stay" String="L" insensitive="true"/&gt;
+&lt;/Int&gt;
+</programlisting
+></para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Float</term>
+<listitem>
+<para
+>Tuvastab ujukomaarvu.</para>
+<para
+><programlisting
+>&lt;Float (üldatribuudid) /&gt;</programlisting
+></para>
+<para
+>Sellel reeglil ei ole spetsiifilisi atribuute. <userinput
+>AnyChar</userinput
+> on lubatud alamreeglina ning tüüpiliselt kasutatakse seda kombinatsioonide tuvastamiseks (vaata võrdluseks reeglit <userinput
+>Int</userinput
+>).</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HICOct</term>
+<listitem>
+<para
+>Tuvastab kaheksandsüsteemis arvu.</para>
+<para
+><programlisting
+>&lt;HICOct (üldatribuudid) /&gt;</programlisting
+></para>
+<para
+>Sellel reeglil ei ole spetsiifilisi atribuute.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HICHex</term>
+<listitem>
+<para
+>Tuvastab kuueteistkümnendsüsteemis arvu.</para>
+<para
+><programlisting
+>&lt;HlCHex (üldatribuudid) /&gt;</programlisting
+></para>
+<para
+>Sellel reeglil ei ole spetsiifilisi atribuute.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HICStringChar</term>
+<listitem>
+<para
+>Tuvastab paomärgi.</para>
+<para
+><programlisting
+>&lt;HlCStringChar (üldatribuudid) /&gt;</programlisting
+></para>
+<para
+>Sellel reeglil ei ole spetsiifilisi atribuute.</para>
+
+<para
+>See otsib sobivusi nähtamatutele märkidele, mida tihti programmikoodis kasutatakse, näiteks <userinput
+>\n</userinput
+> (uus rida) või <userinput
+>\t</userinput
+> (tabeldusmärk).</para>
+
+<para
+>Leitakse järgmised märgid, kui neile eelneb längkriips (<literal
+>\</literal
+>): <userinput
+>abefnrtv&quot;'?\</userinput
+>. Lisaks leitakse kuueteistkümnendsüsteemis varjestatud arvud, näiteks <userinput
+>\xff</userinput
+>, ja kaheksandsüsteemis varjestatud arvud, näiteks <userinput
+>\033</userinput
+>.</para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HlCChar</term>
+<listitem>
+<para
+>Tuvastab C märgi.</para>
+<para
+><programlisting
+>&lt;HlCChar (üldatribuudid) /&gt;</programlisting
+></para>
+<para
+>Sellel reeglil ei ole spetsiifilisi atribuute.</para>
+
+<para
+>Leitakse ülakriipsude vahele võetud C märgid, näiteks <userinput
+>'c'</userinput
+>. Ülakriipsude vahel võib olla lihtne märk või ka varjestatud märk. Viimaste kohta vaata HlCStringChar.</para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>RangeDetect</term>
+<listitem>
+<para
+>Tuvastab stringi määratud algus- ja lõpumärgiga.</para>
+<programlisting
+>&lt;RangeDetect char=&quot;(märk)&quot;  char1=&quot;(märk)&quot; (üldatribuudid) /&gt;</programlisting>
+<para
+><userinput
+>char</userinput
+> määrab vahemikku alustava märgi ning <userinput
+>char1</userinput
+> seda lõpetava märgi.</para>
+<para
+>See on kasulik näiteks väiksemate jutumärkides stringides ja muu sellise leidmiseks, kuid tasub tähele panna, et esiletõstu mootor töötab korraga ühel real ega leia stringe, mis ulatuvad üle reapiiri.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>LineContinue</term>
+<listitem>
+<para
+>Tuvastab sobivused rea lõpus.</para>
+<programlisting
+>&lt;LineContinue (üldatribuudid) /&gt;</programlisting>
+<para
+>Sellel reeglil ei ole spetsiifilisi atribuute.</para>
+<para
+>See reegel on abiks konteksti lülitamisel rea lõpus, kui viimane märk on längkriips (<userinput
+>'\'</userinput
+>). Seda vajab näiteks C/C++ makrode või stringide jätkamiseks.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>IncludeRules</term>
+<listitem>
+<para
+>Kaasatakse teise konteksti või keele/faili reeglid.</para>
+<programlisting
+>&lt;IncludeRules context=&quot;kontekstilink&quot; [includeAttrib=&quot;true|false&quot;] /&gt;</programlisting>
+
+<para
+>Atribuut <userinput
+>context</userinput
+> määrab, milline kontekst kaasata.</para>
+<para
+>Kui see on lihtne string, kaasatakse aktiivsesse konteksti kõik defineeritud reeglid, näiteks: <programlisting
+>&lt;IncludeRules context=&quot;teineKontekst&quot; /&gt;</programlisting
+></para>
+
+<para
+>Kui stringi alguses on <userinput
+>##</userinput
+>, otsib esiletõstu süsteem antud nimega keeledefinitsiooni, näiteks: <programlisting
+>&lt;IncludeRules context=&quot;##C++&quot; /&gt;</programlisting
+></para>
+<para
+>Kui atribuut <userinput
+>includeAttrib</userinput
+> on tõene (<emphasis
+>true</emphasis
+>), muudetakse sihtatribuut lähteatribuudiks. Seda on vaja näiteks kommenteerimise jaoks, kui kaasatud kontekstis sobiv tekst on teistsuguse esiletõstuga kui algkontekstis. </para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>DetectSpaces</term>
+<listitem>
+<para
+>Tuvastab tühimärgid.</para>
+<programlisting
+>&lt;DetectSpaces (üldatribuudid) /&gt;</programlisting>
+
+<para
+>Sellel reeglil ei ole spetsiifilisi atribuute.</para>
+<para
+>Seda on mõtet kasutada, kui tead, et eespool asub tühimärke, näiteks trepitud ridade alguses. Sel juhul jäetakse kõik tühimärgid korraga vahele, mitte ei hakata erinevaid reegleid läbi uurima.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>DetectIdentifier</term>
+<listitem>
+<para
+>Tuvastab identifikaatoristringid (regulaaravaldisena [a-zA-Z_][a-zA-Z0-9_]*).</para>
+<programlisting
+>&lt;DetectIdentifier (üldatribuudid) /&gt;</programlisting>
+
+<para
+>Sellel reeglil ei ole spetsiifilisi atribuute.</para>
+<para
+>Seda on mõtet kasutada, kui soovid terve sõnastringi korraga vahele jätta, mitte lasta seda uurida mitmel reeglil.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</sect2>
+
+<sect2>
+<title
+>Nõuanded ja soovitused</title>
+
+<itemizedlist>
+<para
+>Kui oled aru saanud, kuidas käib konteksti lülitamine, on juba lihtne hakata ise esiletõstu definitsioone kirjutama. Siiski tuleb alati hoolikalt kontrollida, millist reeglit millises olukorras kasutada. Regulaaravaldised on väga võimsad vahendid, kuid võrreldes teiste reeglitega suhteliselt aeglased. Niisiis tasuks silmas pidada järgmisi nõuandeid. </para>
+
+<listitem>
+<para
+>Ainult kahe märgi sobivuse leidmiseks kasuta <userinput
+>Detect2Chars</userinput
+>, mitte <userinput
+>StringDetect</userinput
+>. Sama käib <userinput
+>DetectChar</userinput
+> kohta.</para>
+</listitem>
+<listitem>
+<para
+>Regulaaravaldisi on lihtne kasutada, kuid sageli saavutab sama tulemuse märksa kiiremini. Oletame, et soovid leida ainult märgi <userinput
+>'#'</userinput
+>, kui see on real esimene. Regulaaravaldis näeks välja nii: <programlisting
+>&lt;RegExpr attribute=&quot;Macro&quot; context=&quot;macro&quot; String=&quot;^\s*#&quot; /&gt;</programlisting
+> Sama tulemuse saavutab aga palju kiiremini nii: <programlisting
+>&lt;DetectChar attribute=&quot;Macro&quot; context=&quot;macro&quot; char=&quot;#&quot; firstNonSpace=&quot;true&quot; /&gt;</programlisting
+> Kui soovid leida regulaaravaldise <userinput
+>'^#'</userinput
+> sobivuse, on samuti mõistlik kasutada <userinput
+>DetectChar</userinput
+>, lisades sellele atribuudi <userinput
+>column=&quot;0&quot;</userinput
+>. Atribuut <userinput
+>column</userinput
+> võtab aluseks märkide arvu, pidades niisiis tabeldusmärki üheks märgiks. </para>
+</listitem>
+<listitem>
+<para
+>Konteksti saab lülitada ilma märke töötlemata. Eeldame, et soovid lülitada konteksti, kui esineb string <userinput
+>*/</userinput
+>, aga tahad seda stringi järgmises kontekstis töödelda. Alltoodud reegel leiab sobivuse ning atribuut <userinput
+>lookAhead</userinput
+> sunnib esiletõstu säilitama sobiva stringi järgmises kontekstis. <programlisting
+>&lt;Detect2Chars attribute=&quot;Comment&quot; context=&quot;#pop&quot; char=&quot;*&quot; char1=&quot;/&quot; lookAhead=&quot;true&quot; /&gt;</programlisting>
+</para>
+</listitem>
+<listitem>
+<para
+>Kui tead, et esineb palju tühimärke, kasuta <userinput
+>DetectSpaces</userinput
+>.</para>
+</listitem>
+<listitem>
+<para
+>Kasuta <userinput
+>DetectIdentifier</userinput
+>, mitte regulaaravaldist <userinput
+>'[a-zA-Z_]\w*'</userinput
+>.</para>
+</listitem>
+<listitem>
+<para
+>Kasuta võimaluse korral alati vaikestiile. Sel moel viibi kasutaja alati tuttavas keskkonnas.</para>
+</listitem>
+<listitem>
+<para
+>Uuri teisi XML-faile selgitamaks, kuidas teised on oma reegleid teostanud.</para>
+</listitem>
+<listitem>
+<para
+>XML-faile saab kontrollida käsuga <command
+>xmllint --dtdvalid language.dtd mySyntax.xml</command
+>.</para>
+</listitem>
+<listitem>
+<para
+>Sageli keerukaid regulaaravaldisi vajades võiks kasutada olemeid (<emphasis
+>ENTITIES</emphasis
+>). Näide:</para>
+<programlisting
+>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE language SYSTEM "language.dtd"
+[
+        &lt;!ENTITY myref    "[A-Za-z_:][\w.:_-]*"&gt;
+]&gt;
+</programlisting>
+<para
+>Seejärel võid regulaaravaldise asemel kasutada <emphasis
+>&amp;myref;</emphasis
+>.</para>
+</listitem>
+</itemizedlist>
+</sect2>
+
+</sect1>
+
+</appendix>

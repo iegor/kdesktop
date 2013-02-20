@@ -1,0 +1,636 @@
+<chapter id="tinkering-under-the-hood">
+<!-- Uncomment the <*info
+> below and add your name to be -->
+<!-- credited for writing this section. -->
+
+<!--
+<chapterinfo>
+<authorgroup>
+<author>
+<firstname
+>Your First Name here</firstname>
+<surname
+>Your Surname here </surname>
+</author>
+</authorgroup>
+</chapterinfo>
+-->
+
+<title
+>Тонкая настройка &kde;</title>
+
+<sect1 id="hand-editing-config-files">
+
+<sect1info>
+<author
+><personname
+> <firstname
+>Nicolas</firstname
+> <surname
+>Goutte</surname
+> </personname
+> <email
+>goutte@kde.org</email
+> </author>
+</sect1info>
+
+<title
+>Ручное редактирование файлов конфигурации</title>
+
+<sect2 id="hand-editing-intro">
+<title
+>Введение</title>
+<para
+>Файлы конфигурации &kde; можно редактировать любым текстовым редактором, например, &kate;, так как они - обычные текстовые файлы.</para>
+
+<para
+>Пример файла:</para>
+
+<programlisting
+>[General]
+AutoSave=1
+LastFile=/var/tmp/test.txt</programlisting>
+
+<para
+>Пользовательские параметры хранятся в каталоге <filename class="directory"
+>.kde/share/config</filename
+> (замените <filename
+>.kde</filename
+> на значение переменной $<envar
+>KDEHOME</envar
+> в вашей системе), общесистемные - в подкаталоге <filename class="directory"
+>share/config</filename
+> корневого каталога &kde;. (Для того чтобы узнать путь к этому каталогу, выполните <command
+>kde-config --prefix</command
+>.) Имена файлов обычно заканчиваются символами rc (без точки), например, <filename
+>kopeterc</filename
+>.</para>
+
+<warning
+><para
+>При редактировании файлов конфигурации вручную стабильность &kde; может быть нарушена, так как большинство приложений не проверяет правильность параметров при чтении.</para
+></warning>
+
+</sect2>
+
+<sect2 id="hand-editing-backups">
+<title
+>Резервные копии</title>
+
+<para
+>Создавайте резервные копии файлов перед тем, как их изменять. Резервные копии лучше всего хранить вне подкаталога <filename class="directory"
+>.kde</filename
+> (или другого каталога, на который указывает $<envar
+>KDEHOME</envar
+>). Резервные копии могут помочь вам и в случае системного сбоя &kde;, уничтожившего важные файлы конфигурации (например, файл конфигурации &kmail; - <filename
+>kmailrc</filename
+>). (Такие сбои не должны случаться, но они всё-таки случаются.)</para>
+</sect2>
+
+<sect2 id="hand-editing">
+<title
+>Редактирование</title>
+
+<para
+>Зачем вообще может понадобиться изменять файлы конфигурации? Во-первых, это необходимо при переводе системы в режим KIOSK. Разработчик приложения может попросить вас добавить параметр, чтобы помочь ему решить проблему с программой. Возможно, вы захотите устранить затруднения в работе с системой, не удаляя весь каталог <filename class="directory"
+>.kde</filename
+>. Наконец, таким способом можно узнать больше о &kde;.</para>
+
+<para
+>В любом из этих случаев вам может понадобиться вручную отредактировать файл конфигурации.</para>
+
+<para
+>Приступая к редактированию, убедитесь, что приложение, которое использует файл, не запущено. Если это один из системных файлов конфигурации, редактируйте его, не запуская &kde;.</para>
+
+<para
+>Готовы? Теперь сделайте резервную копию файла (надеюсь, вы об этом не забыли?), запустите ваш любимый редактор (предположим, это &kate;) и откройте файл (убедитесь, что используется кодировка  UTF-8, &kate; отображает её как <quote
+>utf8</quote
+>).</para>
+
+<para
+>Перед вами файл вида</para>
+
+<programlisting
+>[Имя_группы]
+Ключ1=Значение1
+Ключ2=Значение2
+Ключ3=Значение3</programlisting>
+
+<para
+>Теперь отредактируйте его (будьте внимательны!) и сохраните (в кодировке <acronym
+>UTF-8</acronym
+>).</para>
+
+<para
+>Теперь проверьте, как работает приложение. Если его поведение вас не устраивает, закройте его и восстановите файл конфигурации из резервной копии.</para>
+
+<itemizedlist>
+<title
+>Связанная информация</title>
+
+
+<listitem
+><para
+><xref linkend="kde-for-administrators"/> включает информацию о структуре каталогов &kde;. Это поможет вам найти файл, который вы хотите отредактировать.</para>
+</listitem>
+
+</itemizedlist>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="scripting-the-desktop">
+<title
+>Создание сценариев</title>
+
+<para
+>&kde; использует мощный механизм взаимодействия между процессами - &DCOP;, Desktop COmmunication Protocol. С помощью &DCOP; вы можете управлять &kde; из командной строки или с помощью сценария, написанного на вашем любимом интерпретируемом языке. Также вы можете получать информацию от приложений &kde;, например, несколько мультимедийных проигрывателей &kde; могут возвращать информацию о текущем файле.</para>
+
+<para
+>Каждое приложение &kde; включает не менее одного <firstterm
+>интерфейса</firstterm
+> &DCOP;, который, в свою очередь, содержит методы (или функции, как вам угодно), которые могут быть вызваны другими приложениями. Если вы собираетесь использовать &DCOP;, в первую очередь следует найти функцию, с помощью которой вы можете выполнить свою задачу. Самый простой способ узнать доступные методы &DCOP; - использовать программу <application
+>kdcop</application
+>.</para>
+
+<para
+>Запустите <application
+>kdcop</application
+> из &konsole; или через окно запуска программ (выводится по <keycombo action="simul"
+>&Alt;<keycap
+>F2</keycap
+> </keycombo
+>). В окне <application
+>kdcop</application
+> в виде дерева показываются запущенные в данный момент приложения, которые предоставляют интерфейсы &DCOP;. Для того чтобы найти нужную функцию, иногда приходится поискать по этому дереву, однако запомните, что интерфейс, отмеченный <quote
+>(по умолчанию)</quote
+>, обычно содержит наиболее часто используемые функции.</para>
+
+
+
+<para
+>Для того чтобы выяснить, делает ли функция то, что вы от неё ожидаете, щёлкните дважды на пункте <guilabel
+>setColor</guilabel
+>. Для того чтобы установить цвет (переменная <varname
+>c</varname
+>), щёлкните на кнопке выбора цвета и укажите требуемый цвет. Если вы хотите, чтобы цвет был основным, установите флажок. Нажмите ОК, и будет установлен новый цвет фона.</para>
+
+<para
+>Для того чтобы обратиться к методу &DCOP;, используя ваш любимый интерпретируемый язык, вы можете употреблять связки &DCOP;, если они доступны в модуле kdebindings, или использовать приложение <command
+>dcop</command
+>. Для простых вызовов достаточно <command
+>dcop</command
+>. Для того чтобы вызвать метод &DCOP; из командной строки, мы должны указать приложение, интерфейс, которому принадлежит функция, её имя и аргументы. Форма вызова зависит от оболочки.</para>
+
+<para
+>Мы указываем данные в порядке приложение-интерфейс-метод-аргументы (аргументы в том порядке, в котором они отображаются в <application
+>kdcop</application
+>. Программа <command
+>dcop</command
+> имеет множество опций: см. <userinput
+><command
+>dcop</command
+> <option
+>--help</option
+></userinput
+>.</para>
+
+<para
+>От теории перейдём к практике:</para>
+
+<example>
+<title
+>Сценарий изменения цвета фона с помощью функций &DCOP;</title>
+
+<para
+>Мы создадим простой сценарий на Perl, использующий функции <command
+>dcop</command
+>. Он будет циклически изменять цвет фона рабочего стола (в порядке спектра).</para>
+
+<para
+>Сначала с помощью <application
+>kdcop</application
+> найдём подходящий метод. В этом примере мы опустим описание процесса поиска: нам требуется метод <menuchoice
+><guimenu
+>kdesktop</guimenu
+><guisubmenu
+>KBackgroundIface</guisubmenu
+><guimenuitem
+>setColor</guimenuitem
+> </menuchoice
+>. Аргументы и тип возвращаемого значения функции отображаются в соответствии с синтаксисом C++. Аргументы функции <methodname
+>setColor</methodname
+>: цвет (переменная <varname
+>c</varname
+>) - задаёт новый цвет фона, и двоичная переменная, <varname
+>isColorA</varname
+>, которая указывает, является цвет основным или вторичным (имеет значение, если фон формируется из 2-х цветов, т. е. используется градиент).</para>
+
+<para
+>Вызов метода <methodname
+>setColor</methodname
+> производится так: <screen
+><prompt
+>%</prompt
+> <userinput
+><command
+>dcop</command
+> kdesktop KBackgroundIface setColor '#ffffff' false</userinput
+>
+</screen>
+</para>
+
+<para
+>Значение RGB для цвета указывается в 16-ричной форме, как в &HTML;. Обратите внимание, что значение заключается в одинарные кавычки, чтобы оболочка правильно обработала символ <token
+>#</token
+>.</para>
+
+<para
+>Для того чтобы узнать значение RGB для какого-либо цвета, откройте любой диалог выбора цвета в приложении &kde; (например, в Центре управления - <menuchoice
+><guimenu
+>Внешний вид и темы</guimenu
+><guimenuitem
+>Цвета</guimenuitem
+></menuchoice
+>) и выберите желаемый цвет. Значение RGB отобразится в поле <guilabel
+>HTML</guilabel
+>.</para>
+
+
+<para
+>Больше &DCOP; применять не потребуется, можно перейти к созданию сценария. Вот пример реализации (не самый аккуратный): <programlisting
+><![CDATA[
+$min=49;  # Минимальное значение интенсивности красной, зелёной или синей составляющей цвета
+$max=174; # Максимальное значение интенсивности красной, зелёной или синей составляющей цвета
+$step=5;  # На эту величину значение будет изменяться на каждом шаге
+$sleeptime=15; # Пауза между изменениями цвета
+
+@start = ($max, $min, $min);
+@colour = @start;
+
+while (1) {
+        foreach (0..5) {
+                my $which = $_ % 3; # Какой цвет (красный, зелёный или синий) изменять
+                my $updown = $_ % 2; # Увеличивать или уменьшать интенсивность
+                do {
+                        if ($updown == 0) { $colour[$which]+=$step; }
+                        if ($updown == 1) { $colour[$which]-=$step; }
+                        my $dcopcall=sprintf "dcop kdesktop KBackgroundIface setColor '#%x%x%x' true\n", @colour;
+                        system($dcopcall);
+                        sleep $sleeptime;
+                        } while (($colour[$which] 
+>= $min) and ($colour[$which] <= $max));
+                }
+}
+]]>
+</programlisting>
+</para>
+
+<para
+>Запустите сценарий без аргументов, и он будет циклически изменять цвет фона рабочего стола в заданном порядке, пока не будет остановлен. <foreignphrase
+>Вот, собственно, и всё</foreignphrase
+>!</para>
+
+</example>
+
+<para
+>Конечно, вы можете создавать сценарии, использующие &DCOP;, не только на Perl; если вы предпочитаете сценарии оболочки - пожалуйста:</para>
+
+<example>
+<title
+>Установка фона через Интернет</title>
+
+<para
+>Следующий сценарий скачивает основной рисунок комикса <quote
+>User Friendly</quote
+> и устанавливает его в качестве фона рабочего стола. Сценарий использует общедоступные инструменты и функции &DCOP;.</para>
+
+<programlisting
+><![CDATA[
+#!/bin/sh
+COMICURL=`wget -qO - http://www.userfriendly.org/static/index.html | \
+          grep Latest | sed -e "s,.*SRC=\",," -e "s,\"
+>.*,,"`
+TMPFILE=`mktemp /tmp/$0.XXXXXX` || exit 1
+wget -q -O $TMPFILE $COMICURL
+dcop kdesktop KBackgroundIface setWallpaper $TMPFILE 1
+]]>
+</programlisting>
+
+<para
+>Первая строка сценария (после #!/bin/sh) с помощью <command
+>wget</command
+> и регулярных выражений получает адрес рисунка из основной &HTML;-страницы ресурса. Вторая и третья скачивают рисунок и, наконец, функция <command
+>dcop</command
+> помещает рисунок на рабочий стол.</para>
+
+</example>
+
+
+<!-- <itemizedlist>
+<title
+>Related Information</title>
+<listitem
+><para
+>to be written</para>
+</listitem>
+</itemizedlist
+> -->
+
+
+</sect1>
+
+
+<sect1 id="adding-extra-keys">
+<title
+>Добавление дополнительных комбинаций клавиш в &kde;</title>
+
+<para
+>На многих современных клавиатурах есть дополнительные клавиши, которые по умолчанию не используются.</para>
+
+<para
+>Клавиши мультимедийных функций обычно генерируют сигнал и могут быть использованы в комбинациях так же, как и обычные. Однако некоторые клавиши не обнаруживаются, поэтому бесполезно пытаться включить их в комбинации.</para>
+
+<para
+>Например, некоторые ноутбуки IBM рядом с клавишами "влево"-"вправо" имеют дополнительные клавиши, которые выглядят как <guiicon
+>page left</guiicon
+> и <guiicon
+>page right</guiicon
+>.</para>
+
+<procedure>
+<step
+><para
+>Для того чтобы узнать код клавиш, используйте <command
+>xev</command
+>. В указанном примере это 233 и 234. </para
+></step>
+<step
+><para
+>Выберите символы, которые будут соответствовать клавишам. Многие символы по умолчанию не используются, так что выбор есть. Список находится в файле <filename
+>/usr/X11R6/include/X11/keysymdef.h</filename
+> (или его эквиваленте в вашей системе).</para
+></step>
+<step
+><para
+>В домашнем каталоге создайте файл <filename
+>.Xmodmap</filename
+> и добавьте в него следующие строки:</para>
+<screen
+>keycode 233 = Next_Virtual_Screen
+keycode 234 = Prev_Virtual_Screen</screen>
+</step>
+<step
+><para
+>Выполните команду <userinput
+><command
+>xmodmap</command
+> <filename
+>~/.Xmodmap</filename
+></userinput
+></para
+></step>
+</procedure>
+
+<para
+>Теперь программа <command
+>xev</command
+> при нажатии этих клавиш должна отображать символы, которые вы с ними связали. Вы можете использовать эти клавиши в комбинациях.</para>
+
+<itemizedlist>
+<title
+>Связанная информация</title>
+<listitem
+><para
+>Для того чтобы прочитать руководство <command
+>xev</command
+>, введите <userinput
+>man:/xev</userinput
+> в строке адреса окна &konqueror; или <userinput
+><command
+>man</command
+> xev</userinput
+> - в окне терминала.</para
+></listitem>
+</itemizedlist>
+
+</sect1>
+
+<sect1 id="keys-for-scripts">
+<title
+>Добавление комбинаций клавиш для новых действий</title>
+
+<para
+>Вы можете назначить комбинации клавиш для большей части действий в приложениях и на рабочем столе. Вы можете сделать это, даже если добавили это действие сами, и оно не доступно стандартными способами.</para>
+
+<para
+>В одном из примеров мы совместим материал из двух предыдущих разделов с помощью клавиш, которые мы рассматривали в секции <xref linkend="adding-extra-keys"/>, будет осуществляться переход к следующему и предыдущему рабочему столу. Для этого нам потребуются две функции DCOP (последний рассматривается в разделе <xref linkend="scripting-the-desktop"/>).</para>
+
+<para
+>Это достигается следующим образом:</para>
+
+<procedure>
+<step>
+<para
+>Откройте Центр управления KDE, в секции <guilabel
+>Региональные и специальные возможности</guilabel
+> выберите <guilabel
+>Действия</guilabel
+>.</para>
+</step>
+<step>
+<para
+>Нажмите кнопку <guibutton
+>Создать действие</guibutton
+></para>
+</step>
+<step>
+<para
+>Присвойте ему имя, например, <userinput
+>Следующий рабочий стол</userinput
+></para>
+</step>
+<step>
+<para
+>Выберите <guilabel
+>тип действия</guilabel
+>: <guilabel
+>Комбинация клавиш -> Команда/URL (простой)</guilabel
+></para>
+</step>
+<step>
+<para
+>Перейдите на закладку <guilabel
+>Комбинации клавиш</guilabel
+>, щёлкните на кнопке и нажмите клавиши, которые хотите использовать. В нашем примере это клавиша <guiicon
+>Next Page</guiicon
+>. В поле будет отображаться символ <keysym
+>Next_Virtual_Screen</keysym
+>.</para>
+</step>
+<step>
+<para
+>На закладке <guilabel
+>Параметры команды/URL</guilabel
+> введите команду  <userinput
+><command
+>dcop kwin default nextDesktop</command
+></userinput
+></para>
+</step>
+</procedure>
+
+<para
+>Повторите эти действия для клавиши <keysym
+>Prev_Virtual_Screen</keysym
+> (укажите команду <userinput
+><command
+>dcop kwin default previousDesktop</command
+></userinput
+>).</para>
+
+<para
+>Теперь при нажатии клавиш  <keysym
+>Prev_Virtual_Screen</keysym
+> и <keysym
+>Next_Virtual_Screen</keysym
+> вы будете переходить к предыдущему и следующему виртуальному рабочему столу соответственно.</para>
+
+<para
+>Вы можете связать любую свободную клавишу с любым свободным действием.</para>
+
+<itemizedlist>
+<title
+>Связанная информация</title
+> 
+<listitem
+><para
+>Для того чтобы просмотреть документацию <application
+>KHotKeys</application
+>, выберите этот раздел в &khelpcenter; или введите <userinput
+>help:/khotkeys</userinput
+> в строке адреса окна &konqueror;.</para
+></listitem
+> 
+<listitem
+><para
+><xref linkend="adding-extra-keys"/></para
+></listitem>
+<listitem
+><para
+><xref linkend="scripting-the-desktop"/></para
+></listitem>
+</itemizedlist>
+
+</sect1>
+
+<sect1 id="kdebugdialog">
+<sect1info>
+<authorgroup>
+<author
+><personname
+> <firstname
+>Adriaan</firstname
+> <surname
+>de Groot</surname
+> </personname
+> <email
+>groot@kde.org</email
+> </author>
+</authorgroup>
+</sect1info>
+
+<title
+>&kdebugdialog; - настройка вывода отладочной информации &kde;</title>
+
+<sect2 id="kdebugdialog-basic-usage">
+<title
+>Основы использования</title>
+
+<para
+>&kdebugdialog; по умолчанию не указан в &kmenu;. Для того чтобы запустить его, введите команду <userinput
+><command
+>kdebugdialog</command
+></userinput
+> в окне терминала или окне запуска программ. Программа выведет список различных областей отладочной информации. Для того чтобы включить/выключить вывод отладочной информации соответствующих частей &kde;, установите/снимите флажок рядом с названием.</para>
+
+<para
+>Список областей отладки отсортирован по номерам, а не по алфавиту, поэтому  kio (127) идёт перед artskde (400). Максимальный номер - около 200000, но областей всего 400. Для того чтобы найти требуемую, вам не придётся листать весь список: укажите в поле ввода в верхней части окна часть названия области, и в списке будут отображаться только те области, названия которых содержат указанную строку. Например, если вы введёте <userinput
+>k</userinput
+>, список уменьшится ненамного, но если вы введёте <userinput
+>kont</userinput
+>, в списке останется только пункт &kontact;. Используя кнопки <guibutton
+>Выбрать всё</guibutton
+> и <guibutton
+>Отменить весь выбор</guibutton
+>, вы можете заставить &kde; выдавать как огромное количество отладочной информации, так и очень небольшое.</para>
+</sect2>
+
+<sect2 id="kdebugdialog-fullmode">
+<title
+>Полный режим KDebugDialog</title>
+
+<!-- this text partly taken from the kdebugdialog handbook -->
+
+<para
+>В полном режиме (команда kdebugdialog --fullmode) доступны те же области отладки, что и в обычном режиме, но теперь вы выбираете настраиваемую область из выпадающего списка и настраиваете каждую из них отдельно. Вы можете указать, куда будут выводиться сообщения следующих типов: Информация, Предупреждение, Ошибка и Критическая ошибка. </para>
+
+<para
+>В файл (вы должны будете указать имя). Файл будет создан в вашем домашнем каталоге.</para>
+
+<para
+>Вывод окна с сообщением. Каждое отладочное сообщение отображается в диалоговом окне. Нажмите <guibutton
+>ОК</guibutton
+>, чтобы приложение, отправившее сообщение, продолжило работу.</para>
+
+<para
+>Вывод в оболочку (значение по умолчанию). Сообщения отправляются в поток stderr, и будут либо отображены в окне оболочки, из которого приложение было запущено, либо дописаны в файл <filename
+>.xsession-errors</filename
+>.</para>
+
+<para
+>Запись в журнал системных сообщений. Сообщение отправляется процессу syslog, который производит дальнейшую обработку.</para>
+
+<para
+>Ничего. Вывод сообщения подавляется.</para>
+
+<para
+>Для критических ошибок не следует выбирать значение Ничего или Журнал системных сообщений, так как в обоих случаях вы, скорее всего, не увидите сообщение, а процесс приложения просто будет остановлен по неизвестной причине. Будет процесс остановлен при критической ошибке или нет, определяет флажок <guilabel
+>Отмена при фатальных ошибках</guilabel
+>, который по умолчанию установлен &mdash; но критическая ошибка и так почти всегда означает остановку приложения (в результате сбоя).</para>
+
+<!-- Add links to "further reading" here -->
+<!-- <itemizedlist>
+<title
+>Related Information</title>
+<listitem
+><para
+>to be written</para>
+</listitem>
+</itemizedlist
+>-->
+
+
+
+</sect2>
+</sect1>
+</chapter>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: xml
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:0
+sgml-indent-data:true
+sgml-parent-document:("index.docbook" "book" "chapter")
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

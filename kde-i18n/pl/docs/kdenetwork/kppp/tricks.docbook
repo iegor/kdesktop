@@ -1,0 +1,292 @@
+<chapter id="modem-tricks">
+<title
+>Modemy - sztuczki i podpowiedzi</title>
+
+<para
+>Niniejszy rozdział rozjaśni nieco tajemnice konfigurowania modemu. Wszystkie przedstawione polecenie modemu zgodne są ze standardem poleceń AT Hayes, jednak czasami ze względu na różnice pomiędzy modemami, konieczne będzie sięgnięcie do bardziej obszernej dokumentacji.</para>
+
+<sect1 id="modem-sessions">
+<title
+>Sesje modemu</title>
+
+<para
+>Sesje modemu, pozwalają na bezpośrednie sterowanie zachowaniem modemu. Użytkownik wprowadza polecenia, modem zaś na nie odpowiada. Aby nawiązać połączenie z modemem w tym trybie należy wybrać przycisk: <guibutton
+>Konfiguruj</guibutton
+>, a następnie w oknie konfiguracji wybranego urządzenia, wybrać kartę <guilabel
+>Modem</guilabel
+> i nacisnąć przycisk <guibutton
+>Terminal</guibutton
+>. Spowoduje to wywołanie okna dialogowego dla bezpośredniej komunikacji z modemem. Wprowadzenie polecenia <userinput
+><command
+>ATZ</command
+></userinput
+> (oznaczającego zerowanie modemu) powinno wyświetlić odpowiedź OK. Wybranie pozycji <menuchoice
+><guimenu
+>Plik</guimenu
+><guimenuitem
+>Zamknij</guimenuitem
+></menuchoice
+> zamyka okno bezpośredniej sesji modemu.</para>
+
+</sect1>
+
+<sect1 id="modem-profiles">
+<title
+>Profile modemów</title>
+					
+<para
+>Jedną z wielu sytuacji, w których przydatna jest funkcja wysyłania poleceń bezpośrednio do modemu, jest przypadek, gdy niezbędne jest przechowywanie i wybór spośród kilku różnych konfiguracji modemu, a nie ustawianie ich przy każdym połączeniu. Odbywa się to przez zastosowania profili konfiguracyjnych, które mogą być przechowywane przez modem. Numerowane są one kolejno: 0,1,... , za pomocą polecenia <command
+>AT&amp;V</command
+> można wszystkie wyświetlić. Profilem domyślnym jest zwykle profil 0 (można go zmieniać za pomocą polecenia <command
+>AT&amp;Y</command
+>.) Profil będący w użyciu, nazywany jest profilem<quote
+>aktywnym</quote
+>.</para>
+
+<para
+>Każda zmiana ustawień modemu, zmienia aktywny profil konfiguracyjny, jednak polecenie <command
+>ATZ</command
+> powoduje załadowanie profilu domyślnego, usuwając wszelkie poczynione zmiany. Aby zmiany zapisać, należy załadować profil, który ma być zmieniony poleceniem <command
+>ATZ<replaceable
+>n</replaceable
+></command
+> (gdzie <replaceable
+>n</replaceable
+> oznacza numer profilu). Następnie należy dokonać zmian, i zapisać je za pomocą polecenia<command
+>AT&amp;W<replaceable
+>n</replaceable
+></command
+>. Jeżeli program kppp powinien używać wybranego profilu, to należy zmienić polecenia inicjalizujące modemu (<guibutton
+>Konfiguracja</guibutton
+> <guilabel
+>Modem</guilabel
+> <guibutton
+>Polecenia modemu</guibutton
+> <guilabel
+>Polecenia inicjalizujące</guilabel
+>). Na przykład, polecenie <command
+>ATZ1</command
+> spowoduje zerowanie modemu i załadowanie zapisanego profilu numer 1.</para>
+
+<para
+>Jeżeli niezbędne jest usunięcie wszelkich zmian dokonanych i zapisanych w profilach modemu, można wykorzystać polecenie <command
+>AT&amp;F&amp;W</command
+>, które uaktywnia profil domyślny i ustawia go fabrycznie zdefiniowanymi wartościami domyślnymi.</para>
+
+<para
+>Przykłady zmian profilów znajdują się w następnej części</para>
+
+</sect1>
+
+<sect1 id="modem-hangup">
+<title
+>Usuwanie problemów z rozłączaniem</title>
+
+<para
+>Czasami program &kppp; napotyka na trudności z rozłączeniem modemu po zakończeniu połączenia. Może to wynikać z konfliktu ustawień pomiędzy &kppp; a modemem. Typowy modem może się rozłączyć na dwa sposoby: <link linkend="hangup-command-method"
+>Za pomocą polecenia</link
+>, i <link linkend="hangup-dtr-method"
+><acronym
+>Zgodnie z sygnałem DTR</acronym
+></link
+>. Wykorzystanie polecenia wymaga przesłania sekwencji wyjścia do trybu poleceń modemu, i przesłanie polecenie rozłącz (<command
+>ATH</command
+>).</para>
+
+<para
+>Metoda ta często wykorzystywana jest poza programem &kppp;, przy ręcznej konfiguracji demona <application
+>pppd</application
+> można przejść do trybu poleceń, zakończyć sesję terminala, a następnie uruchomić demona <application
+>pppd</application
+> bez konieczności rozłączania modemu. W każdej innej sytuacji metoda <acronym
+>sygnału DTR</acronym
+> jest preferowana i prostsza.</para>
+
+<sect2 id="hangup-dtr-method">
+<title
+>Metoda sygnału <acronym
+>DTR</acronym
+> (<command
+>AT&amp;Dn</command
+>)</title>
+
+<para
+>Metoda sygnału <acronym
+>DTR</acronym
+> powoduje rozłączenia modemu w sytuacji gdy program &kppp; przestaje z niego korzystać. Gdy wyświetlony zostanie stan modemu za pomocą polecenia <command
+>AT&amp;V</command
+>, ustawiony w domyślnym profilu parametr <command
+>&amp;D0</command
+>, oznacza wyłączenie stosowania metody <acronym
+>DTR</acronym
+>. Aby ją włączyć, należy uruchomić sesję terminala, a następnie wprowadzić następujący ciąg poleceń:</para>
+
+<screen
+><userinput
+><command
+>ATZ</command
+></userinput
+> <lineannotation
+># wyzeruj do profilu domyślnego </lineannotation>
+<userinput
+><command
+>AT&amp;D2</command
+></userinput
+>  <lineannotation
+># Ustaw odłożenie słuchawki po utracie sygnału DTR</lineannotation>
+<userinput
+><command
+>AT&amp;W</command
+></userinput
+>  <lineannotation
+># Zapisz ustawienia w profilu domyślnym</lineannotation
+>
+</screen>
+
+<sect3>
+<title
+>Zasada działania metody <acronym
+>DTR</acronym
+>.</title>
+
+<para
+>W każdym momencie, gdy sygnał "Data Terminal Ready" (<acronym
+>DTR</acronym
+>) na liniii szeregowej pomiędzy komputerem i modem, wchodzi w stan "wysoki", modem odkłada słuchawkę. Gdy &kppp; otwiera port szeregowy, sygnał <acronym
+>DTR</acronym
+> ustawiany jest w stan "niski", często na modemie zewnętrznym zapala się wtedy lampka <acronym
+>DTR</acronym
+> (lub <acronym
+>TR</acronym
+>). Jeżeli światełko <acronym
+>TR</acronym
+> wyłącza się (na przykład gdy program &kppp; zamknął port szeregowy itp.) modem odkłada słuchawkę.</para>
+</sect3>
+
+</sect2>
+
+<sect2 id="hangup-command-method">
+<title
+>Metoda Poleceń</title>
+
+<para
+>Innym sposobem na rozłączenie modemu w trakcie połączenia (przy ustawionym parametrze <command
+>AT&amp;D<replaceable
+>n</replaceable
+></command
+> gdzie <replaceable
+>n</replaceable
+> nie jest równe <returnvalue
+>2</returnvalue
+>), jest spowodowanie aby modem akceptował polecenia w trakcie trwania sesji. Aby rozłączanie następowało w sposób prawidłowy, należy skonfigurować czas oczekiwania na krótki przedział, za pomocą następujących poleceń:</para>
+
+<screen
+><userinput
+><command
+>ATZ</command
+></userinput>
+<userinput
+><command
+>ATS12=5</command
+></userinput>
+<userinput
+><command
+>AT&amp;W</command
+></userinput
+>
+</screen>
+
+<para
+>Następnie należy przesunąć suwak <guilabel
+>Czas oczekiwania</guilabel
+> w oknie ustawiania poleceń modemu, tak aby jego wartość odpowiadała wartości zapisanej w rejestrze <varname
+>S12</varname
+> (w tym przypadku jest to<returnvalue
+>5</returnvalue
+>). Po tej operacji modem powinien zachowywać się poprawnie.</para>
+
+<sect3>
+<title
+>Jak działa metoda Poleceń</title>
+
+<para
+>Gdy modem lokalny połączony jest z modemem zdalnym, stan połączenia określony jest jako<quote
+>Połączony</quote
+>. Do zdalnego modemu przekazywany jest każdy znak, bez interpretacji. Aby modem przeszedł w tryb poleceń, należy skorzystać ze specjalnej sekwencji, nazywanej kodem wyjścia.</para>
+
+<para
+>Kod wyjścia, definiowany jest jako trzykrotność przedziału zdefiniowanego w rejestrze <varname
+>S12</varname
+>, mierzonego w pięćdziesiątych częściach sekundy.</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Cisza (czas trwania musi być większy niż <varname
+>S12</varname
+>/50 sekund)</para>
+</listitem>
+<listitem>
+<para
+>Znak wyjścia (zdefiniowany jest w rejestrze <varname
+>S2</varname
+>, którego wartością domyślną jest <quote
+>+</quote
+>), powtórzony powinien zostać trzy razy (z przerwani pomiędzy, mniejszymi od <varname
+>S12</varname
+>/50 sekundy.</para>
+</listitem>
+<listitem>
+<para
+>Cisza (czas trwania musi być większy niż <varname
+>S12</varname
+>/50 sekund)</para>
+</listitem>
+</itemizedlist>
+
+<para
+>Po przejściu w tryb poleceń, można przesyłać do modemu polecenie <command
+>ATH</command
+>, która powoduje jego rozłączenia. Kod wyjścia i polecenie przerwania połączenia są definiowane w oknie dialogowym<link linkend="modem-commands"
+><guilabel
+>Polecenia modemu</guilabel
+></link
+> i powinny być zgodne z ustawieniami używanego modemu.</para>
+
+</sect3>
+</sect2>
+</sect1>
+
+<sect1 id="tone-dialing-speedup">
+<title
+>Przyśpieszanie wybierania tonowego</title>
+
+<para
+>Jeżeli używane jest wybieranie tonowe, można za pomocą rejestru <varname
+>S11</varname
+> skrócić czas tego wybierania. Zapisany jest w nim czas trwania (w setnych sekundy) jednego impulsu wybierania tonowego (jednej cyfry numeru). Wartością domyślną jest 95 (prawie cała sekunda.) Możliwość skrócenia tego czasu zależy od centrali telefonicznej, do której podłączona jest linia. Wartością minimalną tego parametru jest 50 (czyli prawie dwa razy szybsze wybieranie), i z reguły działa bez większych problemów. </para>
+
+<screen
+><userinput
+><command
+>ATZ</command
+></userinput
+>        <lineannotation
+># wyzeruj ustawienia do profilu domyślnego</lineannotation>
+<userinput
+><command
+>ATS11=50</command
+></userinput
+>   <lineannotation
+># największa szybkość wybierania, wpisz większą wartość gdy ta nie zadziała</lineannotation>
+<userinput
+><command
+>AT&amp;W</command
+></userinput
+>   <lineannotation
+># zapisz ustawienia w profilu domyślnym</lineannotation
+>
+</screen>
+
+</sect1>
+</chapter>

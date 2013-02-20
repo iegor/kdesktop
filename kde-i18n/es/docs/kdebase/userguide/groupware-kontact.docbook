@@ -1,0 +1,1100 @@
+<chapter id="groupware-with-kontact">
+
+<chapterinfo>
+<authorgroup>
+<author
+><personname
+> <firstname
+>Marco</firstname
+> <surname
+>Menardi</surname
+> </personname
+> <email
+>gnu@kde.org</email
+> </author>
+</authorgroup>
+
+<othercredit role="translator"
+> <firstname
+>Santiago</firstname
+><surname
+>Fernández</surname
+> <affiliation
+><address
+><email
+>santi@kde-es.org</email
+></address
+> </affiliation
+><contrib
+>Traductor</contrib
+></othercredit
+>  
+
+</chapterinfo>
+<title
+>Compartir datos con &kontact; a través de <acronym
+>IMAP</acronym
+></title>
+
+<sect1 id="kontact-imap-intro">
+<title
+>Introducción</title>
+
+<para
+>Para mi pequeña oficina, he estado buscando durante un tiempo una solución <acronym
+>PIM</acronym
+> que me permitiese compartir datos, para que mi secretaria y yo pudiéramos compartir contactos, citas, etc. Siendo usuario de &kde;, había oído hablar del proyecto Kroupware y esperaba su finalización. Pero cuando ví lo complicada que era la arquitectura y la configuración del servidor 1.0 de <application
+>Kolab</application
+> (el servidor del proyecto), decidí esperar por el desarrollo de <application
+>Kolab</application
+> 2.0. En cualquier caso, el producto <application
+>Kolab</application
+> era el adecuado a mis necesidades. Afortunadamente en el wiki de &kde; encontré algunos trozos de conversaciones del <acronym
+>IRC</acronym
+> en el que hablaban sobre la compartición de datos sin la infraestructura de <application
+>Kolab</application
+>... mmm ¡interesante!</para>
+
+<para
+>Para oficinas y necesidades pequeñas, puede utilizar &kontact; para compartir datos sin que necesite instalar el servidor <application
+>Kolab</application
+> u otros motores de trabajo corporativo. Puede funcionar con tan solo el servidor <acronym
+>IMAP</acronym
+>, que se puede configurar de forma sencilla.</para>
+
+<para
+>Mi escenario es un servidor Debian inestable y &kde; 3.4. He accedido a &kontact; y otras magníficas aplicaciones GNU/Linux desde windows utilizando Cygwin/X, mientras esperaba que el proyecto wine fuera capaz de ejecutar los últimos programas Windows que necesito (y que no están disponibles en GNU/Linux). Quiero compartir contactos, acontecimientos, notas con mi secretaria.</para>
+  
+</sect1>
+
+<sect1 id="kontact-imap-whatis">
+<title
+>Qué es <acronym
+>IMAP</acronym
+></title>
+
+<para
+>Esta definición aparece en el <ulink url="http://computeruser.com"
+>Diccionario de alta tecnología ComputerUser.com:</ulink
+> <blockquote
+><para
+>Internet Message Access Protocol (protocolo de acceso a la mensajería por internet). Un protocolo que permite al usuario llevar a cabo ciertas funciones de correo electrónico en un servidor remoto y en un ordenador local. A través de IMAP el usuario puede crear, borrar o renombrar buzones de correo, obtener nuevos mensajes, borrar mensajes y utilizar funciones de búsqueda en el correo. Para enviar correo se necesita un protocolo diferente. También llamado Internet Mail Access Protocol (Protocolo de acceso a correo por internet).</para
+></blockquote
+> </para>
+  
+<para
+>Por tanto, se puede considerar un almacén de datos. Para utilizarlo necesitará un servidor <acronym
+>IMAP</acronym
+>, como <application
+>Cyrus</application
+>, <application
+>Courier</application
+> o <application
+>UW</application
+>.</para>
+  
+</sect1>
+
+<sect1 id="kontact-kolab-or-imap">
+<title
+>¿<application
+>Kolab</application
+> o <acronym
+>IMAP</acronym
+>?</title>
+  
+<para
+><application
+>Kolab</application
+> tiene la habilidad para compartir datos entre diferentes clientes. Esto hace posible que su secretaria utilice <application
+>Outlook</application
+> y usted utilice &kontact;, por ejemplo.</para>
+  
+<para
+>Podrá utilizar una interfaz de configuración para administrar usuarios, configurar su cuenta de correo, una central <acronym
+>LDAP</acronym
+> de configuración de datos y un servidor de libreta de direcciones, filtrado de correo basura y virus, scripts para las vacaciones, manejo de disponibilidad de listas, manejo de recursos (habitaciones, vehículos), grupos, listas de distribución, gestión de invitaciones automáticas, &etc;</para>
+  
+<para
+>Pero esto puede causar una serie de problemas iniciales. Para los novatos como yo significa: una larga y frustrante pesadilla, y demasiada complejidad para que todo funcione a la primera. Es decir, no gracias, me quedo con <acronym
+>IMAP</acronym
+>.</para>
+
+</sect1>
+
+<sect1 id="kontact-imap-cyrus">
+<title
+>Cómo configurar el servidor de <acronym
+>IMAP</acronym
+> <application
+>Cyrus</application
+></title>
+   
+<para
+>Mi elección es <application
+>Cyrus</application
+>, que forma parte del paquete de software <application
+>Kolab</application
+>, por tanto podré utilizar <application
+>Kolab</application
+> en el futuro, al menos me informaré.</para
+> <para
+>Inicie la instalación y la configuración.</para>
+  
+<para
+>Conviértase en <systemitem class="username"
+>root</systemitem
+>.</para>
+
+<screen
+># <userinput
+><command
+>apt-get</command
+> <command
+>install</command
+> cyrus21-imapd cyrus21-common cyrus21-admin cyrus21-client sasl-bin sasl2-bin</userinput
+> 
+<computeroutput
+>Instalando cyrus21-imapd... </computeroutput
+><lineannotation
+>El instalador ha preguntado algo que no he entendido sobre la búsqueda de una dirección... He pulsado <keycap
+>Entrar</keycap
+></lineannotation
+>.</screen>
+
+<para
+>El instalador también ha creado el usuario <systemitem class="username"
+>cyrus</systemitem
+> que se encuentra en el grupo (creado automáticamente) <systemitem class="groupname"
+>sasl</systemitem
+>, que es el «propietario» de todos los archivos cyrus. Al final con <command
+>ps <option
+>-A</option
+></command
+> puede encontrar los nuevos procesos: <command
+>cyrmaster</command
+> y <command
+>notifyd</command
+>.</para>
+
+<para
+>El problema real en la configuración de <application
+>Cyrus</application
+> es la autentificación, que no es trivial y yo soy novato, con un conocimiento limitado sobre lo que estoy haciendo.</para>
+
+<para
+><application
+>Cyrus</application
+> puede utilizar diferentes mecanismos <acronym
+>SASL</acronym
+> (Simple Authentication and Security Layer o capa de autentificación simple y seguridad), el predeterminado es sasldb (guarda los nombres de los usuarios y las contraseñas en el archivo protegido SASL <filename
+>sasldb</filename
+>), pero también están soportados getpwent, kerberos4, kerberos5, PAM, rimap, shadow y LDAP.</para>
+
+<para
+>Como no quiero definir usuarios/contraseñas diferentes a los de acceso a mi &Linux; he elegido el mecanismo «shadow», es decir, <application
+>Cyrus</application
+> utilizará las contraseñas de &Linux; para la autentificación.</para>
+
+<para
+>Para hacer ésto tenemos que decirle a sasl que utilice <command
+>saslauthd</command
+> como método de autentificación de contraseñas, y a continuación se configurará <command
+>saslauthd</command
+> para utilizar «shadow» (o «getpwent») como mecanismo de autentificación.</para>
+
+<para
+>De acuerdo, ¡comencemos!</para>
+
+<para
+>Como <systemitem class="username"
+>root</systemitem
+>, cambie la contraseña en Linux del usuario <systemitem class="username"
+>cyrus</systemitem
+>:</para>
+
+<screen
+># <userinput
+><command
+>passwd <option
+>cyrus</option
+></command
+></userinput
+></screen>
+
+<para
+>Introduzca la contraseña que desee (y recuérdela). Nosotros utilizaremos para este ejemplo «cyrus» como contraseña de administración de <application
+>cyrus</application
+>.</para>
+
+<screen
+># <command
+>vi</command
+> <filename
+>/etc/imapd.conf</filename
+></screen>
+
+<programlisting
+>sasl_pwcheck_method: <userinput
+>saslauthd</userinput
+> <lineannotation
+>instead of the default <literal
+>auxprop</literal
+></lineannotation
+></programlisting>
+
+<para
+>elimine la marca <literal
+>#</literal
+> de la línea:</para>
+
+<programlisting
+>#admins: cyrus</programlisting>
+
+<para
+>Así podrá administrar <application
+>cyrus</application
+> accediendo como usuario <systemitem class="username"
+>cyrus</systemitem
+> (¡que fantasía he tenido!).</para>
+
+<screen
+># <userinput
+><command
+>vi</command
+> <filename
+>/etc/default/saslauthd</filename
+></userinput
+></screen>
+
+<para
+>Descomentar la línea:</para>
+
+<programlisting
+># START=yes</programlisting>
+
+<para
+>(de otra forma <application
+>saslauthd</application
+> no se iniciará cuando arranque el sistema, ¡incluso aunque se haga referencia en <filename class="directory"
+>/etc/rcx.d</filename
+>!).</para>
+
+<para
+>En lugar de <literal
+>MECHANISM="pam"</literal
+> asigne <userinput
+>MECHANISM="shadow"</userinput
+> de forma que en el arranque del sistema se ejecute <command
+>saslauthd</command
+> <option
+>-a <parameter
+>shadow</parameter
+></option
+>.</para>
+
+<para
+>Una vez que salga de su editor, reinicie <application
+>sasl</application
+> y <application
+>cyrus</application
+>.</para>
+
+<para
+>Para comprobar <acronym
+>IMAP</acronym
+>:</para>
+
+<screen
+><userinput
+><command
+>su</command
+> <option
+>cyrus</option
+></userinput>
+$ <userinput
+><command
+>imtest</command
+> <option
+>-m login -p imap localhost</option
+></userinput
+></screen>
+
+<para
+>Será preguntado por la contraseña (usuario) de <systemitem class="username"
+>cyrus</systemitem
+>, que debe introducir.</para>
+
+<para
+>Si el usuario <systemitem class="username"
+>cyrus</systemitem
+> se ha autentificado correctamente, aparecerán las siguientes línes:</para>
+
+<screen
+><computeroutput
+>S: L01 OK User logged in
+Authenticated.</computeroutput
+></screen>
+<para
+>Para salir teclee <userinput
+>. logout</userinput
+> (&ie; punto espacio «logout»)</para>
+
+<para
+>Ahora añada un usuario llamado <systemitem class="username"
+>groupware</systemitem
+> y asígnele una contraseña, utilizando sus herramientas habituales. Debería incluirse en un grupo sin privilegios como <systemitem class="groupname"
+>nobody</systemitem
+> ya que no precisa iniciar una sesión de intérprete de órdenes o tener un directorio personal.</para>
+
+<para
+>Ahora también tendremos que crear el usuario y un <acronym
+>IMAP</acronym
+> en <application
+>cyrus</application
+>:</para>
+
+<screen
+># <userinput
+><command
+>cyradm</command
+> <option
+>--user cyrus localhost</option
+></userinput>
+después de introducir la contraseña para el usuario administrador <systemitem class="username"
+>cyrus</systemitem
+>, obtendrá el prompt <prompt
+>localhost&gt;</prompt>
+<prompt
+>localhost&gt;</prompt
+> <userinput
+><command
+>cm</command
+> <option
+>user.groupware</option
+></userinput>
+<prompt
+>localhost&gt;</prompt
+> <userinput
+><command
+>lm</command
+></userinput
+> <lineannotation
+>lista el buzón de correo recién creado</lineannotation>
+<computeroutput
+>user.groupware (\HasNoChildren))</computeroutput>
+<prompt
+>localhost&gt;</prompt
+> <userinput
+><command
+>quit</command
+></userinput
+></screen>
+
+<para
+>Puede teclear <userinput
+><command
+>help</command
+></userinput
+> para obtener un lista de las órdenes disponibles.</para>
+
+<para
+>Puede comprobar lo que pasa con:</para>
+
+<screen
+># <userinput
+><command
+>ls</command
+> <option
+>-l</option
+> <filename class="directory"
+>/var/spool/cyrus/mail/g/user/groupware</filename
+></userinput>
+<computeroutput
+>total 12
+-rw------- 1 cyrus mail          4 Oct 29 20:55 cyrus.cache
+-rw------- 1 cyrus mail 155 Oct 29 20:55 cyrus.header
+-rw------- 1 cyrus mail 76 Oct 29 20:55 cyrus.index</computeroutput
+></screen>
+
+<para
+>Ahora debería ser capaz de conectarse con un cliente <acronym
+>IMAP</acronym
+> como el usuario <systemitem class="username"
+>groupware</systemitem
+> y véa el <literal
+>INBOX</literal
+>.</para>
+<note
+><para
+>En el protocolo <acronym
+>IMAP</acronym
+>, seleccionar el buzón de correo <literal
+>INBOX</literal
+> es un mundo mágico, un tipo de «alias» para la estructura superior de directorios. El cliente ve <literal
+>INBOX</literal
+>, y el mapa del servidor <acronym
+>IMAP</acronym
+> en la carpeta y en la estructura de archivos <filename class="directory"
+>/var/spool/cyrus/mail/...</filename
+>.</para
+></note>
+
+</sect1>
+
+<sect1 id="kontact-imap-clients">
+<title
+>Cómo configurar los clientes &kontact;</title>
+  
+<para
+>Me he conectado a mi PC servidor de oficina GNU/Linux (una especie de «caja negra» sin monitor ni teclado) desde 2 PC &Windows; 2000 con <application
+>Cygwin/X</application
+>, utilizándolo como servidor X-Window (en un futuro próximo espero reemplazar ambos con 2 clientes ligeros mini-itx utilizando LTSP). Con esta configuración cada usuario ejecuta &kontact; en la misma máquina en la que esté instalado y ejecutándose <application
+>Cyrus</application
+> (servidor local).</para>
+  
+<para
+>Para que &kontact; trabaje con <acronym
+>IMAP</acronym
+>, debe completar los siguientes pasos:</para>
+
+<procedure>
+
+<step
+><para
+>Crear una cuenta <acronym
+>IMAP</acronym
+> en <application
+>Cyrus</application
+> para el falso usuario <systemitem class="username"
+>groupware</systemitem
+> (¡ya lo habíamos hecho!).</para
+></step>
+
+<step
+><para
+>Crear/configurar una cuenta <acronym
+>IMAP</acronym
+> en &kmail; para conectarse como este usuario.</para
+></step
+> <step
+><para
+>Utilice kresources para hacer que los componentes de &kontact; trabajen con los datos proporcionados por la fuente <acronym
+>IMAP</acronym
+>.</para
+></step>
+
+<step
+><para
+>Activar la funcionalidad de trabajo corporativo y relacionar las supcarpetas de <acronym
+>IMAP</acronym
+> <literal
+>INBOX</literal
+> (sino está preparado).</para
+></step>
+
+<step
+><para
+>Disfrute de &kontact; y comparta datos con su <application
+>Cyrus</application
+> IMAP.</para
+></step>
+
+</procedure>
+  
+<para
+>Inicie la sesión de &kde; con la primera cuenta de «usuario real» a la que quiera dotar de la funcionalidad de trabajo corporativo.</para>
+
+<para
+>Cree la cuenta de IMAP en &kmail;.</para>
+
+<para
+>Ejecute &kontact; y seleccione <guilabel
+>Correo</guilabel
+> (el componente &kmail;). En el menú elija <menuchoice
+><guimenu
+>Preferencias</guimenu
+><guimenuitem
+>Configurar KMail</guimenuitem
+><guilabel
+>Cuentas</guilabel
+><guilabel
+>pestaña Recibiendo</guilabel
+> </menuchoice
+>, y pulse el botón <guibutton
+>Añadir...</guibutton
+>.  A continuación se le preguntará por el tipo de cuenta de correo, debiendo seleccionar <guilabel
+>IMAP desconectado</guilabel
+> (no solo <guilabel
+>IMAP</guilabel
+>). A continuación en la pestaña <guilabel
+>General</guilabel
+> introduzca los siguientes datos:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><guilabel
+>Nombre de la cuenta:</guilabel
+> <userinput
+>office_gwdata</userinput
+></term>
+<listitem>
+<para
+>El nombre que será utilizado para la carpeta «local» que apunta a esta cuenta <acronym
+>IMAP</acronym
+>.</para>
+</listitem
+> 
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Usuario:</guilabel
+> <userinput
+>groupware</userinput
+></term>
+<listitem>
+<para
+>El usuario <application
+>Cyrus</application
+> que se ha elegido como «propietario» de todos los datos de la oficina.</para>
+</listitem>
+</varlistentry>
+<varlistentry
+><term
+><guilabel
+>Contraseña:</guilabel
+></term>
+<listitem>
+<para
+>La contraseña del usuario <systemitem class="username"
+>groupware</systemitem
+>.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Servidor:</guilabel
+> <userinput
+>localhost</userinput
+></term>
+<listitem>
+<para
+>Recuerde que para nuestro ejemplo, el cliente &kontact; se ejecuta en el mismo ordenador que el servidor <acronym
+>IMAP</acronym
+>.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term
+><guilabel
+>Puerto:</guilabel
+> <userinput
+>143</userinput
+></term>
+<listitem>
+<para
+>Predeterminado.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+  
+<para
+>Marque <guilabel
+>Almacenar la contraseña IMAP</guilabel
+> y así no será preguntado la próxima vez que ejecute &kontact;. Marque <guilabel
+>Activar intervalo de comprobación de correo</guilabel
+> y asigne el valor en minutos.</para>
+  
+<para
+>Tenga en cuenta que hemos elegido el tipo de cuenta <guilabel
+>IMAP desconectado</guilabel
+>. Esto tiene el efecto de copiar los datos de trabajo corporativo «localmente en el cliente» (en la carpeta personal), y sincronizándose cada cierto tiempo las conexiones de los clientes. Esto parece muy ineficiente, pudiéndose duplicar los datos en algunas ocasiones (&ie; si tiene 10 usuarios que utilizan &kontact;, obtendrá los datos 10+1 veces), pero es la única forma de que las cosas funcionen rápido, puesto que cada conexión de &kontact; obtiene todos los datos y &korganizer; y &kaddressbook; tienen que interpretarlos. Si utiliza «IMAP desconectado» los datos se almacenan de forma local, y únicamente se envía la «delta» (&ie; los datos que han cambiado).</para>
+  
+<para
+>Por otra parte, si sus usuarios ejecutan &korganizer; en el mismo PC que se ejecuta el servidor <acronym
+>IMAP</acronym
+>, parece razonable utilizar <acronym
+>IMAP</acronym
+> (que es llamado «IMAP conectado») para ahorrar espacio, puesto que la velocidad de transferencia no es un inconveniente. Pero desafortunadamente esto no funciona, puesto que &kontact; no actualiza automáticamente la carpeta <guilabel
+>Calendario</guilabel
+> en «IMAP conectado», por lo tanto no se actualizará cada vez que alguien añada un evento (debería ir manualmente a la aplicación &kmail; y pulsar sobre la carpeta <guilabel
+>Calendario</guilabel
+>). Adicionalmente, en el arranque, cuando se leen las carpetas de <guilabel
+>Calendario</guilabel
+>, podrá ver un gran parpadeo y actualizaciones de datos muy lentas.</para>
+  
+<para
+>Ahora tenemos que decirle a &kontact; que utilice <acronym
+>IMAP</acronym
+> como fuente de datos para los diferentes componentes. Desde el &kmenu;, elija <guimenuitem
+>Ejecutar orden</guimenuitem
+> y ejecute <userinput
+><command
+>kcmshell kresources</command
+></userinput
+>. En el cuadro combinado seleccione <guilabel
+>Contactos</guilabel
+>, pulse el botón <guibutton
+>Añadir...</guibutton
+> y seleccione <guilabel
+>Servidor IMAP por medio de KMail</guilabel
+>. Seleccione la nueva línea y pulse el botón <guibutton
+>Utilizar como estándar</guibutton
+>. Haga lo mismo para el <guilabel
+>Calendario</guilabel
+> y <guilabel
+>Notas</guilabel
+>.</para>
+  
+<para
+>Ahora tenemos que activar la funcionalidad de trabajo corporativo de &kmail; (y en consecuencia, &kontact; entero):</para>
+
+<procedure>
+<step>
+<para
+>Seleccione <menuchoice
+><guimenu
+>Preferencias</guimenu
+><guimenuitem
+>Configurar KMail</guimenuitem
+><guilabel
+>Varios</guilabel
+><guilabel
+>Groupware</guilabel
+></menuchoice
+>.</para>
+</step>
+<step>
+<para
+>Marque <guilabel
+>Activar la funcionalidad de recurso IMAP</guilabel
+>.</para>
+</step>
+<step>
+<para
+>Seleccione <guilabel
+>Español</guilabel
+> como <guilabel
+>Idioma para las carpetas de groupware</guilabel
+> (en el caso de que ya existan carpetas en el servidor <acronym
+>IMAP</acronym
+> creadas por un programa diferente en un idioma diferente).</para>
+</step>
+<step>
+<para
+>Ahora vaya a <guilabel
+>Las carpetas de recursos son subcarpetas de</guilabel
+> y elija la subcarpeta <guilabel
+>entrante</guilabel
+> de la carpeta <guilabel
+>office_gwdata</guilabel
+>.</para>
+<para
+>Deje desmarcado <guilabel
+>Ocultar las carpetas de groupware</guilabel
+> por el momento, ya veremos que sucede. Podrá volver aquí y marcarlo una vez que todo esté claro.</para>
+</step>
+<step>
+<para
+>Cuando pulse Aceptar aparecerá el mensaje: <computeroutput
+>&kmail; creará las carpetas requeridas para los recursos IMAP como subcarpetas de entrante</computeroutput
+>. </para>
+<para
+>Si no quiere hacer esto, pulse <guibutton
+>No</guibutton
+>, y se desactivará el recurso <acronym
+>IMAP</acronym
+>. Pulse <guibutton
+>Si</guibutton
+> (esto solo pasará la primera vez con el primer «usuario real»). Podrá verlo de forma inmediata en el árbol de carpetas de &kmail;, que bajo <menuchoice
+><guilabel
+>office_gwdata</guilabel
+><guilabel
+>entrada</guilabel
+></menuchoice
+> se habrán creado:</para>
+<simplelist>
+<member
+>Calendario</member>
+<member
+>Contactos</member>
+<member
+>Notas</member>
+<member
+>Tareas</member>
+<member
+>Diario</member>
+</simplelist>
+<para
+>si ahora hace:</para>
+<screen
+># <command
+>ls</command
+> <option
+>-l /var/spool/cyrus/mail/g/user/groupware/</option>
+<computeroutput
+>drwx------ 2 cyrus mail 144 Oct 31 16:36 Calendar
+drwx------ 2 cyrus mail 144 Oct 31 16:36 Contacts
+drwx------ 2 cyrus mail 144 Oct 31 16:36 Journal
+drwx------ 2 cyrus mail 144 Oct 31 16:36 Notes
+drwx------ 2 cyrus mail 144 Oct 31 16:36 Tasks
+-rw------- 1 cyrus mail      4 Oct 31 15:28 cyrus.cache
+-rw------- 1 cyrus mail 155 Oct 29 20:55 cyrus.header
+-rw------- 1 cyrus mail 76 Oct 31 15:28 cyrus.index</computeroutput
+></screen>
+
+<para
+>Como puede ver, <guilabel
+>office_gwdata entrada</guilabel
+> no se almacena en el directorio personal del usuario de &kontact;, pero sí en las carpetas de usuarios <acronym
+>IMAP</acronym
+> <systemitem class="username"
+>groupware</systemitem
+>.</para>
+</step>
+</procedure>
+
+<para
+>Ahora &kontact; está preparado para trabajar con los datos guardados aquí. En la aplicación calendario, si la cuenta <acronym
+>IMAP</acronym
+> de &kmail; es del tipo «desconectado», la ventana de <guilabel
+>recursos</guilabel
+> debería mostrar el elemento <guilabel
+>Recurso imap</guilabel
+> con 3 subelementos, que son rutas a los archivos personales locales. Sin embargo, la aplicación de <guilabel
+>Contactos</guilabel
+> no mostrará subelementos bajo <guilabel
+>Recurso imap</guilabel
+>.</para>
+
+<para
+>Ahora podrá iniciar la sesión de &kde; con un nombre de usuario diferente y configurar sus cliente &kontact; de forma similar a:</para>
+
+<procedure>
+<step>
+<para
+>Abra &kontact; y en el componente <guilabel
+>KMail</guilabel
+> añada una cuenta <acronym
+>IMAP</acronym
+> especificando como <guilabel
+>servidor</guilabel
+> el ordenador en el que se está ejecutando el servidor <application
+>Cyrus</application
+> (en mi caso: <literal
+>192.168.1.3</literal
+>).</para>
+
+<para
+>Recuerde marcar <guilabel
+>Activar intervalo de comprobación de correo</guilabel
+> y establecer el valor en minutos. Cuando lo confirme, no será preguntado respecto a la creación de la subcarpeta (puesto que estas se encuentran en el servidor <acronym
+>IMAP</acronym
+>), y podrá verlos en el árbol de carpetas.</para>
+</step>
+<step>
+<para
+>Active la funcionalidad groupware para poder guardar los datos en el servidor <acronym
+>IMAP</acronym
+>.</para>
+</step>
+</procedure>
+<para
+>Asegúrese de que en «<acronym
+>IMAP</acronym
+> desconectado», los datos se transmitan al servidor <acronym
+>IMAP</acronym
+> únicamente cuando los clientes se conecten para comprobar el correo nuevo. Por tanto si sus clientes en &kontact; tienen el <guilabel
+>Intervalo de comprobación de correo</guilabel
+> establecido, por ejemplo, en 5 minutos, en el peor de los casos tendrá un retraso de 10 minutos desde que se escribió el acontecimiento hasta que se le aparezca al resto de los usuarios.</para>
+</sect1>
+<sect1 id="kontact-imap-readonly">
+<title
+>Cómo tener acceso de sólo lectura</title>
+
+<note
+><para
+>Asegúrese de tener instalada una implementación de <acronym
+>IMAP</acronym
+> en &kontact; adecuada, ya que las anteriores a la versión 1.01 se cuelgan con esta configuración, y por ello esta configuración no funcionará con ella, por tanto cuando utilice este tipo de configuración, necesitará utilizar una configuración anterior.</para
+></note>
+    
+<para
+>En la configuración anterior, tendremos el mismo usuario «falso», llamado <systemitem class="username"
+>groupware</systemitem
+>, que se utiliza por los usuarios «reales» de &kontact; (&ie; <systemitem class="username"
+>tony</systemitem
+>, <systemitem class="username"
+>rohn</systemitem
+>, <systemitem class="username"
+>amanda</systemitem
+>, &etc;) utilizado por la cuenta de <acronym
+>IMAP</acronym
+> con su usuario y contraseña. Pero de esta forma todos los usuarios reales tienen los mismos permisos de lectura/escritura, puesto que se conectan como el usuario <systemitem class="username"
+>groupware</systemitem
+> al servidor <acronym
+>IMAP</acronym
+>.</para>
+    
+<para
+>Para limitar el acceso a algunos usuarios (típicamente, proporcionando acceso de solo lectura), pueden utilizarse las <acronym
+>ACL</acronym
+> (Access Control Lists - listas de control de acceso).</para>
+    
+<para
+>Seleccione en &kmail; una subcarpeta de <guilabel
+>office_gwdata</guilabel
+> entrada, por ejemplo <guilabel
+>Calendario</guilabel
+>, y pulse con el botón derecho del ratón. Seleccione <guilabel
+>Propiedades</guilabel
+> <guilabel
+>pestaña Control de acceso</guilabel
+>. Aquí podrá introducir los usuarios a los que quiera dar acceso a esta carpeta y lo que pueden hacer.</para>
+
+<para
+>Para experimentar intente cambiar algunos elementos, dando «Todos» los permisos al usuario <systemitem class="username"
+>mary</systemitem
+>.</para>
+
+<para
+>En el nivel <application
+>cyrus</application
+> (en el <acronym
+>PC</acronym
+> que se está ejecutando el servidor <acronym
+>IMAP</acronym
+> cyrus, con las herramientas <application
+>cyrus</application
+>), lo primero que necesitamos es añadir el usuario <systemitem class="username"
+>mary</systemitem
+>, para que reconozca al usuario <acronym
+>IMAP</acronym
+>, y cree una carpeta <acronym
+>IMAP</acronym
+> para ella.</para>
+
+<para
+>A continuación iniciamos la sesión de GNU/Linux como <systemitem class="username"
+>mary</systemitem
+> y entramos en &kontact;. Como se vió anteriormente, configuraremos una cuenta <acronym
+>IMAP</acronym
+> en &kmail; pero con los datos del usuario (en lugar del falso usuario <systemitem class="username"
+>groupware</systemitem
+> y su contraseña, utilizaremos <systemitem class="username"
+>mary</systemitem
+> y su contraseña).</para>
+
+<para
+>En el árbol de carpetas de &kmail;, esta vez verá esta estructura: <menuchoice
+><guimenu
+>office_gwdata</guimenu
+><guisubmenu
+>usuario</guisubmenu
+> <guisubmenu
+>groupware</guisubmenu
+><guimenuitem
+>Calendario y Tareas</guimenuitem
+></menuchoice
+>. Compruebe el correo (<menuchoice
+><guimenu
+>Archivo</guimenu
+><guimenuitem
+>Comprobar correo</guimenuitem
+></menuchoice
+>) y tendrá una carpeta «entrada» bajo «office_gwdata».</para>
+
+<para
+>Ahora active la funcionalidad de trabajo corporativo de &kmail; y en <guilabel
+>Las carpetas de recursos son subcarpetas de</guilabel
+> escriba <guimenuitem
+>entrada</guimenuitem
+> como subcarpeta de «office_gwdata».</para>
+
+<para
+>Ahora active la funcionalidad de trabajo corporativo de &kmail; y en <guilabel
+>Las carpetas de recursos son subcarpetas de</guilabel
+> escriba <guimenuitem
+>entrada</guimenuitem
+> como subcarpeta de <guimenuitem
+>office_gwdata</guimenuitem
+>.</para>
+  
+<para
+>Ahora tendrá dos ramas de carpetas bajo «office_gwdata»:</para>
+
+<orderedlist>
+<listitem>
+<para
+>«entrada» con Calendario, Contactos, Notas, Tareas y Diario, se guarda en la carpeta <acronym
+>IMAP</acronym
+> de <systemitem class="username"
+>mary</systemitem
+> en el servidor <acronym
+>IMAP</acronym
+>.</para>
+</listitem>
+<listitem>
+<para
+>El «usuario», con la subcarpeta «groupware» y las subcarpetas a las que <systemitem class="username"
+>mary</systemitem
+> tiene acceso (en este ejemplo, Calendario y Tareas).</para>
+</listitem>
+</orderedlist>
+<para
+>Pulse con el &RMB; en «Calendario» del «usuario» y compruebe si es del tipo Calendario (sino, debería serlo), y si las «tareas» del «usuario» son del tipo Tareas.</para>
+<para
+>Ahora en el Calendario tendrá disponibles dos recursos <acronym
+>IMAP</acronym
+> sobre los que escribir, por tanto, si crea un nuevo acontecimiento, se le preguntará sobre cuál de los dos utilizar (o si tiene los recursos locales disponibles, ¡tendrá 3!).</para>
+<para
+>Vaya a la pequeña pantalla inferior de la izquierda en Calendario, la que muestra los recursos disponibles, y desmarque aquellos que no apunten a la ruta <guilabel
+>.groupware.directory</guilabel
+> (véa la cabecera de cada ruta del recurso).</para>
+
+</sect1>
+
+<sect1 id="kontact-imap-credits">
+<title
+>Créditos</title>
+
+<para
+>Soy novato, y para este cómo solo he utilizado mi tiempo y mi deseo. Para obtener el conocimiento debo dar las gracias a algunas personas en los canales de freenode por su competencia, paciencia y amabilidad.</para>
+
+<itemizedlist>
+<title
+>Agradecimientos especiales a:</title>
+<listitem>
+<para
+>Para la parte <acronym
+>IMAP</acronym
+> <application
+>Cyrus</application
+> en el canal #cyrus:</para
+> 
+<itemizedlist>
+<listitem>
+<para
+>[protagonist] Andy Morgan <email
+>morgan@orst.edu</email
+>.</para>
+</listitem>
+<listitem>
+<para
+>[plixed] Okke Timm <email
+>okke.timm@web.de</email
+>.</para>
+</listitem>
+</itemizedlist>
+</listitem>
+<listitem>
+<para
+>Para la parte &kontact; en el canal #kontact:</para>
+<itemizedlist>
+<listitem>
+<para
+>[till] Till Adam <email
+>adam@kde.org</email
+>.</para>
+</listitem>
+<listitem>
+<para
+>[dfaure] David Faure <email
+>faure@kde.org</email
+>.</para>
+</listitem>
+<listitem>
+<para
+>[mdouhan] Matt Douhan <email
+>matt@fruitsalad.org</email
+>.</para>
+</listitem>
+</itemizedlist>
+</listitem>
+</itemizedlist>
+
+<para
+>¡Muchas gracias chicos!</para>
+
+<para
+>Ah, y también para, [markit] Marco Menardi <email
+>mmenaz@mail.com</email
+>.</para>
+
+</sect1>
+
+<sect1 id="kontact-imap-further-reading">
+<title
+>Lecturas adicionales</title>
+
+<itemizedlist>
+<title
+>Referencias</title>
+<listitem
+><para
+>KDE: <ulink url="http://www.kde.org"
+>http://www.kde.org</ulink
+></para
+></listitem>
+<listitem
+><para
+>Sitio web de &kontact;: <ulink url="http://www.kontact.org"
+>http://www.kontact.org</ulink
+></para
+></listitem>
+<listitem
+><para
+>Proyecto Kroupware: <ulink url="http://www.kroupware.org"
+>http://www.kroupware.org</ulink
+></para
+></listitem>
+<listitem
+><para
+>Comunidad wiki de &kde;: <ulink url="http://wiki.kde.org"
+>http://wiki.kde.org</ulink
+></para
+></listitem>
+<listitem
+><para
+>Proyecto wine: <ulink url="http://www.winehq.org"
+>http://www.winehq.org</ulink
+></para
+></listitem>
+<listitem
+><para
+>Proyecto Cygwin/X: <ulink url="http://x.cygwin.com"
+>http://x.cygwin.com</ulink
+></para
+></listitem>
+<listitem
+><para
+>Proyecto LTSP: <ulink url="http://www.ltsp.org"
+>http://www.ltsp.org</ulink
+></para
+></listitem>
+</itemizedlist>
+
+</sect1>
+
+</chapter>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: xml
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:0
+sgml-indent-data:true
+sgml-parent-document:("index.docbook" "book" "chapter")
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

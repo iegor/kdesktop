@@ -1,0 +1,4 @@
+KDE_LANG = pt
+SUBDIRS = $(AUTODIRS)
+KDE_DOCS = kcontrol/crypto
+KDE_MANS = AUTO

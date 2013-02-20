@@ -1,0 +1,321 @@
+<chapter id="callback">
+<title
+>Konfigurieren von &kppp; für Rückrufverbindungen</title>
+
+<para
+>Das folgende Kapitel wurde von Martin H&auml;fner <email
+>mh@ap-dec717c.physik.uni-karlsruhe.de</email
+>zur Verfügung gestellt.</para>
+
+<sect1 id="unix-callback-server">
+<title
+>&UNIX; oder &Linux; Rückruf-Server</title>
+
+<para
+>Dieser Abschnitt ist eine Einführung in den Ablauf beim Aufbau einer &UNIX; (&Linux;)-Rückrufverbindung und wie &kppp; eingestellt werden kann, um eine Verbindung mit einem &UNIX; Rückruf-Server, speziell mit einen Skript-basierten &Linux; <link linkend="callback-resources"
+>Rückruf-Server</link
+>, zu erstellen.</para>
+
+<sect2>
+<title
+>Einführung in Rückrufverbindungen</title>
+
+<para
+>Es gibt verschiedene Gründe für die Benutzung von Rückrufverbindungen. Einige davon sind:</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Die Sicherheit Ihres lokalen Netzwerkes erhöhen.</para>
+</listitem>
+<listitem>
+<para
+>Die Kosten von auswertigen Mitarbeitern senken.</para>
+</listitem>
+<listitem>
+<para
+>Telefonkosten kontrollieren, die als Geschäftsausgaben deklariert wurden.</para>
+</listitem>
+</itemizedlist>
+
+<para
+>Machen Sie sich Sorgen, dass jemand Ihren Einwahl-Server anwählt und versucht ein Passwort zu entschlüsseln? Warum betreiben Sie dann überhaupt einen Firewall für Ihre Internetverbindungen?</para>
+
+<para
+>Rückrufverbindungs-Software fragt normalerweise nach Ihrem Namen und unterbricht dann die Verbindung. Dann ruft sie Sie zurück, meistens unter einer Nummer die <emphasis
+>auf dem Server </emphasis
+> in einer Datenbank gespeichert ist.Der Client nimmt den Anruf an und fährt mit dem Verbindungsaufbau fort, als wenn nichts gewesen wäre. Der Server fragt Sie nun nach Ihrem Benutzernamen und Passwort, wohlwissend das Sie die Person sind, deren Namen bei der ersten Einwahl angegeben wurde. Die Verbindung wird normal aufgebaut und <application
+>pppd</application
+> wird gestartet.</para>
+
+<para
+>Die Frage ist, wie sage ich dem Client er soll den Anruf annehmen, wenn der Server zurückruft? Brauchen Sie dazu einProgramm wie <application
+>mgetty</application
+>? Die Antwort ist <emphasis
+>Nein</emphasis
+>! Sie brauchen kein speziellesClient-Programm.Allgemein gesagt, können alle Clients für Rückrufverbindungen benutzt werden. Sie können sogar ein gewöhnliches Terminalprogramm wie <application
+>minicom</application
+> dazu benutzen, eine Verbindung zu einem Rückruf-Server aufzubauen. </para>
+
+<para
+>Das einzige was Sie tun müssen ist Ihrem Modem zu sagen <command
+>AutoAnswer</command
+> den Anruf, wenn ein <computeroutput
+>RING</computeroutput
+> aufgetreten ist durch das Modem. Dieses erreichen Sie durch den folgenden Modem-Befehl:</para>
+
+<screen
+><userinput
+><command
+>AT&amp;SO=1</command
+></userinput
+>
+</screen>
+
+<para
+>Dieser Befehl sagt dem Modem, nimm ab nach einem <computeroutput
+>RING</computeroutput
+>.</para>
+
+<para
+>Das heißt, Ihr Modem nimmt einen Anruf nach einem <literal
+>RING</literal
+> an. Erinnern Sie sich, dies passiert ohne Mitwirkung einer Software auf Ihrem Rechner. Wie viele andere Wählprogramme auch, prüft <emphasis
+>Kppp</emphasis
+> ob die Verbindung vom Server beendet wurde und beendet dann die Verbindung, wenn ein <literal
+>NO CARRIER</literal
+> registriert wurde. Und das ist das nächste Problem: <literal
+>NO CARRIER</literal
+> wird auch registriert, wenn der Rückruf-Server auflegt, nachdem er weiß unter welcher Nummer er zurückrufen soll. Manche Server benutzen dafür ein spezielles Anmeldeprogramm. Wie können Sie dieses Problem lösen? Sagen Sie Ihrem Modem, dass es die ganze Zeit eine <emphasis
+>offene Leitung</emphasis
+> zeigen soll (was kein Problem bereitet, wenn der Client auflegt), indem Sie das Modemkommando benutzen:</para>
+
+<screen
+><userinput
+><command
+>AT&amp;C0</command
+></userinput
+>
+</screen>
+
+<para
+>Wenn Sie das testen wollen, können Sie zuerst ein normales Terminalprogramm wie <emphasis
+>minicom</emphasis
+> benutzen und Ihren Rückruf-Server anrufen.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Die &kppp; Einstellungen</title>
+
+<para
+>Jetzt, wo Sie die Theorie in Aktion gesehen haben, wie müssen Sie &kppp; einstellen, um damit zu einem Rückruf-Server zu verbinden? </para>
+
+<para
+>Die folgende Prozedur ist sehr einfach.</para>
+
+<procedure>
+<step>
+<para
+>Zuerst müssen Sie Ihrem Modem mitteilen, dass es Anrufe annehmen soll und die Leitung nicht schließt, wenn der Rückruf-Server auflegt, um zurückzurufen. Beide Einstellungen können Sie auf der <guilabel
+>Modem</guilabel
+> Karte der &kppp; Konfiguration vornehmen durch hinzufügen von <command
+>AT&amp;C0S0=1DT</command
+> zu der Option <guilabel
+>Wähl String</guilabel
+>.</para>
+<para
+>Alle anderen Einstellungen für &kppp; können Sie belassen. Falls Sie auf Probleme beim Modem Initialisieren und Zurücksetzen treffen, lesen Sie im Abschnitt <link linkend="callback-troubleshooting"
+>Problembeseitigung</link
+> nach.</para>
+</step>
+<step>
+<para
+>Machen Sie sich jetzt ein paar Gedanken über Ihren Server. Denken Sie daran, dass &Windows; und &UNIX;-Betriebssysteme unterschiedlicher Meinung sind, wie Zeilenenden in Textdateien (und Anmeldeprozeduren) aussehen: einfaches CR oder CR/LF oder LF. Falls Sie eine Verbindung zu einem Macintosh-Server aufbauen wollen, benutzen Sie <emphasis
+>CR</emphasis
+> als Zeilenende. </para>
+</step>
+<step>
+<para
+>Der nächste Abschnitt beschreibt die Einstellung von &kppp; auf der Basis eines &Linux; Rückruf-Pakets (siehe unten), das eine gewöhnliche Anmeldeprozedur (kein <acronym
+>PAP</acronym
+> oder sonstiges) benutzt.</para>
+<para
+>Setzen Sie die Art der <guilabel
+>Authentifizierung</guilabel
+> auf der <guilabel
+>Wählen</guilabel
+> Karte der Zugangseinstellung auf <guilabel
+>Script-basiert</guilabel
+></para>
+</step>
+<step>
+<para
+>Nun müssen Sie das Anmeldeskript schreiben. Sie finden es auf der Karteikarte <guilabel
+>Anmeldeskript</guilabel
+> des Dialogs <guilabel
+>Zugangsbeschreibungs-</guilabel
+>.</para>
+
+<para
+>In diesem Beispiel braucht der Benutzer <systemitem
+>Benutzer xyz</systemitem
+> das folgende Skript, um zu Hause zurückgerufen zu werden (der Rückruf-Server hat eine Tabelle mit Namen und Nummern, so dass Sie Ihre Telefonnummer aus Sicherheitsgründen über einen Alias auswählen müssen ).</para>
+
+<para
+>Für jede Zeile wählen Sie das Kriterium von der Auswahlliste auf der linken Seite des Dialoges aus und schreiben in die Textbox auf der rechten Seite. Wählen Sie <guibutton
+>Hinzufügen</guibutton
+> um die einzelnen Zeilen zum Script hinzuzufügen. Sie können die Option <guibutton
+>Einfügen</guibutton
+> benutzen, um eine Zeile inmitten des Scripts einzufügen und <guibutton
+>Löschen</guibutton
+>, um eine Zeile zu löschen, falls Sie einen Fehler gemacht haben.</para>
+
+<para
+>Das Skript könnte etwa folgendermaßen aussehen ( ohne die Kommentare, beginnend mit #): </para>
+
+<screen
+>Expect       ogin:           <lineannotation
+># denken Sie daran, wir melden uns auf einem Terminal an</lineannotation>
+ID           ""              <lineannotation
+># Kppp sendet den Benutzernamen,den Sie im Hauptfenster
+                                                          # angegeben haben.</lineannotation>
+Expect       for xyz:    <lineannotation
+># Eine Liste verfügbarer Nummern wird gezeigt, von denen
+                                                           # der Benutzer eine auswählen muss</lineannotation
+> 
+Send         xyz-home    <lineannotation
+># Der Benutzer will zurückgerufen werden</lineannotation>
+Expect       ogin:           <lineannotation
+># Der Rückrufprozess läuft. Eine neue Verbindung, eine neue Anmeldung</lineannotation>
+ID
+Expect       assword:        <lineannotation
+># Jetzt Ihr Passwort</lineannotation>
+Expect       &gt;            <lineannotation
+># warte auf die Eingabeaufforderung (das kann variieren)</lineannotation>
+Send         start_ppp       <lineannotation
+># start_ppp startet den pppd</lineannotation
+>
+</screen>
+
+<para
+>Nachdem die Anmeldeaufforderung erscheint, sendet der Benutzer seinen Benutzernamen und wartet auf die Liste mit verfügbaren Verbindungen. Dann teilt er dem Server mit, unter welcher Nummer er zurückgerufen werden will. &kppp; kann dafür einen Dialog öffnen, falls sich Ihr Aufenthaltsort oft ändert (z.B. wenn Sie ein Vertreter sind und von Hotel zu H otel reisen). Danach erwartet der Server Ihren Benutzernamen und die Passworteingabe. In der Zwischenzeit hängt der Server auf und ruft den Benutzer zurück. &kppp; wartet auf die Eingabeaufforderung und startet dann ein kurzes Skript (hier genannt <filename
+>start_ppp</filename
+>), welches den <application
+>pppd</application
+> auf dem Server startet. </para>
+					      
+<para
+>Das <filename
+>start_ppp</filename
+> Skript könnte etwa folgendermaßen aussehen: </para>
+					      
+<programlisting
+>#!/bin/sh
+stty -echo
+exec /usr/sbin/pppd -detach silent modem
+</programlisting>
+					      
+<para
+>Natürlich geht die Konfiguration eines <acronym
+>PPP</acronym
+>-Servers etwas über die Intention dieses Kapitel hinaus. Für mehr Informationen lesen Sie die <application
+>pppd</application
+>-Manpage. Eine sehr gute Beschreibung eines Rückruf-Servers können sie unter<ulink url="http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback"
+> http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback</ulink
+> finden.</para>
+</step>
+</procedure>
+
+<para
+>Alle anderen Einstellungen (z.B. pppd Konfiguration oder IP-Einstellungen) sind die gleichen wie sonst auch. Denken Sie daran, dass keine spezielle Software nötig ist, um den Rückruf anzunehmen.</para>
+
+<note>
+<para
+><emphasis
+>Hinweis:</emphasis
+> <emphasis
+>Kppp</emphasis
+> Rückruf und andere Programme wie mgetty oder andere faxgetty können auf die gleiche serielle Schnittstelle zugreifen. Dabei gibt es beim Einwählen keine Probleme, da <emphasis
+>Kppp</emphasis
+> eine Sperrdatei erzeugt, die anderen getty-Programmen anzeigt, dass gerade ein anderes Programm die Leitung benutzt.</para>
+</note>
+
+</sect2>
+
+<sect2 id="callback-troubleshooting">
+<title
+>Problembeseitigung</title>
+
+<para
+>Es gibt ein paar bekannte Probleme mit &kppp; im Rückruf-Modus:</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Da Sie das Modem mit <literal
+>AutoAnswer</literal
+> initialisieren, müssen Sie es nach dem Verbindungsabbruch zurücksetzen. Wenn Sie das nicht tun, wird das Modem alle Anrufe für Sie annehmen.</para>
+</listitem>
+<listitem>
+<para
+>&kppp; hat leichte Problem, wenn die Modemschnittstelle mit einem anderen Programm wie <application
+>mgetty</application
+> gemeinsam benutzt wird. Wenn <application
+>mgetty</application
+> die gleiche Schnittstelle benutzt, kann &kppp; das Modem nicht korrekt initialisieren. </para>
+</listitem>
+<listitem>
+<para
+>&kppp; kann während einer Skript-basierten Verbindung nach einer Benutzereingabe fragen. Leider fragt &kppp; Sie auch nach dem Benutzernamen, wenn der Server zum zweiten Mal den Benutzernamen wissen will. Wenn Sie das abstellen wollen, müssen Sie Ihren Benutzernamen direkt in das Anmeldeskript schreiben (nicht sehr schön, aber es hilft).</para>
+</listitem>
+</itemizedlist>
+
+</sect2>
+
+<sect2 id="callback-resources">
+<title
+>Serversoftware im Internet</title>
+
+<para
+>&Linux; Rückruf-Server Softwarepakete sind überall im Internet erhältlich. </para>
+
+<para
+>Natürlich gehört auch das sehr bekannte und leistungsfähige <application
+>mgetty</application
+> dazu, mit dem man auch Rückrufverbindungen erstellen kann. Eine Beschreibung, wie man <application
+>mgetty</application
+> dafür konfigurieren muss, gibt es unter <ulink url="http://www.dyer.demon.co.uk/slug/tipscrip.htm"
+>http://www.dyer.demon.co.uk/slug/tipscrip.htm</ulink
+> betreut von Colin McKinnon, <email
+>colin@wew.co.uk</email
+>.</para>
+
+<para
+>Aber es ist auch ein fertig benutzbares Paket für &Linux; Rückruf-Server unter <ulink url="http://www.icce.rug.nl/docs/programs/callback/callback.html"
+> http://www.icce.rug.nl/docs/programs/callback/callback.html</ulink
+> erhältlich. Dieses Paket wird betreut von Frank B. Brokken <email
+>frank@icce.rug.nl</email
+>.Weil das Paket nicht so leicht einzustellen ist,habe ich eine kurze Einleitung dafür geschrieben unter <ulink url="http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback"
+> http://ap-dec717c.physik.uni-karlsruhe.de/~mh/callback/</ulink
+>Schauen Sie dort ebenfalls nach, wenn Sie eine weitergehende allgemeine Einführung in Rückrufverbindungen wollen. </para>
+
+</sect2>
+</sect1>
+
+<sect1 id="nt-callback">
+<title
+>&Windows; NT <acronym
+>RAS</acronym
+> Rückrufverbindungen</title>
+
+<para
+>Windows NT benutzt einen völlig verschiedenen Ansatz als der hier beschriebene (wie üblich). NT benötigt eine Erweiterung des PPP Protokolls namens CBCP (Call Back Control Protocol). <literal
+>pppd</literal
+> unterstützt dieses Protokoll, aber Sie müssen <literal
+>pppd</literal
+> dazu neu kompilieren.</para>
+
+</sect1>
+</chapter>

@@ -1,0 +1,1388 @@
+<!-- <?xml version="1.0" ?>
+<!DOCTYPE chapter PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" "dtd/kdex.dtd">
+To validate or process this file as a standalone document, uncomment
+this prolog. Be sure to comment it out again when you are done -->
+
+<chapter id="arts-in-detail">
+<title
+>O &arts; em Detalhe</title>
+
+<sect1 id="architecture">
+<title
+>Arquitectura</title>
+
+<mediaobject>
+<imageobject>
+<imagedata fileref="arts-structure.png" format="PNG"/>
+</imageobject>
+<textobject
+><phrase
+>A estrutura do &arts;.</phrase
+></textobject>
+</mediaobject>
+</sect1>
+
+<sect1 id="modules-ports">
+<title
+>Módulos &amp; Portos</title>
+
+<para
+>A ideia do &arts; é que a síntese pode ser feita com módulos pequenos que só fazem uma coisa, voltando a combiná-los depois em estruturas complexas. Os pequenos módulos normalmente têm entradas, onde poderão obter alguns sinais ou parâmetros, e saídas, onde produzirão alguns sinais. </para>
+
+<para
+>Um módulo (o Synth&lowbar;ADD), por exemplo, apanha simplesmente os dois sinais à entrada e adiciona-os em conjunto. O resultado fica disponível como um sinal de saída. Os locais onde os módulos oferecem os seus sinais de entrada e saída chamam-se portos. </para>
+
+</sect1>
+
+<sect1 id="structures">
+<title
+>Estruturas</title>
+
+<para
+>Uma estrutura é uma combinação de módulos ligados, alguns dos quais têm parâmetros codificados directamente nos seus portos de entrada, outros que poderão estar ligados e outros ainda que não estão ligados de todo. </para>
+
+<para
+>O que você pode fazer com o &arts-builder; é descrever as estruturas. Você descreve quais os módulos que quer que estejam ligados com outros módulos. Quando terminar, você poderá gravar a descrição dessa estrutura num ficheiro, ou dizer ao &arts; para criar essa estrutura que descreveu (Executar). </para>
+
+<para
+>Aí você irá provavelmente ouvir algum som, se fez tudo correctamente. </para>
+</sect1>
+
+<!-- TODO
+
+<sect1 id="streams">
+<title
+>Streams</title>
+ 
+</sect1>
+
+-->
+
+<sect1 id="latency">
+<title
+>Latência</title>
+
+<sect2 id="what-islatency">
+<title
+>O Que é a Latência?</title>
+
+<para
+>Suponha que tem uma aplicação chamada <quote
+>pling_rato</quote
+> (que fará um som de um <quote
+>pling</quote
+> se carregar num botão). A latência é o tempo que passa entre você pressionar o botão do rato com o seu dedo e você ouvir o som. A latência nesta configuração compõe-se por si só em várias latências, que poderão ter causas diferentes. </para>
+
+</sect2>
+
+<sect2 id="latenbcy-simple">
+<title
+>Latência em Aplicações Simples</title>
+
+<para
+>Nesta aplicação simples, a latência ocorre nestes sítios: </para>
+
+<itemizedlist>
+
+<listitem>
+<para
+>O tempo até o 'kernel' notificar o servidor do X11 que foi carregado um botão do rato. </para>
+</listitem>
+
+<listitem>
+<para
+>O tempo até o servidor do X11 notificar a sua aplicação que um botão do rato foi pressionado. </para>
+</listitem>
+
+<listitem>
+<para
+>O tempo até à aplicação 'pling_rato' decidir que este botão merece tocar um 'pling'. </para>
+</listitem>
+
+<listitem>
+<para
+>O tempo que leva à aplicação 'pling_rato' dizer ao servidor de som que deverá tocar um 'pling'. </para>
+</listitem>
+
+<listitem>
+<para
+>O tempo que leva para o 'pling' (que o servidor de som começa a misturar com a outra saída ao mesmo tempo) vá para os dados dos 'buffers', até que atinge a posição onde a placa de som reproduz o toque. </para>
+</listitem>
+
+<listitem>
+<para
+>O tempo que leva o som do 'pling' dos altifalantes a atingir o seu ouvido. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Os primeiros três itens são latências externas ao &arts;. Elas são interessantes, mas saem do âmbito deste documento. Todavia, tenha em atenção que elas existem, por isso, mesmo que você tenha optimizado tudo o resto para valores muito baixos, você poderá não obter exactamente o resultado que calculou. </para>
+
+<para
+>Indicar ao servidor para tocar qualquer coisa envolve normalmente uma única chamada de &MCOP;. Existem medidas que confirmam isso, na mesma máquina e usando 'sockets' do domínio Unix, que dizem que, para dizer ao servidor para tocar algo, poderão ser feitas cerca de 9000 invocações por segundo na implementação actual. Espera-se que a maioria disto seja devido à sobrecarga no 'kernel', na mudança de uma aplicação para outra. Claro que este valor altera com o tipo exacto dos parâmetros. Se você transferir uma imagem inteira numa chamada, a chamada será mais lenta do que se transferir um valor inteiro. Aplica-se o mesmo para o valor devolvido. Contudo, para as cadeias de caracteres (como o nome do ficheiro <literal role="extension"
+>WAV</literal
+> a tocar), isto não deverá ser nenhum problema. </para>
+
+<para
+>Isto significa que podemos aproximar este tempo a 1/9000 sec, o que fica abaixo de 0.15 ms. Concluir-se-á que isto não é relevante. </para>
+
+<para
+>A seguir vem o tempo entre o servidor começar a tocar e a placa de som a obter algo. O servidor precisa de armazenar os dados temporariamente em tampões ('buffers'), por isso quando as outras aplicações começarem a executar, como o seu servidor de X11 ou a aplicação <quote
+>pling_rato</quote
+> não se poderão ouvir quebras. A forma como isso é feito no &Linux; é recorrendo a um conjunto de fragmentos de determinado tamanho. O servidor voltará a preencher os fragmentos, e a placa de som irá reproduzi-los. </para>
+
+<para
+>Por isso, suponha que existem três fragmentos. O servidor preenche o primeiro, e a placa de som começa a tocá-lo. O servidor preenche o segundo e o terceiro, terminando assim a sua parte. As outras aplicações podem agora fazer algo. </para>
+
+<para
+>Dado que a placa de som acabou de tocar o primeiro fragmento, começa a tocar o segundo e o servidor volta a preencher o primeiro, repetindo este processo indefinidamente. </para>
+
+<para
+>A maior latência que você obtém com tudo isto é igual a (número de fragmentos)*(tamanho de cada fragmento)/(taxa amostragem * (tamanho de cada amostra)). Suponha que tem estéreo a 44kHz, com  7 fragmentos de 1024 bytes (o valor por omissão actual do &arts;): isso irá corresponder a 40 ms. </para>
+
+<para
+>Estes valores poderão ser ajustados de acordo com as suas necessidades. Todavia, a utilização do <acronym
+>CPU</acronym
+> aumenta com latências menores, dado que o servidor de som terá de preencher os tampões com maior frequência e em menores partes. É também quase impossível atingir valores melhores sem dar ao servidor de som a prioridade de tempo-real, porque caso contrário irá ter frequentes quebras. </para>
+
+<para
+>Contudo, é realista ter algo como 3 fragmentos de 256 bytes cada, o que iria fazer com que este valor fosse igual a 4,4 ms. Com um atraso de 4,4ms a utilização inactiva do <acronym
+>CPU</acronym
+> seria de aproximadamente 7,5% por parte do &arts;. Com um atraso de 40ms, seria de aproximadamente 3% (num PII-350, e este valor poderá depender da sua placa de som, versão do 'kernel', entre outros). </para>
+
+<para
+>Agora, finalmente, tem o tempo que leva o som do 'pling' a sair dos altifalantes e a chegar ao seu ouvido. Suponha que a sua distância até aos altifalantes é de 2 metros. O som viaja à velocidade de 330 metros por segundo. Por isso, esse tempo poder-se-á aproximar a 6 ms. </para>
+
+</sect2>
+
+<sect2 id="latency-streaming">
+<title
+>Latência em Aplicações de Transmissão</title>
+
+<para
+>As aplicações de transmissão ou difusão são aquelas que produzem elas próprias o som, e que origina uma sequência constanted de amostras, e que será agora adapto para reproduzir as coisas através do &arts;. Por exemplo: quando se pressiona uma tecla, a figura que está a tocar salta, aparecendo um som de 'boing'. </para>
+
+<para
+>Primeiro que tudo, você precisa de saber como é que o &arts; faz a transmissão. É bastante semelhante às E/S com a placa de som. O jogo envia alguns pacotes com amostras para o servidor de som. Imagine-se que são três pacotes. Assim que o servidor estiver pronto com o primeiro pacote, envia uma confirmação de volta para o jogo a dizer que este pacote está pronto. </para>
+
+<para
+>O jogo cria outro pacote de som e envia-o para o servidor. Entretanto o servidor começa a consumir o segundo pacote de som, e assim por diante. A latência aqui é semelhante à do caso simples: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>O tempo até que o 'kernel' notifique o servidor de X11 que uma tecla foi carregada. </para>
+</listitem>
+
+<listitem>
+<para
+>O tempo até que o servidor de X11 notifique o jogo de que uma tecla foi carregada. </para>
+</listitem>
+
+<listitem>
+<para
+>O tempo até que o jogo se decida que esta tecla merece tocar um 'boing'. </para>
+</listitem>
+
+<listitem>
+<para
+>O tempo até o pacote de som onde o jogo começou a colocar o som do 'boing' leva a chegar ao servidor de som. </para>
+</listitem>
+
+<listitem>
+<para
+>O tempo que leva ao 'boing' (que o servidor de som começa a misturar para de uma vez) passe para os dados nos tampões ('buffers'), até que atinja a posição em que a placa de som começa a tocar. </para>
+</listitem>
+
+<listitem>
+<para
+>O tempo que o 'boing' leva a sair dos altifalantes até atingir o seu ouvido. </para>
+</listitem>
+
+</itemizedlist>
+
+<para
+>As latências externas, tal como acima, estão fora do âmbito deste documento. </para>
+
+<para
+>Obviamente, a latência da transmissão depende do tempo que leva a todos os pacotes que são usados na transmissão a serem tocados uma vez. Deste modo, é igual a (número de pacotes)*(taxa de amostragem * (tamanho de cada amostra)) </para>
+
+<para
+>Como você vê, é a mesma fórmula que se aplica para os fragmentos. Contudo, para os jogos, não faz sentido fazer demoras tão pequenas. Pode-se dizer que uma configuração realista para os jogos seria de 2048 bytes por pacote, usando 3 pacotes. A latência resultante seria de 35 ms. </para>
+
+<para
+>Isto baseia-se no seguinte: assuma que o jogo desenha 25 imagens por segundo. É provavelmente seguro assumir que você não notará nenhuma diferença na saída de som para uma imagem. Por isso, 1/25 segundos para a transmissão é aceitável, o que por sua vez significa que 40 ms seria ok. </para>
+
+<para
+>A maioria das pessoas também não irão executar os seus jogos, com prioridade de tempo-real, onde o perigo de quebras no som não pode ser negligenciado. A transmissão com 3 pacotes de 256 bytes cada é possível (tentou-se isso) - mas provoca uma carga grande de <acronym
+>CPU</acronym
+> para a transmissão. </para>
+
+<para
+>para as latências do lado do servidor, você pode calculá-las exactamente como está dito em cima. </para>
+
+</sect2>
+
+<sect2 id="cpu-usage">
+<title
+>Algumas considerações de utilização do <acronym
+>CPU</acronym
+></title>
+
+<para
+>Existem vários factores que influenciam a utilização do <acronym
+>CPU</acronym
+> num cenário complexo, com algumas aplicações de transmissão entre outras, alguns 'plugins' no servidor, &etc;. Só para indicar algumas: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Utilização em bruto de <acronym
+>CPU</acronym
+> pelos cálculos que são necessários. </para>
+</listitem>
+
+<listitem>
+<para
+>A sobrecarga do escalonamento interno do &arts; - como é que o &arts; decide qual o módulo que deve calcular o quê. </para>
+</listitem>
+
+<listitem>
+<para
+>A sobrecarga da conversão de inteiros para números de vírgula flutuante. </para>
+</listitem>
+
+<listitem>
+<para
+>A sobrecarga do protocolo &MCOP;. </para>
+</listitem>
+
+<listitem>
+<para
+>'Kernel': mudança de contexto/processo. </para>
+</listitem>
+
+<listitem>
+<para
+>'Kernel': sobrecarga nas comunicações </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Para a carga em bruto do <acronym
+>CPU</acronym
+> usada nos cálculos, se você tocar duas sequências em simultâneo, você terá de efectuar somas. Se você aplicar um filtro, estão envolvidos alguns cálculos. Para dar um exemplo simplificado, a adição de duas sequências envolve talvez quatro ciclos de <acronym
+>CPU</acronym
+> por soma, o que num processador a 350MHz corresponde a 44100*2*4/350000000 = 0,1% utilização do <acronym
+>CPU</acronym
+>. </para>
+
+<para
+>Escalonamento interno do &arts;: o &arts; precisa de decidir qual o 'plugin' que irá calcular um dado conjunto de dados; isto leva tempo. Faça uma análise da performance se você estiver interessado nisso. Geralmente o que se pode dizer é: quanto menos de tempo-real fizer (&ie;. quanto maiores os blocos que poderão ser calculados numa dada altura), a menor sobrecarga de escalonamento você obterá. Acima do cálculo de blocos de 128 amostras de cada vez (usando deste modo tamanhos de fragmentos de 512 bytes), a sobrecarga no escalonamento não será grave. </para>
+
+<para
+>Conversão de inteiros para números de vírgula flutuante: o &arts; usa números de vírgula flutuante internamente como formato de dados. Este são simples de usr e nos processadores mais recentes não são mais lentos do que as operações com inteiros. Contudo, se existirem clientes que lidem com dados que não estejam em vírgula flutuante (como um jogo que deverá fazer a sua saída de som através do &arts;), estes precisam de ser convertidos. O mesmo aplica-se que você quiser reproduzir os sons na sua placa de som. A placa de som está à espera de inteiros, por isso você terá de converter. </para>
+
+<para
+>Aqui estão números para um Celeron, da quantidade aproximada de 'ticks' por amostra, com o egcs 2.91.66 com a opção -O2 (dados de Eugene Smith <email
+>hamster@null.ru</email
+>). Isto é altamente dependente do processador, como é óbvio: </para>
+
+<programlisting
+>convert_mono_8_float: 14
+convert_stereo_i8_2float: 28
+convert_mono_16le_float: 40
+interpolate_mono_16le_float: 200
+convert_stereo_i16le_2float: 80
+convert_mono_float_16le: 80
+</programlisting>
+
+<para
+>Por isso significa 1% de utilização do <acronym
+>CPU</acronym
+> para a conversão e 5% para a interpolação para este processador de 350 MHz. </para>
+
+<para
+>A sobrecarga que o protocolo &MCOP; provoca; este protocolo origina, como regra de algibeira, 9000 invocações por segundo. Muitas destas não são culpa do protocolo &MCOP; em si, mas relaciona-se com as duas causas do 'kernel' indicadas em baixo. Contudo, isto fornece uma base para cálculo do quanto custa a transmissão. </para>
+
+<para
+>Cada pacote de dados que é transmitido poderá ser considerado uma invocação do &MCOP;. Claro que os pacotes grandes são mais lentos do que 9000 pacotes/s, mas isto é a ideia básica. </para>
+
+<para
+>Suponha que você usa tamanhos de pacotes de 1024 bytes. Deste modo, para transferir uma sequência estéreo de 44kHz, você precisa de transferir 44100*4/1024 = 172 pacotes por segundo. Suponha que po100% de utilização de CPU, 9000 pacotes, então iria obter (172*100)/9000 = 2% de utilização de <acronym
+>CPU</acronym
+> devido à transmissão de pacotes de 1024 bytes. </para>
+
+<para
+>Existem aproximações. Contudo, estas mostram que você poderia estar muito melhor (se o poder fazer para o bem da latência), se usasse por exemplo pacotes de 4096 bytes. Pode-se fazer aqui uma fórmula compacta, calculando o tamanho do pacote que provoca uma utilização de 100% do <acronym
+>CPU</acronym
+> como sendo igual a 44100*4/9000 = 19,6 amostras, obtendo assim a fórmula rápida: </para>
+
+<para
+>utilização de <acronym
+>CPU</acronym
+> na transmissão em percentagem = 1960/(tamanho do seu pacote) </para>
+
+<para
+>o que dará 0,5% de utilização do <acronym
+>CPU</acronym
+> ao transmitir com pacotes de 4096 bytes. </para>
+
+<para
+>Mudança de contextos/processos do 'kernel': isto faz parte da sobrecarga do protocolo &MCOP;. A mudança entre dois processos leva tempo. Existe um novo mapeamento de memória, as 'caches' são invalidadas, entre outras coisas (se existir alguém experiente no 'kernel' a ler isto - que diga quais são as causas exactas). Tudo isto para dizer: leva tempo. </para>
+
+<para
+>Não é certo quantas mudanças de contexto o I &Linux; consegue fazer por segundo, mas esse número não é infinito. Por isso, muita parte da sobrecarga do protocolo &MCOP; deve-se, supostamente, em grande medida à mudança de contextos. No início do &MCOP;, foram feitos testes para usar a mesma comunicação dentro de um processo e isso era muito mais rápido (quatro vezes mais rápido, aproximadamente). </para>
+
+<para
+>'Kernel': sobrecarga na comunicação: Isto faz parte da sobrecarga do protocolo &MCOP;. A transferência de dados entre processos é feita de momento, recorrendo a 'sockets'. Isto é conveniente, dado que os métodos normais do select() podem ser usados para determinar quando chegou uma mensagem. Também pode ser combinado com ou E/S de áudio, o servidor do X11 ou outras fontes, com relativa facilidade. </para>
+
+<para
+>Contudo, estas chamadas de leitura e escrita custam certamente ciclos processador. Para as invocações pequenas (como a transferência de um evento MIDI), isso não é provavelmente assim tão mau, mas para as chamadas pesadas (como a transferência de uma imagem de vídeo com vários megabytes), isto é claramente um problema. </para>
+
+<para
+>A utilização de memória partilhada no &MCOP;, sempre que apropriado, é provavelmente a melhor solução. Isto deverá ser feito de forma transparente para o programador da aplicação. </para>
+
+<para
+>Obtenha um analisador ('profiler') ou faça outros testes para descobrir exactamente como é que a transmissão de áudio tem impacto se usar ou não memória partilhada. Contudo, não é mau, dado que a transmissão de áudio (reproduzir MP3s, por exemplo) poderá ser feita com utilização total de 6% de carga do <acronym
+>CPU</acronym
+> pelo &artsd; e pelo <application
+>artscat</application
+> (e 5% pelo descodificador de MP3). Contudo, isto inclui todas as coisas, desde os cálculos necessários até à sobrecarga nos 'sockets', por isso poder-se-á dizer que, nesta configuração, você poderá talvez poupar 1% se usar memória partilhada. </para>
+
+</sect2>
+
+<sect2 id="hard-numbers">
+<title
+>Alguns Números em Bruto</title>
+
+<para
+>Estes são retirados a partir da versão actual em desenvolvimento. Tentou-se obter também casos reais, porque isso não é o que as aplicações do dia-a-dia deverão usar. </para>
+
+<para
+>Foi criada uma aplicação chamada 'som_sequencia' que transmite dados para o &arts;. Aqui está a correr com prioridade de tempo-real (sem problemas) e com um 'plugin' pequeno por parte do servidor (ajuste e recorte do volume): </para>
+
+<programlisting
+>4974 stefan    20   0  2360 2360  1784 S       0 17.7  1.8   0:21 artsd
+5016 stefan    20   0  2208 2208  1684 S       0  7.2  1.7   0:02 som_sequencia
+5002 stefan    20   0  2208 2208  1684 S       0  6.8  1.7   0:07 som_sequencia
+4997 stefan    20   0  2208 2208  1684 S       0  6.6  1.7   0:07 som_sequencia
+</programlisting>
+
+<para
+>Cada um deles está a transmitir com 3 fragmentos de 1024 bytes (18 ms). Existem três clientes do mesmo tipo a correr em simultâneo. É certo que isto parece demasiado, mas como foi dito: pegue num analisador ('profiler') e procure o que é que leva tempo e, se o desejar, tente melhorá-lo. </para>
+
+<para
+>Contudo, não se deve pensar que a utilização da transmissão desta forma é realista ou faz sentido. Para levar isto ainda mais ao extremo, tentou-se a menor latência possível. Resultado: você poderá fazer transmissões sem interrupções com uma aplicação-cliente, se tiver 2 fragmentos de 128 bytes entre o &arts; e a placa de som e entre a aplicação-cliente e o &arts;. Isto significa que você tem uma latência total máxima de 128*4/44100*4 = 3 ms, onde 1,5 ms são gerados devido à E/S da placa de som e os outros 1,5 devem-se à comunicação com o &arts;. Ambas as aplicações precisam de correr em tempo-real. </para>
+
+<para
+>Mas isto tem um custo enorme do <acronym
+>CPU</acronym
+>. Este exemplo custa-lhe cerca de 45% num P-II/350. Ele também começa a fazer 'clicks' se você iniciar o 'top', se mover as janelas no seu ecrã do X11 ou se fizer E/S de disco. Todas estas questões são respeitantes ao 'kernel'. O problema é que o escalonamento de duas ou mais aplicações em tempo-real custam-lhe uma quantidade enorme de esforço também, e ainda mais se elas comunicarem, notificarem-se uma à outra, &etc;. </para>
+
+<para
+>Finalmente, um exemplo mais real. Isto é o &arts; com o &artsd; e um 'artscat' (um cliente de transmissão) que estão a correr 16 fragmentos de 4096 bytes: </para>
+
+<programlisting
+>5548 stefan    12   0  2364 2364  1752 R       0  4.9  1.8   0:03 artsd
+5554 stefan     3   0   752  752   572 R       0  0.7  0.5   0:00 top
+5550 stefan     2   0  2280 2280  1696 S       0  0.5  1.7   0:00 artscat
+</programlisting>
+
+</sect2>
+</sect1>
+
+<!-- TODO
+
+<sect1 id="dynamic-instantiation">
+<title
+>Dynamic Instantiation</title>
+ 
+</sect1>
+
+-->
+
+<sect1 id="busses">
+<title
+>Barramentos</title>
+
+<para
+>Os barramentos são ligações criadas dinamicamente que transferem o áudio. Basicamente, existem alguns canais de envio e de recepção e de envio. Todos os sinais dos canais de envio são adicionados e enviados para os canais de recepção. </para>
+
+<para
+>Os barramentos, tal como são implementados actualmente, operam em estéreo, por isso você só poderá transferir dados em estéreo nos barramentos. Se você quiser dados mono, bem, transfira apenas por um canal e coloque o outro a zeros ou com outro valor qualquer. Tudo o que precisa de fazer é criar um ou mais objectos Synth&lowbar;BUS&lowbar;UPLINK e dar-lhes o nome de um barramento, com o qual eles deverão falar (&eg; <quote
+>áudio</quote
+> ou <quote
+>bateria</quote
+>). Basta largar os dados aí. </para>
+
+<para
+>Aí, você terá de criar um ou mais objectos Synth&lowbar;BUS&lowbar;DOWNLINK, indicando-lhe o nome do barramento (<quote
+>áudio</quote
+> ou <quote
+>bateria</quote
+> ... se corresponde, os dados serão transferidos para aí), e os dados misturados irão sair de novo. </para>
+
+<para
+>Os canais de envio e de recepção poderão residir em estruturas diferentes, e você até poderá ter vários &arts-builder;s diferentes a correr e iniciar um canal de envio num e receber os dados noutro, através do canal de recepção respectivo. </para>
+
+<para
+>O que é interessante acerca dos barramentos é que eles são completamente dinâmicos. Os clientes poder-se-ão ligar instantaneamente. Não deverá haver nenhum 'click' ou ruído à medida que isto acontece. </para>
+
+<para
+>Claro que você não deverá desligar um cliente que toca um sinal, dado que poderá não estar a um nível nulo quando for desligado do barramento, ao que se ouvirá então um 'click'. </para>
+</sect1>
+
+<!-- TODO
+<sect1 id="network-ransparency">
+<title
+>Network Transparency</title>
+ 
+</sect1>
+
+<sect1 id="security">
+<title
+>Security</title>
+ 
+</sect1>
+
+
+<sect1 id="effects">
+<title
+>Effects and Effect Stacks</title>
+ 
+</sect1>
+
+-->
+<sect1 id="trader">
+<title
+>Mediador</title>
+
+<para
+>O &arts;/&MCOP; baseia-se em grande medida na divisão das coisas em pequenos componentes. Isto torna as coisas muito flexíveis, à medida que vai extendendo o sistema facilmente com a adição de componentes novos que implementam efeitos novos, formatos de ficheiros, osciladores, elementos gráficos.... Dado que quase tudo é um componente, quase tudo poderá ser extendido facilmente, sem alterar o código existente. Os componentes novos poderão ser simplesmente carregados dinamicamente para melhorar as aplicações já existentes. </para>
+
+<para
+>Contudo, para isto funcionar, são necessárias duas coisas: </para>
+
+<itemizedlist>
+
+<listitem>
+<para
+>Os componentes têm de se publicitar a eles próprios - eles precisam de descrever quais as coisas que eles oferecem, para que as aplicações sejam capazes de as usar. </para>
+</listitem>
+
+<listitem>
+<para
+>As aplicações precisam de procurar activamente os componentes que elas poderão usar, em vez de usar sempre a mesma coisa para uma dada tarefa. </para>
+</listitem>
+
+</itemizedlist>
+
+<para
+>A combinação disto - os componentes que dizem <quote
+>aqui estou eu, sou bom, usem-me</quote
+>, e as aplicações (ou, se preferir, outros componentes) que vão e procuram qual o componente que eles poderão usar para ter uma coisa feita - é o que é chamado de 'mediação' ou 'negociação'. </para>
+
+<para
+>No &arts;, os componentes descrevem-se a si próprios, indicando valores que <quote
+>suportam</quote
+> para as propriedades.. Uma propriedade típica para um componente de leitura de ficheiros poderá ser a extensão dos ficheiros que pode processar. Os valores típicos poderão ser o <literal role="extension"
+>wav</literal
+>, o <literal role="extension"
+>aiff</literal
+> ou o <literal role="extension"
+>mp3</literal
+>. </para>
+
+<para
+>De facto, todos os componentes poderão optar por oferecer vários valores diferentes para uma dada propriedade. Por isso, um único componente poder-se-á oferecer para ler tanto os ficheiros <literal role="extension"
+>wav</literal
+> como os <literal role="extension"
+>aiff</literal
+>, indicando que suporta estes valores para a propriedade <quote
+>Extension</quote
+> (Extensão). </para>
+
+<para
+>Para o fazer, um componente terá de colocar um ficheiro <literal role="extension"
+>.mcopclass</literal
+> num local apropriado, contendo as propriedades que suporta; no caso do exemplo actual, isto poderá assemelhar-se ao  seguinte (e estará instalado como <filename
+><replaceable
+>dir_componente</replaceable
+>/Arts/WavPlayObject.mcopclass</filename
+>): </para>
+
+<programlisting
+>Interface=Arts::WavPlayObject,Arts::PlayObject,Arts::SynthModule,Arts::Object
+Author="Stefan Westerfeld &lt;stefan@space.twc.de&gt;"
+URL="http://www.arts-project.org"
+Extension=wav,aiff
+MimeType=audio/x-wav,audio/x-aiff
+</programlisting>
+
+<para
+>É importante que o nome do ficheiro <literal role="extension"
+>.mcopclass</literal
+> também diga como é que se chama a interface do componente. O mediador não olha para o conteúdo de todo, se o ficheiro (tal como está aqui) se chamar <filename
+>Arts/WavPlayObject.mcopclass</filename
+>, a interface do componente é chamada de <interfacename
+>Arts::WavPlayObject</interfacename
+> (os módulos mapeiam-se nas pastas). </para>
+
+<para
+>Para ver os componentes, existem duas interfaces (que estão definidas em <filename
+>core.idl</filename
+>, por isso você irá tê-las em todas as aplicações), chamadas de <interfacename
+>Arts::TraderQuery</interfacename
+> e <interfacename
+>Arts::TraderOffer</interfacename
+>. Você poderá fazer uma <quote
+>ida às compras</quote
+> nos componentes deste tipo: </para>
+
+<orderedlist>
+<listitem>
+<para
+>Crie um objecto de pesquisa: </para>
+<programlisting
+>Arts::TraderQuery pesquisa;
+</programlisting>
+</listitem>
+
+<listitem>
+<para
+>Indique o que pretende. Como viu em cima, os componentes descrevem-se a si próprios recorrendo a propriedades, para os quais eles oferecem determinados valores. Por isso, poderá indicar o que quiser através da selecção de componentes que suportem um dado valor para uma dada propriedade. Isto é feito se usar o método 'supports' de uma TraderQuery: </para>
+
+<programlisting
+>pesquisa.supports("Interface","Arts::PlayObject");
+    pesquisa.supports("Extension","wav");
+</programlisting>
+</listitem>
+
+<listitem>
+<para
+>Finalmente, efectue a pesquisa usando o método 'query'. Aí, você irá obter (ou assim se espera) algumas ofertas: </para>
+
+<programlisting
+>vector&lt;Arts::TraderOffer&gt; *ofertas = pesquisa.query();
+</programlisting>
+</listitem>
+
+<listitem>
+<para
+>Agora você poderá examinar o que encontrou. O que é importante é o método 'interfaceName' do TraderOffer, o qual lhe dirá o nome do componente que correspondeu à pesquisa. Você poderá também encontrar mais propriedades com o método 'getProperty'. O código seguinte irá simplesmente iterar por todos os componentes, imprimir o nome das suas interfaces (que poderão ser usados na criação), e limpar os resultados da pesquisa de novo: </para>
+<programlisting
+>vector&lt;Arts::TraderOffer&gt;::iterator i;
+    for(i = ofertas-&gt;begin(); i != ofertas-&gt;end(); i++)
+        cout &lt;&lt; i-&gt;interfaceName() &lt;&lt; endl;
+    delete ofertas;
+</programlisting>
+</listitem>
+</orderedlist>
+
+<para
+>Para este tipo de serviço de mediação ser útil, é importante concordar de alguma forma nos tipos de propriedades que os componentes deverão definir normalmente. É essencial que mais ou menos todos os componentes de uma determinada área usem o mesmo conjunto de propriedades para se descreverem a si próprios (e o mesmo conjunto de valores, sempre que se aplicar), de modo a que as aplicações (ou as outras componentes) sejam capazes de os encontrar. </para>
+
+<para
+>Author (tipo 'texto', opcional): Isto poderá ser usado para mostrar em última instância ao mundo que você fez algo. Aqui você poderá escrever tudo o que quiser, se bem que um endereço de e-mail é obviamente útil. </para>
+
+<para
+>Buildable (tipo booleano, recomendado): Isto indica se o componente pode sre usado com ferramentas de <acronym
+>RAD</acronym
+> (como o &arts-builder;) que usam os componentes, atribuindo-lhes propriedades e ligando os seus portos. Recomenda-se ter este valor a 'true' (verdadeiro) para quase todos os componentes de processamento de sinal (como os filtros, efeitos, osciladores, ...) e para todas as outras coisas que podem usadas numa abordagem <acronym
+>RAD</acronym
+>, mas não para coisas internas como, por exemplo, o <interfacename
+>Arts::InterfaceRepo</interfacename
+>. </para>
+
+<para
+>Extension (tipo texto, onde for relevante): Tudo o que lide com ficheiros deverá optar por usar isto. Você deverá colocar aqui a versão em minúsculas da extensão do ficheiro sem o <quote
+>.</quote
+>, como por exemplo <userinput
+>wav</userinput
+>. </para>
+
+<para
+>Interface (tipo texto, obrigatório): Isto deverá incluir a lista completa de interfaces (úteis) que os seus componentes suportam, incluindo provavelmente o <interfacename
+>Arts::Object</interfacename
+> e, se se aplicar, o <interfacename
+>Arts::SynthModule</interfacename
+>. </para>
+
+<para
+>Language (tipo texto, recomendado): Se você quiser que o seu componente seja carregado dinamicamente, você precisa de indicar aqui a linguagem. De momento, o único valor permitido é o <userinput
+>C++</userinput
+>, o que significa que o componente foi criado com a <acronym
+>API</acronym
+> normal de C++. Se o fizer, você também terá de definir a propriedade <quote
+>Library</quote
+> em baixo. </para>
+
+<para
+>Library (tipo texto, usado quando relevante): Os componentes feitos em C++ podem ser carregados dinamicamente. Para o fazer, você terá de os compilar num módulo de biblioteca carregada dinamicamente (<literal role="extension"
+>.la</literal
+>). Aqui você poderá indicar o nome do ficheiro <literal role="extension"
+>.la</literal
+>. Lembre-se de usar o REGISTER_IMPLEMENTATION (como sempre). </para>
+
+<para
+>MimeType (tipo texto, usado quando for relevante): Tudo o que lide com ficheiros deverá optar por usar isto. Você deverá colocar aqui a versão em minúsculas do tipo MIME normal, como por exemplo <userinput
+>audio/x-wav</userinput
+>. </para>
+
+<para
+>&URL; (tipo texto, opcional): Se quiser que as pessoas saibam onde poderão obter uma nova versão do componente (ou uma página pessoal, ou algo do género), você podê-lo-á fazer aqui. Isto deverá ser um &URL; normal de &HTTP; ou de &FTP;. </para>
+
+</sect1>
+
+<!-- TODO
+<sect1 id="midi-synthesis">
+<title
+><acronym
+>MIDI</acronym
+> Synthesis</title>
+ 
+</sect1>
+
+<sect1 id="instruments">
+<title
+>Instruments</title>
+ 
+</sect1>
+
+<sect1 id="session-management">
+<title
+>Session Management</title>
+ 
+</sect1>
+
+<sect1 id="full-duplex">
+<title
+>Full duplex Audio</title>
+ 
+</sect1>
+-->
+
+<sect1 id="namespaces">
+<title
+>Espaços de nomes no &arts;</title>
+
+<sect2 id="namespaces-intro">
+<title
+>Introdução</title>
+
+<para
+>Cada declaração de espaço de nomes corresponde à declaração de um <quote
+>módulo</quote
+> na &IDL; do &MCOP;. </para>
+
+<programlisting
+>// idl de mcop
+
+module M {
+    interface A
+    {
+    }
+};
+
+interface B;
+</programlisting>
+
+<para
+>Neste caso, o código de C++ gerado para o excerto de &IDL; deverá ser algo semelhante a isto: </para>
+
+<programlisting
+>// código de C++
+
+namespace M {
+    /* declaração de A_base/A_skel/A_stub e itens semelhantes */
+    class A {        // Classe de interface de referência
+        /* [...] */
+    };
+}
+
+/* declaração de B_base/B_skel/B_stub e itens semelhantes */
+class B {
+    /* [...] */
+};
+</programlisting>
+
+<para
+>Por isso, quando se referir às classes do seu código em C++, você terá de escrever <classname
+>M::A</classname
+>, mas só B. Todavia, você poderá indicar <quote
+>using M</quote
+> algures - como em qualquer 'namespace' do C++. </para>
+
+</sect2>
+
+<sect2 id="namespaces-how">
+<title
+>Como o &arts; usa os espaços de nomes</title>
+
+<para
+>Existe um espaço de nomes global chamado <quote
+>Arts</quote
+>, o qual todos os programas e bibliotecas usam para colocar lá as suas declarações. Isto significa que, ao criar código em C++ que dependa do &arts;, você terá normalmente de anteceder cada classe que usar com o <classname
+>Arts::</classname
+>, tal como se segue: </para>
+
+<programlisting
+>int main(int argc, char **argv)
+{
+    Arts::Dispatcher mediador;
+"    Arts::SimpleSoundServer servidor(Arts::Reference("global:Arts_SimpleSoundServer"));
+
+    servidor.play("/var/xpto/um_ficheiro.wav");
+</programlisting>
+
+<para
+>A outra alternativa é usar um 'using', tal como se segue: </para>
+
+<programlisting
+>using namespace Arts;
+
+int main(int argc, char **argv)
+{
+    Dispatcher mediador;
+    SimpleSoundServer servidor(Reference("global:Arts_SimpleSoundServer"));
+
+    servidor.play("/var/xpto/um_ficheiro.wav");
+    [...]
+</programlisting>
+
+<para
+>Nos ficheiros &IDL;, você não tem de facto escolha alguma. Se estiver a fazer código que pertença ao &arts; em si, você terá de o pôr no módulo do &arts;. </para>
+
+<programlisting
+>// Ficheiro IDL para código do aRts:
+#include &lt;artsflow.idl&gt;
+module Arts {        // colocar no espaço de nomes Arts
+    interface Synth_AJUSTE : SynthModule
+    {
+        in audio stream entrada;
+        out audio stream saida;
+        attribute float factorAjuste;
+    };
+};
+</programlisting>
+
+<para
+>Se você fizer código que não pertença ao &arts; em si, você não o deverá colocar no espaço de nomes <quote
+>Arts</quote
+>. Contudo, você poderá criar um espaço de nomes próprio se quiser. Em qualquer dos casos, você terá de anteceder as classes que usar do &arts;. </para>
+
+<programlisting
+>// Ficheiro IDL para código que não pertence ao aRts:
+#include &lt;artsflow.idl&gt;
+
+// pode criar sem declaração do módulo, onde as classes geradas não irão
+// usar nenhum 'namespace' (espaço de nomes):
+interface Synth_AJUSTE2 : Arts::SynthModule
+{
+    in audio stream entrada;
+    out audio stream saida;
+    attribute float factorAjuste;
+};
+
+// contudo, você também poderá escolher o seu espaço de nomes, se preferir, por
+// isso se criar uma aplicação "Radio", você poderá fazê-lo da seguinte forma:
+module Radio {
+    struct Estacao {
+        string nome;
+        float frequencia;
+    };
+
+    interface Sintonizador : Arts::SynthModule {
+        attribute Estacao estacao;     // não é necessário anteceder o Estacao, por ser do mesmo módulo
+        out audio stream esquerda, direita;
+    };
+};
+</programlisting>
+
+</sect2>
+
+<sect2 id="namespaces-implementation">
+<title
+>Detalhes Internos: Como Funciona a Implementação</title>
+
+<para
+>Normalmente, nas interfaces, conversões ('casts'), assinaturas dos métodos e noutras situações semelhantes, o &MCOP; precisa de se referir aos nomes dos tipos ou das interfaces. Estes são representados como texto nas estruturas de dados comuns do &MCOP;, enquanto que o espaço de nomes é sempre representado por completo no estilo do C++. Isto significa que os textos iriam conter <quote
+>M::A</quote
+> e <quote
+>B</quote
+>, seguindo o exemplo acima. </para>
+
+<para
+>Repare que isto se aplica mesmo se, dentro do texto do &IDL;, os qualificadores de espaços de nomes não foram indicados, dado que o contexto tornou claro qual a o espaço de nomes em que a interface <interfacename
+>A</interfacename
+> pretendia ser usada. </para>
+
+</sect2>
+</sect1>
+
+<sect1 id="threads">
+<title
+>Tarefas no &arts;</title>
+
+<sect2 id="threads-basics">
+<title
+>Básicos</title>
+
+<para
+>A utilização de tarefas ('threads') em todas as plataformas não é possível. Foi por isso que o &arts; originalmente foi feito sem qualquer suporte multitarefa. Para quase todos os problemas, para cada solução multitarefa para o problema, existe uma solução monotarefa que faz o mesmo. </para>
+
+<para
+>Por exemplo, em vez de colocar a saída de áudio numa tarefa em separado, tornando-a bloqueante, o &arts; usa a saída de áudio não-bloqueante, e tenta descobrir quando deve escrever os próximos blocos de dados com o <function
+>select()</function
+>. </para>
+
+<para
+>Contudo, o &arts; (em versões muito recentes) oferece pelo menos o suporte para as pessoas que queiram implementar os seus objectos com tarefas separadas. Por exemplo, se você já tiver código para um leitor de <literal role="extension"
+>mp3</literal
+> e o código do descodificador de <literal role="extension"
+>mp3</literal
+> está à espera de correr numa tarefa separada, é normalmente o acto mais fácil manter este desenho. </para>
+
+<para
+>A implementação do &arts;/&MCOP; é desenhada tendo como ideia de base a partilha do estado entre os objectos separados, implementada de formas óbvias ou menos óbvias. Uma pequena lista do estado partilhado inclui: </para>
+
+<itemizedlist>
+<listitem
+><para
+>O objecto Dispatcher (mediador) que faz a comunicação do &MCOP;. </para>
+</listitem>
+
+<listitem>
+<para
+>A contagem de referências (interfaces inteligentes). </para>
+</listitem>
+
+<listitem>
+<para
+>O IOManager (gestor de E/S) que vigia os temporizadores e descritores de ficheiros. </para>
+</listitem>
+
+<listitem>
+<para
+>O ObjectManager (gestor de objectos), que cria os objectos e carrega automaticamente os 'plugins'. </para>
+</listitem>
+
+<listitem>
+<para
+>O FlowSystem (sistema de fluxo) que invoca o 'calculateBlock' nas situações apropriadas. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Todos os objectos acima não estão à espera de ser usados concorrentemente (&ie; chamados em tarefas separadas ao mesmo tempo). Normalmente, existem duas formas de resolver isto: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Obrigar ao invocador de todas as funções nestes objectos a adquirir um bloqueio antes de as usar. </para>
+</listitem>
+
+<listitem>
+<para
+>Tornar estes objectos realmente seguros em multitarefa e/ou criar instâncias por cada tarefa das mesmas. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>O &arts; segue a primeira aproximação: você terá de bloquear os objectos sempre que precisar de comunicar com qualquer um deles. A segunda aproximação é mais difícil de conseguir. Um truque que tenta obter isto está disponível em <ulink url="http://space.twc.de/~stefan/kde/download/arts-mt.tar.gz"
+> http://space.twc.de/~stefan/kde/download/arts-mt.tar.gz</ulink
+>, mas nesta altura do campeonato, funcionará melhor uma aproximação minimalista, e causará menos problemas com as aplicações existentes. </para>
+
+</sect2>
+<sect2 id="threads-locking">
+<title
+>Quando/como efectuar o bloqueio?</title>
+
+<para
+>Você poderá efectuar/libertar o bloqueio com as duas funções: </para>
+
+<itemizedlist>
+<listitem>
+<para>
+<ulink
+url="http://space.twc.de/~stefan/kde/arts-mcop-doc/arts-reference/headers/Arts__Dispatcher.html#lock"
+><function
+>Arts::Dispatcher::lock()</function
+></ulink>
+</para>
+</listitem>
+<listitem>
+<para>
+<ulink
+url="http://space.twc.de/~stefan/kde/arts-mcop-doc/arts-reference/headers/Arts__Dispatcher.html#unlock"
+><function
+>Arts::Dispatcher::unlock()</function
+></ulink>
+</para>
+</listitem>
+</itemizedlist>
+
+<para
+>Geralmente, você não terá de efectuar o bloqueio (e não deverá ter de tentar fazê-lo), se já foi efectuado anteriormente. Segue-se uma lista com as condições em que este é o caso: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Você recebe uma chamada de resposta do IOManager (um temporizador ou um descritor). </para>
+</listitem>
+
+<listitem>
+<para
+>Você é invocado devido a algum pedido do &MCOP;. </para>
+</listitem>
+
+<listitem>
+<para
+>Você é chamado a partir do NotificationManager (gestor de notificações). </para>
+</listitem>
+
+<listitem>
+<para
+>Você é invocado a partir do FlowSystem (pelo 'calculateBlock') </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Existem também algumas excepções de funções que você só poderá invocar na tarefa principal e que, por essa razão, nunca irá necessitar de bloquear para as chamar: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>O construtor/destrutor do Dispatcher/IOManager. </para>
+</listitem>
+
+<listitem>
+<para
+><methodname
+>Dispatcher::run()</methodname
+> / <methodname
+>IOManager::run()</methodname
+> </para>
+</listitem>
+
+<listitem>
+<para
+><methodname
+>IOManager::processOneEvent()</methodname
+></para>
+</listitem>
+</itemizedlist>
+
+<para
+>Mas é tudo. Para tudo o resto que esteja relacionado de qualquer forma com o &arts;, você irá necessitar de obter o bloqueio e libertá-lo quando terminar - sempre. Aqui está um exemplo simples: </para>
+
+<programlisting
+>class TarefaTempoSuspensao : Arts::Thread {
+public:
+    void run() {
+        /*
+         * você precisa deste bloqueio porque:
+         *  - a criação de uma referência necessita de um bloqueio (porque o
+         *    'global:' vai para o gestor de objectos, o qual poderá necessitar
+         *    por seu turno do objecto GlobalComm para procurar onde se ligar)
+         *  - a atribuição de uma interface inteligente necessita de um
+         *    bloqueio
+         *  - a construção de um objecto a partir de uma referência necessita  *    de um bloqueio (porque poderá necessitar de se ligar a um 
+         *    servidor)
+         */
+        Arts::Dispatcher::lock();
+        Arts::SoundServer servidor = Arts::Reference("global:Arts_SoundServer");
+        Arts::Dispatcher::unlock();
+
+        for(;;) {            /*
+             * você precisa de bloquear aqui, por que
+             *  - libertar a referência a uma interface inteligente necessita
+             *    de um bloqueio (porque poderá fazer uma criação tardia)
+             *  - fazer uma invocação do MCOP necessita de efectuar um bloqueio
+             */
+            Arts::Dispatcher::lock();
+            long segundos = servidor.secondsUntilSuspend();
+            Arts::Dispatcher::unlock();
+
+            printf("segundos até à suspensão = %d",segundos);
+            sleep(1);
+        }
+    }
+}
+</programlisting>
+
+
+</sect2>
+
+<sect2 id="threads-classes">
+<title
+>Classes relacionadas com tarefas</title>
+
+<para
+>As seguintes classes relacionadas com tarefas estão disponíveis de momento: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>O <ulink url="http://www.arts-project.org/doc/headers/Arts__Thread.html"
+><classname
+> Arts::Thread</classname
+></ulink
+> - que encapsula uma tarefa. </para>
+</listitem>
+
+<listitem>
+<para
+>O <ulink url="http://www.arts-project.org/doc/headers/Arts__Mutex.html"
+> <classname
+>Arts::Mutex</classname
+></ulink
+> - que encapsula um 'mutex' - uma exclusão mútua. </para>
+</listitem>
+
+<listitem>
+<para
+>O <ulink url="http://www.arts-project.org/doc/headers/Arts__ThreadCondition.html"
+> <classname
+>Arts::ThreadCondition</classname
+></ulink
+> - que oferece o suporte para acordar as tarefas que estão à espera que uma dada condição se torne verdadeira. </para>
+</listitem>
+
+<listitem>
+<para
+>O <ulink url="http://www.arts-project.org/doc/headers/Arts__SystemThreads.html"
+><classname
+>Arts::SystemThreads</classname
+></ulink
+> - que encapsula a camada do suporte multitarefa do sistema operativo (e que oferece algumas funções úteis para os programadores das aplicações). </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Veja os 'links' para obter mais documentação. </para>
+
+</sect2>
+</sect1>
+
+<sect1 id="references-errors">
+<title
+>Referências e Tratamento de Erros</title>
+
+<para
+>As referências no &MCOP; são um dos conceitos mais centrais na programação com o &MCOP;. Esta secção irá tentar descrever como é que as referências são usadas ao certo, e irá também tentar especialmente cobrir os casos de falha ). </para>
+
+<sect2 id="references-properties">
+<title
+>Propriedades básicas das referências</title>
+
+<itemizedlist>
+<listitem>
+<para
+>Uma referência de &MCOP; não é um objecto, mas sim a referência a um objecto: Ainda que a seguinte declaração <programlisting>
+   Arts::Synth_PLAY p;
+</programlisting
+> se pareça com a definição de um objecto, apenas declara a referência a um objecto. Como programador de C++, você poderá pensar nisto como um  Synth_PLAY *, um tipo de ponteiro para um objecto Synth_PLAY. Isto significa especialmente que o 'p' poderá ser a mesma coisas que um ponteiro nulo (NULL). </para>
+</listitem>
+
+<listitem>
+<para
+>Você poderá criar uma referência a NULL (valor nulo), atribuindo este valor explicitamente </para>
+<programlisting
+>Arts::Synth_PLAY p = Arts::Synth_PLAY::null();
+</programlisting>
+</listitem>
+
+<listitem>
+<para
+>Invocar objectos numa referência NULL irá conduzir a um estoiro </para>
+<programlisting
+>Arts::Synth_PLAY p = Arts::Synth_PLAY::null();
+   string s = p.toString();
+</programlisting>
+<para
+>irá levar a um estoiro. Se comparar isto com um ponteiro, é exactamente o mesmo que <programlisting>
+   QWindow* janela = 0;
+   janela-&gt;show();
+</programlisting
+>, o qual todos os programadores de C++ sabem que deverão evitar. </para>
+</listitem>
+
+<listitem>
+<para
+>Os objectos não-inicializados tentar-se-ão criar 'a posteriori' quando forem usados pela primeira vez </para>
+
+<programlisting
+>Arts::Synth_PLAY p;
+   string s = p.toString();
+</programlisting>
+<para
+>é algo diferente de fazer uma referência a um ponteiro NULL. Você não indicou ao objecto de todo o que ele é, e agora irá tentar usá-lo. A questão aqui é que você deseja ter uma instância local de um objecto Arts::Synth_PLAY. Claro que você poderá querer ter algo diferente (como criar o objecto noutro local qualquer, ou usar um objecto remoto existente). Contudo, é um atalho conveniente para criar objectos. A criação tardia não irá funcionar logo que tenha atribuído outra coisa qualquer (como por exemplo uma referência nula). </para>
+
+<para
+>Os termos equivalentes em C++ seriam <programlisting>
+   QWidget* janela;
+   janela-&gt;show();
+</programlisting
+> o que obviamente, em C++, iria dar um estoiro garantido. Por isso, isto é diferente aqui. Esta criação tardia é enganadora, porque não quer dizer que exista necessariamente uma implementação para a sua interface. </para>
+
+<para
+>Por exemplo, considere uma coisa abstracta como um Arts::PlayObject. Existem decerto PlayObjects concretos como os que existem para tocar MP3s ou WAVs, mas o <programlisting>
+   Arts::PlayObject objecto;
+   objecto.play();
+</programlisting
+> irá falhar de certeza. O problema é que, ainda que a criação tardia funcione e tente criar um PlayObject, irá falhar, dado que existem coisas do tipo Arts::WavPlayObject e outros do género. Daí, use a criação tardia apenas se tiver a certeza que existe uma implementação. </para>
+</listitem>
+
+<listitem>
+<para
+>As referência podem apontar para o mesmo objecto </para>
+
+<programlisting
+>Arts::SimpleSoundServer s = Arts::Reference("global:Arts_SimpleSoundServer");
+   Arts::SimpleSoundServer s2 = s;
+</programlisting>
+
+<para
+>cria duas referências para o mesmo objecto. Isto não copia nenhum valor e não cria dois objectos. </para>
+</listitem>
+
+<listitem>
+<para
+>Todos objectos fazem contagem das referências. Por isso, logo que um objecto já não seja mais referenciado por nenhum outro objecto, é removido. Não existe nenhuma forma explícita de remover um objecto, contudo poderá usar algo do género <programlisting>
+   Arts::Synth_PLAY p;
+   p.start();
+   [...]
+   p = Arts::Synth_PLAY::null();
+</programlisting
+> para fazer com que o objecto Synth_PLAY se vá embora no fim. Especialmente não deverá ser necessário usar o 'new' e o 'delete' em conjunto com as referências. </para>
+</listitem>
+</itemizedlist>
+
+</sect2>
+
+<sect2 id="references-failure">
+<title
+>O caso de falha</title>
+
+<para
+>Dado que as referências poderão apontar para objectos remotos, os servidores que contenham esses objectos poderão estoirar. O que acontece então? </para>
+
+<itemizedlist>
+
+<listitem>
+<para
+>Um estoiro não muda se uma referência é nula. Isto significa que, se o <function
+>xpto.isNull()</function
+> foi <returnvalue
+>true</returnvalue
+> antes de um estoiro do servidor, então também será <returnvalue
+>true</returnvalue
+> depois do estoiro (o que parece claro). Significa também que, se o <function
+>xpto.isNull()</function
+> foi <returnvalue
+>false</returnvalue
+> antes de um estoiro do servidor (o 'xpto' fazia referência a um objecto), então também será <returnvalue
+>false</returnvalue
+> depois do estoiro do servidor. </para>
+</listitem>
+
+<listitem>
+<para
+>A invocação dos métodos numa referência válida mantém-se segura. Suponha que o servidor que contém o objecto 'calc' estoirou. Se continuar a invocar coisas do tipo <programlisting>
+   int k = calc.subtrair(i,j)
+</programlisting
+> estas serão seguras. Obviamente, o 'subtrair' terá de devolver algo aqui, o que não consegue porque o objecto remoto já não existe mais. Nesse caso, o (k == 0) será verdadeiro. Geralmente, as operações tentam devolver algo <quote
+>neutro</quote
+> como resultado, como por exemplo 0,0, uma referência nula para os objectos ou textos em branco, sempre que o objecto não existir mais. </para>
+</listitem>
+
+<listitem>
+<para
+>Se invocar o <function
+>error()</function
+> verá se algo correu bem ou mal. </para>
+
+<para
+>No caso de cima, o <programlisting>
+   int k = calc.subtrair(i,j)
+   if(k.error()) {
+      printf("O k não é igual a i-j!\n");
+   }
+</programlisting
+> iria imprimir <computeroutput
+>O k não é igual a i-j</computeroutput
+> sempre que a invocação remota não funcionasse. Caso contrário, o <varname
+>k</varname
+> é de facto o resultado da operação 'subtrair' efectuada pelo objecto remoto (sem estoiro do servidor). Contudo, para os métodos que fazem coisas como remover ficheiros, você não poderá saber de certeza se isso de facto aconteceu. Claro que aconteceu se o <function
+>.error()</function
+> devolveu <returnvalue
+>false</returnvalue
+>. Contudo, se o <function
+>.error()</function
+> devolveu <returnvalue
+>true</returnvalue
+>, existem duas possibilidades: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>O ficheiro foi removido, e o servidor estoirou logo depois de o remover, mas antes de transferir o resultado. </para>
+</listitem>
+
+<listitem>
+<para
+>O servidor estoirou antes de ser capaz de remover o ficheiro. </para>
+</listitem>
+</itemizedlist>
+</listitem>
+
+<listitem>
+<para
+>O uso de invocações aninhadas é perigoso em programas resistentes a estoiros </para>
+
+<para
+>Se usar algo do tipo <programlisting>
+   janela.titlebar().setTitle("xpto");
+</programlisting
+> não é uma boa ideia. Suponha que você sabia que essa janela era uma referência de Window válida. Agora suponha que sabe que o <function
+>janela.titlebar()</function
+> iria devolver uma referência a Titlebar porque o objecto Window foi criado correctamente. Todavia, ainda a frase acima não é segura. </para>
+
+<para
+>O que poderia acontecer é que o servidor que continha o objecto Window tinha estoirado. Aí, independentemente de quão válida fosse a implementação de Window, você iria obter uma referência nula como resultado da operação 'janela.titlebar()'. E aí, obviamente, a invocação de 'setTitle' nessa referência nula iria provocar um estoiro à mesma. </para>
+
+<para
+>Por isso, uma variante segura disto seria <programlisting>
+   Titlebar titulo = janela.titlebar();
+   if(!janela.error())
+      titulo.setTitle("xpto");
+</programlisting
+>, adicionando o tratamento de erros apropriado, se o desejar. Se você não confiar na implementação de Window, você poderá também usar <programlisting>
+   Titlebar titulo = janela.titlebar();
+   if(!titulo.isNull())
+      titulo.setTitle("xpto");
+</programlisting
+> em que ambas são seguras. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Existem outras condições de falha, como a quebra de rede (suponha que você retira o cabo entre o seu servidor e o cliente enquanto a sua aplicação corre). Contudo, o efeito é o mesmo que um estoiro do servidor. </para>
+
+<para
+>De um modo geral, é claro uma questão de política a forma como você tenta eliminar os erros de comunicação na sua aplicação. Você poderá seguir o método de <quote
+>se o servidor estoirar, é necessário depurar o servidor até que nunca mais estoire de novo</quote
+>, o que significaria que você não se precisa de se incomodar com todos esses problemas. </para>
+
+</sect2>
+
+<sect2 id="references-internals">
+<title
+>Detalhes Internos: Contagem de Referências Distribuída</title>
+
+<para
+>Um objecto, para existir, precisa de pertencer a alguém. Se não pertencer, deixará de existir (mais ou menos) imediatamente. Internamente, a pertença é indicada ao chamar o <function
+>_copy()</function
+>, o qual incrementa uma contagem de referências e é devolvida ao invocar o <function
+>_release()</function
+>. Logo que a contagem de referências chegue a zero, será feito um 'delete'. </para>
+
+<para
+>Como variação do tema, a utilização remota é indicada pelo <function
+>_useRemote()</function
+> e desfeita pelo <function
+>_releaseRemote()</function
+>. Estas funções mantêm uma lista dos servidores que invocaram o objecto (e que, por esse motivo, o possuem). Isto é usado no caso deste servidor se desligar (&ie; estoiro, falha de rede), para remover as referência que ainda existem nos objectos. Isto é feito com o <function
+>_disconnectRemote()</function
+>. </para>
+
+<para
+>Agora existe um problema. Considere um valor devolvido. Normalmente, o objecto do valor devolvido não pertencerá mais à função que foi chamada. Também não pertencerá à função que chamou, até que a mensagem que mantém o objecto seja recebida. Deste modo, existe um tempo para os objectos <quote
+>sem dono</quote
+>. </para>
+
+<para
+>Agora, ao enviar um objecto, poder-se-á assumir que, assim que seja recebido, passará a ter um dono de novo, a menos que, mais uma vez, o receptor morra. Contudo, isto significa que é preciso ter um cuidado especial com os objectos, pelo menos ao enviá-los e provavelmente ao recebê-los, de modo a que não morra de uma vez. </para>
+
+<para
+>A forma como o &MCOP; faz isto é <quote
+>marcando</quote
+> os objectos que estão em vias de ser copiados para a rede. Antes de se dar início a uma cópia, o <function
+>_copyRemote</function
+> é invocado. Isto evita que o objecto seja libertado durante algum tempo (5 segundos). Logo que o receptor invoque o <function
+>_useRemote()</function
+>, a marca é removida de novo. Deste modo, todos os objectos que são enviado para a rede são marcados antes da transferência. </para>
+
+<para
+>Se o receptor obtiver um objecto que está no seu servidor, é óbvio que ele não irá invocar o <function
+>_useRemote()</function
+>. Para esse caso especial, o <function
+>_cancelCopyRemote()</function
+> existe para remover a marca manualmente. Para além disso, existe também a remoção de marcas temporizada, se tiver sido feita a marcação mas o destinatário não recebeu de facto o objecto (devido a um estoiro ou falha de rede). Isto é feito com a classe <classname
+>ReferenceClean</classname
+>. </para>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="detail-gui-elements">
+<title
+>Elementos &GUI;</title>
+
+<para
+>Os elementos &GUI; estão neste momento num estado experimental. Contudo, esta secção irá descrever o que é suposto acontecer aqui por isso, se você for um programador, você será capaz de perceber como é que o &arts; irá lidar com as &GUI;s no futuro. Existe já algum código, também. </para>
+
+<para
+>Os elementos &GUI; deverão ser usados para permitir às estruturas de síntese interagirem com o utilizador. No caso mais simples, o utilizador deverá ser capaz de modificar alguns parâmetros de uma estrutura directamente (como um factor de ganho que é usado antes do módulo final de reprodução). </para>
+
+<para
+>Nas opções mais complexas, pode-se imaginar que o utilizador deseja modificar os parâmetros de grupos de estruturas e/ou ainda não tem as estruturas a correr, como a modificação do envelope <acronym
+>ADSR</acronym
+> do instrumento &MIDI; activo no momento. Outra coisa seria mudar o nome do ficheiro de um instrumento baseado em amostras. </para
+> 
+
+<para
+>Por outro lado, o utilizador poderá querer monitorizar o que o sintetizador está a fazer. Poderão existir osciloscópios, analisadores de espectro, medidores de volume e outras <quote
+>experiências</quote
+> que mostram a curva de transferência na frequência de um dado módulo de filtragem. </para>
+
+<para
+>Finalmente, os elementos &GUI; deverão ser capazes de controlar a estrutura completa de o que é que está a correr dentro do &arts; e como. O utilizador deverá ser capaz de associar instrumentos a canais &MIDI;, iniciar novos processadores de efeitos, configurar a sua mesa de mistura principal (a qual é ela própria baseada em estruturas do &arts;) para ter mais um canal e usar outra estratégia para os seus equalizadores. </para>
+
+<para
+>Você pode ver - os elementos <acronym
+>GUI</acronym
+> deverão trazer todas as possibilidades do estúdio virtual que o &arts; deverá simular para o utilizador. Claro, eles deverão interagir de forma ordeira com as entradas &MIDI; (assim como as barras se deverão mexer se elas tiverem entradas &MIDI; que mudem também esse parâmetro), e provavelmente até elas próprias gerarem eventos, para permitir a interacção com o utilizador ser registada com o sequenciador. </para>
+
+<para
+>Tecnicamente, a ideia é ter uma classe de base de &IDL; para todos os elementos  (a <classname
+>Arts::Widget</classname
+>), e derivar um conjunto de elementos comuns desta (como o <classname
+>Arts::Poti</classname
+>, o <classname
+>Arts::Panel</classname
+>, o <classname
+>Arts::Window</classname
+>, ...). </para>
+
+<para
+>Aí, poder-se-á implementar estes elementos com uma biblioteca, como por exemplo o &Qt; ou o Gtk. Finalmente, os efeitos deverão criar as suas &GUI;s a partir dos elementos existentes. Por exemplo, um ' poderia criar a sua interface a partir de cinco objectos <classname
+>Arts::Poti</classname
+> e de uma <classname
+>Arts::Window</classname
+>. Por isso, SE existir uma implementação do &Qt; para esses elementos de base, o efeito deverá ser capaz de se apresentar, usando o &Qt;. Se existir uma implementação para Gtk, então deverá também funcionar para o Gtk (e assemelhar-se/funcionar mais ou menos da mesma forma). </para>
+
+<para
+>Finalmente, dado que tem sido utilizada aqui a  &IDL;, o &arts-builder; (ou outras ferramentas), serão capazes de ligar as interfaces visualmente, ou gerar automaticamente as interfaces com base nos parâmetros definidos, baseando-se apenas nas interfaces. Deverá ser relativamente simples criar uma classe para <quote
+>criar uma &GUI; a partir da descrição</quote
+>, que obtém uma descrição da &GUI; (contendo os vários parâmetros e elementos) e criar um objecto gráfico vivo a partir dele. </para>
+
+<para
+>Baseando-se na &IDL; e no modelo de componentes do &arts;/&MCOP;, deverá ser simples extender os objectos possíveis que podem ser usados na &GUI; de forma tão simples como para adicionar um 'plugin' que implementa um novo filtro para o &arts;. </para>
+
+</sect1>
+
+</chapter>

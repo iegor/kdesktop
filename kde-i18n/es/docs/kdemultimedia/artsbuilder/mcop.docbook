@@ -1,0 +1,1872 @@
+<!-- <?xml version="1.0" ?>
+<!DOCTYPE chapter PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" "dtd/kdex.dtd">
+To validate or process this file as a standalone document, uncomment
+this prolog. Be sure to comment it out again when you are done -->
+
+<chapter id="mcop">
+<title
+>&MCOP;: modelo de objetos y transmisión</title>
+
+<sect1 id="mcop-overview">
+
+<title
+>Introducción</title>
+
+<para
+>&MCOP; es el estándar que utiliza &arts; para: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>La comunicación entre los objetos. </para>
+</listitem>
+
+<listitem>
+<para
+>La transparencia de red. </para>
+</listitem>
+
+<listitem>
+<para
+>La descripción de entornos de objetos. </para>
+</listitem>
+
+<listitem>
+<para
+>Independencia del lenguaje. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Uno de los aspectos mas importantes de &MCOP; es el <emphasis
+>lenguaje de descripción de interfaces</emphasis
+>, &IDL;, por el cual muchas de las interfaces de &arts; y <acronym
+>API</acronym
+>s se definen en un lenguaje independiente. </para>
+
+<para
+>Para utilizar las interfaces &IDL; de C++, está compilado por el compilador &IDL; en código C++. Cuando implementa una interfaz, éste deriva del esqueleto de una clase &IDL; que el compilador ha generado. Cuando utiliza una interfaz está utilizando un envoltorio. De esta forma, &MCOP; puede utilizar un protocolo si el objeto con el que se está comunicando no es local (de forma transparente a la red). </para>
+
+<para
+>Este capítulo se propone describir las características básicas del modelo de objetos que resulta del uso de &MCOP;, el protocolo, cómo usar &MCOP; en C++ (lenguaje asociado), y mucho más. </para>
+
+</sect1>
+
+<sect1 id="interfaces">
+
+<title
+>Interfaces e &IDL;</title>
+
+<para
+>Muchos de los servicios proporcionados por &arts;, como los módulos y el servidor de sonido, se definen en términos de <acronym
+>interfaces</acronym
+>. Las interfaces se especifican en un lenguaje de programación de formato independiente: &IDL;. </para>
+
+<para
+>Ésto permite implementar que, muchos detalles como el formato de las transmisiones de datos multimedia, transparencia de red y dependencias del lenguaje de programación, estén ocultos desde la especificación de la interfaz. La herramienta, &mcopidl;, traduce la defición de interfaz a un lenguaje de programación específico (actualmente solo está soportado C++). </para>
+
+<para
+>La herramienta genera un esqueleto con todo el código y la funcionalidad básicos. De esta clase podrá derivar las características que desee. </para>
+
+<para
+>El &IDL; usado por &arts; es similar al usado por <acronym
+>CORBA</acronym
+>  y <acronym
+>DCOM</acronym
+>. </para>
+
+<para
+>Los archivos &IDL; pueden contener: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Directivas #include al estilo C para otros archivos &IDL;. </para>
+</listitem>
+
+<listitem>
+<para
+>Definición de tipos de enumeraciones y estructuras, cono en C/C++. </para>
+</listitem>
+
+<listitem>
+<para
+>Definición de interfaces. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>En &IDL;, las interfaces se definen como una clase C++ o como una estructura C, pero con algunas restricciones. Como en C++, las interfaces pueden contener otras interfaces usando la herencia. Las definiciones de interfaces pueden incluír tres cosas: transmisiones, atributos y métodos. </para>
+
+<sect2 id="streams">
+
+<title
+>Transmisiones</title>
+
+<para
+>Las transmisiones definen datos multimedia, uno de los componentes más importantes de un módulo. Las transmisiones se definen con el siguiente formato: </para>
+
+<para
+>[ async ] in|out [ multi ] <replaceable
+>tipo</replaceable
+> stream <replaceable
+>nombre</replaceable
+> [ , <replaceable
+>nombre</replaceable
+> ] ; </para>
+
+<para
+>Los transmisiones tienen una dirección definida con respecto al módulo, que se indica con las partículas in y out. El tipo de argumento define el tipo de datos, que puede ser uno de los tipos descritos más tarde para los atributos (no todos están actualmente soportados). Muchos módulos usan el tipo de transmisión de audio, que es un alias para 'punto flotante' ya que es el formato interno de datos usado para la transmisión de audio. Se pueden definir múltiples transmisiones del mismo tipo en la misma definición utilizando nombres separados por comas. </para>
+
+<para
+>Las transmisiones son de manera predeterminada síncronas, que significa que son corrientes contínuas de datos a un ratio constante, como el audio <acronym
+>PCM</acronym
+>. El calificador async especifica una transmisión asíncrona, que se usa para corrientes discontínuas de datos. El ejemplo más común de flujo asíncrono es los mensajes &MIDI;. </para>
+
+<para
+>La palabra clave multi, sólo válida para transmisiones de entrada, indica que la interfaz soporta un número variable de entradas. Ésto es útil para implementar dispositivos como mezcladores que puedan aceptar cualquier número de transmisiones de entrada. </para>
+
+</sect2>
+<sect2 id="attributes">
+
+<title
+>Atributos</title>
+
+<para
+>Los atributos son datos asociados con una instancia de una interfaz. Se declaran como variables miembro en C++, y puede usar algunos de los tipos primitivos boolean, byte, long, string o float. Puede también usar tipos enumerados o estructuras definidas por el usuario así como secuencias de tamaño variable usando la sintaxis sequence&lt;type&gt;. Los atributos pueden ser opcionalmente marcados como solo léctura. </para>
+
+</sect2>
+<sect2 id="methods">
+
+<title
+>Métodos</title>
+
+<para
+>Como en C++, los métodos pueden definirse en las interfaces. Los parámetros de los métodos están restringidos al mismo tipo que los atributos. La palabra clave oneway indica un método que retorna inmediatamente y se ejecuta asincrónicamente. </para>
+
+</sect2>
+
+<sect2 id="standardinterfaces">
+
+<title
+>Interfaces estándar</title>
+
+<para
+>Muchas interfaces de módulos estándar están ya definidas en &arts;, como <interfacename
+>StereoEffect</interfacename
+> y <interfacename
+>SimpleSoundServer</interfacename
+>. </para>
+
+</sect2>
+
+<sect2 id="example">
+<title
+>Ejemplo</title>
+
+<para
+>Un simple ejemplo de módulo sacado de &arts; es el módulo retraso constante, alojado en el archivo <filename
+>kdemultimedia/arts/modules/artsmodules.idl</filename
+>. La definición de la interfaz se lista a continuación. </para>
+
+<programlisting
+>interface Synth_CDELAY : SynthModule {
+        attribute float time;
+        in audio stream invalue;
+        out audio stream outvalue;
+};
+</programlisting>
+
+<para
+>Este módulo se hereda de <interfacename
+>SynthModule</interfacename
+>. Esta interfaz, definida en <filename
+>artsflow.idl</filename
+>, define los métodos estándar implementados en todos los módulos de sintetizadores de música. </para>
+
+<para
+>CDELAY provoca un retraso en la transferencia del audio estéreo durante el tiempo especificado como un parámetro de coma flotante. La definición del interfaz tiene un atributo de tipo número de coma flotante para guardar el valor del retraso. Define dos transferencias de entrada de audio y dos de salida (habitual en los efectos estereofónicos). No precisa de otros métodos cuando se heredan éstos. </para>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="more-about-streams">
+<title
+>Más sobre transmisiones</title>
+
+<para
+>Esta sección añade algunos consejos relacionados con las transmisiones. </para>
+
+<sect2 id="stream-types">
+<title
+>Tipos de transmisión</title>
+
+<para
+>Hay algunos requerimientos para que un módulo pueda hacer transmisión. Para ilustrar esto, considere los siguientes ejemplos: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Escalar una señal por un factor dos. </para>
+</listitem>
+
+<listitem>
+<para
+>Realizar conversiones de la frecuencia de muestreo. </para>
+</listitem>
+
+<listitem>
+<para
+>Descomprimir una señal codificada con RLE. </para>
+</listitem>
+
+<listitem>
+<para
+>Leer eventos &MIDI; desde <filename class="devicefile"
+>/dev/midi00</filename
+> e insertarlos en una transmisión. </para>
+</listitem
+> 
+</itemizedlist>
+
+<para
+>El primer caso es el más simple: una vez que se reciben 200 muestras de entrada el módulo produce 200 muestras de salida. Solamente produce salida cuando recibe una entrada. </para>
+
+<para
+>El segundo caso produce diferentes números de muestras de salida cuando recibe 200 muestras de entrada. Depende de la conversión que se realice, pero ese número se conoce a priori. </para>
+
+<para
+>El tercer caso es incluso peor. Ya desde el principio no podrá averiguar cuántos datos reciben entradas de 200 bytes (probablemente muchos más de 200 bytes, pero...). </para>
+
+<para
+>El último caso es un módulo que viene activo por sí mismo, y que en ocasiones produce datos. </para>
+
+<para
+>En &arts;-0.3.4, solo se manejaban las transmisiones de primer tipo, y la mayor parte de las cosas funcionaban. Ésto es lo que probablemente necesitaba para escribir módulos que procesen audio. El problema con los demás tipos más complejos de transmisión, es que son difíciles de programar, y la mayor parte de las veces no necesitará estas características. Esto se debe a que podemos hacerlo con dos tipos diferentes de transmisiones: síncrona y asíncrona. </para>
+
+<para
+>Las transmisiones síncronas tienen estas características: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Los módulos deben ser capaces de calcular datos de cualquier longitud, dada una entrada suficiente. </para>
+</listitem>
+
+<listitem>
+<para
+>Todas las transmisiones tienen el mismo ratio de muestreo. </para>
+</listitem>
+
+<listitem>
+<para
+>La función <function
+>calculateBlock()</function
+> se llamará cuando existan suficientes datos disponibles, y el módulo pueda depender de que los punteros apunten a los datos. </para>
+</listitem
+> 
+
+<listitem>
+<para
+>No se puede hacer asignación ni liberación de memoria. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>La transmisión asíncrona, por otro lado, sigue este comportamiento: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Los módulos pueden producir datos algunas veces, o con ratio de muestreo variable, o solo si reciben una entrada desde algún descriptor de archivo. No se rigen por la regla «tener que ser capaces de satisfacer peticiones de cualquier tamaño». </para>
+</listitem>
+
+<listitem>
+<para
+>Las transmisiones asíncronas de un módulo pueden tener ratios de muestreo completamente diferentes. </para>
+</listitem>
+
+<listitem>
+<para
+>Transmisiones salientes: hay funciones específicas para asignar paquetes, para enviar paquetes, y un mecanismo opcional de votación que le dirá cuando debe crear más datos. </para>
+</listitem>
+
+<listitem>
+<para
+>Transmisiones entrantes: puede recibir una llamada cuando recibe un nuevo paquete. Tendría que establecer cuándo se procesan todos los datos del paquete, si no lo hacen de una vez (lo podrá decidir posteriormente, y en el caso de que alguien haya procesado un paquete, indicar si se liberará/reutilizará). </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Cuando declare transmisiones, utilice la palabra clave «async» para indicar que desea hacer un flujo asíncrono. Así, por ejemplo, imaginemos que desea convertir una transimisión asíncrona de bytes en una transmisión síncrona de muestras. Su interfaz debería parecerse a esto: </para>
+
+<programlisting
+>interface TransmisionDeByteAAudio : SynthModule {
+    async in byte stream entrada;   // la transmisión asíncrona de entrada de muestras
+
+    out audio stream izquierda,derecha;   // la transmisión síncrona de salida de muestras
+};
+</programlisting>
+
+</sect2>
+
+<sect2 id="async-streams">
+<title
+>Utilizar transmisiones asíncronas</title>
+
+<para
+>Suponga que decide escribir un módulo para producir sonido asíncronamente. Su interfaz puede parecerse a algo como esto: </para>
+
+<programlisting
+>interface UnModulo : SynthModule
+{
+    async out byte stream salida;
+};
+</programlisting>
+
+<para
+>¿Cómo puede enviar los datos? El primer método se llama «push delivery» (entrega por empuje). Con las transmisiones asíncronas envía los datos como paquetes. Ésto significa que envía paquetes individuales con bytes como en el ejemplo de arriba. El proceso actual es: asignar un paquete, rellenarlo, enviarlo. </para>
+
+<para
+>Ahora en términos de código. Primero asignamos el paquete: </para>
+
+<programlisting
+>DataPacket&lt;mcopbyte&gt; *paquete = salida.allocPacket(100);
+</programlisting>
+
+<para
+>Ahora lo rellenamos: </para>
+
+<programlisting
+>// convertir de modo que fgets contenga un puntero (char *)
+char *datos = (char *)paquete-&gt;contents;
+
+// como puede ver, podrá reducir el tamaño del paquete tras la asignación
+// si así lo desea
+if(fgets(datos,100,stdin))
+    paquete-&gt;size = strlen(datos);
+else
+    paquete-&gt;size = 0;
+</programlisting>
+
+<para
+>Ahora lo enviamos: </para>
+
+<programlisting
+>paquete-&gt;send();
+</programlisting>
+
+<para
+>Ésto es muy simple, pero si deseamos enviar paquetes con la misma velocidad que el receptor pueda procesarlos, necesitaremos otra aproximación, el método «pull delivery» (entrega por empuje). Envía paquetes tan pronto como el receptor está preparado para procesarlos. Empieza con una cierta cantidad de paquetes que envía. Cuando el receptor procesa un paquete tras otro, se comenzará a rellenarlos con datos nuevos y se enviarán nuevamente. </para>
+
+<para
+>Empiece llamando a setPull. Por ejemplo: </para>
+
+<programlisting
+>salida.setPull(8, 1024);
+</programlisting>
+
+<para
+>Significa que desea enviar paquetes sobre los datos de salida. Tiene que empezar enviando 8 paquetes de una vez, y cuando el receptor procese alguno de ellos, tiene que rellenarlos. </para>
+
+<para
+>Entonces, necesita implementar un método que llene los paquetes, que podría parecerse a esto: </para>
+
+<programlisting
+>void request_salida(DataPacket&lt;mcopbyte&gt; *paquete)
+{
+    paquete-&gt;size = 1024;  // no debe ser mayor que 1024
+    for(int i = 0;i &lt; 1024; i++)
+        paquete-&gt;contents[i] = (mcopbyte)'A';
+    paquete-&gt;send();
+}
+</programlisting>
+
+<para
+>Ya está. Cuando se necesite enviar más datos, se puede empezar a enviar paquetes con tamaño cero, lo que detendrá la recepción. </para>
+
+<para
+>Fíjese que es esencial dar al método el nombre exacto <methodname
+>request_<replaceable
+>nombre_transmision</replaceable
+></methodname
+>. </para>
+
+<para
+>Empezamos enviando datos. Recibirlos es mucho más sencillo. Suponga que tiene un filtro ParaMinusculas, que simplemente convierte todas las letras en minúsculas: </para>
+
+<programlisting
+>interface ParaMinusculas {
+    async in byte stream entrada;
+    async out byte stream salida;
+};
+</programlisting>
+
+<para
+>Es realmente simple de implementar. Aquí está la implementación completa: </para>
+
+<programlisting
+>class ParaMinusculas_impl : public ParaMinusculas_skel {
+public:
+    void process_entrada(DataPacket&lt;mcopbyte&gt; *paquete_entrada)
+    {
+        DataPacket&lt;mcopbyte&gt; *paquete_salida = salida.allocPacket(paquete_entrada-&gt;size);
+
+        // convierte a minúsculas
+        char *texto_entrada = (char *)paquete_entrada-&gt;contents;
+        char *texto_salida = (char *)paquete_salida-&gt;contents;
+
+        for(int i=0;i&lt;paquete_entrada-&gt;size;i++)
+            textosalida[i] = tolower(textoentrada[i]);
+
+        paquete_entrada-&gt;processed();
+        paquete_salida-&gt;send();
+    }
+};
+
+REGISTER_IMPLEMENTATION(ParaMinusculas_impl);
+</programlisting>
+
+<para
+>De nuevo, es esencial nombrar el método como <methodname
+>process_<replaceable
+>nombre_transmision</replaceable
+></methodname
+>. </para>
+
+<para
+>Como puede comprobar, para cada paquete que llega tiene una llamada para una función (llamada <function
+>process_entrada</function
+>en nuestro caso). Necesita llamar al método <methodname
+>processed()</methodname
+> de un paquete para indicar que lo ha procesado. </para>
+
+<para
+>Un consejo para la implementación: si el procesado tarda mucho (&ie;, si necesita esperar la salida de la tarjeta de sonido o algo similar), no llame a lo procesado inmediatamente, en su lugar almacene el paquete de datos completo y procese la llamada tan pronto como el paquete se haya procesado. De esta forma, los emisores tienen la posibilidad de saber cuanto durará su trabajo. </para>
+
+<para
+>Como la sincronización con flujos asíncronos no es muy buena, debe usar flujos síncronos cuando sea posible y flujos asíncronos solo cuando sea necesario. </para>
+
+</sect2>
+
+<sect2 id="default-streams">
+<title
+>Transmisiones predeterminadas</title>
+
+<para
+>Suponga que tiene 2 objetos, por ejemplo un ProductorDeAudio y un ConsumidorDeAudio. El ProductorDeAudio tiene una transmisión de salida y el ConsumidorDeAudio tiene una de entrada. Cada vez que intente conectarlos, usará estas 2 transmisiones. El primer uso de predeterminación es el de habilitarle para hacer las conexiones sin especificar los puertos. </para>
+
+<para
+>Ahora imagine que los dos objetos anteriores pueden manejar estéreo, y que cada uno tiene un puerto «izquierdo» y otro «derecho». Podría conectarse a ellos de una forma todavía más fácilmente que antes. Pero ¿cómo puede saber el sistema que se conecta cuál es el puerto de salida y cuál el de entrada? No existe una forma correcta de mapear la transmisión. De forma predeterminada se especifican varias transmisiones, con un orden. Así, cuando conecta un objeto con 2 salidas de transmisión predeterminada con otro con 2 entradas de transmisión predeterminadas, no necesitará especificar los puertos, y el mapeado se realizará de forma correcta. </para>
+
+<para
+>Por supuesto, no está limitado al estéreo. Cualquier número de transmisiones pueden declararse predeterminados si es necesario, y la función connect comprobará que el número predeterminado para 2 objetos coinciden (en la dirección requerida) si usted no especifica los puertos a usar. </para>
+
+<para
+>La sintaxis es la siguiente: en el &IDL;, puede usar la palabra clave 'default' en la declaración de la transmisión, o en una línea simple. Por ejemplo: </para>
+
+<programlisting
+>interface CombinarDosEnUno {
+    default in audio stream entrada1, entrada2;
+    out audio stream salida;
+};
+</programlisting>
+
+<para
+>En este ejemplo, el objeto esperará a sus dos puertos de entrada estén conectados de forma predeterminada. La orden es la especificada en la línea 'default', por lo que un objeto como este otro: </para>
+
+<programlisting
+>interface GeneradorDeRuidoDual {
+    out audio stream bzzt, couic;
+    default couic, bzzt;
+};
+</programlisting>
+
+<para
+>Hará conexiones de «couic» a «entrada1», y de «bzzt» a «entrada2» automáticamente. Tenga en cuenta que como solo hay una entrada para el mezclador, en este caso se hará de forma predeterminada (ver a continuación). La sintaxis utilizada en el generador de ruido es práctica para declarar un orden diferente que en la declaración, o seleccionando únicamente unos pocos puertos predeterminados. Las direcciones de los puertos en esta línea se pueden buscar por &mcopidl;, por tanto no lo especifique. Incluso puede mezclar puertos de entrada y de salida en cada línea, sólo es importante el orden. </para>
+
+<para
+>Cuando se utiliza la herencia se deben seguir ciertas reglas: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Si hay una lista predeterminada especificada en el &IDL;, la utilizará. Los puertos padre pueden ser colocados en esta lista también, ya sean predefinidos en el padre o no. </para>
+</listitem>
+
+<listitem>
+<para
+>En otro caso hereda los valores predeterminados del padre. El orden es padre1 predeterminado1, padre1 predeterminado2.., padre2 predeterminado1... Si existe un antecedente común a ambos utilizando 2 ramas padre, se realiza una mezcla similar a un «virtual public» de forma predeterminada en la primera aparición de la lista. </para>
+</listitem>
+
+<listitem>
+<para
+>Si todavía no hay una predeterminada y existe una transmisión simple en una dirección, ésta se utiliza como predeterminada para esta dirección. </para>
+</listitem>
+</itemizedlist>
+
+</sect2>
+
+</sect1>
+<sect1 id="attribute-change-notify">
+<title
+>Notificaciones de cambio de atributos</title>
+
+<!-- TODO: This should be embedded better into the context - I mean: the
+ context should be written ;-). -->
+
+<para
+>Las notificaciones de cambio de atributos son una forma de saber cuando un atributo cambia. Es comparable con las señales y slots de &Qt; o Gtk. Por ejemplo, si tiene un elemento de una &GUI;, un deslizador, que configura un número entre 0 y 100, normalmente dispondrá de un objeto que haga algo con ese número (por ejemplo, podría estar controlando el volumen de alguna señal de audio). Por lo que le gustaría que una vez que el deslizador se mueva, el objeto que escala el volumen reciba una notificación. Una conexión entre un emisor y un receptor. </para>
+
+<para
+>&MCOP; negocia con ésto, siendo capaz de efectuar notificaciones cuando los atributos cambian. Lo que se declara como «atributo» en el &IDL;, puede emitir estas notificaciones de cambio, y debería hacerlo, cuando se producen modificaciones. Aquello que se declara como «atributo» también puede recibir estas notificaciones. Así, por ejemplo, si tiene dos interfaces &IDL;, como estos: </para>
+
+<programlisting
+>interface Deslizador {
+         attribute long min,max;
+         attribute long posicion;
+ };
+ interface ControlDeVolumen : Arts::StereoEffect {
+     attribute long volume; // 0..100
+ };
+</programlisting>
+
+<para
+>Puede conectarlos usando notificaciones de cambio. Funciona usando la operación normal de conectar el sistema de flujo. En este caso, el código C++ para conectar dos objetos se parecería a esto: </para>
+
+<programlisting
+>#include &lt;connect.h&gt;
+using namespace Arts;
+[...]
+connect(deslizador,"position_changed",volumeControl,"volume");
+</programlisting>
+
+<para
+>Como puede ver, cada atributo ofrece dos flujos diferentes, uno para enviar notificaciones de cambio, llamado <function
+><replaceable
+>nombre_atributo</replaceable
+>_changed</function
+>, y uno para recibir notificaciones de cambio, llamado <function
+>nombre_atributo</function
+>. </para>
+
+<para
+>Es importante saber que las notificaciones de los cambios y las transmisiones asíncronas son compatibles. Son transparentes a la red. Por eso puede conectar una notificación de un cambio de un atributo en coma flotante de un componente de un &GUI; a una transmisión asíncrona de un módulo de síntesis que se esté ejecutando en otro ordenador. Esto implica que las notificaciones de cambio son <emphasis
+>no síncronas</emphasis
+>, lo que significa que después de que haya enviado la notificación de cambio, pasará algún tiempo hasta que la reciba realmente. </para>
+
+<sect2 id="sending-change-notifications">
+
+<title
+>Enviando notificaciones de cambio</title>
+
+<para
+>Cuando implementa objetos que contienen atributos, necesita enviar notificaciones de cambio cuando un atributo cambia. El código para hacer esto debe parecerse a esto: </para>
+
+<programlisting
+>void KPoti_impl::value(float nuevoValor)
+ {
+     if(nuevoValor != _valor)
+     {
+         _valor = nuevoValor;
+         value_changed(nuevoValor); // &lt;- envía notificación de cambio
+     }
+ }
+</programlisting>
+ 
+<para
+>Es altamente recomendable utilizar código como éste para todos los objetos que implemente, ya que las notificaciones de cambio puede ser utilizadas por otras personas. Debería sin embargo evitar el envío de notificaciones con demasiada frecuencia, ya que si está procesando la señal, probablemente será mejor que mantenga un registro de cuando envió la última notificación, de forma que no envíe una con cada muestra que procese. </para>
+
+</sect2>
+
+<sect2 id="change-notifications-apps">
+<title
+>Aplicaciones para notificaciones de cambio</title>
+
+<para
+>Es especialmente práctico utilizar notificaciones de cambio junto con osciloscopios (elementos que visualizan datos de audio, por ejemplo), elementos gráficos, elementos de control, y monitorización. El código que utiliza esto se encuentra en <filename class="directory"
+>kdelibs/arts/tests</filename
+>, y en la implementación experimental de artsgui, que puede encontrar en <filename class="directory"
+>kdemultimedia/arts/gui</filename
+>. </para>
+
+<!-- TODO: can I markup links into the source code - if yes, how? -->
+
+<!-- LW: Linking into the source is problematic - we can't assume people are
+reading this on a machine with the sources available, or that they aren't
+reading it from a website. We're working on it! -->
+
+</sect2>
+</sect1>
+
+<sect1 id="the-mcoprc-file">
+
+<title
+>El archivo <literal role="extension"
+>.mcoprc</literal
+></title>
+
+<para
+>El archivo <literal role="extension"
+>.mcoprc</literal
+> (se encuentra en cada carpeta personal de cada usuario) puede usarse para configurar &MCOP; de diferentes maneras. Actualmente, son posibles las siguientes: </para>
+
+<variablelist>
+
+<varlistentry>
+<term
+>GlobalComm</term>
+<listitem>
+<para
+>El nombre de un interfaz que se utilizará para la comunicación global. La comunicación global se utiliza para encontrar otros objetos y para obtener la cookie secreta. Los múltiples clientes/servidores &MCOP; deberían ser capaces de hablar entre ellos y para ello necesitan un objeto GlobalComm que sea capaz de compartir información entre ellos. Actualmente, los posibles valores son «Arts::TmpGlobalComm» para comunicarse a través de la carpeta <filename class="directory"
+>/tmp/mcop-<replaceable
+>nombreusuario</replaceable
+></filename
+> (que únicamente pueden trabajar en el ordenador local) y «Arts::X11GlobalComm» para comunicarse a través de las propiedades de la ventana raíz en el servidor X11. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>TraderPath</term>
+
+<listitem>
+<para
+>Especifica dónde encontrar la información de negociación. Puede enumerar más de una carpeta aquí separándolas por comas, como en el ejemplo. </para>
+</listitem>
+
+</varlistentry>
+
+<varlistentry>
+<term
+>ExtensionPath</term>
+
+<listitem>
+<para
+>Especifica qué extensiones de carpetas se cargarán (en forma de bibliotecas compartidas). Se pueden especificar múltiples valores separados por comas. </para>
+</listitem>
+
+</varlistentry>
+</variablelist>
+
+<para
+>Un ejemplo que usa todo lo que se describe arriba: </para>
+
+<programlisting
+># archivo $HOME/.mcoprc
+GlobalComm=Arts::X11GlobalComm
+
+# si es un desarrollador, puede ser práctico añadir una carpeta en su carpeta personal
+# para que la ruta del negociador/extensión sea capaz de añadir componentes sin
+# instalarlos
+TraderPath="/opt/kde2/lib/mcop","/home/jose/mcopdesarrollo/mcop"
+ExtensionPath="/opt/kde2/lib","/home/jose/mcopdesarrollo/lib"
+</programlisting>
+
+</sect1>
+
+<sect1 id="mcop-for-corba-users">
+<title
+>&MCOP; para usuarios de <acronym
+>CORBA</acronym
+></title>
+
+<para
+>Si ha usado <acronym
+>CORBA</acronym
+> antes, verá que &MCOP; es más o menos lo mismo. De hecho, &arts; antes de la versión 0.4 usaba <acronym
+>CORBA</acronym
+>. </para>
+
+<para
+>La idea básica de <acronym
+>CORBA</acronym
+> es la misma: implementar objetos (componentes). Usando las características de &MCOP;, sus objetos no están solo disponibles como clases normales del mismo proceso (via técnicas estándar de C++), sino también para servidores remotos de forma transparente. Para este trabajo, lo primero que necesita hacer es especificar la interfaz de sus objetos en un archivo &IDL;, al igual que el &IDL; de <acronym
+>CORBA</acronym
+>. Solo hay unas pequeñas diferencias. </para>
+
+<sect2 id="corba-missing">
+<title
+>Características de <acronym
+>CORBA</acronym
+> que no existen en &MCOP;</title>
+
+<para
+>En &MCOP; no existen los parámetros «in» y «out» en las invocaciones de métodos. Los parámetros son siempre de entrada, el código de retorno es siempre de salida, lo que significa que la interfaz: </para>
+
+<programlisting
+>// idl CORBA
+interface Contabilizar {
+  void cargar( in long importe );
+  void abonar( in long importe );
+  long saldo();
+};
+</programlisting>
+
+<para
+>se escribe como: </para>
+
+<programlisting
+>// idl MCOP
+interface Contabilizar {
+  void cargar( long importe );
+  void abonar( long importe );
+  long saldo();
+};
+</programlisting>
+
+<para
+>en &MCOP;. </para>
+
+<para
+>No existe soporte de excepciones. &MCOP; no tiene excepciones, utiliza algo diferente para la gestión de errores. </para>
+
+<para
+>No existen tipos 'union' ni 'typedef'. No se si realmente es un fallo, o una medida desesperada para sobrevivir. </para>
+
+<para
+>No existe soporte para interfaces pasivas o referencias a objetos. </para>
+
+</sect2>
+
+<sect2 id="corba-different">
+<title
+>Características de <acronym
+>CORBA</acronym
+> que son diferentes en &MCOP;</title>
+
+<para
+>Declara secuencias como «secuencia<replaceable
+>tipo</replaceable
+>» en &MCOP;. No se necesita 'typedef'. Por ejemplo, en lugar de: </para>
+
+<programlisting
+>// idl CORBA
+struct Linea {
+    long x1,y1,x2,y2;
+};
+typedef sequence&lt;Linea&gt; Lineas;
+interface Trazador {
+    void trazar(in Lineas lineas);
+};
+</programlisting>
+
+<para
+>usted escribiría </para>
+
+<programlisting
+>// idl MCOP
+struct Linea {
+    long x1,y1,x2,y2;
+};
+interface Trazador {
+    void trazar(sequence&lt;Linea&gt; lineas);
+};
+</programlisting>
+
+</sect2>
+
+<sect2 id="no-in-corba">
+<title
+>Características de &MCOP; que no existen en <acronym
+>CORBA</acronym
+></title>
+
+<para
+>Puede declarar transmisiones, que se evaluarán por el entorno de trabajo &arts;. Las transmisiones se declaran de manera similar a los atributos. Por ejemplo: </para>
+
+<programlisting
+>// idl MCOP
+interface Synth_SUMAR : SynthModule {
+    in audio stream señal1,señal2;
+    out audio stream salida;
+};
+</programlisting>
+
+<para
+>Esto indica que su objeto aceptará dos transmisiones de audio síncronas entrantes llamadas señal1 y señal2. Síncrono significa que son transmisiones que entregan x muestras por segundo (u otro periodo de tiempo), de forma que el planificador garantizará que siempre proporcione una cantidad equilibrada de datos de entrada (&eg; 200 muestras de la señal1 y 200 de la señal2). Garantizará esto si su objeto es llamado con estas 200 muestras de señal1 + señal2, que producirá exactamente 200 muestra de valor de salida. </para>
+
+</sect2>
+
+<sect2 id="mcop-binding">
+<title
+>Las uniones en el lenguaje C++ en &MCOP;</title>
+
+<para
+>Difiere de <acronym
+>CORBA</acronym
+> principalmente en: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Las cadenas utilizan la clase <acronym
+>STL</acronym
+> <classname
+>string</classname
+> de C++. Cuando se guardan secuencias, se guardan «planas», lo que significan que son consideradas un tipo primitivo. Por esta razón necesitan ser copiadas. </para>
+</listitem>
+
+<listitem>
+<para
+>Los números 'long' son 'long' normales (excepto los de 32 bit). </para>
+</listitem>
+
+<listitem>
+<para
+>Las secuencias utilizan la clase <acronym
+>STL</acronym
+> <classname
+>vector</classname
+> de C++. </para>
+</listitem>
+
+<listitem>
+<para
+>Todas las estructuras se derivan de la clase &MCOP; <classname
+>Type</classname
+>, y se generan por el compilador &IDL; de &MCOP;. Cuando se guardan en secuencias, no se guardan de forma «plana», sino como punteros, ya que sino se realizaría demasiado trabajo de copiado. </para>
+</listitem>
+</itemizedlist>
+</sect2>
+
+<sect2 id="implementing-objects">
+<title
+>Implementando objetos &MCOP;</title>
+
+<para
+>Después de haber pasado a través del compilador &IDL;, necesitará derivarlos de la clase <classname
+>_skel</classname
+>. Por ejemplo, imagine que tiene definida una interfaz como esta: </para>
+
+<programlisting
+>// idl MCOP: hola.idl
+interface Hola {
+    void hola(string s);
+    string concatenar(string s1, string s2);
+    long sumar2(long a, long b);
+};
+</programlisting>
+
+<para
+>Podrá pasar ésto por el compilador &IDL; haciendo <userinput
+><command
+>mcopidl</command
+> <parameter
+>hola.idl</parameter
+></userinput
+>, que debería generar <filename
+>hola.cc</filename
+> y <filename
+>hola.h</filename
+>. Para implementarlo, necesitará definir una clase C++ que herede el esqueleto: </para>
+
+<programlisting
+>// archivo cabecera C++ - incluir hola.h en algún sitio
+class Hola_impl : virtual public Hola_skel {
+public:
+    void hola(const string&amp; s);
+    string concatenar(const string&amp; s1, const string&amp; s2);
+    long sumar2(long a, long b);
+};
+</programlisting>
+
+<para
+>Finalmente, necesitará implementar los métodos de la forma habitual en C++. </para>
+
+<programlisting
+>// archivo de implementación C++
+
+// como puede ver las cadenas se pasan como referencias a const string (constantes de cadena)
+void Hola_impl::hola(const string&amp; s)
+{
+    printf("Hola '%s'!\n",s.c_str());
+}
+
+// cuando devuelvan un código se pasarán como cadenas «normales»
+string Hola_impl::concat(const string&amp; s1, const string&amp; s2)
+{
+    return s1+s2;
+}
+
+long Hola_impl::sumar2(long a, long b)
+{
+    return a+b;
+}
+</programlisting>
+
+<para
+>Una vez que haya hecho esto, tendrá un objeto que podrá comunicarse utilizando &MCOP;. Cree uno (use las funcionalidades habituales de C++ para crear un objeto): </para>
+
+<programlisting
+>Hola_impl servidor;
+</programlisting>
+
+<para
+>y tan pronto como dé a alguien la referencia: </para>
+
+<programlisting
+>string referencia = servidor._toString();
+    printf("%s\n",referencia.c_str());
+</programlisting>
+
+<para
+>e ir al ciclo de inactividad de &MCOP;: </para>
+
+<programlisting
+>Dispatcher::the()-&gt;run();
+</programlisting>
+
+<para
+>La gente puede acceder a las cosas utilizando: </para>
+
+<programlisting
+>// este código puede ejecutarse en cualquier parte, no necesariamente en el mismo proceso
+// (también puede ejecutarse en un ordenador/arquitectura diferente)
+
+    Hola *h = Hola::_fromString([la referencia al objeto impreso anteriormente]);
+</programlisting>
+
+<para
+>y llamar a los métodos: </para>
+
+<programlisting
+>if(h)
+        h-&gt;hola("prueba");
+    else
+        printf("¿Falló el acceso?\n");
+</programlisting>
+
+</sect2>
+</sect1>
+
+<sect1 id="mcop-security">
+<title
+>Consideraciones de seguridad de &MCOP;</title>
+
+<para
+>Como los servidores &MCOP; escucharán en un puerto <acronym
+>TCP</acronym
+>, potencialmente, todo el mundo (si está conectado a Internet) puede intentar conectarse a los servicios &MCOP;. Por esta razón, es importante autentificar a los clientes. &MCOP; utiliza el protocolo md5-auth. </para>
+
+<para
+>El protocolo md5-auth hace lo siguiente para asegurarse que únicamente los clientes seleccionados (de confianza) pueden conectarse al servidor: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Asume que da a los clientes una cookie secreta. </para>
+</listitem>
+
+<listitem>
+<para
+>Cada vez que un cliente se conecta, verifica que este cliente conoce la cookie secreta, sin transferirla (no sea que alguien que esté escuchando el tráfico de la red pueda descubrirla). </para>
+</listitem>
+
+</itemizedlist>
+
+<para
+>Para dar a cada cliente la cookie secreta, &MCOP; la colocará (normalmente) en la carpeta <filename class="directory"
+>mcop</filename
+> (en <filename class="directory"
+>/tmp/mcop-<envar
+>USER</envar
+>/secret-cookie</filename
+>). Por supuesto, puede copiarla a otros ordenadores. Sin embargo, si lo hace, utilice un mecanismo de transferencia segura, como <command
+>scp</command
+> (en <application
+>ssh</application
+>). </para>
+
+<para
+>La autentificación de los clientes sigue los siguientes pasos: </para>
+
+<procedure>
+<step>
+<para
+>[SERVIDOR] genera una cookie nueva (aleatoria) R. </para>
+</step>
+
+<step>
+<para
+>[SERVIDOR] la envía al cliente. </para>
+</step>
+
+<step>
+<para
+>[CLIENTE] lee la «cookie secreta» S desde un archivo. </para>
+</step>
+
+<step>
+<para
+>[CLIENTE] baraja las cookies R y S y las transforma en una cookie barajada M utilizando el algoritmo MD5. </para>
+</step>
+
+<step>
+<para
+>[CLIENTE] envía M al servidor. </para>
+</step>
+
+<step>
+<para
+>[SERVIDOR] verifica que las R y S barajadas dan el mismo resultado que la cookie M recibida por el cliente. Si esto es así, la autentificación es correcta. </para>
+</step>
+
+</procedure>
+
+<para
+>Este algoritmo debería ser seguro, debido a: </para>
+
+<orderedlist>
+<listitem>
+<para
+>Las cookies secretas y la aleatoria son «suficientemente aleatorias». </para>
+</listitem>
+
+<listitem>
+<para
+>El algoritmo de cálculo de clave MD5 no permite encontrar el «texto original», formado por la cookie S y la cookie aleatoria R (que de cualquier forma es conocida), a partir de la cookie barajada M. </para>
+</listitem>
+</orderedlist>
+
+<para
+>El protocolo &MCOP; comienza cada conexión nueva con un proceso de autentificación. Básicamente, se parece a esto: </para>
+
+<procedure>
+
+<step>
+<para
+>El servidor envía un mensaje ServerHello, que describe los protocolos de autentificación conocidos. </para>
+</step>
+
+<step>
+<para
+>El cliente envía un mensaje ClientHello, que incluye información de autentificación. </para>
+</step>
+
+<step>
+<para
+>El servidor envía un mensage AuthAccept. </para>
+</step>
+</procedure>
+
+<para
+>Para comprobar como funciona la seguridad, deberíamos echar un vistazo a cómo se procesan los mensajes en las conexiones sin autentificar: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Antes de que se produzca la autentificación, el servidor no recibirá otros mensajes de conexión. En su lugar, si el servidor, por ejemplo, espera un mensaje «ClienteHello», y obtiene un mensaje mcopInvocation, cerrará la conexión. </para>
+</listitem>
+
+<listitem>
+<para
+>Si el cliente no envía un mensaje &MCOP; válido (sin el código especial de &MCOP; en el mensaje de cabecera) en la fase de autentificación, sino otra cosa, la conexión se cerrará. </para>
+</listitem>
+
+<listitem>
+<para
+>Si el cliente intenta enviar un mensaje extremadamente largo (&gt; 4.096 bytes en la fase de autentificación, el tamaño del mensaje se truncará a 0 bytes, lo que provocará que no sea aceptado para la autentificación). Esto evita que los clientes que no estén autentificados envíen &eg; 100 megabytes de mensaje, que si se recibieran provocarían que el servidor se quedase sin memoria. </para>
+</listitem>
+
+<listitem>
+<para
+>Si el cliente envía un mensaje ClientHello corrupto (uno en el que ha fallado la decodificación), la conexión se cierra. </para>
+</listitem>
+
+<listitem>
+<para
+>Si el cliente no envía nada, finalizará el tiempo de espera (para implementar). </para>
+</listitem>
+</itemizedlist>
+
+</sect1>
+
+<sect1 id="mcop-protocol">
+<title
+>Especificaciones del protocolo &MCOP;</title>
+
+<sect2 id="mcop-protocol-intro">
+<title
+>Introducción</title>
+
+<para
+>Conceptualmente es similar a <acronym
+>CORBA</acronym
+>, pero pretende ampliarlo de forma que dé cobertura a las operaciones multimedia en tiempo real. </para>
+
+<para
+>Proporciona un modelo de objeto multimedia, que puede utilizarse por ambos: comunicación entre componentes en un espacio de dirección (un proceso), y entre componentes que están en diferentes hilos, procesos o en diferentes servidores. </para>
+
+<para
+>Todo junto, será diseñado para obtener un rendimiento extremadamente alto (de forma que todo sea optimizado para ser extremadamente rápido), lo que es deseable para las aplicaciones multimedia muy comunicativas. Por ejemplo, la transmisión de vídeos es una de las aplicaciones de &MCOP;, donde la mayoría de las aplicaciones <acronym
+>CORBA</acronym
+> caerían. </para>
+
+<para
+>Las definiciones de interfaz pueden manejar lo siguiente nativamente: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Transmisión contínua de datos (como datos de audio). </para>
+</listitem>
+
+<listitem>
+<para
+>Transmisión de datos de eventos (como eventos &MIDI;). </para>
+</listitem>
+
+<listitem>
+<para
+>Cuenta de referencia real. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Y los trucos más importantes de <acronym
+>CORBA</acronym
+>, como: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Invocaciones de métodos sícronos. </para>
+</listitem>
+
+<listitem>
+<para
+>Invocaciones de métodos asíncronos. </para>
+</listitem>
+
+<listitem>
+<para
+>Construir tipos de datos definidos por el usuario. </para>
+</listitem>
+
+<listitem>
+<para
+>Herencia múltiple. </para>
+</listitem>
+
+<listitem>
+<para
+>Pasar referencias de objetos. </para>
+</listitem>
+</itemizedlist>
+
+</sect2>
+
+<sect2 id="mcop-protocol-marshalling">
+<title
+>La codificación del mensaje &MCOP;</title>
+
+<para
+>Diseño de objetivos/ideas: </para>
+
+<itemizedlist>
+
+<listitem>
+<para
+>La codificación debería ser fácil de implementar. </para>
+</listitem>
+
+<listitem>
+<para
+>La decodificación requiere que el receptor conozca el tipo que desea decodificar. </para>
+</listitem>
+
+<listitem>
+<para
+>Se espera que el receptor utilice toda la información, por eso, se ignoran los datos del protocolo en la medida que: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Si sabe que va a recibir un bloque de bytes, no necesitará buscar en cada byte un marcador. </para>
+</listitem>
+
+<listitem>
+<para
+>Si sabe que va a recibir una cadena, no necesitará leer hasta encontrar el byte cero para averiguar su tamaño. </para>
+</listitem>
+
+<listitem>
+<para
+>Sin embargo, si sabe que va a recibir una secuencia de cadenas, necesitará saber la longitud de cada una de ellas para conocer el final de la secuencia, ya que las cadenas tienen longitud variable. Pero si utiliza las cadenas para hacer algo práctico, necesitará hacer esto de todas formas, por ello no se perderá nada. </para>
+</listitem>
+</itemizedlist>
+
+</listitem>
+
+<listitem>
+<para
+>Uso del sistema lo más pequeña posible. </para>
+</listitem>
+</itemizedlist>
+
+<!-- TODO: Make this a table -->
+
+<para
+>La codificación de los diferentes tipos se muestra a continuación: </para>
+
+<informaltable>
+<tgroup cols="3">
+<thead>
+<row>
+<entry
+>Tipo</entry>
+<entry
+>Proceso de codificación</entry>
+<entry
+>Resultado</entry>
+</row>
+</thead>
+
+<tbody>
+<row>
+<entry
+><type
+>void</type
+></entry>
+<entry
+>Los tipo <type
+>void</type
+> se codifican omitiéndolos, por tanto no se escribe nada en la transmisión para ellos.</entry>
+<entry
+></entry>
+</row>
+
+<row>
+<entry
+><type
+>long</type
+></entry>
+<entry
+>Se codifica con cuatro bytes, primero el byte más significativo, por eso, el número 10.001.025 (que es 0x989a81) se codificaría como:</entry>
+<entry
+><literal
+>0x00 0x98 0x9a 0x81</literal
+></entry>
+</row>
+
+<row>
+<entry
+><type
+>enums</type
+></entry>
+<entry
+><para
+>se codifican como los tipos <type
+>long</type
+>.</para
+></entry>
+<entry
+></entry>
+</row>
+
+<row>
+<entry
+><type
+>byte</type
+></entry>
+<entry
+><para
+>Se codifica como un solo byte, por tanto el byte 0x42 se codificaría como:</para
+></entry>
+<entry
+><literal
+>0x42</literal
+></entry>
+</row>
+
+<row>
+<entry
+><type
+>string</type
+></entry>
+<entry
+><para
+>Se codifica como un tipo <type
+>long</type
+>, conteniendo la longitud de la siguiente cadena, y a continuación la secuencia de caracteres de la cadena finalizando con un byte cero (que se incluye en la longitud).</para>
+<important>
+<para
+>¡incluye el byte 0 para determinar el tamaño!</para>
+</important>
+<para
+>«hola» se codificaría como:</para
+></entry>
+<entry
+><literal
+>0x00 0x00 0x00 0x05 0x68 0x6f 0x6c 0x61 0x00</literal
+></entry>
+</row>
+
+<row>
+<entry
+><type
+>boolean</type
+></entry>
+<entry
+><para
+>Se codifica como un byte, conteniendo 0 si es <returnvalue
+>falso</returnvalue
+> o 1 si es <returnvalue
+>verdadero</returnvalue
+>, por ello, el valor lógico <returnvalue
+>verdadero</returnvalue
+> se codificaría como:</para
+></entry>
+<entry
+><literal
+>0x01</literal
+></entry>
+</row>
+
+<row>
+<entry
+><type
+>float</type
+></entry>
+<entry
+><para
+>Se codifica utilizando las representación IEEE754 de cuatro bytes - el documento que detalla cómo funciona IEEE se encuentra aquí: <ulink url="http://twister.ou.edu/workshop.docs/common-tools/numerical_comp_guide/ncg_math.doc.html"
+>http://twister.ou.edu/workshop.docs/common-tools/numerical_comp_guide/ncg_math.doc.html</ulink
+> y aquí: <ulink url="http://java.sun.com/docs/books/vmspec/2nd-edition/html/Overview.doc.html"
+>http://java.sun.com/docs/books/vmspec/2nd-edition/html/Overview.doc.html</ulink
+>. Por tanto, el valor 2,15 se codificaría como:</para
+></entry>
+<entry
+><literal
+>0x9a 0x99 0x09 0x40</literal
+></entry>
+</row>
+
+<row>
+<entry
+><type
+>struct</type
+></entry>
+<entry
+><para
+>Una estructura se codifica codificando sus contenidos. No se necesitan prefijos y sufijos adicionales, por ello, la estructura </para>
+<programlisting
+>struct prueba {
+    string name;        // que es «hola»
+    long value;         // que es 10.001.025  (0x989a81)
+};
+</programlisting>
+<para
+>que se codificaría como</para
+></entry>
+<entry>
+<literallayout
+>0x00 0x00 0x00 0x05   0x68 0x6f 0x6c 0x61
+0x00 0x00 0x98 0x9a   0x81
+</literallayout
+></entry>
+</row>
+
+<row>
+<entry
+><type
+>sequence</type
+></entry>
+<entry
+><para
+>Una secuencia se codifica como una lista de elementos que se siguen, codificándose, por tanto, los elementos uno a uno.</para>
+<para
+>Por ello una secuencia de 3 longs 'a', con a[0] = 0x12345678, a[1] = 0x01 y a[2] = 0x42 se codificaría como:</para
+></entry>
+<entry>
+<literallayout
+>0x00 0x00 0x00 0x03   0x12 0x34 0x56 0x78
+0x00 0x00 0x00 0x01   0x00 0x00 0x00 0x42
+</literallayout>
+</entry>
+</row>
+</tbody>
+</tgroup>
+</informaltable>
+
+<para
+>Si necesita hacer referencia a un tipo, todos los tipos primitivos se referencian a través de los nombres anteriores. Las estructuras y enumeraciones tienen sus propios nombres (como Header). Las secuencias se referencian como *<replaceable
+>tipo normal</replaceable
+>, por tanto una secuencia de longs es «*long» y una secuencia de estructuras Header es «*Header». </para>
+
+</sect2>
+
+<sect2 id="mcop-protocol-messages">
+<title
+>Mensajes</title>
+
+<para
+>El formato de la cabecera del mensaje &MCOP; está definido por esta estructura: </para>
+
+<programlisting
+>struct Header {
+    long magic;          // el valor 0x4d434f50, que se codifica como MCOP
+    long messageLength;
+    long messageType;
+};
+</programlisting>
+
+<para
+>Los messsageTypes posibles son actualmente </para>
+
+<programlisting
+>mcopServerHello                = 1
+mcopClientHello                = 2
+mcopAuthAccept                 = 3
+mcopInvocation                 = 4
+mcopReturn                     = 5
+mcopOnewayInvocation           = 6
+</programlisting>
+
+<para
+>Breves notas sobre los mensajes &MCOP;: </para>
+
+
+<itemizedlist>
+<listitem>
+<para
+>Todo mensaje empieza con un Header. </para>
+</listitem>
+
+<listitem>
+<para
+>Algunos tipos de mensaje deberían ser ignorados por el servidor, en tanto la autentificación no se haya completado. </para>
+</listitem>
+
+<listitem>
+<para
+>Después de recibir la cabecera, el protocolo (conexión) manejado puede recibir el mensaje completo, sin buscar en el contenido. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>El messageLength en la cabecera es, por supuesto, en muchos casos redundante, lo que significa que esta aproximación no es minimalista en lo que respecta al número de bytes. </para>
+
+<para
+>Sin embargo, conduce a una implementación sencilla (y rápida) de procesamiento de mensajes no bloqueantes. Con la ayuda de la cabecera, el mensaje puede ser recibido por las clases que manejan el protocolo en segundo plano (no bloqueante), si existen varias conexiones al servidor, todas ellas pueden ser servidas en paralelo. No necesitará ver el contenido del mensaje, para recibirlo (y para determinar cuando ha terminado), solo la cabecera, y el código para realizar ésto es muy sencillo. </para>
+
+<para
+>Una vez que el mensaje se encuentre allí, puede ser decodificado y procesado de una sola pasada, sin preocuparse de que no se hayan recibido todos los datos (puesto que messageLength garantiza que estén todos). </para>
+
+</sect2>
+
+<sect2 id="mcop-protocol-invocations">
+<title
+>Llamadas</title>
+
+<para
+>Para llamar a un método remoto, necesita enviar la siguiente estructura en el cuerpo de un mensaje &MCOP; con messageType = 1 (mcopInvocation): </para>
+
+<programlisting
+>struct Invocation {
+    long objectID;
+    long methodID;
+    long requestID;
+};
+</programlisting>
+
+<para
+>después de esto, enviará el parámetro como estructura, &eg; si llama el método string concatenar(string s1, string s2), enviará una estructura como: </para>
+
+<programlisting
+>struct InvocationBody {
+    string s1;
+    string s2;
+};
+</programlisting>
+
+
+<para
+>Si el método se declara unidireccional, lo que significa asíncrono, sin devolver código, ésto será todo. En otro caso, recibirá un mensaje de respuesta con messageType = 2 (mcopReturn). </para>
+
+<programlisting
+>struct ReturnCode {
+    long requestID;
+    &lt;tipo_devuelto&gt; result;
+};
+</programlisting>
+
+
+<para
+>donde &lt;tipodevuelto&gt; es el tipo del resultado. Como los tipos void se omiten en la codificación, también podrá escribir el requestID si devuelve algo desde un método void. </para>
+
+<para
+>Por tanto nuestro string concat(string s1, string s2) darían como resultado un código devuelto cómo </para>
+
+<programlisting
+>struct ReturnCode {
+    long   requestID;
+    string result;
+};
+</programlisting>
+
+</sect2>
+
+<sect2 id="mcop-protocol-inspecting">
+<title
+>Inspección de interfaces</title>
+
+<para
+>Para hacer llamadas, necesitará conocer los métodos que un objeto soporta. Para hacer esto, los métodos methodID 0, 1, 2 y 3 tiene predefinidas ciertas funcionalidades. Esto es </para>
+
+<programlisting
+>long _lookupMethod(MethodDef methodDef);                                // methodID siempre 0
+string _interfaceName();                                                                // methodID siempre 1
+InterfaceDef _queryInterface(string name);                                // methodID siempre 2
+TypeDef _queryType(string name);                                                // methodID siempre 3
+</programlisting>
+
+<para
+>para leer esto, por supuesto, también necesitará </para>
+
+<programlisting
+>struct MethodDef {
+        string  methodName;
+        string  type;
+        long    flags;        // puesto a 0 por ahora (requerido para la transmisión)
+        sequence&lt;ParamDef&gt; signature;
+};
+
+struct ParamDef {
+        string name;
+        long   typeCode;
+};
+</programlisting>
+
+<para
+>El campo 'parameters' contiene los componentes de tipo que especifican el tipo de los parámetros. El tipo del código devuelto se especifica en el campo 'type' de MethodDef. </para>
+
+<para
+>Estrictamente hablando, sólo los métodos <methodname
+>_lookMethod()</methodname
+> y <methodname
+>_interfaceName()</methodname
+> son diferentes entre objetos, mientras que <methodname
+>_queryInterface()</methodname
+> y <methodname
+>_queryType()</methodname
+> son siempre los mismos. </para>
+
+<para
+>¿Cuáles son estos methodID? si hace una llamada &MCOP;, pasará un número para el método que está llamando. La razón de ésto es que los números se pueden procesar mucho más rápido que las cadenas cuando se ejecuta una petición &MCOP;. </para>
+
+<para
+>¿Cómo obtendrá estos números? Si conoce la firma del método, que es un MethodDef que describe el método, (que contiene el nombre, tipo, nombres de parámetro, tipos de parámetro y otros), puede pasar esto al _lookupMethod del objeto al que desea llamar un método. Como _lookupMethod está preasociado a methodID 0, no debería tener problemas para hacerlo. </para>
+
+<para
+>Por otra parte, sino conoce la firma del método, puede encontrar qué métodos están soportados utilizando _interfaceName, _queryInterface y _queryType. </para>
+</sect2>
+
+<sect2 id="mcop-protocol-typedefs">
+<title
+>Definiciones de tipo</title>
+
+<para
+>La definición de los tipos de datos se describen utilizando la estructura <structname
+>TypeDef</structname
+>: </para>
+
+<programlisting
+>struct TypeComponent {
+        string type;
+        string name;
+};
+
+struct TypeDef {
+        string name;
+
+        sequence&lt;TypeComponent&gt; contents;
+};
+</programlisting>
+
+</sect2>
+</sect1>
+
+<sect1 id="why-not-dcop">
+<title
+>Por qué &arts; no usa &DCOP;</title>
+
+<para
+>Desde que &kde; abandonó <acronym
+>CORBA</acronym
+> completamente, y está usando &DCOP; en su lugar, la pregunta natural que surge es por qué &arts; no está haciendo eso. Después de todo, el soporte para &DCOP; está en <classname
+>KApplication</classname
+>, está bien mantenido, y supuestamente bien integrado con libICE, entre otras cosas. </para>
+
+<para
+>Como habrá (potencialmente) mucha gente preguntando si es realmente necesario usar &MCOP; en lugar de &DCOP; aquí está la respuesta. No me malinterpreten. No estoy intentando decir «&DCOP; es malo». Estoy intentando decir «&DCOP; no es la solución adecuada para &arts;» (mientras que sí lo es para otras muchas cosas). </para>
+
+<para
+>En primer lugar necesita entender para qué fué escrito &DCOP; exactamente. Se creo en dos días durante el encuentro &kde;-TWO, intentó ser tan simple como fuera posible, un protocolo de comunicación realmente «ligero». La implementación descarta de forma especial todo aquello que implique complejidad, por ejemplo, un concepto completo de cómo deberían ser codificados los tipos de datos. </para>
+
+<para
+>Aunque &DCOP; no se ocupa de ciertas cosas (como: ¿cómo envío una cadena de forma transparente por una red?) - ésto es necesario hacerlo. Por lo que, todo lo que &DCOP; no hace, se deja a &Qt; en las aplicaciones &kde; que hoy usan &DCOP;. Éste es el tipo de administración más usado (usando el operador de serialización de &Qt;). </para>
+
+<para
+>Por lo que &DCOP; es un protocolo mínimo que habilita perfectamente a las aplicaciones &kde; para envíar mensajes simples como «abrir una ventana apuntando a http://www.kde.org» o «sus datos de configuración han cambiado». Sin embargo, dentro de &arts; el enfoque se hace en otra dirección. </para>
+
+<para
+>La idea es que las pequeñas extensiones en &arts; se comunicarán tratando algunas estructuras de datos como «eventos midi», «punteros de posicionamiento de canciones» y «diagramas de flujo». </para>
+
+<para
+>Estos son tipos de datos complejos, que deberían ser enviados entre diferentes objetos, y pasados como transmisiones, o parámetros. &MCOP; suple el tipo concepto, para definir tipos de datos complejos a partir de otros más simples (similar a las estructuras o matrices en C++). &DCOP; no se preocupa de los tipos, ya que esto se deja en manos del programador: escribiendo clases C++ para los tipos, y asegurándose de serializarlos correctamente (por ejemplo: soporte para el operador de transmisión de &Qt;). </para>
+
+<para
+>Pero de esta forma, serían inaccesibles a todo lo que no fuera codificación directa C++. Especialmente, no podría diseñar un lenguaje de script, que conociese todos los tipos de extensiones que pudieran estar expuestas, ya que no se describen a sí mismos. </para>
+
+<para
+>El mismo argumento se aplica también a los interfaces. Los objetos &DCOP; no exponen sus relaciones, jerarquía de herencias, etc. Si intentase escribir un navegador de objetos que mostrase «qué atributos tiene este objeto», no podría. </para>
+
+
+<para
+>Aunque Matthias me dijo que existía una función «functions» en cada objeto que indicaba los métodos que soporta un objeto, esto dejaría fuera cosas como atributos (propiedades), transmisiones y relaciones de herencia. </para>
+
+<para
+>Esto rompe seriamente aplicaciones como &arts-builder;. Pero recuerde: &DCOP; no pretende ser un modelador de objetos (dado que &Qt; ya tiene alguno como <application
+>moc</application
+> o otros), o algo parecido a <acronym
+>CORBA</acronym
+>, pero sí proporcionar comunicación entre aplicaciones. </para>
+
+<para
+>La razón por la que existe &MCOP; es: debería funcionar muy bien con la transmisión entre objetos. &arts; hace uso intensivo de pequeñas extensiones, que se interconecta con las transmisiones. La versión <acronym
+>CORBA</acronym
+> de &arts; tuvo que introducir una división muy incómoda entre «los objetos SynthModule», que era la forma en que los módulos funcionaban cuando hacían la transmisión, y «el interfaz <acronym
+>CORBA</acronym
+>», que era algo externo. </para>
+
+<para
+>Gran cantidad de código se preocupaba de la forma de hacer la interacción entre «los objetos SynthModule» y «el interfaz <acronym
+>CORBA</acronym
+>» de forma natural, pero no lo era, ya que <acronym
+>CORBA</acronym
+> no sabía nada de transmisiones. &MCOP; sí. Eche un vistazo al código (algo como <filename
+>simplesoundserver_impl.cc</filename
+>). ¡Mucho mejor! Las transmisiones se pueden declarar en el interfaz de los módulos, y se pueden implementar de forma natural. </para>
+
+<para
+>Nadie lo puede negar. Una de las razones por las que escribí &MCOP; fue la velocidad. Aquí están los argumentos por los que &MCOP; fue definitivamente más rápido que &DCOP; (incluso sin mostrar imágenes). </para>
+
+
+<para
+>Una llamada en &MCOP; tendrá una cabecera con seis «long». Esto es: </para>
+
+<itemizedlist>
+<listitem
+><para
+>Código de «MCOP».</para
+></listitem>
+<listitem
+><para
+>Tipo de mensaje (llamada).</para
+></listitem>
+<listitem
+><para
+>Tamaño de la solicitud en bytes.</para
+></listitem>
+<listitem
+><para
+>ID de la solicitud.</para
+></listitem>
+<listitem
+><para
+>ID del objeto objetivo.</para
+></listitem>
+<listitem
+><para
+>ID del método objetivo.</para
+></listitem>
+</itemizedlist>
+
+<para
+>A continuación siguen los parámetros. Tenga en cuenta que la decodificación de esto es extremadamente rápido. Puede utilizar tablas de búsqueda para encontrar el objeto y la función de decodificación del método, lo que significa que la complejidad es O(1) (tardará la misma cantidad de tiempo, independientemente de cuántos objetos estén vivos, o cuántas funciones tengan). </para>
+
+<para
+>Comparando esto con &DCOP;, verá que existen, al menos: </para>
+
+<itemizedlist>
+<listitem
+><para
+>Una cadena para el objeto de destino - algo como «miCalculadora».</para
+></listitem
+> 
+<listitem
+><para
+>Una cadena como «incluirNumero(int,int)» para especificar el método.</para
+></listitem>
+<listitem
+><para
+>Algunos protocolos de información más añadidos por libICE, y otros específicos de DCOP, no lo se.</para
+></listitem>
+</itemizedlist>
+
+<para
+>Esto es mucho más complicado de decodificar, puesto que necesitará procesar la cadena, buscar la función, &etc;. </para>
+
+<para
+>En &DCOP;, todas las solicitudes se ejecutan a través de un servidor (<application
+>DCOPServer</application
+>), lo que significa, que el proceso de una invocación síncrona se parece a esto: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>El proceso cliente envía una llamada. </para>
+</listitem>
+
+<listitem>
+<para
+>El <application
+>DCOPServer</application
+> (hombre-en-el-medio) recibe la llamada y mira dónde necesita ir, y la envía al servidor «real». </para>
+</listitem
+> 
+
+<listitem>
+<para
+>El proceso servidor recibe la llamada, realiza la petición y envía el resultado. </para>
+</listitem>
+
+<listitem>
+<para
+>El <application
+>DCOPServer</application
+> (hombre-en-el-medio) recibe el resultado y ... lo envía al cliente. </para>
+</listitem>
+
+<listitem>
+<para
+>El cliente descodifica la respuesta. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>En &MCOP;, la misma llamada se parece a esto: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>El proceso cliente envía una llamada. </para>
+</listitem>
+
+<listitem>
+<para
+>El proceso servidor recibe la llamada, realiza la petición y envía el resultado. </para>
+</listitem>
+
+<listitem>
+<para
+>El cliente descodifica la respuesta. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Estando ambos correctamente implementados, la estrategia punto-a-punto de &MCOP; debería ser dos veces más rápida que la estrategia hombre-en-el-medio de &DCOP;. Fíjese que sin embargo que hay por supuesto razones para escojer la estrategia &DCOP;, como por ejemplo: si tiene 20 aplicaciones ejecutándose, y cada aplicación está hablando a cada aplicación, necesitará 20 conexiones con &DCOP;, y 200 con &MCOP;. Sin embargo en el caso multimedia, esto se supone que no es una configuración usual. </para>
+
+<para
+>Intenté comparar &MCOP; y &DCOP;, haciendo una llamada como añadir dos números. Modifique testdcop para conseguir esto. Sin embargo, la prueba no fue lo suficientemente precisa por parte de &DCOP;. Llamé el método en el mismo proceso que hizo la llamada para &DCOP;, y no podrá librarse de un mensaje de depuración, por ello utilicé la redirección de la salida. </para>
+
+<para
+>La prueba solo utilizó un objeto y una función, esperando que los resultados de &DCOP; se redujesen con más objetos y funciones, mientras que los resultados de &MCOP; fueran los mismos. El proceso <application
+>dcopserver</application
+> tampoco estaba conectada a otras aplicaciones, ya que si estuviera conectado con otras aplicaciones, el rendimiento del enrutado disminuiría. </para>
+
+<para
+>El resultado obtenido fue que mientras con &DCOP; obtuve más de 2.000 llamadas por segundo, con &MCOP; conseguí más de 8.000 llamadas por segundo. Esto da como resultado un factor de 4. Sé que &MCOP; no está afinado al máximo posible todavía (Comparación: <acronym
+>CORBA</acronym
+>, implementado con mico, hace entre 1.000 y 1.500 llamadas por segundo). </para>
+
+<para
+>Si desea datos más «elaborados», piense en escribir alguna pequeña aplicación a medida para &DCOP; y envíemela. </para>
+
+<para
+><acronym
+>CORBA</acronym
+> tiene una interesante funcionalidad que permite utilizar objetos que implementó una vez, como «procesos separados del servidor», o como «biblioteca». Puede utilizar el mismo código para hacerlo, y <acronym
+>CORBA</acronym
+> decidirá hacerlo de forma transparente. Con &DCOP;, no se ha intentado ésto, y está lejos de ser posible realmente. </para>
+
+<para
+>&MCOP; por otra parte debería soportar ésto desde el principio. Por eso podrá ejecutar un efecto dentro de &artsd;. Pero si hace esto con un editor de ondas, podrá seleccionar ejecutar el mismo efecto dentro de su espacio de proceso también. </para>
+
+<para
+>Mientras que &DCOP; no es más que una forma de comunicación entre aplicaciones, &MCOP; es también una forma de comunicarse dentro de las aplicaciones. Esto es especialmente importante para la transmisión multimedia (puede ejecutar múltiples objetos &MCOP; de forma paralela, para resolver una tarea multimedia en su aplicación). </para>
+
+<para
+>Aunque &MCOP; no hace esto actualmente, las posibilidades están abiertas a la implementación de funcionalidades de calidad de servicio. Algo como «este evento &MIDI; es extremadamente importante en comparación con esta llamada». O algo como «necesito llegar puntual». </para>
+
+<para
+>Por otro lado, la transferencia se puede integrar en el protocolo &MCOP; sin problemas, y ser combinada con elementos <acronym
+>QoS</acronym
+>. Dado que el protocolo puede cambiarse, la transferencia &MCOP; no debería ser tan lenta como la transmisión convencional <acronym
+>TCP</acronym
+>, pero: es más fácil y consistente de utilizar. </para>
+
+<para
+>No es necesario basar una plataforma multimedia en &Qt;. Una vez decidido ésto, y utilizando la serialización y otras funcionalidades de &Qt;, se podría concluir fácilmente en una plataforma solo-&Qt; (e incluso solo-&kde;). Quiero decir: tan pronto como vea a GNOME utilizando &DCOP;, o quizá algo similar, comprobaré si estaba equivocado. </para>
+
+<para
+>Como &DCOP; no sabe nada sobre los tipos de datos que envía, podría utilizar &DCOP; sin utilizar &Qt;, veamos el uso diario que se hace de &kde;: la gente envía tipos como <classname
+>QString</classname
+>, <classname
+>QRect</classname
+>, <classname
+>QPixmap</classname
+>, <classname
+>QCString</classname
+>, ..., de un lado para otro. Esto utiliza la serialización &Qt;. Por eso si alguien elige soportar &DCOP; en un programa GNOME, debería utilizar tipos <classname
+>QString</classname
+>,... (aunque no lo haga de facto), y emular la forma en que &Qt; realiza la transmisión, o podría enviar otros tipos de cadena, imágenes y rectángulos, lo que dejaría de ser interoperativo. </para>
+
+<para
+>Bueno, sea como fuere, &arts; siempre intentó funcionar con o sin &kde;, con o sin &Qt;, con o sin X11, y quizá incluso con o sin &Linux; (y no ha habido problemas con la gente que lo ha portado a un popular sistema operativo no libre). </para>
+
+<para
+>Mi posición es que los componentes no-&GUI; deberían ser escritos independientemente del &GUI;, para que puedan ser compartidos con tantos desarrolladores (u usuarios) como sea posible. </para>
+
+<para
+>Es obvio que la utilización de dos protocolos <acronym
+>IPC</acronym
+> puede provocar inconvenientes. Incluso más, si ninguno de ellos es estándar. Sin embargo, estas razones no son suficientes para cambiar a &DCOP;. Si existe un interés significativo para encontrar una forma de unir los dos, perfecto, lo intentaremos. Incluso intentaré hacer que &MCOP; hable <acronym
+>IIOP</acronym
+>, y tendremos un <acronym
+>ORB</acronym
+> <acronym
+>CORBA</acronym
+> ;). </para>
+
+<para
+>He hablado con Matthias Ettrich un poquito sobre el futuro de los dos protocolos, y hemos visto como podrían ir las cosas. Por ejemplo, &MCOP; podría manejar la comunicación del mensaje en &DCOP;, colocando los protocolos un poco más juntos entre sí. </para>
+
+<para
+>Se pueden tomar varias soluciones: </para>
+
+<itemizedlist>
+<listitem>
+<para
+>Escribir una pasarela &MCOP; - &DCOP; (sería posible, y haría posible la interoperatividad). Nota: Si desea trabajar en ello debe tener en cuenta que es un prototipo experimental. </para>
+</listitem>
+
+<listitem>
+<para
+>Integrar todo lo que los usuarios esperan de &DCOP; en &MCOP;, y utilizar solo &MCOP; - también se podría añadir una «opción-intermedia» a &MCOP; ;). </para>
+</listitem>
+
+<listitem>
+<para
+>Basar &DCOP; en &MCOP; en lugar de en libICE, y comenzar a integrar lentamente las cosas. </para>
+</listitem>
+</itemizedlist>
+
+<para
+>Sin embargo, puede no ser la peor posibilidad utilizar cada protocolo para aquello para lo que fue creado (existen grandes diferencias en los objetivos de diseño), y no intentar juntarlos en uno. </para>
+
+</sect1>
+</chapter>

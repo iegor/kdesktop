@@ -1,0 +1,296 @@
+<chapter id="modem-tricks">
+<title
+>Truques e Dicas de Modem</title>
+
+<para
+>Esta seção deve desvendar a temível e (nem tanto) misteriosa arte de ajuste do modem. Os comandos aqui são todos do padrão AT da Hayes, mas nem todos os modens são iguais, assim seus resultados podem variar.</para>
+
+<sect1 id="modem-sessions">
+<title
+>Sessões de Modem</title>
+
+<para
+>Uma sessão de modem permite que você interaja com o modem diretamente. Você digita comandos, e ele responderá. Para obter uma sessão de modem, quando nenhuma conexão estiver ativa, vá para o diálogo <guibutton
+>Configurar...</guibutton
+>, e então <guilabel
+>Modem</guilabel
+> <guibutton
+>Terminal</guibutton
+>. Isto abrirá uma janela para configuração interativa do modem. Tente digitar <userinput
+><command
+>ATZ</command
+></userinput
+> (que reinicia seu modem). Você deve receber uma resposta OK. Use <menuchoice
+><guimenu
+>Arquivo</guimenu
+><guimenuitem
+>Fechar</guimenuitem
+></menuchoice
+> para terminar a sessão.</para>
+
+</sect1>
+
+<sect1 id="modem-profiles">
+<title
+>Perfis do Modem</title>
+					
+<para
+>Uma razão para você precisar enviar os comandos de modem diretamente é se você tem um conjunto de configurações do modem que deseja manter, sem ter que especificá-las para cada conexão. Uma boa maneira de fazer isto é através de perfis de modem. Modens podem ter diversos perfis armazenados e numerados de 0,1,... O <command
+>AT&amp;V</command
+> pode ser usado para ver todos eles. O perfil padrão é normalmente o 0 (isto pode ser mudado através do <command
+>AT&amp;Y</command
+>). O perfil atualmente em uso é chamado de perfil <quote
+>ativo</quote
+>.</para>
+
+<para
+>Quando você muda uma configuração, o perfil ativo é modificado. O comando <command
+>ATZ</command
+> fará com que o modem carregue o perfil padrão, apagando qualquer mudança que tenha feito. Para salvar as mudanças, carregue o perfil que deseja mudar através do <command
+>ATZ<replaceable
+>n</replaceable
+></command
+> (onde <replaceable
+>n</replaceable
+> é o número do perfil). Faça as mudanças que deseja, então salve-o com <command
+>AT&amp;W<replaceable
+>n</replaceable
+></command
+>. Para que o kppp use o perfil que deseja, mude o string de inicialização (<guibutton
+>Configurar...</guibutton
+> <guilabel
+>Modem</guilabel
+> <guibutton
+>Comandos do Modem</guibutton
+> <guilabel
+>String de Inicialização</guilabel
+>). Por exemplo, <command
+>ATZ1</command
+> fará que o kppp reinicie o modem e use o perfil #1 armazenado.</para>
+
+<para
+>Se você deseja reiniciar seu modem para algum ponto anterior conhecido, use <command
+>AT&amp;F&amp;W</command
+> para configurar o perfil ativo para os padrões de fábrica, e armazene estas configurações como o perfil padrão.</para>
+
+<para
+>Exemplos de mudanças de perfil aparecem na próxima seção</para>
+
+</sect1>
+
+<sect1 id="modem-hangup">
+<title
+>Fazendo com que o modem interrompa a ligação</title>
+
+<para
+>Algumas vezes você pode achar que o &kppp; tem dificuldades em interromper a ligação do modem. Isto é normalmente o resultado de uma diferença entre as configurações do &kppp; e do seu modem. Um modem padrão usa dois métodos para decidir interromper a ligação: <link linkend="hangup-command-method"
+>Comando</link
+>, e <link linkend="hangup-dtr-method"
+><acronym
+>DTR</acronym
+></link
+>. O método Comando envolve enviar uma sequência de escape para o modem, que coloca-o no modo comando, e então enviar um comando de desligamento (<command
+>ATH</command
+>).</para>
+
+<para
+>Além do &kppp;, ao configurar o pacote <application
+>pppd</application
+> manualmente, é frequentemente útil usar o método de comando, assim alguém pode sair de uma sessão de terminal e então iniciar o <application
+>pppd</application
+> sem ter que desligar o modem. Na maioria das outras situações, o método <acronym
+>DTR</acronym
+> é preferível, por ser mais simples.</para>
+
+<sect2 id="hangup-dtr-method">
+<title
+>Método <acronym
+>DTR</acronym
+> (<command
+>AT&amp;Dn</command
+>)</title>
+
+<para
+>O método <acronym
+>DTR</acronym
+> desligará o modem sempre que o &kppp; parar de usar o modem. Se você obtiver uma sessão de modem, e consultar o estado através do <command
+>AT&amp;V</command
+>, e puder ver entre as configurações exibidas para o perfil ativo um <command
+>&amp;D0</command
+>, então o método de desligamento <acronym
+>DTR</acronym
+> está desabilitado. Para habilitar o método <acronym
+>DTR</acronym
+> use o botão <guibutton
+>Terminal</guibutton
+> para obter uma sessão de modem, e então:</para>
+
+<screen
+><userinput
+><command
+>ATZ</command
+></userinput
+> <lineannotation
+># reinicia o perfil padrão</lineannotation>
+<userinput
+><command
+>AT&amp;D2</command
+></userinput
+>  <lineannotation
+># Configura o desligamento para DTR</lineannotation>
+<userinput
+><command
+>AT&amp;W</command
+></userinput
+>  <lineannotation
+># Grava para o perfil padrão</lineannotation
+>
+</screen>
+
+<sect3>
+<title
+>Como o método <acronym
+>DTR</acronym
+> funciona</title>
+
+<para
+>Sempre que a linha de Terminal de Dados Pronto (do inglês, <acronym
+>DTR</acronym
+>) na linha serial entre o computador e o modem é levantada, a ligação é interrompida. Quando o &kppp; abre a porta serial, a linha <acronym
+>DTR</acronym
+> é colocado para baixo, em um modem externo, você pode ver o <acronym
+>DTR</acronym
+> (ou <acronym
+>TR</acronym
+>) aceso quando isto acontece. Quanda a luz <acronym
+>TR</acronym
+> apaga (porque o &kppp; fechou a porta serial, ou alguma coisa deu errado!), o modem interrompe a ligação.</para>
+</sect3>
+
+</sect2>
+
+<sect2 id="hangup-command-method">
+<title
+>Método Comando</title>
+
+<para
+>A outra maneira de fazer que o modem desligue quando conectado (usada quando <command
+>AT&amp;D<replaceable
+>n</replaceable
+></command
+> onde <replaceable
+>n</replaceable
+> não é <returnvalue
+>2</returnvalue
+>) é fazer com que o modem aceite o comando quando uma sessão está em progresso. Para desligar corretamente, obtenha uma sessão de modem, e configure o tempo de guarda para um intervalo curto como:</para>
+
+<screen
+><userinput
+><command
+>ATZ</command
+></userinput>
+<userinput
+><command
+>ATS12=5</command
+></userinput>
+<userinput
+><command
+>AT&amp;W</command
+></userinput
+>
+</screen>
+
+<para
+>Então use o índice deslizante <guilabel
+>Tempo de Guarda</guilabel
+> na seção de comandos do modem para corresponder ao registrador (<varname
+>S12</varname
+>) para este valor (<returnvalue
+>5</returnvalue
+>). O modem deve então desligar corretamente.</para>
+
+<sect3>
+<title
+>Como o Método Comando Funciona</title>
+
+<para
+>Quando o modem local é conectado ao remoto, ele está em estado <quote
+>conectado</quote
+>, onde ele passa todos os caracteres que recebe para o modem remoto sem interpretação. Para fazer com que o modem aceite os caracteres como comandos para ele mesmo, alguém deve colocar o modem em estado de comando. O código de escape faz isto.</para>
+
+<para
+>O código de escape é definido como sendo três intervalos de tempo cujo comprimento é definido pelo <varname
+>S12</varname
+> em cinquentésimos de um segundo.</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Silencioso (deve ser pelo menos mais qe <varname
+>S12</varname
+>/50 segundos)</para>
+</listitem>
+<listitem>
+<para
+>Caracter de escape (definido pelo registrador <varname
+>S2</varname
+>, o padrão é <quote
+>+</quote
+>), repetido três vezes (menos que <varname
+>S12</varname
+>/50 segundos entre cada repetição).</para>
+</listitem>
+<listitem>
+<para
+>Silencioso (deve ser pelo menos mais qe <varname
+>S12</varname
+>/50 segundos)</para>
+</listitem>
+</itemizedlist>
+
+<para
+>Uma vez que o modem esteja em estado de comando, você pode enviar comandos. Para fazer que interrompa a ligação, envie o comando <command
+>ATH</command
+>. O código de escape e o string de desligamento usado pelo &kppp; é mostrado no diálogo <link linkend="modem-commands"
+><guilabel
+>Comandos do Modem</guilabel
+></link
+>. Eles devem corresponder ao do seu modem.</para>
+
+</sect3>
+</sect2>
+</sect1>
+
+<sect1 id="tone-dialing-speedup">
+<title
+>Tornando a discagem por tom mais rápida</title>
+
+<para
+>Se você pode usar a discagem por tom, a quantidade de tempo que ela demora para discar pode ser mudada usando o registrador <varname
+>S11</varname
+>. Ele fornece a duração (em centésimos de segundo) para enviar cada tom durante a discagem. O padrão é normalmente 95 (quase um segundo). O quão rápido você pode discar depende do equipamento de sua compania telefônica que controla sua linha. A duração mínima é de 50, quase duas vezes mais rápido, e esta velocidade normalmente funciona. </para>
+
+<screen
+><userinput
+><command
+>ATZ</command
+></userinput
+>        <lineannotation
+># reinicia para o perfil padrão</lineannotation>
+<userinput
+><command
+>ATS11=50</command
+></userinput
+>   <lineannotation
+># discagem o mais rápida possível, use números maiores se não funcionar</lineannotation>
+<userinput
+><command
+>AT&amp;W</command
+></userinput
+>   <lineannotation
+># grava para o perfil padrão</lineannotation
+>
+</screen>
+
+</sect1>
+</chapter>

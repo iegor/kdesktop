@@ -1,0 +1,4 @@
+KDE_LANG = ca
+SUBDIRS = $(AUTODIRS)
+KDE_DOCS = kdesu
+KDE_MANS = AUTO

@@ -1,0 +1,140 @@
+<chapter id="security">
+<title
+>&kppp; in vprašanja varnosti</title>
+
+<para
+>Ta razdelek je v glavnem za superuporabnike (<systemitem
+>root</systemitem
+>), ljudi s pomembnimi varnostnimi vprašanji ali za preprosto tehnično zainteresirane ljudi. Ni vam potrebno prebrati tega, če uporabljate &Linux; samo doma za vaše potrebe (čeprav se lahko naučite kaj novega, če to preberete).</para>
+
+<sect1 id="security-restricting-access">
+<title
+>Omejevanje dostopa do &kppp;</title>
+
+<para
+>Sistemski administrator bo mogoče želel omejiti dostop, komu je dovoljeno uporabljati &kppp;. Za to obstajata dva načina:</para>
+
+<sect2 id="security-group-permissions">
+<title
+>Omejevanje dostopa z dovoljenji za skupine</title>
+
+<para
+>Ustvarite novo skupino (mogoče jo boste hoteli poimenovati <systemitem
+>dialout</systemitem
+> ali podobno), dodajte vse uporabnike, ki naj bi imeli dovoljenje za uporabo &kppp;-ja v to skupino in vtipkajte:</para>
+
+<screen
+><prompt
+>#</prompt
+> <userinput
+><command
+>chown</command
+> <option
+>root.dialout</option
+> <filename
+>/opt/kde/bin/kppp</filename
+></userinput>
+<prompt
+>#</prompt
+> <userinput
+><command
+>chmod</command
+> <option
+>4750</option
+> <filename
+>/opt/kde/bin/kppp</filename
+></userinput>
+</screen>
+
+<para
+>Tukaj se privzame, da je bil &kde; nameščen v <filename class="directory"
+>/usr/local/kde</filename
+>in vaša nova skupina se imenuje <systemitem
+>dialout</systemitem
+>.</para>
+
+</sect2>
+
+<sect2 id="security-kppps-way">
+<title
+>Omejevanje dostopa na &kppp;-jev način</title>
+
+<para
+>Preden se karkoli naredi, &kppp; preveri, če obstaja datoteka imenovana <filename
+>/etc/kppp.allow</filename
+>. Če ta datoteka obstaja, bodo SAMO uporabniki imenovani v tej datoteki imeli dovoljenje za klicanje. Ta datoteka mora biti berljiva vsakemu uporabniku (seveda <emphasis
+>NE</emphasis
+> zapisljiva). Prepoznana so samo imena s katerimi se uporabniki prijavijo, zato ne morete uporabiti <acronym
+>UID</acronym
+>-jev v tej datoteki. Tukaj je kratek primer:</para>
+
+<screen>
+# /etc/kppp.allow
+# comment lines like this are ignored
+# as well as empty lines
+
+fred
+karl
+daisy
+</screen>
+
+<para
+>V zgornjem primeru samo uporabniki <systemitem
+>fred</systemitem
+>, <systemitem
+>karl</systemitem
+> in <systemitem
+>daisy</systemitem
+> lahko kličejo, kot tudi vsak uporabnik z <acronym
+>UID</acronym
+> nastavljen na 0. Zato vam ni potrebno postaviti uporabnika root v to datoteko.</para>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="security-why-suid">
+<title
+>&kppp; ima nastavljen <acronym
+>SUID</acronym
+> bit. Kaj pa varnost?</title>
+
+<para
+>Navidezno je nemogoče napisati program za klicanje brez <acronym
+>SUID</acronym
+> bita, ki je istočasno varen in preprost za uporabo za neizkušene uporabnike. &kppp; odgovarja na varnostna vprašanja z naslednjo strategijo:</para>
+
+<itemizedlist
+> <listitem
+> <para
+>Takoj ko se program zažene, se &kppp; razveji.</para
+> </listitem
+> <listitem
+> <para
+>Glavni proces (master process) (kateri skrbi za vse <acronym
+>GUI</acronym
+> stvari, uporabniško medsebojno delovanje in podobno) takoj za tem prekine <acronym
+>SUID</acronym
+> način in teče z navadnimi uporabniškimi privilegiji.</para
+> </listitem
+> <listitem
+> <para
+>Podrejeni proces (slave process) ohrani svoje privilegije in je odgovoren za akcije, ki potrebujejo privilegije <systemitem
+>root</systemitem
+>-a. Da ohranimo ta del varen, se tukaj ne uporabijo nobeni klici &kde; ali &Qt; knjižnic, ampak samo preprosti klici C knjižnic. Izvorna koda za ta proces je kratka (okrog 500 vrstic) in dobro dokumentirana, zato jo je lahko preveriti, če vsebuje varnostne luknje.</para
+> </listitem
+> <listitem
+> <para
+>Glavni in podrejeni proces komunicirata s standardnim &UNIX; <acronym
+>IPC</acronym
+>.</para
+> </listitem
+> </itemizedlist>
+
+<para
+>Resnično hvala Harriju Portenu, da je napisal ta odlični del kode. Jaz sem mislil, da je nemogoče - on pa jo je napisal v enem tednu.</para>
+
+</sect1>
+
+</chapter>
+

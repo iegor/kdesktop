@@ -1,0 +1,676 @@
+<chapter id="theory">
+<title
+>Informació teòrica fonamental: &CUPS;, <acronym
+>IPP</acronym
+>, &PostScript; i <application
+>Ghostscript</application
+></title>
+
+<para
+>Aquest capítol està orientat a oferir una mica de rerefons teòric sobre la impressió en general i especialment sobre &CUPS;. Si no necessiteu aquesta informació, passeu directament al <link linkend="getting-started"
+>següent capítol</link
+>. Segurament haureu de tornar a aquest capítol en algun moment, perquè a vegades és necessària teoria extra per a resoldre problemes pràctics.</para>
+
+<sect1 id="basics-of-printing">
+<title
+>Fonaments sobre la impressió</title>
+
+<para
+>La impressió és un dels capítols més complicats de la tecnologia <acronym
+>IT</acronym
+>.</para>
+
+
+<para
+>Al principi, tot desenvolupador d'un programa que era capaç d'imprimir també havia d'escriure els seus propis controladors. Això era força complicat perquè diferents programes tenien formats diferents. Fins i tot programes amb el mateix ús, per exemple, els processadors de text, tot sovint no entenien d'altres formats. De manera que no hi havia una interfície comú per a totes les impressores, per tant els programadors sovint tan sols donaven suport a uns pocs models seleccionats.</para>
+
+<para
+>L'aparició d'un nou dispositiu en el mercat obligava als autors dels programes a escriure un nou controlador si volien que el seu programa el suportés. També per als fabricants, no era possible assegurar de que el seu dispositiu estigués suportat per tots els programes coneguts (tot i que ara n'hi ha molts menys).</para>
+
+<para
+>Oferir suport a deu programes d'aplicació i a una dotzena d'impressores, volia dir que l'administrador del sistema havia de batallar amb 120 controladors. De manera que el desenvolupament d'interfícies unificades entre programes i impressores es convertia en una necessitat urgent.</para>
+
+<para
+>L'aparició dels <quote
+>Llenguatges de descripció de la pàgina</quote
+>, descrivint la representació gràfica de la tinta i el tòner en fulls de paper (o d'altres dispositius de sortida, com monitors, tipògrafs fotogràfics, &etc;) d'una manera comuna, el qual va ocupar un gran buit. </para>
+
+<para
+>Un d'aquests desenvolupaments fou el &PostScript; de Adobe. Significava que un programador d'aplicacions es podia concentrar en fer que el seu programa generés un llenguatge de descripció &PostScript; de les pàgines que volia imprimir, mentre que els desenvolupadors de dispositius de la impressió es podien concentrar en crear dispositius conformes a &PostScript;.</para>
+
+<para
+>Per descomptat, amb el temps, varen aparèixer d'altres mètodes de descripció. Els competidors més importants de &PostScript; foren <acronym
+>PCL</acronym
+> (<quote
+>Print Control Language</quote
+>, de &Hewlett-Packard;), <quote
+>ESC/P</quote
+> (de Epson) i <acronym
+>GDI</acronym
+> (<quote
+>Graphical Device Interface</quote
+> de &Microsoft;).</para>
+
+<para
+>L'aparença d'aquests llenguatges de descripció de pàgina va facilitar la vida i el desenvolupament futur a tot el món. Tot i això encara n'hi havien de diferents, incompatibles, i competien entre sí dificultant la vida dels usuaris, administradors, desenvolupadors i fabricants.</para>
+
+<sect2>
+<title
+>&PostScript; en memòria - Mapes de bits sobre paper</title>
+
+<para
+>&PostScript; és més usat en entorns professionals de la impressió tals com PrePress i industries de serveis d'impressió. En els dominis de &UNIX; i &Linux;, &PostScript; és un estàndard predominant com <acronym
+>PDL</acronym
+>. Allí, gairebé tots els programes generen una representació &PostScript; de les seves pàgines una vegada que feu clic sobre el botó <quote
+>Imprimeix</quote
+>. Mirem un exemple simple (fet a ma) de codi &PostScript;. El següent llistat descriu dos dibuixos simples:</para>
+
+<example id="coded-postscript">
+<title
+>Codi &PostScript;</title>
+<screen
+>%!PS
+100 100 moveto
+0 50 rlineto
+50 0 rlineto
+0 -50 rlineto
+closepath
+.7 setgray fill
+% first box over; next
+160 100 moveto
+0 60 rlineto
+45 10 rlineto
+0 -40 rlineto
+closepath
+.2 setgray fill</screen>
+</example>
+
+<para
+>Aquest exemple us indica a la imaginària <quote
+>ploma</quote
+> de &PostScript; que dibuixi una certa forma, i després ompli les diferents ombres de gris. La primera part es tradueix en castellà amb <quote
+>Moure a la coordenada (100,100), dibuixa una línia de longitud 50 cap a dalt, després una a la dreta, altra vegada cap avall i finalment tanca aquesta part. Ara usa un dibuix gris al 70% i usa-la per omplir la forma geomètrica.</quote
+></para>
+
+<example id="rendered-postscript">
+<title
+>Renderitzat &PostScript;</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="ps-boxes.png" format="PNG"/>
+</imageobject>
+<textobject>
+<phrase
+><xref linkend="coded-postscript"/> exemple mostrat com una imatge.</phrase>
+</textobject>
+</mediaobject>
+</example>
+
+<para
+>Per descomptat, el &PostScript; pot ser molt més complicat que el que es veu en aquest simple exemple. És un complet llenguatge de programació amb molts operadors i funcions. Fins i tot es poden escriure programes de &PostScript; per a calcular el valor de Pi, formatar un disc dur o escriure un fitxer. El principal valor i força de &PostScript; resideix en el camp de la descripció dels objectes gràfics d'una pàgina: També podeu canviar l'escala, moure, transformar, rotar i distorsionar qualsevol cosa susceptible de ser representada en un full de paper; tals com lletres amb diferents aspectes, figures, formes, ombres, colors, línies, punts, dibuixos...</para>
+
+<para
+>Un fitxer &PostScript; és una representació d'una o més pàgines destinades a ser impreses, d'una forma relativament abstracta. La seva utilitat ideal és la de representar pàgines d'una forma independent al dispositiu que s'usarà per a imprimir-les. &PostScript; no és <quote
+>visible</quote
+> directament, tan sols es desa en discos durs i en memòria <acronym
+>RAM</acronym
+> com a una representació codificada de futures pàgines impreses.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Imatges de trama en fulls de paper</title>
+
+<para
+>El que es veu sobre una full de paper gairebé sempre és una <quote
+>imatge de trama</quote
+>. Tot i que el vostre cervell us suggereixi que el que els vostres ulls veuen és una línia: Agafeu una bona lupa i descobrireu cents de petits punts... (un exemple del contrari són les línies que han estat dibuixades per un traçador). Y això és tot el que els <quote
+>motors de dibuix</quote
+> de les impressores actuals són capaces de posar sobre el paper: Simples punts de diferents colors, mides i resolucions, per a composar una <quote
+>imatge de pàgina</quote
+> completa en base a diferents patrons de mapes de bits.</para>
+
+<para
+>Les diferents impressores necessiten les imatges de trama preparades en maneres diferents. Penseu en un dispositiu d'injecció de tinta: Depenen de la seva resolució, el nombre de tintes usades (les millors necessiten 7 tintes diferents, mentre que les més barates tan sols en solen usar 3), el nombre d'injectors disponibles (alguns capçals de la impressió tenen fins a 100) que dispensen tinta simultàniament, l'<quote
+>algoritme de tramat</quote
+> que s'usi, i moltes altres coses, el format de trama final i l'ordre de transferència al motor d'injecció depenen en gran mesura del model exacte utilitzat.</para>
+
+<para
+>Al començament de la existència del <quote
+>Line Printer Daemon</quote
+>, les impressores eren màquines que martellejaven mecànicament línies de text <acronym
+>ASCII</acronym
+> en un paper continu que es recollia d'una caixa ubicada sota la taula... Tota una diferència amb avui dia!</para>
+
+</sect2>
+
+
+<sect2>
+<title
+><acronym
+>RIP</acronym
+>: Del &PostScript; a les trames</title>
+
+<para
+>Abans de que les imatges de trama siguin impreses en fulls de paper, ha estat necessari calcular d'alguna manera un representació &PostScript; abstracta. Aquest procés requereix un càlcul força intensiu. S'anomena <quote
+>Raster Imaging Process -procés de tramat de la imatge-</quote
+>, més comunament conegut com <quote
+><acronym
+>RIP</acronym
+></quote
+>.</para>
+
+<para
+>En les impressores &PostScript; el procés <acronym
+>RIP</acronym
+> es realitza en els propis dispositius d'impressió. Simplement s'ha d'enviar el fitxer &PostScript;. El <quote
+>Processador de tramat de la imatge</quote
+> (que també s'anomena <acronym
+>RIP</acronym
+>) intern de la impressora és el responsable (i especialista) en dur a terme correctament aquesta tasca d'interpretació de les descripcions de la pàgina &PostScript; i posar la trama sobre el paper.</para>
+
+<para
+>Els dispositius &PostScript; petits tenen un <acronym
+>RIP</acronym
+> incorporat en el maquinari; gravat e silici, sobre un xip especial. Les grans impressores professionals tenen el seu <acronym
+>RIP</acronym
+> implementat per programari dins d'un ordinador &UNIX; ràpid i dedicat en exclusiva al procés, normalment màquines Sun SPARC Solaris o &SGI; &IRIX;.</para>
+
+</sect2>
+
+<sect2>
+<title
+><application
+>Ghostscript</application
+> com a un <acronym
+>RIP</acronym
+> per programari</title>
+
+<para
+>Però, què succeeix quan no es te la sort de poder disposar d'una impressora &PostScript;?</para>
+
+<para
+>És necessari realitzar el procés de <acronym
+>RIP</acronym
+> abans d'enviar la informació a la impressora. Necessitareu interpretar el &PostScript; generat per l'aplicació en la mateixa màquina (client d'impressió). Necessitareu conèixer el format de trama exacte que requereix la impressora per a poder-lo composar adequadament.</para>
+
+<para
+>En altres paraules, com no es pot deixar en mans de la impressora la responsabilitat d'interpretar el &PostScript;, tot resulta més complicat. Necessitareu un programari que intenti resoldre automàticament la qüestió.</para>
+
+<para
+>Això és exactament el que s'encarrega de fer l'omnipresent &ghostscript; en molts sistemes &Linux;, *BSD o d'altres &UNIX; que necessiten imprimir en impressores que no són &PostScript;: &ghostscript; és un intèrpret de &PostScript;, un <acronym
+>RIP</acronym
+> per programari capaç d'ocupar-se de molts dispositius diferents.</para>
+
+</sect2>
+
+<sect2>
+<title
+><quote
+>Controladors</quote
+> i <quote
+>filtres</quote
+> en general</title>
+
+<para
+>Per a produir imatges de trama a partir d'una entrada &PostScript;, en &ghostscript; s'usa el concepte de <quote
+>filtres</quote
+>. Hi ha molts filtres diferents en &ghostscript;, alguns d'ells específics per a un model d'impressora. Els filtres específics per a dispositius de &ghostscript; en moltes ocasions han estat desenvolupats sense el consentiment o el suport del fabricant en qüestió. Sense accés a les especificacions i a la documentació, resulta un procés molt complicat descobrir els protocols i els formats de dades a través de enginyeria inversa.</para>
+
+<para
+>No tots els filtres de &ghostscript; funcionen igual de bé en les seves impressores corresponents. Alguns dels més moderns, com el filtre <application
+>stp</application
+> del projecte de la impressió de <application
+>Gimp</application
+>, produeixen uns resultats excel·lents amb una qualitat de la impressió a qualitat fotogràfica igual o fins i tot superior que els seus controladors equivalents en &Microsoft; &Windows;.</para>
+
+<para
+>&PostScript; és el que produeixen la majoria de programes d'aplicació que imprimeixen en &UNIX; i &Linux;. Els filtres són autèntiques màquines de conversió cap a qualsevol sistema d'impressió. Essencialment el que fan és produir els mapes de bits correctes a partir de qualsevol entrada &PostScript; i amb destí als enginys que no són &PostScript;.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Controladors, filtres i dorsals en CUPS</title>
+
+<para
+>&CUPS; usa els seus propis filtres, tot i que el sistema de filtratge està basat en Ghostscript. En concret els filtres pstoraster i imagetoraster estan derivats directament del codi de Ghostscript. &CUPS; ha reorganitzat i optimitzat tots els mecanismes del codi antic i l'ha distribuït en uns quants mòduls més concrets i diferents.</para>
+
+<para
+>El següent dibuix (realitzat amb l'ajuda de &kivio;) mostra una idea dels filtres i els dorsals que funcionen dins de &CUPS;, i de com interaccionen junts. El <quote
+>flux</quote
+> va de dalt cap a avall. Els dorsals són filtres especials: No converteixen les dades a un format diferent, però envien els fitxers una vegada preparats a la impressora. Hi ha diferents dorsals per als diferents protocols de transferència.</para>
+
+<screenshot id="architecture-diagram">
+<screeninfo
+>Diàleg de &kprinter; iniciat (esborrany del dibuix de &kivio;) </screeninfo>
+<mediaobject>
+<imageobject>
+<imagedata fileref="cups-filterarchitecture-kivio-70Percent-scaled.png"
+format="PNG"/></imageobject>
+<textobject>
+<phrase
+>Diàleg de &kprinter; iniciat (esborrany del dibuix de &kivio;)</phrase
+></textobject>
+</mediaobject>
+</screenshot>
+
+</sect2>
+<sect2>
+<title
+>Cues i dimonis de la impressió</title>
+
+<para
+>A part de la dura tasca del filtratge per a generar mapes de bits llestos per a la impressió, qualsevol programari d'impressió necessita usar un mecanisme de cues: Això serveix per alinear els diferents treballs dels diferents usuaris per a les diferents impressores a través dels diferents filtres i enviar-los correctament cap als seus destins. El dimoni de la impressió s'encarrega de tot això.</para>
+
+<para
+>Aquest dimoni manté la casa ordenada: També és el responsable del control de tasques: Els usuaris tenen que poder cancel·lar, aturar, reiniciar, &etc; les seves tasques (però no les d'altres persones) i tot ha de funcionar correctament.</para>
+
+</sect2>
+
+</sect1>
+
+
+
+<sect1 id="cups-and-ppd">
+<title
+>Excursió: Com usa <quote
+>CUPS</quote
+> la potència dels &PPD;</title>
+
+<para
+>Ara que ja coneixem com es transforma un fitxer en llenguatge &PostScript; (el qual descriu la disposició de la pàgina de manera independent al dispositiu) en una imatge de trama, podríem preguntar: <quote
+>Bé, hi ha diferents tipus de dispositius de sortida: Difereixen en la seva resolució, en els diferents mides de paper, en les opcions de l'acabat (a doble cara, pamflets, enquadernació entre fulls de diferents colors que es recullen de diferents safates, &etc;). Com s'ajusta tot això en el nostre model de &PostScript; independent del dispositiu?</quote
+></para>
+
+<para
+>La resposta la trobarem en els fitxers de descripció d'impressores &PostScript; (&PPD;). Un &PPD; descriu totes les característiques dependents del model en concret que s'usin en una impressora determinada. També conté els comandaments codificats que s'han d'usar per a invocar a certes característiques del dispositiu. Però els &PPD; no són un llibre tancat, simplement són fitxers de text <acronym
+>ASCII</acronym
+>.</para>
+
+<para
+>Els &PPD; foren <quote
+>inventats</quote
+> per Adobe per a facilitar als fabricants la implementació de les seves pròpies característiques en les impressores &PostScript;, i alhora conservar la manera estàndard de fer-ho. Els &PPD; estan ben descrits i documentats per Adobe. La seva especificació resulta ser un estàndard obert de facte.</para>
+
+<sect2 id="ppd-files">
+<title
+>Opcions de la impressió dependents del dispositiu</title>
+
+<para
+>Tingueu present que la impressió avançada de &PostScript; es desenvolupar originalment per a ser usada tan sols en sistemes &Microsoft; &Windows; i Apple &Mac;. Durant molt de temps les característiques especials dels dispositius de la impressió moderns no han estat disponibles en &Linux; i &UNIX;. &CUPS; ha suposat un canvi radical en això. &CUPS; està unit molt a prop als &PPD; i per això els &PPD; existents es poden usar completament en els sistemes que usen &CUPS;.</para>
+
+<para
+>Mitjançant l'ús dels &PPD;, els fabricants d'impressores foren capaços d'introduir característiques específiques del maquinari en els seus productes, com per exemple, la impressió a dues cares, l'enquadernació, les grapadores, l'acabat, &etc;. El controlador de la impressora carrega el &PPD; de la mateixa manera que un fitxer de configuració. D'aquesta manera el controlador de la impressora s'informa sobre les opcions del dispositiu que estan disponibles i com cridar-les; el controlador també presenta un &GUI; per a l'usuari. A través d'aquest mecanisme encara podreu imprimir fitxers de llenguatges de descripció &PostScript; que són <quote
+>independents del dispositiu</quote
+> i especificar opcions d'acabat que sí són exclusives de cada dispositiu en concret i que s'afegeixen al &PostScript; generat per l'aplicació.</para>
+
+</sect2>
+
+<sect2>
+<title
+>A on obtenir els &PPD; per a les impressores &PostScript;</title>
+
+<para
+>Els &PPD; no foren originalment utilitzats rutinàriament en els sistemes &UNIX; i &Linux;. Els distribuïdores dels &PPD; mai varen tenir la intenció de que fossin usats en d'altres sistemes operatius diferents als suportats originalment: &Microsoft; &Windows; i &MacOS;. Gràcies al brillant esforç realitzat per a suportar i tornar a usar l'especificació &PPD; existent, &CUPS; ofereix ara la possibilitat d'usar totes les característiques de les impressores modernes als usuaris dels sistemes operatius &Linux; i similars. &kdeprint; fa el seu ús fins i tot més còmode del que el varen concebre originalment els desenvolupadors de &CUPS;.</para>
+
+<para
+>&CUPS; pot usar els &PPD; originals de &Windows;, distribuïts pels fabricants en el cas de les impressores &PostScript;. Normalment no solen costar diners i es poden obtenir de qualsevol ordinador &Windows; que tingui instal·lat el controlador &PostScript; del model en qüestió o dels discos proveïts junt amb la impressora. També hi ha diverses pàgines web des de les que es poden descarregar.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Com poden ser d'útils els &PPD; fins i tot en les impressores que no són &PostScript;.</title>
+
+<para
+>Ara ja coneixem com poden usar els &PPD; les impressores &PostScript;. Però, què passa amb les impressores que no són &PostScript;? &CUPS; ha realitzat un bon truc amb això: Usant el mateix format i la mateixa estructura que en les descripcions d'impressores &PostScript; (els &PPD;) del mon &PostScript;, es poden descriure les opcions existents en les impressores que no són &PostScript;. Per a aquest propòsit &CUPS; ha afegit algunes opcions especials (principalment la línia que defineix el filtre a usar en el procés posterior del fitxer &PostScript;).</para>
+
+<para
+>D'aquesta manera els desenvolupadors poden usar el mateix motor de programari per a processar les opcions disponibles en els fitxers de descripció d'impressores de tot tipus de dispositius. És obvi que els desenvolupadors de &CUPS; no poden esperar a que els fabricants de les impressores no &PostScript; decideixin de sobte posar-se a desenvolupar els &PPD;. Haurien de fer-ho ells sols i començar des de cero. Hi ha més de 1.000 d'aquests fitxers disponibles amb la versió comercial de &CUPS;, anomenada <application
+>ESP PrintPro</application
+>.</para>
+
+<para
+>Però també hi ha disponibles molts &PPD; específics de &CUPS;. Fins i tot ara segueixen sense estar realitzats, en molts casos, pels fabricants de les impressores, si no per desenvolupadors de programari lliure. L'equip de &CUPS; ha comprovat el seu funcionament i els altres han vingut al darrere: Mentre que fa un o dos anys imprimir en &Linux; i &UNIX; era una tortura amb determinades impressores, en l'actualitat és possible usar a la perfecció una gran gama d'aquestes, incloent impressores d'injecció de 7 colors capaces de donar una sortida de qualitat fotogràfica.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Diferents maneres d'obtenir els &PPD; per a impressores que no són &PostScript;</title>
+
+<para
+>Es poden obtenir els &PPD; per a usar amb &CUPS; i impressores que no són &PostScript; de diferents punts en la web:</para>
+
+<itemizedlist>
+<listitem>
+<para
+>En primer lloc està el repositori de <ulink url="http://www.linuxprinting.org"
+>www.linuxprinting.org</ulink
+>, el qual permet generar automàticament un &PPD; per a qualsevol impressora que estigués anteriorment suportada per &ghostscript;. Això ajuda a realitzar el canvi a &CUPS; sense molt esforç, si és que voleu fer-ho. Si la vostra impressora funcionava bé amb el mètode tradicional de &ghostscript;, useu el generador automàtic per afegir el controlador a &CUPS; i així tindreu el millor d'ambdós mons.</para>
+</listitem>
+
+<listitem>
+<para
+>En segon lloc, hi ha els &PPD; de &CUPS; per a més de 120 models d'impressores, guiats pel nou controlador universal <application
+>stp</application
+>. <application
+>stp</application
+> (usat originalment per a Stylus Photo) ara és desenvolupat pel projecte gimp-print; el projecte fou iniciat per en Mike Sweet, el líder desenvolupador de &CUPS; i ara està disponible en la pàgina <ulink url="http://gimp-print.sourceforge.net"
+>gimp-print.sourceforge.net</ulink
+>. Aquest controlador imprimeix en qualitat fotogràfica real en la majoria de les impressores d'injecció de tinta modernes i es pot configurar per a crear 120 &PPD; de &CUPS;, a més de la seva pròpia compilació. Estan suportades les impressores làser i d'injecció d'&HP;, els models Stylus i Photo Color de <trademark class="registered"
+>Epson</trademark
+> així com alguns models de <trademark class="registered"
+>Canon</trademark
+> i <trademark class="registered"
+>Lexmark</trademark
+>.</para>
+</listitem>
+
+<listitem>
+<para
+>En tercer lloc està l'extensió comercial de &CUPS; realitzada pels mateixos desenvolupadors de &CUPS;: S'anomena <application
+>ESP PrintPro</application
+> i inclou més de 2.300 controladors d'impressora. Fins i tot porta incloses unes versions millorades dels filtres imagetoraster i pstoraster.</para>
+</listitem>
+</itemizedlist>
+
+<para
+>&CUPS; facilita molt als fabricants incloure suport de la impressió per a &Linux; i &UNIX; a un cost raonablement baix. El marc de treball modular de &CUPS; facilita la inclusió de qualsevol filtre (=controlador) amb un esforç mínim i l'accés i ús de tot l'entorn de treball de la impressió que crea &CUPS;.</para>
+
+<para
+>Podeu llegir més sobre les impressionants característiques de &CUPS; en la documentació de &CUPS; que està disponible en <ulink url="http://www.cups.org/documentation.html"
+>http://www.cups.org/documentation.html</ulink
+> i <ulink url="http://wwww.danka.de/printpro/faq.html"
+>http://www.danka.de/printpro/faq.html</ulink
+>. També és interessant <ulink url="http://www.linuxprinting.org"
+>http://www.linuxprinting.org/</ulink
+>, a on es troba el repositori universal de tot el relacionat amb la impressió en &Linux; i &UNIX;.</para>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="cups-ipp-support">
+<title
+>Com &CUPS; és la millor opció disponible gràcies al suport de &IPP;</title>
+
+<sect2>
+<title
+><quote
+><acronym
+>LPD</acronym
+> ha de morir!</quote
+></title>
+
+<para
+>Durant molt de temps gran quantitat de desenvolupadors estaven en profund desacord amb l'antic <acronym
+>LPD</acronym
+>. Diversos nous projectes varen mirar de millorar la impressió: <application
+>LPRng</application
+> és l'exemple més conegut. D'altres són <acronym
+>PDQ</acronym
+>, <acronym
+>PPR</acronym
+>, <acronym
+>PLP</acronym
+>, <acronym
+>GNUlpr</acronym
+> i <acronym
+>RLPR</acronym
+>. Però cap dels nous programes varen resultar ser un <quote
+>gran avanç</quote
+>; la majoria d'aquests es limitaven a implementar l'antiga especificació del <acronym
+>LPD</acronym
+> amb unes poques (o unes moltes) noves extensions, el que els feia incompatibles entre ells.</para>
+
+<para
+>Després d'haver vist el desenvolupament de no un, si no de diferents alternatives al venerable <acronym
+>LPD</acronym
+> d'estil <acronym
+>BSD</acronym
+>, en Grant Taylor, autor del <citetitle
+>Linux Printing HOWTO</citetitle
+>, va alçar la veu per a dir <citetitle
+>LPD ha de morir!</citetitle
+> en la seva <quote
+>Campanya per a l'abolició del Line Printer Daemon</quote
+>.</para>
+
+<!-- FIXME: look up URLs for the above -->
+
+</sect2>
+
+<sect2>
+<title
+>Com va arribar a ser el &IPP;</title>
+
+<para
+>Conjuntament amb el vist anteriorment, en el costat de la industria, es varen fer esforços per a superar les conegudes debilitats de <acronym
+>LPD</acronym
+>. Es va començar amb extensions propietàries de l'antic <acronym
+>LPD</acronym
+> i es va arribar fins el punt de que &Hewlett-Packard; va intentar establir &HP; JetDirect com a un nou estàndard en la impressió en xarxa. Això va desembocar en més incompatibilitats.</para>
+
+<para
+>Al final, va prendre forma una iniciativa per a definir un nova industria comú i l'estàndard <acronym
+>IETF</acronym
+>. El <quote
+>Printer Working Group</quote
+> o <acronym
+>PWG</acronym
+>, una unió de fabricants de maquinari, programari i sistemes operatius, va crear un esborrany del nou <quote
+>Internet Printing Protocol</quote
+>, &IPP;. La versió 1.1 de &IPP; ha estat aprovada per la <acronym
+>IETF</acronym
+> (Internet Engineering Task Force) com a un estàndard proposat i ara frueix del suport unànime en la industria a Europa, els Estats Units i el Japó. La majoria dels models d'impressores de xarxa actuals incorporen suport per a &IPP; junt amb el tradicional <acronym
+>LPR</acronym
+>/<acronym
+>LPD</acronym
+> o per a la impressió JetDirect.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Perquè &IPP; és la solució a tants problemes</title>
+
+<para
+>&IPP; promet resoldre molts dels problemes als que s'enfronten els administradores de xarxa. Aquest col·lectiu normalment ha d'ocupar-se d'entorns de xarxa heterogenis i passa més de la meitat de les seves hores de treball resolent problemes d'impressió.</para>
+
+<para
+>Al crear un conjunt únic de funcions de consulta per a les impressores i els servidors compatibles amb &IPP;, per a la transferència de fitxers i l'establiment d'atributs de control de tasques entre altres coses, &IPP; està destinat a funcionar en totes les plataformes i sistemes operatius. De tota manera, la implantació no va a produir-se de manera immediata, ja que molts dispositius d'impressió antics seguiran en ús durant diversos anys. Pel que, en &IPP; es preveu la compatibilitat amb qualsevol implementació anterior de &IPP;. &CUPS; proveeix la viabilitat de la impressió &IPP; en tots els entorns.</para>
+
+<para
+>Sense dubte el seu major avantatge serà la integració en el conjunt existent d'altres protocols <acronym
+>IP</acronym
+> robustos. Al ser una extensió del provat i robust protocol <acronym
+>HTTP</acronym
+> 1.1, per a la tasca especial de manejar fitxers i dades relacionades, també resulta molt simple afegir-li d'altres estàndards a mesura que es van desenvolupant:</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Autenticació bàsica, organitzada i certificada per als usuaris que desitgen accedir als serveis d'impressió.</para>
+</listitem>
+<listitem>
+<para
+>Xifratge SSL3 i <acronym
+>TLS</acronym
+> per a la transferència de dades.</para>
+</listitem>
+<listitem>
+<para
+>Comunicació bidireccional entre els clients i els dispositius d'impressió, usant els mecanismes <command
+>GET</command
+> i <command
+>POST</command
+> de <acronym
+>HTTP</acronym
+>/&IPP;.</para>
+</listitem>
+<listitem>
+<para
+>Integració amb el servei de directori LDAP per a mantenir una base de dades consistent d'impressores disponibles, les seves capacitats i els costos per pàgina, &etc;, així com contrasenyes d'usuari, les <acronym
+>ACL</acronym
+>, &etc;.</para>
+</listitem>
+<listitem>
+<para
+>Impressió de <quote
+>recollida</quote
+> (en oposició al model tradicional d'impressió per <quote
+>enviament</quote
+>), a on el servidor o la impressora tan sols han de ser informats de la &URL; d'un document, per a poder-lo rebre des del recurs sobre la Internet i imprimir-lo.</para>
+</listitem>
+</itemizedlist>
+
+</sect2>
+
+<!--
+<sect2>
+<title
+>&CUPS;, &IPP; and &kde;</title>
+
+<para
+>&CUPS; is the most advanced implementation of &IPP; on all &OS;
+platforms.  That makes &CUPS; a crucial ally to help "conquer the
+desktop" for projects like &kde;. &kdeprint; is the best utility to
+make &CUPS; core functionality available to &kde; Desktop
+users.</para>
+
+</sect2
+> -->
+
+<sect2>
+<title
+>Impressió <quote
+>Plug'n'Play</quote
+> per als clients</title>
+
+<para
+>Heu vist alguna vegada una demostració de les capacitats de &CUPS; en la xarxa? Segurament us haureu quedat molt impressionat si no teníeu una idea prèvia del que anava a succeir.</para>
+
+<para
+>Imagineu que sou l'administrador d'una <quote
+>xarxa local</quote
+>. Amb el propòsit de realitzar unes proves heu instal·lat un sistema &kde;/&CUPS; a la vostra xarxa, junt amb una dotzena d'impressores configurades i funcionant: Impressores làser &PostScript;, d'injecció de tinta, &etc; Els usuaris de &kde; d'aquest sistema estan feliços i contents, ja que poden imprimir com mai ho havien fet, podent accedir a tots <quote
+>els ítems</quote
+> de cada impressora. Heu tardat 2 hores en tenir-ho tot funcionant a la perfecció... i ara 100 usuaris de la xarxa volen un el mateix. Dues hores més en cada sistema? Creieu que és impossible acabar-ho abans de l'any que ve?</para>
+
+<para
+>Doncs aneu errat! Simplement amb que canvieu un paràmetre en el sistema &CUPS; original per a convertir-lo en un <quote
+>servidor</quote
+>. Instal·leu &CUPS; en els altres cinc sistemes, com a <quote
+>client</quote
+>. En el moment en el que torneu al vostre primer sistema, trobareu als usuaris jugant feliçment amb els paràmetres de la dotzena d'impressores que havíeu instal·lat en el <quote
+>servidor</quote
+>. D'alguna manera màgica les impressores han aparegut en tots els diàlegs de la impressió dels cinc nous sistemes client de &CUPS;.</para>
+
+<para
+>Els seus usuaris poden imprimir, però no s'ha instal·lat ni un controlador en els clients, ni tan sols s'han definit cues d'impressió.</para>
+
+<para
+>Llavores, quin és el truc?</para>
+
+</sect2>
+
+<sect2>
+<title
+>Es <quote
+>veuen</quote
+> les impressores que no estan instal·lades localment?</title>
+
+<para
+>La resposta no és de cap manera complicada.</para>
+
+<para
+>Si en la <quote
+>xarxa local</quote
+> hi ha un servidor &CUPS;, aquest envia els noms de totes les impressores disponibles, usant el protocol <acronym
+>UDP</acronym
+> i el port 631. El port 631 està reservat com a un <quote
+>port conegut</quote
+> per la <acronym
+>IANA</acronym
+> (l'<quote
+>Autoritat d'assignació de números d'Internet</quote
+>) per als propòsits de &IPP;. Tots els clients &CUPS; esperen informació d'un servidor &CUPS; en el port 631. D'aquesta manera és com tenen notícia de les impressores disponibles i també és així com coneixen la <quote
+>ruta</quote
+> cap a aquestes impressores.</para>
+
+<para
+>Usant &IPP;, el qual en realitat és una intel·ligent extensió per a <acronym
+>HTTP</acronym
+> v1.1, &CUPS; és capaç d'adreçar tots els objectes relacionats amb el sistema d'impressió a través de <quote
+>localitzadors universals de recursos</quote
+> (Universal Resource Locators o <acronym
+>URL</acronym
+>). Ja siguin tasques d'impressió per eliminar o reiniciar, impressores per a ser consultades o modificades, o tasques d'administració per a realitzar en el servidor, amb &IPP; i &CUPS; es pot accedir a qualsevol recurs a través d'una <acronym
+>URL</acronym
+> determinada. Moltes de les coses més importants es poden fer a través de la interfície web de &CUPS;, la qual és accessible, per exemple, amb &konqueror;.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Imprimir sense instal·lar un controlador</title>
+
+<para
+>I encara més, els clientes bàsicament poden <quote
+>administrar</quote
+> i <quote
+>usar</quote
+> qualsevol impressora de la que tinguin noticia, de la mateixa manera que si fossin una impressora local. Òbviament això es pot restringir a través de llistes de control d'accés, &etc;, de manera que <emphasis
+>cap</emphasis
+> client no pugui usar <emphasis
+>qualsevol</emphasis
+> impressora de la manera que vulgui.</para>
+
+<para
+>Els clientes poden fins i tot imprimir sense tenir el filtre (o controlador) adequat instal·lat localment.</para>
+
+<para
+>Com funciona això? Si un client vol conèixer i seleccionar les opcions específiques d'una impressora, envia una petició (anomenada <command
+>CUPS-get-ppd</command
+>) al servidor. El servidor informa al client de totes les opcions específiques de la impressora, tal i com les ha llegit &PPD; al costat del servidor. L'usuari del client pot veure les opcions i seleccionar les que requereixi. Llavores envia al servidor d'impressió el fitxer a imprimir, normalment &PostScript; en <quote
+>brut</quote
+> sense filtrar, amanit amb les opcions específiques de la impressora, usant &IPP; com a protocol de transport. Tota la resta del procés, especialment el filtratge per a generar el format final adequat per a la impressora en concret, es realitza en el servidor. El servidor disposa dels programes necessaris (<quote
+>controladors</quote
+> o <quote
+>filtres</quote
+>) per a fer-ho.</para>
+
+<para
+>D'aquesta manera un client pot imprimir sense la necessitat de tenir instal·lat un controlador localment.</para>
+
+<para
+>Qualsevol canvi en el servidor, com l'afegit o modificació d'una impressora, és <quote
+>conegut</quote
+> a l'instant pels clients, sense que sigui necessari cap altra tipus de configuració.</para>
+
+</sect2>
+
+<sect2>
+<title
+><quote
+>Administració cero</quote
+>, balanceig de càrrega i <quote
+>commutació en les falles</quote
+></title>
+
+<para
+>Algunes altres de les característiques avançades que es troben integrades en &CUPS;, són la possibilitat de fer <quote
+>balanceig de càrrega</quote
+>.</para>
+
+<para
+>Si definiu les mateixes cues d'impressió en dos o més servidors diferents, els clients enviaran els seus treballs al primer servidor disponible o que respongui. Això implica un balanceig de càrrega automàtic entre els servidors. Si necessiteu retirar de la xarxa un servidor per a realitzar tasques de manteniment, els altres s'ocuparan de les seves tasques sense que l'usuari arribi a notar la diferència.</para>
+
+</sect2>
+
+</sect1>
+
+</chapter>

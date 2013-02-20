@@ -1,0 +1,1404 @@
+<appendix id="highlight">
+<appendixinfo>
+<authorgroup>
+<author
+><personname
+><firstname
+></firstname
+></personname
+></author>
+<othercredit role="translator"
+><firstname
+>Андрей</firstname
+><surname
+>Балагута</surname
+><affiliation
+><address
+><email
+>uj2@mail.ru</email
+></address
+></affiliation
+><contrib
+>Перевод на русский</contrib
+></othercredit
+><othercredit role="translator"
+><firstname
+>Алексей</firstname
+><surname
+>Опарин</surname
+><affiliation
+><address
+><email
+>opaleksej@yandex.ru</email
+></address
+></affiliation
+><contrib
+>Перевод на русский</contrib
+></othercredit
+> 
+</authorgroup>
+</appendixinfo>
+<title
+>Подсветка синтаксиса</title>
+
+<sect1 id="highlight-overview">
+
+<title
+>Обзор</title>
+
+<para
+>Синтаксическая подсветка позволяет отображать текст в редакторе разными цветами и стилями, таким образом отделяя одни синтаксические понятия от других. Например, в исходном тексте программы можно ключевые слова выделить полужирным шрифтом, а типы данных и комментарии отображать разными цветами, выделяя их из основного текста. Это улучшает читаемость документа и повышает продуктивность работы автора.</para>
+
+<mediaobject>
+<imageobject
+><imagedata format="PNG" fileref="highlighted.png"/></imageobject>
+<textobject
+><phrase
+>Функция Perl, отображенная с использованием синтаксической подсветки.</phrase
+></textobject>
+<caption
+><para
+>Функция Perl, отображенная с использованием синтаксической подсветки.</para>
+</caption>
+</mediaobject>
+
+<mediaobject>
+<imageobject
+><imagedata format="PNG" fileref="unhighlighted.png"/></imageobject>
+<textobject
+><phrase
+>Та же самая функция, но без подсветки.</phrase
+></textobject>
+<caption
+><para
+>Та же самая функция, но без подсветки.</para
+></caption>
+</mediaobject>
+
+<para
+>Какой из примеров легче читать?</para>
+
+<para
+>&kate; имеет гибкую, легко настраиваемую систему синтаксической подсветки, в стандартную поставку редактора входят правила подсветки синтаксиса для большого числа языков программирования, разметки и других текстовых форматов. Все определения хранятся в простых текстовых файлах в формате &XML;, поэтому вы можете свободно создавать собственные правила.</para>
+
+<para
+>При открытии файла &kate; автоматически подбирает правила подсветки, основываясь на &MIME;-типе (который, в свою очередь, определяется расширением файла) или содержании файла, если расширения нет. Если &kate; неправильно определил тип файла, выберите нужный режим подсветки вручную в меню <menuchoice
+><guimenu
+>Документ</guimenu
+><guisubmenu
+>Режим подсветки</guisubmenu
+></menuchoice
+>.</para>
+
+<para
+>Вы можете настроить стили и цвета доступных синтаксических определений на вкладке <link linkend="config-dialog-editor-appearance"
+>Схемы</link
+>диалога <link linkend="config-dialog"
+>Настройка &kate;</link
+> , а соответствующие им &MIME;-типы - на вкладке <link linkend="config-dialog-editor-highlighting"
+>Подсветка</link
+> .</para>
+
+<note>
+<para
+>Синтаксическая подсветка улучшает читаемость корректно оформленного текста, но не факт, что текст некорректен, если он неправильно отображается системой подсветки. Синтаксическая разметка текста - достаточно сложный процесс, сложность которого зависит от формата файла, поэтому авторы синтаксических определений считают удачей, если 98% текста отображается корректно, но не стоит забывать об оставшихся 2%.</para>
+</note>
+
+<tip>
+<para
+>На сайте &kate; вы можете загрузить обновлённые или дополнительные правила синтаксической подсветки. Для этого нужно щёлкнуть на кнопке <guibutton
+>Загрузить</guibutton
+> на вкладке <link linkend="config-dialog-editor-highlighting"
+>Подсветка</link
+> диалога <link linkend="config-dialog"
+>Настройка &kate;</link
+>.</para>
+</tip>
+
+</sect1>
+
+<sect1 id="katehighlight-system">
+
+<title
+>Система синтаксической подсветки &kate;</title>
+
+<para
+>В этом разделе подробно рассматривается механизм синтаксической подсветки &kate;. Прочитав его, вы сможете изменять существующие или создавать свои синтаксические определения.</para>
+
+<sect2 id="katehighlight-howitworks">
+
+<title
+>Механизм работы</title>
+
+<para
+>Когда вы открываете файл, первое, что делает &kate; - определяет, какое синтаксическое определение использовать для него. При чтении и наборе система подсветки анализирует текст в редакторе, используя правила, указанные в синтаксическом определении, и помечает границы контекстов и стилей.</para>
+
+<para
+>При вводе система динамически анализирует текст, поэтому, если вы удалите символ, который был помечен как начало или конец контекста, стиль окружающего текста автоматически изменится.</para>
+
+<para
+>Синтаксические определения &kate; хранятся в &XML;-файлах. Они содержат: <itemizedlist>
+<listitem
+><para
+>Правила определения роли текста, организованного в контекстные блоки</para
+></listitem>
+<listitem
+><para
+>Списки ключевых слов</para
+></listitem>
+<listitem
+><para
+>Определения стилей</para
+></listitem>
+</itemizedlist>
+</para>
+
+<para
+>Система подсветки анализирует текст последовательно от начала до конца. Указатель анализатора перемещается от символа к символу, проверяя текст на соответствие правилам и помечая границы контекстов. Правила применяются к текущей строке в порядке их объявления, и при соответствии к ней применяется контекст, указанный в правиле. После этого указатель смещается на конец области соответствия и начинается новый цикл проверки правил, принадлежащих установленному контексту.</para>
+
+</sect2>
+
+<sect2 id="highlight-system-rules">
+<title
+>Правила</title>
+
+<para
+>Правила - это сердце системы подсветки. Правило может быть строкой, символом или <link linkend="regular-expressions"
+>регулярным выражением</link
+>, с которым сравнивается текст документа. Оно содержит информацию о стиле, который будет применен к тексту, если последний соответствует правилу. Оно может переключить текущий контекст системы на явно указанный или предыдущий контекст.</para>
+
+<para
+>Правила организованы в контекстные группы. Контекстная группа используется для определения главных понятий в формате, например, строка, заключенная в двойные кавычки, или блок комментария в исходном тексте программы. Такая организация правил позволяет предотвратить проверку правил, неприменимых к текущему контексту (правил из других контекстов). Эта структура делает систему подсветки более гибкой, позволяя определять одинаковые правила в разных контекстах, что делает возможным одинаковые последовательности символов отображать разными стилями в зависимости от контекста, в котором они находятся. </para>
+
+<para
+>Контексты могут образовываться динамически, чтобы сделать возможным использование правил, справедливых для данного момента.</para>
+
+</sect2>
+
+<sect2 id="highlight-context-styles-keywords">
+<title
+>Стили контекстов и ключевые слова</title>
+
+<para
+>В некоторых языках программирования целые и вещественные числа трактуются компилятором по-разному (компилятор - это программа, которая преобразует исходный текст программы в двоичный исполняемый файл). Синтаксис языка может определять символы, имеющие специальное значение, если они находятся в строке, заключенной в кавычки. В этих случаях есть смысл выделять их в тексте для более удобного чтения. Иногда бывает полезно выделять символы, не имеющие специального значения - это тоже под силу системе синтаксической подсветки &kate;.</para>
+
+<para
+>Синтаксическое определение может содержать столько стилей, сколько нужно для данного формата.</para>
+
+<para
+>Во многих форматах существуют списки слов, имеющих специальное значение. Например, в языках программирования такими словами будут являться управляющие операторы, названия типов данных и встроенные функции. Это концептуальные слова, поскольку они определяют саму суть синтаксиса. Система синтаксической подсветки &kate; использует списки подобных слов, чтобы подчеркнуть концептуальные элементы формата.</para>
+
+</sect2>
+
+<sect2 id="kate-highlight-system-default-styles">
+<title
+>Стили по умолчанию</title>
+
+<para
+>Если вы откроете файл исходного кода на C++, на &Java; или документ <acronym
+>HTML</acronym
+>, то увидите, что разные форматы отображаются в одних и тех же цветах. Дело в том, что &kate; содержит предустановленный набор стандартных стилей. Синтаксические определения по возможности используют этот набор.</para>
+
+<para
+>Это позволяет подобным образом отображать похожие концепции в различных форматах. Например, комментарии есть почти во всех языках программирования, разметки и скриптах.</para>
+
+<tip>
+<para
+>Каждый стиль в синтаксическом определении основывается на одном из стандартных стилей. Поэтому, если вы часто используете какой-то формат с большим количеством стилей, следует проверить его конфигурацию на предмет их совпадения. Приведём небольшой пример. В &kate; определен всего один стандартный стиль для отображения строковых констант, но в языке программирования Perl существует два вида строк. Согласитесь, было бы гораздо лучше отображать их по разному - вы заходите в диалоговое окно настройки &kate; и изменяете соответствующие стили. Все <link linkend="kate-highlight-default-styles"
+>доступные стандартные стили</link
+> будут рассмотрены позже.</para>
+</tip>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="katehighlight-xml-format">
+<title
+>&XML;-формат определения синтаксической подсветки</title>
+
+<sect2>
+<title
+>Обзор</title>
+
+<para
+>В этом разделе вы познакомитесь с &XML;-форматом определения синтаксической подсветки. Вначале, на небольшом примере, будут кратко объяснены главные компоненты и их значение, затем мы более подробно остановимся на правилах подсветки.</para>
+
+<para
+>Формальное определение (<acronym
+>DTD</acronym
+>) находится в файле <filename
+>language.dtd</filename
+>, в каталоге <filename
+>$<envar
+>KDEDIR</envar
+>/share/apps/katepart/syntax</filename
+>. </para>
+
+<variablelist>
+<title
+>Основные разделы файла определения синтаксической подсветки &kate;</title>
+
+<varlistentry>
+<term
+>В заголовке файла подсветки указаны версия XML и тип документа:</term>
+<listitem>
+<programlisting
+>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!DOCTYPE language SYSTEM &quot;language.dtd&quot;&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Главная часть файла определений - элемент <userinput
+>language</userinput
+>. Доступные атрибуты:</term>
+
+<listitem>
+<para
+>Необходимые атрибуты:</para>
+<para
+><userinput
+>name</userinput
+> определяет название языка. Впоследствии оно появляется во всех меню и диалогах.</para>
+<para
+><userinput
+>section</userinput
+> указывает категорию.</para>
+<para
+><userinput
+>extensions</userinput
+> определяет расширения файлов, вроде &quot;*.cpp;*.h&quot;</para>
+
+<para
+>Дополнительные атрибуты:</para>
+<para
+><userinput
+>mimetype</userinput
+> связывает файл с определенным типом &MIME;.</para>
+<para
+><userinput
+>version</userinput
+> указывает текущую версию файла определений.</para>
+<para
+><userinput
+>kateversion</userinput
+> указывает новейшую из поддерживаемых версий &kate;.</para>
+<para
+><userinput
+>casesensitive</userinput
+> определяет чувствительность ключевых слов к регистру.</para>
+<para
+><userinput
+>priority</userinput
+> определяет приоритет в случае использования разных правил подсветки. Действует правило с высшим приоритетом.</para>
+<para
+><userinput
+>author</userinput
+> содержит имя и email-адрес автора.</para>
+<para
+><userinput
+>license</userinput
+> содержит лицензию, обычно LGPL, Artistic, GPL и т.п.</para>
+<para
+><userinput
+>hidden</userinput
+> определяет, будет ли отображаться название в меню &kate;.</para>
+<para
+>Итак, следующая строка может быть примерно такой:</para>
+<programlisting
+>&lt;language name=&quot;C++&quot; version=&quot;1.00&quot; kateversion=&quot;2.4&quot; section=&quot;Sources&quot; extensions=&quot;*.cpp;*.h&quot; /&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Следующий элемент - <userinput
+>highlighting</userinput
+>, состоящий из необязательного <userinput
+>list</userinput
+> и обязательных - <userinput
+>contexts</userinput
+> и <userinput
+>itemDatas</userinput
+>.</term>
+<listitem>
+<para
+>Элемент <userinput
+>list</userinput
+> содержит список ключевых слов. В нашем случае это <emphasis
+>class</emphasis
+> и <emphasis
+>const</emphasis
+>.Списков можете добавить, сколько хотите.</para>
+<para
+>Элемент <userinput
+>contexts</userinput
+> содержит все контексты. По умолчанию, подсветка начинается с первого контекста. В контексте <emphasis
+>Normal Text</emphasis
+> есть два правила, одно из которых проверяет наличие в тексте <emphasis
+>слов</emphasis
+>, соответствующих списку ключевых слов, другое определяет наличие кавычек и переключает контекст к <emphasis
+>строковому</emphasis
+> типу. Подробнее правила описаны в следующей главе.</para>
+<para
+>Элемент <userinput
+>itemDatas</userinput
+> содержит сведения о цветах и стилях, применяющихся в контекстах и правилах. В нашем примере <userinput
+>itemData</userinput
+> использует контексты <emphasis
+>Normal Text</emphasis
+>, <emphasis
+>String</emphasis
+> и <emphasis
+>Keyword</emphasis
+>. </para>
+<programlisting
+>&lt;highlighting&gt;
+    &lt;list name=&quot;somename&quot;&gt;
+      &lt;item&gt; class &lt;/item&gt;
+      &lt;item&gt; const &lt;/item&gt;
+    &lt;/list&gt;
+    &lt;contexts&gt;
+      &lt;context attribute=&quot;Normal Text&quot; lineEndContext=&quot;#pop&quot; name=&quot;Normal Text&quot; &gt;
+        &lt;keyword attribute=&quot;Keyword&quot; context=&quot;#stay&quot; String=&quot;somename&quot; /&gt;
+        &lt;DetectChar attribute=&quot;String&quot; context=&quot;string&quot; char=&quot;&amp;quot;&quot; /&gt;
+      &lt;/context&gt;
+      &lt;context attribute=&quot;String&quot; lineEndContext=&quot;#stay&quot; name=&quot;string&quot; &gt;
+        &lt;DetectChar attribute=&quot;String&quot; context=&quot;#pop&quot; char=&quot;&amp;quot;&quot; /&gt;
+      &lt;/context&gt;
+    &lt;/contexts&gt;
+    &lt;itemDatas&gt;
+      &lt;itemData name=&quot;Normal Text&quot; defStyleNum=&quot;dsNormal&quot; /&gt;
+      &lt;itemData name=&quot;Keyword&quot; defStyleNum=&quot;dsKeyword&quot; /&gt;
+      &lt;itemData name=&quot;String&quot; defStyleNum=&quot;dsString&quot; /&gt;
+    &lt;/itemDatas&gt;
+  &lt;/highlighting&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+> Последня часть файла определения синтаксической подсветки - необязательный раздел <userinput
+>general</userinput
+>. Здесь могут содержаться сведения о ключевых словах, сворачивании блоков кода, комментариях и отступах.</term>
+
+<listitem>
+<para
+>Раздел <userinput
+>comment</userinput
+> определяет, какой строкой вводится однострочный комментарий. Можно пользоваться также многострочными комментариями, используя <emphasis
+>multiLine</emphasis
+> с дополнительным атрибутом <emphasis
+>end</emphasis
+>. Это используется тогда, когда пользователь нажимает комбинацию клавиш, назначенную для действия <emphasis
+>закомментировать/раскомментировать</emphasis
+>.</para>
+<para
+>Секция <userinput
+>keywords</userinput
+> определяет чувствительность ключевых слов к регистру. Остальные атрибуты рассмотрим позднее.</para>
+<programlisting
+>&lt;general&gt;
+    &lt;comments&gt;
+      &lt;comment name="singleLine" start="#"/&gt;
+    &lt;/comments&gt;
+    &lt;keywords casesensitive="1"/&gt;
+  &lt;/general&gt;
+&lt;/language&gt;
+</programlisting>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+
+</sect2>
+
+<sect2 id="kate-highlight-sections">
+<title
+>Более подробно о разделах</title>
+<para
+>В этой части указаны все возможные атрибуты для контекстов, itemDatas, ключевых слов, комментариев, сворачивания кодов и отступов.</para>
+
+<variablelist>
+<varlistentry>
+<term
+>Элемент <userinput
+>context</userinput
+> относится к группе <userinput
+>contexts</userinput
+>. Контекстом определяются некоторые особые правила (например, что происходит при достижении подсвеченной структурой конца строки). Доступные атрибуты:</term>
+
+
+<listitem>
+<para
+><userinput
+>name</userinput
+> - название контекста. Правила используют это название для переключения на указанный контекст.</para>
+<para
+><userinput
+>lineEndContext</userinput
+> определяет, на какой контекст подсвеченная структура переключается при достижении конца строки. Это может быть название другого контекста, <userinput
+>#stay</userinput
+>, если контекст не меняется (т.е. не делать ничего) или <userinput
+>#pop</userinput
+> для выхода из контекста. Например, набор <userinput
+>#pop#pop#pop</userinput
+> приведет к троекратному выходу из контекста.</para>
+<para
+><userinput
+>lineBeginContext</userinput
+> определяет контекст при достижении начала строки. По умолчанию: #stay.</para>
+<para
+><userinput
+>fallthrough</userinput
+> определяет поведение в случае переключения подсвеченной структуры на контекст, указанный в fallthroughContext, если не найдено соответствующее правило. По умолчанию: <emphasis
+>false</emphasis
+>.</para>
+<para
+><userinput
+>fallthroughContext</userinput
+> указывает следующий контекст, если не найдено соответствующее правило.</para>
+<para
+>Если <userinput
+>dynamic</userinput
+> имеет значение <emphasis
+>true</emphasis
+>, то контекст запоминает строки/метки-заполнители, сохранённые в динамических правилах. Это необходимо, например, для текущих документов. По умолчанию: <emphasis
+>false</emphasis
+>.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Элемент <userinput
+>itemData</userinput
+> принадлежит группе <userinput
+>itemDatas</userinput
+>. Он определяет стиль и цвет шрифта, их можно устанавливать самому в тех случаях, когда это необходимо. И все же, рекомендуется придерживаться стандартных стилей, чтобы помочь пользователю свободно ориентироваться в любом языке . Название атрибута (name) и defStyleNum обязательны, остальные нет. Доступные атрибуты:</term>
+
+<listitem>
+<para
+><userinput
+>name</userinput
+> даёт название itemData. Контексты и правила будут использовать это название при обращении к itemData в своих атрибутах <emphasis
+>attribute</emphasis
+>.</para>
+<para
+><userinput
+>defStyleNum</userinput
+> определяет стиль, используемый по умолчанию. Доступные стандартные стили будут детально описаны ниже.</para>
+<para
+><userinput
+>color</userinput
+> определяет цвет. Правильные форматы '#rrggbb' или '#rgb'.</para>
+<para
+><userinput
+>selColor</userinput
+> определяет цвет выделенного текста.</para>
+<para
+>Если <userinput
+>italic</userinput
+> имеет значение <emphasis
+>true</emphasis
+>, шрифт будет курсивным.</para>
+<para
+>Если <userinput
+>bold</userinput
+> имеет значение <emphasis
+>true</emphasis
+>, шрифт будет полужирным.</para>
+<para
+>Если <userinput
+>underline</userinput
+> имеет значение <emphasis
+>true</emphasis
+>, текст будет подчёркнут.</para>
+<para
+>Если <userinput
+>strikeout</userinput
+> имеет значение <emphasis
+>true</emphasis
+>, текст будет зачёркнут.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Элемент <userinput
+>keywords</userinput
+> в группе <userinput
+>general</userinput
+> определяет свойства ключевых слов. Доступные атрибуты:</term>
+
+<listitem>
+<para
+><userinput
+>casesensitive</userinput
+> может быть <emphasis
+>true</emphasis
+> или <emphasis
+>false</emphasis
+>. Если <emphasis
+>true</emphasis
+>, все ключевые слова будут проверяться на соответствие с учетом регистра</para>
+<para
+><userinput
+>weakDeliminator</userinput
+> - это группа знаков, которые не могут разделять слова. Например, точка <userinput
+>'.'</userinput
+> - разделитель слов. Если ключевое слово в <userinput
+>list</userinput
+> содержит точку, оно будет использовано по назначению только, если точка будет определена как "нетвердый разделитель" (weak delimiter).</para>
+<para
+><userinput
+>additionalDeliminator</userinput
+> определяют дополнительные разделители.</para>
+<para
+><userinput
+>wordWrapDeliminator</userinput
+> определяют символы, после которых может происходить перевод строки.</para>
+<para
+>По умолчанию разделителями слов и строк являются символы <userinput
+>.():!+,-&lt;=&gt;%&amp;*/;?[]^{|}~\</userinput
+>, пробел (<userinput
+>' '</userinput
+>) и табуляция (<userinput
+>'\t'</userinput
+>).</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Элемент <userinput
+>comment</userinput
+> в группе <userinput
+>comments</userinput
+> определяет свойства комментариев, которые используются в меню<menuchoice
+><guimenu
+>Сервис</guimenu
+><guimenuitem
+>Закомментировать</guimenuitem
+></menuchoice
+> и <menuchoice
+><guimenu
+>Сервис</guimenu
+><guimenuitem
+>Раскомментировать</guimenuitem
+></menuchoice
+>. Доступные атрибуты:</term>
+
+<listitem>
+<para
+><userinput
+>name</userinput
+> может быть <emphasis
+>singleLine</emphasis
+> или <emphasis
+>multiLine</emphasis
+>. Если выбрать <emphasis
+>multiLine</emphasis
+>, то потребуются атрибуты <emphasis
+>end</emphasis
+> и <emphasis
+>region</emphasis
+>.</para>
+<para
+><userinput
+>start</userinput
+> указывает строку начала комментария. В C++ это может быть &quot;/*&quot;.</para>
+<para
+><userinput
+>end</userinput
+> указывает строку окончания комментария. В C++ это может быть &quot;*/&quot;.</para>
+<para
+><userinput
+>region</userinput
+> должно быть названием сворачиваемого многострочного комментария. Допустим, если в ваших правилах указано <emphasis
+>beginRegion="Comment"</emphasis
+> ... <emphasis
+>endRegion="Comment"</emphasis
+>, вы должны использовать <emphasis
+>region="Comment"</emphasis
+>. В этом случае раскомментирование будет действовать, даже если не будет выделен весь текст многострочного комментария. Достаточно будет просто поместить курсор в его пределы.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Элемент <userinput
+>folding</userinput
+> в группе <userinput
+>general</userinput
+> определяет свойства сворачивания кода. Доступные атрибуты:</term>
+
+<listitem>
+<para
+>Если <userinput
+>indentationsensitive</userinput
+> имеет значение <emphasis
+>true</emphasis
+>, то маркёры сворачивания кода будут располагаться с учетом отступов, как в языке сценариев Python. Чаще всего в этом нет необходимости, поэтому по умолчанию этот параметр определен как <emphasis
+>false</emphasis
+>.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>Элемент <userinput
+>indentation</userinput
+> в группе <userinput
+>general</userinput
+> определяет формат отступов, однако мы настоятельно рекомендуем не менять этот элемент, так как отступы обычно определяются типом файла или добавлением режимной строки в текстовый файл. Если вы всё-таки укажете способ отступа, он может оказаться навязанным пользователю, которому совсем не нужен. Доступные атрибуты:</term>
+
+<listitem>
+<para
+><userinput
+>mode</userinput
+> - название формата отступов. Доступные форматы: <emphasis
+>normal, cstyle, csands, xml, python</emphasis
+> и <emphasis
+>varindent</emphasis
+>.</para>
+</listitem>
+</varlistentry>
+
+
+</variablelist>
+
+
+</sect2>
+
+<sect2 id="kate-highlight-default-styles">
+<title
+>Стандартные стили</title>
+<para
+>Стандартные стили уже были кратко <link linkend="kate-highlight-system-default-styles"
+>описаны</link
+>: Стандартные стили предопределяют настройки цветов и шрифтов.</para>
+<variablelist>
+<varlistentry>
+<term
+>Здесь приведен только список доступных стандартных стилей:</term>
+<listitem>
+<para
+><userinput
+>dsNormal</userinput
+>, для нормального текста.</para>
+<para
+><userinput
+>dsKeyword</userinput
+>, для ключевых слов.</para>
+<para
+><userinput
+>dsDataType</userinput
+>, для типов данных.</para>
+<para
+><userinput
+>dsDecVal</userinput
+>, для десятичных значений.</para>
+<para
+><userinput
+>dsBaseN</userinput
+>, для значений с основанием, отличным от10.</para>
+<para
+><userinput
+>dsFloat</userinput
+>, для значений с плавающей точкой.</para>
+<para
+><userinput
+>dsChar</userinput
+>, для символов.</para>
+<para
+><userinput
+>dsString</userinput
+>, для строк.</para>
+<para
+><userinput
+>dsComment</userinput
+>, для комментариев.</para>
+<para
+><userinput
+>dsOthers</userinput
+>, для всего остального.</para>
+<para
+><userinput
+>dsAlert</userinput
+>, для вывода предупреждений.</para>
+<para
+><userinput
+>dsFunction</userinput
+>, для вызова функций.</para>
+<para
+><userinput
+>dsRegionMarker</userinput
+>, для маркёров участков.</para>
+<para
+><userinput
+>dsError</userinput
+>, для подсветки ошибок и неверного синтаксиса.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="kate-highlight-rules-detailled">
+<title
+>Синтаксические правила</title>
+
+<para
+>В этом разделе описываются синтаксические правила.</para>
+
+<para
+>При анализе строки каждое правило может <quote
+>запросить</quote
+> на проверку любое количество символов (даже ноль). Если правило подходит, к соответствующим символам применяется стиль или <emphasis
+>атрибут</emphasis
+>, определённый в правиле. Применяемое правило также может запросить переключение текущего контекста.</para>
+
+<para
+>Правило выглядит примерно так:</para>
+
+<programlisting
+>&lt;RuleName attribute=&quot;(identifier)&quot; context=&quot;(identifier)&quot; [rule specific attributes] /&gt;</programlisting>
+
+<para
+>Параметр <emphasis
+>attribute</emphasis
+> указывает, какой стиль применить к  символам, соответствующим правилу. Параметр <emphasis
+>context</emphasis
+> определяет контекст, который будет установлен в случае применения правила.</para>
+
+<para
+>Параметр <emphasis
+>context</emphasis
+> может принимать следующие значения:</para>
+
+<itemizedlist>
+<listitem>
+<para
+><emphasis
+>Идентификатор</emphasis
+>, т.е. название контекста.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>order</emphasis
+> предписывает системе подсветки не менять текущий контекст (<userinput
+>#stay</userinput
+>) или вернуться к предыдущему контексту (<userinput
+>#pop</userinput
+>).</para>
+<para
+>Чтобы вернуться назад на несколько контекстов, повторите нужное количество раз ключевое слово #pop: <userinput
+>#pop#pop#pop</userinput
+></para>
+</listitem>
+</itemizedlist>
+
+<para
+>Некоторые правила могут иметь <emphasis
+>дочерние правила</emphasis
+>, которые проверяются только в том случае, если текст соответствует родительскому правилу. Всей совпавшей строке будут присвоены атрибуты, определенные в родительском правиле. Вот пример правила с дочерними правилами:</para>
+
+<programlisting
+>&lt;RuleName (attributes)&gt;
+  &lt;ChildRuleName (attributes) /&gt;
+  ...
+&lt;/RuleName&gt;
+</programlisting>
+
+
+<para
+>Параметры конкретных видов правил описаны в следующих разделах.</para>
+
+
+<itemizedlist>
+<title
+>Общие атрибуты</title>
+<para
+>У любого правила есть следующие атрибуты, <userinput
+>(common attributes)</userinput
+>, доступные всегда. <emphasis
+>attribute</emphasis
+> и <emphasis
+>context</emphasis
+> обязательны, остальные - нет. </para>
+
+<listitem>
+<para
+><emphasis
+>attribute</emphasis
+>: Атрибут, описывающий определённые <emphasis
+>itemData</emphasis
+>.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>context</emphasis
+>: Определяет контекст, на который происходит переключение в случае соответствия правилу.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>beginRegion</emphasis
+>: Начало сворачиваемого блока кода. По умолчанию: не установлен (unset).</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>endRegion</emphasis
+>: Окончание сворачиваемого блока кода. По умолчанию: не установлен (unset).</para>
+</listitem>
+<listitem>
+<para
+>Если <emphasis
+>lookAhead</emphasis
+> имеет значение <emphasis
+>true</emphasis
+>, то система подсветки больше не будет обрабатывать соответствия. По умолчанию: <emphasis
+>false</emphasis
+>.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>firstNonSpace</emphasis
+>: Соответствие, только если строка начинается не с пробела. По умолчанию: <emphasis
+>false</emphasis
+>.</para>
+</listitem>
+<listitem>
+<para
+><emphasis
+>column</emphasis
+>: Соответствие, только если соответствует номер столбца. По умолчанию: не установлено (unset).</para>
+</listitem>
+</itemizedlist>
+
+<itemizedlist>
+<title
+>Динамические правила</title>
+<para
+>У некоторых правил есть необязательный атрибут <userinput
+>dynamic</userinput
+>, имеющий логическое значение (по умолчанию <emphasis
+>false</emphasis
+>). Если dynamic установить <emphasis
+>true</emphasis
+>, то правило может использовать метки-заполнители, заменяющие текст, соответствующий правилу <emphasis
+>регулярного выражения</emphasis
+>, переключенного к текущему контексту по своим атрибутам <userinput
+>string</userinput
+> или <userinput
+>char</userinput
+>. В атрибуте <userinput
+>string</userinput
+> метка-заполнитель <replaceable
+>%N</replaceable
+> (где N - цифра) будет заменена номером <replaceable
+>N</replaceable
+> найденного регулярного выражения. В атрибуте <userinput
+>char</userinput
+> метка-заполнитель должна быть цифрой <replaceable
+>N</replaceable
+>, и будет заменена первым символом <replaceable
+>N</replaceable
+> найденного регулярного выражения. Чтобы правило могло использовать эти атрибуты, оно должно содержать параметр <emphasis
+>(dynamic)</emphasis
+>.</para>
+
+<listitem>
+<para
+><emphasis
+>dynamic</emphasis
+>: логический атрибут <emphasis
+>(true|false)</emphasis
+>.</para>
+</listitem>
+</itemizedlist>
+
+<sect2 id="highlighting-rules-in-detail">
+<title
+>Более подробно о правилах</title>
+
+<variablelist>
+<varlistentry>
+<term
+>DetectChar</term>
+<listitem>
+<para
+>Проверка на совпадение с одним определенным символом. Используется, например, для определения завершающего символа строки, заключённой в кавычки.</para>
+<programlisting
+>&lt;DetectChar char=&quot;(character)&quot; (common attributes) (dynamic) /&gt;</programlisting>
+<para
+>Параметр <userinput
+>char</userinput
+> определяет символ.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Detect2Chars</term>
+<listitem>
+<para
+>Проверка на совпадение с двумя символами в заданном порядке.</para>
+<programlisting
+>&lt;Detect2Chars char=&quot;(character)&quot; char1=&quot;(character)&quot; (common attributes) (dynamic) /&gt;</programlisting>
+<para
+>Параметр <userinput
+>char</userinput
+> определяет первый символ для проверки, <userinput
+>char1</userinput
+> - второй.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>AnyChar</term>
+<listitem>
+<para
+>Проверка на совпадение с любым символом из заданного набора.</para>
+<programlisting
+>&lt;AnyChar String=&quot;(string)&quot; (common attributes) /&gt;</programlisting>
+<para
+>Параметр <userinput
+>String</userinput
+> содержит набор допустимых символов.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>StringDetect</term>
+<listitem>
+<para
+>Проверка на совпадение со строкой.</para>
+<programlisting
+>&lt;StringDetect String=&quot;(string)&quot; [insensitive=&quot;true|false&quot;] (common attributes) (dynamic) /&gt;</programlisting>
+<para
+>Параметр <userinput
+>String</userinput
+> должен содержать строку, которую нужно проверить на соответствие. Атрибут <userinput
+>insensitive</userinput
+> по умолчанию имеет значение <userinput
+>false</userinput
+>, он влияет на сравнение строк. Если этот параметр установлен <userinput
+>true</userinput
+>, функция сравнения не будет учитывать регистр символов.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>RegExpr</term>
+<listitem>
+<para
+>Проверка на совпадение с регулярным выражением.</para>
+<programlisting
+>&lt;RegExpr String=&quot;(string)&quot; [insensitive=&quot;true|false&quot;] [minimal=&quot;true|false&quot;] (common attributes) (dynamic) /&gt;</programlisting>
+<para
+>Параметр <userinput
+>String</userinput
+> определяет регулярное выражение.</para>
+<para
+><userinput
+>insensitive</userinput
+> имеет то же значение, что и в предыдущем правиле; по умолчанию установлен <userinput
+>false</userinput
+>.</para>
+<para
+>Параметр <userinput
+>minimal</userinput
+> по умолчанию имеет значение <userinput
+>false</userinput
+> и передаётся функции обработки регулярных выражений.</para>
+<para
+>Символ перевода каретки (<literal
+>^</literal
+>) в начале регулярного выражения говорит о том, что данное правило будет применяться только к тем цепочкам символов, которые начинаются с новой строки.</para>
+<para
+>Более подробно регулярные выражения рассматриваются в разделе <link linkend="regular-expressions"
+><quote
+>Регулярные выражения</quote
+></link
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>keyword</term>
+<listitem>
+<para
+>Проверка на ключевое слово из указанного списка.</para>
+<programlisting
+>&lt;keyword String=&quot;(list name)&quot; (common attributes) /&gt;</programlisting>
+<para
+>В параметре <userinput
+>String</userinput
+> нужно указать название списка ключевых слов. Этот список должен существовать.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Int</term>
+<listitem>
+<para
+>Проверка на целое число.</para>
+<para
+><programlisting
+>&lt;Int (common attributes) (dynamic) /&gt;</programlisting
+></para>
+<para
+>Это правило не имеет своих параметров. Дочерние правила обычно используются для определения комбинаций символов <userinput
+>L</userinput
+> и <userinput
+>U</userinput
+> после числа, которые конкретизируют тип целой константы в коде программы. Вообще, все правила могут быть использованы в качестве дочерних, хотя <acronym
+>DTD</acronym
+> разрешает использовать в качестве дочернего только правило <userinput
+>StringDetect</userinput
+>.</para>
+<para
+>Пример проверки на целые числа, следующие за символом 'L'. <programlisting
+>&lt;Int attribute="Decimal" context="#stay" &gt;
+  &lt;StringDetect attribute="Decimal" context="#stay" String="L" insensitive="true"/&gt;
+&lt;/Int&gt;
+</programlisting
+></para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Float</term>
+<listitem>
+<para
+>Проверка на число с плавающей точкой.</para>
+<para
+><programlisting
+>&lt;Float (common attributes) /&gt;</programlisting
+></para>
+<para
+>У этого правила нет особых атрибутов. <userinput
+>AnyChar</userinput
+> можно использовать как дочернее, обычно оно используется для проверки комбинаций. Для примера смотрите правило <userinput
+>Int</userinput
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HlCOct</term>
+<listitem>
+<para
+>Проверка на восьмеричное число (должно начинаться с нуля).</para>
+<para
+><programlisting
+>&lt;HlCOct (common attributes) /&gt;</programlisting
+></para>
+<para
+>У этого правила нет особых атрибутов.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HlCHex</term>
+<listitem>
+<para
+>Проверка на шестнадцатеричное число (должно начинаться с символов <quote
+>0x</quote
+>).</para>
+<para
+><programlisting
+>&lt;HlCHex (common attributes) /&gt;</programlisting
+></para>
+<para
+>У этого правила нет особых атрибутов.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HlCStringChar</term>
+<listitem>
+<para
+>Проверка на управляющий символ.</para>
+<para
+><programlisting
+>&lt;HlCStringChar (common attributes) /&gt;</programlisting
+></para>
+<para
+>У этого правила нет особых атрибутов.</para>
+
+<para
+>Проверка на специальное представление символов, которое используется в языках программирования, например, <userinput
+>\n</userinput
+> (переход на новую строку) или <userinput
+>\t</userinput
+> (символ табуляции).</para>
+
+<para
+>Следующие символы соответствуют правилу, если они вводятся после обратной черты (<literal
+>\</literal
+>): <userinput
+>abefnrtv&quot;'?\</userinput
+>. Также будут соответствовать шестнадцатеричные и восьмеричные числа, предварённые обратной чертой (например, <userinput
+>\xff</userinput
+> и <userinput
+>\033</userinput
+>).</para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>HlCChar</term>
+<listitem>
+<para
+>Проверка на символ C.</para>
+<para
+><programlisting
+>&lt;HlCChar (common attributes) /&gt;</programlisting
+></para>
+<para
+>У этого правила нет особых атрибутов.</para>
+
+<para
+>Правило находит символы C, заключенные в одинарные кавычки (например, <userinput
+>'c'</userinput
+>). Внутри одинарных кавычек может быть как одиночный символ, так и управляющая последовательность, более подробно ознакомиться с которыми можно в описании правила HlCStringChar.</para>
+
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>RangeDetect</term>
+<listitem>
+<para
+>Проверка на строку, имеющую заданные начальный и конечный символы.</para>
+<programlisting
+>&lt;RangeDetect char=&quot;(character)&quot;  char1=&quot;(character)&quot; (common attributes) /&gt;</programlisting>
+<para
+><userinput
+>char</userinput
+> определяет символ, с которого начинается строка, а <userinput
+>char1</userinput
+> - которым она заканчивается.</para>
+<para
+>Это правило может быть использовано для поиска небольших строк, заключенных в кавычки, но, поскольку при проверке правила система подсветки работает с одной строкой, данное правило не сможет определить строку, разбитую символами перевода.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>LineContinue</term>
+<listitem>
+<para
+>Проверка на символ перевода строки.</para>
+<programlisting
+>&lt;LineContinue (common attributes) /&gt;</programlisting>
+<para
+>У этого правила нет особых атрибутов.</para>
+<para
+>Это правило может быть удобно для переключения контекста в конце строки, если последним знаком будет обратная черта (<userinput
+>'\'</userinput
+>). Это необходимо, например, в языках C/C++ для продолжения макросов и строк.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>IncludeRules</term>
+<listitem>
+<para
+>Включение правил из другого контекста или языка/файла.</para>
+<programlisting
+>&lt;IncludeRules context=&quot;contextlink&quot; [includeAttrib=&quot;true|false&quot;] /&gt;</programlisting>
+
+<para
+>Атрибут <userinput
+>context</userinput
+> определяет контекст, из которого берётся правило.</para>
+<para
+>Если это простая строка, то включаются все правила из другого контекста, например: <programlisting
+>&lt;IncludeRules context=&quot;anotherContext&quot; /&gt;</programlisting
+></para>
+
+<para
+>Если строка начинается с <userinput
+>##</userinput
+>, то система подсветки найдёт описание для другого языка с указанным названием, например: <programlisting
+>&lt;IncludeRules context=&quot;##C++&quot; /&gt;</programlisting
+></para>
+<para
+>Если <userinput
+>includeAttrib</userinput
+> выставить <emphasis
+>true</emphasis
+>, атрибут назначения должен быть таким же, как атрибут источника. Это необходимо, например, при вводе комментариев, если текст, соответствующий включаемому контексту, имеет иную подсветку, чем основной контекст. </para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>DetectSpaces</term>
+<listitem>
+<para
+>Поиск пробелов.</para>
+<programlisting
+>&lt;DetectSpaces (common attributes) /&gt;</programlisting>
+
+<para
+>У этого правила нет особых атрибутов.</para>
+<para
+>Используйте это правило, если вы уверены, что в тексте есть несколько пробелов подряд, например в начале строк с отступом. Это правило поможет пропустить все пробелы разом, вместо проверки каждого из них по нескольким параметрам.</para>
+</listitem>
+</varlistentry>
+
+
+<varlistentry>
+<term
+>DetectIdentifier</term>
+<listitem>
+<para
+>Поиск строк идентификаторов (таких как регулярные выражения: [a-zA-Z_][a-zA-Z0-9_]*).</para>
+<programlisting
+>&lt;DetectIdentifier (common attributes) /&gt;</programlisting>
+
+<para
+>У этого правила нет особых атрибутов.</para>
+<para
+>Используйте это правило, чтобы пропустить все буквенные символы разом, вместо проверки каждого из них по нескольким параметрам.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</sect2>
+
+<sect2>
+<title
+>Подсказки &amp; Советы</title>
+
+<itemizedlist>
+<para
+>Усвоив принцип действия переключения контекста, вы без труда сможете написать своё определение подсветки. Подумайте о том, в какой ситуации какое правило следует применить. Регулярные выражения - мощное средство, но, по сравнению с другими правилами, очень медленное. Поэтому стоит воспользоваться следующими советами. </para>
+
+<listitem>
+<para
+>Проверяя на соответствие только пару символов, воспользуйтесь <userinput
+>Detect2Chars</userinput
+> вместо <userinput
+>StringDetect</userinput
+>. То же относится к <userinput
+>DetectChar</userinput
+>.</para>
+</listitem>
+<listitem>
+<para
+>Регулярные выражения несложны в использовании, но очень часто можно найти более быстрый способ. Допустим, вы ищете символ <userinput
+>'#'</userinput
+>, это первый символ строки. Решение с регулярным выражением будет выглядеть примерно так: <programlisting
+>&lt;RegExpr attribute=&quot;Macro&quot; context=&quot;macro&quot; String=&quot;^\s*#&quot; /&gt;</programlisting
+>. Этой же цели можно достичь значительно быстрее: <programlisting
+>&lt;DetectChar attribute=&quot;Macro&quot; context=&quot;macro&quot; char=&quot;#&quot; firstNonSpace=&quot;true&quot; /&gt;</programlisting
+>. Для поиска регулярного выражения <userinput
+>'^#'</userinput
+> можно применить <userinput
+>DetectChar</userinput
+> с атрибутом <userinput
+>column=&quot;0&quot;</userinput
+>. Отсчет для атрибута <userinput
+>column</userinput
+> идет посимвольно, поэтому знак табуляции для него - всего один символ. </para>
+</listitem>
+<listitem>
+<para
+>Можно переключать контексты без специальных символов. Допустим, вы хотите переключить контекст при достижении строки <userinput
+>*/</userinput
+>, но в новом контексте хотите продолжить обработку этой строки. Можно воспользоваться нижеследующим правилом, а атрибут <userinput
+>lookAhead</userinput
+> заставит систему подсветки сохранить найденную строку для нового контекста. <programlisting
+>&lt;Detect2Chars attribute=&quot;Comment&quot; context=&quot;#pop&quot; char=&quot;*&quot; char1=&quot;/&quot; lookAhead=&quot;true&quot; /&gt;</programlisting>
+</para>
+</listitem>
+<listitem>
+<para
+>Если известно, что в тексте много пробелов, воспользуйтесь <userinput
+>DetectSpaces</userinput
+>.</para>
+</listitem>
+<listitem>
+<para
+>Пользуйтесь <userinput
+>DetectIdentifier</userinput
+> вместо регулярного выражения <userinput
+>'[a-zA-Z_]\w*'</userinput
+>.</para>
+</listitem>
+<listitem>
+<para
+>Старайтесь использовать стандартные стили, это удобно для пользователя.</para>
+</listitem>
+<listitem>
+<para
+>Заглянув в другие XML-файлы, вы узнаете много нового о работе с правилами.</para>
+</listitem>
+<listitem>
+<para
+>Проверить правильность XML-файла можно командой <command
+>xmllint --dtdvalid language.dtd mySyntax.xml</command
+>.</para>
+</listitem>
+<listitem>
+<para
+>Если сложное регулярное выражение встречается часто, воспользуйтесь <emphasis
+>ENTITIES</emphasis
+>. Пример:</para>
+<programlisting
+>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE language SYSTEM "language.dtd"
+[
+        &lt;!ENTITY myref    "[A-Za-z_:][\w.:_-]*"&gt;
+]&gt;
+</programlisting>
+<para
+>Теперь вместо регулярного выражения можно использовать <emphasis
+>&amp;myref;</emphasis
+>.</para>
+</listitem>
+</itemizedlist>
+</sect2>
+
+</sect1>
+
+</appendix>

@@ -1,0 +1,672 @@
+<chapter id="theory">
+<title
+>Enige theoretische achtergrond: &CUPS;, <acronym
+>IPP</acronym
+>, &PostScript; en <application
+>Ghostscript</application
+></title>
+
+<para
+>In dit hoofdstuk kunt u een stuk theoretische achtergrond lezen over afdrukken in het algemeen, en over &CUPS; in het bijzonder. Wanneer u dit hoofdstuk niet denkt nodig te hebben, kunt u dit overslaan en direct naar het <link linkend="getting-started"
+>volgende hoofdstuk</link
+> gaan. Het is mogelijk dat u op een bepaald punt toch terugslaat naar dit hoofdstuk, omdat het soms nodig is de theorie te begrijpen om een praktisch probleem op te lossen.</para>
+
+<sect1 id="basics-of-printing">
+<title
+>Basisbegrippen over afdrukken</title>
+
+<para
+>Afdrukken is één van de gecompliceerdere onderdelen in de <acronym
+>IT</acronym
+>-technologie.</para>
+
+
+<para
+>Een tijd terug moest elke ontwikkelaar van een programma dat kon afdrukken zelf zijn eigen printerstuurprogramma's schrijven. Dat was vrij ingewikkeld om te doen, omdat elk programma een ander bestandsformaat had. Zelfs programma's met hetzelfde doel, bijvoorbeeld tekstverwerking, konden elkaars formaat niet inlezen. Er was geen algemene interface tot alle printers, zodat programmeurs vaak maar een paar modellen konden ondersteunen.</para>
+
+<para
+>Als er een nieuw apparaat op de markt verscheen, moesten de auteurs van het programma een nieuw stuurprogramma schrijven, wilden ze dat hun programma het ondersteunde. Evenzo was het voor fabrikanten onmogelijk om ervoor te zorgen dat hun apparaat werkte onder elk bekende programma (hoewel het er toen wel minder waren).</para>
+
+<para
+>Als een systeembeheerder tien toepassingen wilde hebben en twaalf soorten printers, zat hij of zij opgescheept met 120 stuurprogramma's. Het werd dus hoognodig dat er een algemene interface kwam tussen toepassingen en printers.</para>
+
+<para
+>Toen er voor het eerst <quote
+>Page Description Languages</quote
+> (paginabeschrijvingstalen) verschenen, deze beschrijven de grafische uitvoering van inkt en tint op vellen papier (of andere uitvoerapparaten, zoals monitors, fotozetmachines, enz.) op een algemene manier, werd er een flink gat gevuld. </para>
+
+<para
+>Eén zo'n ontwikkeling was &PostScript; van Adobe. Hiermee kon een toepassingsprogrammeur zich kon concentreren op het laten aanmaken van een beschrijving van de af te drukken pagina in &PostScript;, waarbij printerontwikkelaars ervoor konden zorgen dat hun apparaten &PostScript; konden inlezen.</para>
+
+<para
+>Natuurlijk werden er na een tijdje ook andere beschrijvingsmethoden ontwikkeld. De belangrijkste concurrenten voor &PostScript; waren <acronym
+>PCL</acronym
+> (<quote
+>Print Control Language</quote
+>, van &Hewlett-Packard;), <quote
+>ESC/P</quote
+> (van Epson) en <acronym
+>GDI</acronym
+> (<quote
+>Graphical Device Interface</quote
+>, van &Microsoft;).</para>
+
+<para
+>De beschikbaarheid van deze beschrijvingstalen maakte het veel eenvoudiger en voorzag iedereen van verdere ontwikkelingen. Het feit dat er nog steeds verschillende, incompatibele en concurrerende beschrijvingstalen bestonden hield het echter moeilijk genoeg voor gebruikers, systeembeheerders, ontwikkelaars en fabrikanten.</para>
+
+<sect2>
+<title
+>&PostScript; in het geheugen - bitmaps op papier</title>
+
+<para
+>&PostScript; wordt vooral gebruikt in professionele afdrukomgevingen als PrePress en de drukindustrie. In &UNIX;- en &Linux;-domein is &PostScript; de absolute standaard als <acronym
+>PDL</acronym
+>. Hier maakt vrijwel elke toepassing een &PostScript;-beschrijving van de pagina's aan wanneer u klikt op de afdrukknop. Hieronder ziet u een eenvoudig voorbeeld van (handgemaakte) &PostScript;-code, dat twee eenvoudige vormen beschrijft.</para>
+
+<example id="coded-postscript">
+<title
+>&PostScript;-code</title>
+<screen
+>%!PS
+100 100 moveto
+0 50 rlineto
+50 0 rlineto
+0 -50 rlineto
+closepath
+.7 setgray fill
+% first box over; next
+160 100 moveto
+0 60 rlineto
+45 10 rlineto
+0 -40 rlineto
+closepath
+.2 setgray fill</screen>
+</example>
+
+<para
+>Dit voorbeeld vraagt de denkbeeldige &PostScript;-<quote
+>pen</quote
+> om een bepaalde vorm te tekenen die vervolgens gevuld moet worden met verschillende tinten grijs. Het eerste deel laat zich in begrijpelijk Nederlands vertalen als: <quote
+>Ga naar coördinaat (100,100), trek een lijn met lengte 50 omhoog, vervolgens één vanaf daar naar rechts, dan naar beneden, en sluit vervolgens de vorm. Vul de zojuist getekende vorm daarna met 70% grijs.</quote
+></para>
+
+<example id="rendered-postscript">
+<title
+>Gerenderde &PostScript;</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="ps-boxes.png" format="PNG"/>
+</imageobject>
+<textobject>
+<phrase
+><xref linkend="coded-postscript"/> Voorbeeld getoond als afbeelding.</phrase>
+</textobject>
+</mediaobject>
+</example>
+
+<para
+>Natuurlijk kan &PostScript; veel ingewikkeldere dingen doen dan in dit simpele voorbeeld gebeurt. Het is een volledige en volwassen programmeertaal met verschillende operatoren en functies. U kunt zelfs &PostScript;-programma's schrijven om de waarde van pi te berekenen, om een harde schijf te formatteren of een bestand te beschrijven. De belangrijkste kracht van &PostScript; ligt echter bij het beschrijven van grafische objecten op een pagina: &PostScript; kan grootte wijzigen, spiegelen, verplaatsen, transformeren, draaien, vrijwel alles wat u zich maar kunt voorstellen - als het maar op papier kan staan: letters plaatsen in verschillende lettertypen en stijlen, figuren, vormen, vullingen, kleuren, lijnen, punten, rasters tekenen...</para>
+
+<para
+>Een &PostScript;-bestand is een weergave van één of meer af te drukken pagina's op een vrij abstracte manier. Het is bedoeld om pagina's op een apparaat-onafhankelijke manier te beschrijven. &PostScript; is niet direct <quote
+>zichtbaar</quote
+>; het bestaat alleen de harde schijf in in het geheugen als een gecodeerde weergave voor afdruktaken.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Rasterafbeeldingen op papier</title>
+
+<para
+>Op papier ziet u bijna altijd <quote
+>rasterafbeeldingen</quote
+>. Uw hersenen geven u echter de suggestie dat u een lijn ziet: neem maar eens een goed vergrootglas en u zult zien dat er honderden puntjes op het papier staan (een uitzondering vormen de lijnen van <quote
+>pen-plotters</quote
+>). Dit is het enige wat de printers van vandaag op papier kunnen zetten: simpelweg puntjes van verschillende kleur, grootte en resolutie, zodat er een complete afbeelding gevormd wordt, gecomposeerd van verschillende bitmappatronen.</para>
+
+<para
+>Elke printer wil zo'n rasterafbeelding op een eigen manier. Kijk maar eens naar inktjetprinters: door verschillen in resolutie, het aantal inktpatronen (de beste printers hebben er zeven nodig, goedkopere misschien maar drie), het aantal spuiten die tegelijkertijd inkt kunnen afgeven (sommige printerkoppen hebben er meer dan honderd!), het gebruikte <quote
+>vermengingsalgoritme</quote
+> en veel andere dingen is het uiteindelijke rasterformaat en overdrachtsvolgorde zeer afhankelijk van het exacte model.</para>
+
+<para
+>Terug in de tijd van de <quote
+>Line Printer Daemon</quote
+> waren printers machines die rijen <acronym
+>ASCII</acronym
+>-tekst mechanisch hamerden op lange stukken papier, dat zich gevouwen als een <quote
+>zig-zag-slang</quote
+> van papier uit een kartonnen doos onder de tafel wurmde... Wat een verschil met vandaag!</para>
+
+</sect2>
+
+
+<sect2>
+<title
+><acronym
+>RIP</acronym
+>: van &PostScript; naar raster</title>
+
+<para
+>Voordat een rasterafbeelding op papier kan worden gezet, moet deze berekend worden vanuit de abstracte &PostScript;-weergave. Dit is een proces dat erg computerintensief is. Het wordt <quote
+>Raster Imaging Process</quote
+> genoemd, ofwel <quote
+><acronym
+>RIP</acronym
+></quote
+>.</para>
+
+<para
+>Bij &PostScript;-printers wordt <acronym
+>RIP</acronym
+> verzorgd door het apparaat zelf. Om iets af te drukken wordt er een &PostScript;-bestand naartoe verzonden. De <quote
+>Raster Imaging Processor</quote
+> (wordt ook <acronym
+>RIP</acronym
+> genoemd) in de printer is verantwoordelijk voor (en gespecialiseerd in) de taak om het &PostScript;-bestand te interpreteren en dit als rasterafbeelding op papier te zetten.</para>
+
+<para
+>Kleinere &PostScript;-apparaten hebben een hardware-<acronym
+>RIP</acronym
+> ingebouwd; deze is geplaatst op een speciale chip. Grote professionele printers hebben de <acronym
+>RIP</acronym
+> vaak geïmplementeerd als een software-<acronym
+>RIP</acronym
+> op een bepaalde snelle &UNIX;-computer; vaak een Sun SPARC Solaris- of een &SGI; &IRIX;-machine.</para>
+
+</sect2>
+
+<sect2>
+<title
+><application
+>Ghostscript</application
+> als software-<acronym
+>RIP</acronym
+></title>
+
+<para
+>Maar wat nu, als u niet zo veel geluk hebt en het met een niet-&PostScript;-printer moet doen?</para>
+
+<para
+>Hiervoor gebeurt <acronym
+>RIP</acronym
+> voordat u het document naar het afdrukapparaat stuurt. U dient het &PostScript;-bestand dat door uw toepassing op de hostcomputer (de afdrukcliënt) is aangemaakt zelf te verwerken tot rasterafbeelding. Hiervoor heeft u het exacte rasterformaat nodig van de printer in kwestie.</para>
+
+<para
+>In andere woorden: als u er niet vanuit kunt gaan dat de printer het &PostScript;-bestand zelf begrijpt en kan interpreteren, wordt het een stukje ingewikkelder. U hebt software nodig die deze zaken voor u oplost.</para>
+
+<para
+>Dit is nou precies wat het alomtegenwoordige &ghostscript;-pakket doet bij de meeste &Linux;-, *BSD- en andere &UNIX;-computers die afdrukken naar niet-&PostScript;-printers: &ghostscript; is een &PostScript;-interpreter, een software-<acronym
+>RIP</acronym
+> die voor veel verschillende apparaten werkt.</para>
+
+</sect2>
+
+<sect2>
+<title
+><quote
+>Stuurprogramma's</quote
+> en <quote
+>filters</quote
+> in het algemeen</title>
+
+<para
+>Voor het aanmaken van rasterbitmaps uit &PostScript;-invoer gebruikt &ghostscript; het concept <quote
+>filters</quote
+>. Er bestaan veel verschillende filters voor &ghostscript;, sommige zijn gespecialiseerd in een bepaald printermodel. &ghostscript;-filters die gespecialiseerd zijn in bepaalde apparaten werden vaak ontwikkeld zonder toestemming of hulp van de fabrikant. Zonder toegang tot de specificaties en documentatie was het een zeer langdurig proces om de protocollen en gegevensformaten van het apparaat uit te vinden.</para>
+
+<para
+>Niet alle &ghostscript;-filters werken helemaal juist voor hun printer. Sommige nieuwere filters, bijvoorbeeld de <application
+>stp</application
+>-filter van het project <application
+>Gimp</application
+> Print produceren uitstekende resultaten waardoor fotografische kwaliteit bereikt wordt die gelijk staataan de concurrerende stuurprogramma's voor &Microsoft; &Windows;, of deze zelfs overtreffen.</para>
+
+<para
+>De meeste toepassingen voor &UNIX; en &Windows; produceren om af te drukken &PostScript;-bestanden. Filters zijn hier de ware werkpaarden voor het afdruksubsysteem. Ze verwerken &PostScript;-invoer tot bitmaps voor niet-&PostScript;-toestellen.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Stuurprogramma's, filters en backends in CUPS</title>
+
+<para
+>&CUPS; gebruikt zijn eigen filters, maar toch is het filtersysteem gebaseerd op Ghostscript. De filters pstoraster en imagetoraster zijn namelijk direct afgeleid van de Ghostscript-code. &CUPS; heeft de hele kern van deze code georganiseerd en gestroomlijnd en heeft dit in een paar duidelijke, aparte modules geplaatst.</para>
+
+<para
+>Het volgende stroomschema (gemaakt met hulp van &kivio;) geeft u een overzicht van de filters en backends binnen &CUPS; en laat zien hoe ze met elkaar samenwerken. Het proces speelt zich van boven naar beneden af. Backends zijn speciale filters: ze converteren geen gegevens naar een ander formaat maat ze sturen de gegevens die al in het juiste formaat staan naar de printer. Elk overdrachtprotocol heeft een eigen backend.</para>
+
+<screenshot id="architecture-diagram">
+<screeninfo
+>Dialoogvenster van &kprinter; </screeninfo>
+<mediaobject>
+<imageobject>
+<imagedata fileref="cups-filterarchitecture-kivio-70Percent-scaled.png"
+format="PNG"/></imageobject>
+<textobject>
+<phrase
+>Dialoogvenster van &kprinter;</phrase
+></textobject>
+</mediaobject>
+</screenshot>
+
+</sect2>
+<sect2>
+<title
+>Spoolers en afdrukdaemons</title>
+
+<para
+>Naast het moeilijke filteren om een voor afdrukken klaargemaakte bitmap te maken, heeft alle software die kan afdrukken een spool-mechanisme nodig: dit moet om verschillende taken van verschillende gebruikers voor verschillende printers en verschillende filters op te stellen en naar de juiste printer te sturen. De afdrukdaemon zorgt hier volledig voor.</para>
+
+<para
+>De daemon zorgt ervoor dat alles in orde blijft en is verantwoordelijk voor het taakbeheer: gebruikers moeten hun taken (niet die van andere mensen) kunnen annuleren, stoppen, herstarten, enzovoort.</para>
+
+</sect2>
+
+</sect1>
+
+
+
+<sect1 id="cups-and-ppd">
+<title
+>Uitstapje: hoe <quote
+>CUPS</quote
+> de kracht van &PPD;'s gebruikt</title>
+
+<para
+>Nu u weet hoe een &PostScript;-bestand (dat de pagina voor het grootste deel apparaatonafhankelijk beschrijft) wordt verwerkt tot een rasterafbeelding vraagt u zich wellicht af: <quote
+>Er bestaan dus verschillende soorten uitvoerapparaten voor rasterafbeeldingen: ze verschillen ten eerste in resolutie, ten tweede zijn er verschillende papiergrootten, en ten slotte zijn er heel veel mogelijkheden voor de afwerking (duplex, pamfletten, geponste en gestapelde uitvoer met verschillende bakken gekleurd papier, enzovoort). Hoe past dit dan in het model van het apparaat-onafhankelijke &PostScript;?</quote
+></para>
+
+<para
+>Het antwoord omvat de zogenaamde &PostScript; Printer Description-bestanden (&PPD;-bestanden). Een &PPD;-bestand beschrijft alle apparaat-afhankelijke functies die kunnen worden gebruikt voor het model. Het bestand bevat ook de gecodeerde commando's die gebruikt moeten worden om aparte functies van het apparaat aan te roepen. &PPD;'s zijn echter geen gesloten boek voor ons, het zijn gewone tekstbestanden.</para>
+
+<para
+>&PPD;'s zijn <quote
+>uitgevonden</quote
+> door Adobe om het voor fabrikanten gemakkelijk te maken om hun eigen functies in &PostScript;-printers te implementeren, waarbij er tegelijkertijd een standaardmanier wordt behouden. Het &PPD;-formaat is goed gedocumenteerd door Adobe. Hun specificatie is de enige standaard die gebruikt wordt.</para>
+
+<sect2 id="ppd-files">
+<title
+>Apparaat-afhankelijke afdrukopties</title>
+
+<para
+>Onthoud dat geavanceerd afdrukken met &PostScript; eigenlijk alleen ontwikkeld werd voor gebruik onder &Microsoft; &Windows; en Apple &Mac;. Alle geavanceerde functies voor afdrukken op moderne apparaten waren lange tijd simpelweg niet beschikbaar voor &Linux; en &UNIX;. &CUPS; heeft dit beslist veranderd. &CUPS; is zowat afhankelijk van &PPD;'s en daarom kunnen bestaande &PPD;'s volledig benut worden door alle systemen die onder &CUPS; draaien.</para>
+
+<para
+>Met &PPD;'s kunnen printerfabrikanten apparaat-afhankelijke hardwarefuncties toevoegen bij hun producten, bijvoorbeeld functies als duplex, stapelen, ponsen, afwerking, enzovoort. Het printerstuurprogramma laadt dit &PPD;-bestand als extra configuratiebestand. Het stuurprogramma verneemt de beschikbare opties en hoe deze aangeroepen kunnen worden en toont deze grafisch aan de gebruiker. Door dit mechanisme kunt u nog steeds <quote
+>apparaatonafhankelijke</quote
+> &PostScript;-bestanden afdrukken waarbij de apparaat-afhankelijke afwerkingsopties toegevoegd worden aan het &PostScript;-bestand dat door een toepassing is aangemaakt.</para>
+
+</sect2>
+
+<sect2>
+<title
+>&PPD;'s voor &PostScript;-printers ophalen</title>
+
+<para
+>&PPD;'s werden eigenlijk nooit gebruikt bij &UNIX;- en &Linux;-systemen. De fabrikanten die de &PPD;'s maakten hadden ze eigenlijk nooit voor andere dan de van origine ondersteunde besturingssystemen &Microsoft; &Windows; en &MacOS; bedoeld. Door een fantastische zet van &CUPS; om de bestaande &PPD;-specificatie te omarmen en te gebruiken verschaft &CUPS; alle functies van moderne printers voor gebruikers van &Linux; en &Linux;-achtige systemen. &kdeprint; maakt dit nog gemakkelijker dan de &CUPS;-ontwikkelaars ooit durfden te dromen.</para>
+
+<para
+>Als het om &PostScript;-printers gaat is het mogelijk om de originele &Windows;-&PPD;'s te gebruiken die uitgegeven zijn door de fabrikanten. Ze kosten over het algemeen geen geld, u kunt ze halen van elke &Windows;-computer die een &PostScript;-stuurprogramma heeft voor het betreffende model, maar ook van de schijfjes die bij de printer zitten. Op Internet bestaan ook veel plaatsen waar u ze kunt vinden.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Hoe u speciale &PPD;'s kunt gebruiken voor niet-&PostScript;-printers</title>
+
+<para
+>U weet nu dat &PostScript;-printers gebruik kunnen maken van &PPD;'s. Maar hoe zit het dan met niet-&PostScript;-printers? &CUPS; heeft hier een trucje voor bedacht: door hetzelfde formaat en gegevensstructuur gebruiken als bij &PostScript; Printer Descriptions (&PPD;'s) voor &PostScript;-printers, kunnen de beschikbare afdrukopties voor niet-&PostScript;-printers precies hetzelfde beschreven worden. Voor eigen doeleinden heeft &CUPS; enkele speciale opties toegevoegd (zoals de regel die bepaalt welke filter gebruikt moet worden voor verdere verwerking van het &PostScript;-bestand).</para>
+
+<para
+>De ontwikkelaars konden dus voor alle soorten printers dezelfde software gebruiken om &PPD;-bestanden voor beschikbare opties te ontleden voor alle soorten printers. Natuurlijk hoefden de &CUPS;-ontwikkelaars niet te verwachten dat de fabrikanten van niet-&PostScript;-printers deze &PPD;'s zelf gingen schrijven. De &CUPS;-ontwikkelaars moesten ze vanuit het niets maken, wat in het begin erg moeilijk was. Er zijn er meer dan 1000 van beschikbaar door de commerciële versie van &CUPS;, genaamd <application
+>ESP PrintPro</application
+>.</para>
+
+<para
+>In de tussentijd is er een groot aantal &CUPS;-specifieke &PPD;'s beschikbaar gekomen. In de meeste gevallen komen ze niet van de printerfabrikanten, maar van ontwikkelaars van vrije software. De &CUPS;-mensen hebben bewezen dat het werkt, en anderen volgden direct: was het afdrukken onder &Linux; en &UNIX; een paar jaar geleden nog een rommeltje, nu wordt een groot aantal printers ondersteund, inclusief 7 kleuren-inktjets die uitvoer kunnen geven van fotokwaliteit.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Manieren waarop u &PPD;-bestanden kunt verkrijgen voor niet-&PostScript;-printers</title>
+
+<para
+>U kunt &CUPS;-&PPD;'s voor niet-&PostScript;-printers op verschillende plaatsen op Internet vinden:</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Ten eerste: er is een opslagplaats op <ulink url="http://www.linuxprinting.org"
+>www.linuxprinting.org</ulink
+> waar u online een <quote
+>CUPS-O-Matic</quote
+>-&PPD; kunt laten aanmaken voor elke printer die al door het traditionele &ghostscript;-afdrukken werd ondersteund. Hiermee kunt u met weinig moeite overschakelen naar &CUPS;, als u wilt. Wanneer uw printer het goed deed met de traditionele manier van &ghostscript;-afdrukken, laat uw stuurprogramma dan door CUPS-O-Matic overzetten naar het &CUPS;-systeem zodat u het beste van beide werelden krijgt;</para>
+</listitem>
+
+<listitem>
+<para
+>Ten tweede: er bestaan al voor 120 printermodellen &CUPS;-&PPD;'s die door het nieuwe universele stuurprogramma <application
+>stp</application
+> worden aangedreven (stond oorspronkelijk voor Stylus Photo). <application
+>stp</application
+> wordt nu ontwikkeld door het gimp-print-project; Mike Sweet, de belangrijkste &CUPS;-ontwikkelaar, begon er mee en is nu beschikbaar via <ulink url="http://gimp-print.sourceforge.net"
+>gimp-print.sourceforge.net</ulink
+>. Dit stuurprogramma drukt met fotokwaliteit af op vele moderne inkjets en kan zo ingesteld worden om 120 &CUPS;-&PPD;'s te maken langs zijn eigen compilatie. De modellen &HP; Laser- en DeskJet, <trademark class="registered"
+>Epson</trademark
+> Stylus en Photo Color, en enkele printers van <trademark class="registered"
+>Canon</trademark
+> en <trademark class="registered"
+>Lexmark</trademark
+> vallen hieronder;</para>
+</listitem>
+
+<listitem>
+<para
+>Ten derde bestaat er een commerciële uitbreiding voor &CUPS; van de &CUPS;-ontwikkelaars zelf; dit wordt <application
+>ESP PrintPro</application
+> genoemd en omvat meer dan 2.300 printerstuurprogramma's. Er worden bovendien verbeterde versies van de filters imagetoraster en pstoraster meegeleverd.</para>
+</listitem>
+</itemizedlist>
+
+<para
+>&CUPS; maakt het voor fabrikanten zeer eenvoudig om &Linux; en &UNIX; voor hun modellen te ondersteunen zonder hoge kosten te maken. Het modulaire raamwerk van &CUPS; zorg ervoor dat elke filter (= stuurprogramma) met weinig moeite gebruikt kan worden voor het hele afdrukraamwerk van &CUPS;.</para>
+
+<para
+>U kunt meer lezen over de &CUPS;-mogelijkheden in de beschikbare &CUPS;-documentatie op <ulink url="http://www.cups.org/documentation.html"
+>http://www.cups.org/documentation.html</ulink
+> en <ulink url="http://wwww.danka.de/printpro/faq.html"
+>http://www.danka.de/printpro/faq.html</ulink
+>. En op <ulink url="http://www.linuxprinting.org"
+>http://www.linuxprinting.org/</ulink
+> vindt u een allesomvattende bron voor moeilijkheden voor het afdrukken op &Linux; en &UNIX;.</para>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="cups-ipp-support">
+<title
+>Waarom &CUPS; de beste keuze is door ondersteuning voor &IPP;</title>
+
+<sect2>
+<title
+><quote
+><quote
+><acronym
+>LPD</acronym
+> must die!</quote
+></quote
+></title>
+
+<para
+>Lange tijd waren ontwikkelaars diep ontevreden met de oude vertrouwde <acronym
+>LPD</acronym
+>. Er werden enkele nieuwe projecten opgezet om het afdrukken te verbeteren; <application
+>LPRng</application
+> is daar het beste voorbeeld van. Andere voorbeelden zijn <acronym
+>PDQ</acronym
+>, <acronym
+>PPR</acronym
+>, <acronym
+>PLP</acronym
+>, <acronym
+>GNUlpr</acronym
+> en <acronym
+>RLPR</acronym
+>. Maar geen van deze nieuwe ontwikkelingen werd gezien als de grote vervanger, de meeste daarvan waren eigenlijk gewoon een implementatie van dezelfde oude <acronym
+>LPD</acronym
+>-specificatie met een paar (en soms veel) uitbreidingen, waardoor deze weer incompatibel met elkaar werden.</para>
+
+<para
+>Toen Grant Taylor, auteur van de <citetitle
+>Linux Printing HOWTO</citetitle
+>, opmerkte dat er niet één maar meerdere levensvatbare alternatieven kwamen voor de hooggeëerde <acronym
+>LPD</acronym
+> van <acronym
+>BSD</acronym
+>-stijl, riep hij op: <citetitle
+>LPD must die!</citetitle
+> in zijn <quote
+>Veldtocht om de Line Printer Daemon om zeep te helpen</quote
+>.</para>
+
+<!-- FIXME: look up URLs for the above -->
+
+</sect2>
+
+<sect2>
+<title
+>De geboorte van &IPP;</title>
+
+<para
+>Naast de zaken die betrekking hebben op de industrie, hierboven vermeld, kwamen er pogingen om de welbekende beperkingen van <acronym
+>LPD</acronym
+> te overbruggen. Het begon met commerciële uitbreidingen van de oude <acronym
+>LPD</acronym
+>, en breidde zich uit met de poging van &Hewlett-Packard; om &HP; JetDirect in te voeren als standaardprotocol voor afdrukken over een netwerk. Het resultaat: meer incompabiliteiten.</para>
+
+<para
+>Ten slotte nam er een initiatief om een nieuwe algemene industrie- en <acronym
+>IETF</acronym
+>-standaard in te stellen vorm aan. De <quote
+>Printer Working Group</quote
+> (Printerwerkgroep, afgekort tot <acronym
+>PWG</acronym
+>), een losse groep ontwikkelaars van hardware, software en besturingssystemen maakte het nieuwe <quote
+>Internet Printing Protocol</quote
+>, &IPP;. &IPP; versie 1.1 is nu aanvaard als standaard door <acronym
+>IETF</acronym
+> (Internet Engineering Task Force), en geniet nu eenstemmige ondersteuning door de industrie in Europa, de VS en Japan. De huidige generatie netwerkprinters hebben &IPP;-ondersteuning ingebouwd boven het traditionele <acronym
+>LPR</acronym
+>/<acronym
+>LPD</acronym
+> of JetDirect Printing.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Waarom &IPP; zo veel problemen oplost</title>
+
+<para
+>&IPP; lost voor netwerkbeheerders een groot aantal problemen op. Deze mensen hebben normaal gesproken te doen met netwerkomgevingen van ongelijke soorten en besteden meer dan de helft van hun tijd aan het oplossen van afdrukproblemen.</para>
+
+<para
+>Door een universele set verzoekfuncties te ontwikkelen voor printers die met &IPP; overweg kunnen, om bijvoorbeeld bestanden over te zetten en attributen voor taakbeheer in te stellen, is &IPP; voorbestemd voor alle besturingssystemen. Dit zal echter niet in één dag gebeuren, omdat vele oude afdrukapparaten nog jaren gebruikt zullen worden. Daarom is bij &IPP; vastgesteld dat alle &IPP;-implementaties terugwaards-compatibel moeten zijn. &CUPS; zorgt voor levensvatbaarheid van het afdrukken met &IPP; in alle omgevingen.</para>
+
+<para
+>Het grootste voordeel zit in de integratie met de bestaande andere robuuste <acronym
+>IP</acronym
+>-protocollen. Hoewel het een uitbreiding is voor het zich bewezen hebbende en robuuste <acronym
+>HTTP</acronym
+> 1.1-protocol, is het, voor zijn speciale taak van het verwerken van afdrukbestanden en gerelateerde gegevens, ook erg eenvoudig om andere standaarden in te voeren zodra ze worden ontwikkeld en gebruikt:</para>
+
+<itemizedlist>
+<listitem>
+<para
+>Basic- en digest-authenticatie en authenticatie op basis van certificaat voor gebruikers die toegang willen tot afdrukdiensten;</para>
+</listitem>
+<listitem>
+<para
+>SSL3- en <acronym
+>TLS</acronym
+>-cryptografie om gegevens over te brengen;</para>
+</listitem>
+<listitem>
+<para
+>Bidirectionele communicatie van cliënten met afdrukapparaten met het mechanisme <command
+>GET</command
+> en <command
+>POST</command
+> van <acronym
+>HTTP</acronym
+>/&IPP;;</para>
+</listitem>
+<listitem>
+<para
+>Integratie van de LDAP-mapdiensten om een consistente database te onderhouden van beschikbare printers, hun mogelijkheiden en kosten per pagina, enzovoort, net als gebruikerswachtwoorden, <acronym
+>ACL</acronym
+>'s, ga zo maar verder;</para>
+</listitem>
+<listitem>
+<para
+><quote
+>Pull</quote
+>-afdrukken (tegenovergesteld aan het gebruikelijke <quote
+>push</quote
+>-model), waarbij een server of printer alleen een &URL; van een document nodig heeft, waarna deze van Internet-bron wordt afgehaald en wordt afgedrukt.</para>
+</listitem>
+</itemizedlist>
+
+</sect2>
+
+<!--
+<sect2>
+<title
+>&CUPS;, &IPP; and &kde;</title>
+
+<para
+>&CUPS; is the most advanced implementation of &IPP; on all &OS;
+platforms.  That makes &CUPS; a crucial ally to help "conquer the
+desktop" for projects like &kde;. &kdeprint; is the best utility to
+make &CUPS; core functionality available to &kde; Desktop
+users.</para>
+
+</sect2
+> -->
+
+<sect2>
+<title
+><quote
+>Plug'n'Play</quote
+> bij printers voor cliënten.</title>
+
+<para
+>Hebt u wel eens een demonstratie gezien voor de mogelijkheden van &CUPS; in het netwerk? U vond het vast indrukwekkend, als u nog niet wist wat u ervan moest verwachten.</para>
+
+<para
+>Stelt u zich eens voor dat u een systeembeheerder bent van een <quote
+>LAN</quote
+>. Om de zaken te testen, hebt u een &kde;/&CUPS;-computer geïnstalleerd met een aantal goed ingestelde en werkende printers: &PostScript;-printers, LaserJets, InkJets, BubbleJets, enzovoort. De gebruikers van die &kde;-computer zijn er erg blij mee, het was nog nooit zo makkelijk om alle printers volledig te benutten. Het nam twee uur in beslag om alles juist in te stellen... Nu willen de andere 100 gebruikers van het netwerk precies hetzelfde. Zal dat ook weer twee uur duren, voor elk systeem? Dat lukt vast niet voor het einde van het jaar, denkt u niet?</para>
+
+<para
+>Mis. Door één intstelling te wijzigen bij het eerste &CUPS;-systeem kunt u er een <quote
+>server</quote
+> van maken. Installeer &CUPS; op vijf andere systemen, maar dan als <quote
+>cliënt</quote
+>. Als u vervolgens terugkijkt naar het eerste systeem, zult u zien dat de gebruikers spelen met de instellingen voor alle printers die u eerder voor de <quote
+>server</quote
+>had ingesteld. Op een of andere manier zijn de printers verschenen in het afdrukdialoogvenster op alle vijf systemen met &CUPS; als cliënt.</para>
+
+<para
+>De gebruikers kunnen afdrukken, maar er is geen enkel stuurprogramma geïnstalleerd op de cliënten en er is ook geen printerwachtrij ingesteld.</para>
+
+<para
+>Hoe werkt dit nu toch?</para>
+
+</sect2>
+
+<sect2>
+<title
+>Printers <quote
+>zien</quote
+> die niet lokaal zijn geïnstalleerd</title>
+
+<para
+>Het antwoord is verre van moeilijk.</para>
+
+<para
+>Wanneer een &CUPS;-server op het <acronym
+>LAN</acronym
+> actief is, zendt deze de naam van alle beschikbare printers uit op dat netwerk met het <acronym
+>UDP</acronym
+>-protocol en poort 631. Poort 631 is aangewezen als poort voor &IPP;-doeleinden door <acronym
+>IANA</acronym
+> (de <quote
+>Internet Assigning Numbers Authority</quote
+>). Alle &CUPS;-cliënten luisteren naar informatie van de &CUPS;-server op poort 631. Zo krijgen de cliënten ook te weten welke printers er beschikbaar zijn en op welk <quote
+>pad</quote
+> ze staan.</para>
+
+<para
+>Met &IPP;, een slimme uitbreiding op <acronym
+>HTTP</acronym
+> versie 1.1, kan &CUPS; toegang krijgen tot alle objecten op het afdruksysteem via <quote
+>Universal Resource Locators</quote
+> (<acronym
+>URL</acronym
+>'s). Afdruktaken kunnen verwijderd of herstart worden, printers opgevraagd of ingesteld, beheertaken uitgevoerd... Met &IPP; in combinatie met &CUPS; is alles toegankelijk via een bepaald <acronym
+>URL</acronym
+>. Veel belangrijke dingen kunt u ook regelen via de webinterface voor &CUPS;, dat u met bijvoorbeeld &konqueror; kunt besturen.</para>
+
+</sect2>
+
+<sect2>
+<title
+>Afdrukken zonder een stuurprogramma te installeren</title>
+
+<para
+>Naast het <quote
+>zien</quote
+> van de printers kunnen ze vanaf de cliënten ook <quote
+>beheerd</quote
+> en <quote
+>gebruikt</quote
+> worden alsof ze lokaal geïnstalleerde printers zijn. Natuurlijk is het mogelijk om restricties in te stellen voor beperkte toegankelijkheid, zodat niet <emphasis
+>alle</emphasis
+> cliënten <emphasis
+>alle</emphasis
+> printers kunnen gebruiken.</para>
+
+<para
+>De cliënten kunnen zelfs afdrukken zonder dat de bijbehorende filter (of stuurprogramma) lokaal is geïnstalleerd.</para>
+
+<para
+>Hoe kan dat? Wanneer een cliënt wil weten welke printer-specifieke opties er bestaan, verzendt deze een aanvraag (genaamd <command
+>CUPS-get-ppd</command
+>) naar de server. De server laat de cliënt alle printer-specifieke opties weten door ze te lezen uit het &PPD;-bestand op de server. De gebruiker van de cliënt kan vervolgens de opties zien en selecteert degene die hij/zij nodig heeft. Deze verzendt het af te drukken bestand, meestal ongefilterde <quote
+>rauwe</quote
+> &PostScript;, inclusief de printeropties naar de afdrukserver via &IPP; als transportprotocol. De verdere verwerking, vooral het filteren om het uiteindelijke formaat te verkrijgen, wordt uitgevoerd door de server. De server heeft de nodige programma's (<quote
+>stuurprogramma's</quote
+> of <quote
+>filters</quote
+>) tot zijn beschikking om dit te doen.</para>
+
+<para
+>Op deze manier drukt een cliënt af zonder dat er lokaal een stuurprogramma geïnstalleerd hoeft te worden.</para>
+
+<para
+>Bij iedere wijziging op de server, zoals het toevoegen of instellen van een printer, <quote
+>weten</quote
+> de cliënten dit direct zonder dat er verder iets ingesteld hoeft te worden.</para>
+
+</sect2>
+
+<sect2>
+<title
+><quote
+>Zero Administration</quote
+>, lasten in evenwicht houden en <quote
+>failover switching</quote
+></title>
+
+<para
+>Een andere geavanceerde functie die is ingebouwd in &CUPS; is de mogelijkheid om <quote
+>lasten in evenwicht te houden</quote
+> (<quote
+>load balancing</quote
+>).</para>
+
+<para
+>Als u dezelfde printerwachtrijen instelt op twee of meer verschillende servers, verzenden de cliënten de afdruktaak naar de server die het eerst beschikbaar is/reageert. Dit zorgt ervoor dat de lasten voor servers automatisch in evenwicht worden gehouden. Wanneer u één server tijdelijk moet afzetten voor doeleinden als systeembeheer, nemen de andere servers diens taken over zonder dat de gebruikers verschil merken.</para>
+
+</sect2>
+
+</sect1>
+
+</chapter>

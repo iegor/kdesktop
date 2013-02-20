@@ -1,0 +1,1340 @@
+<!-- <?xml version="1.0" ?>
+<!DOCTYPE chapter PUBLIC "-//KDE//DTD DocBook XML V4.1.2-Based Variant V1.1//EN" "dtd/kdex.dtd">
+To validate or process this file as a standalone document, uncomment
+this prolog. Be sure to comment it out again when you are done -->
+
+<chapter id="arts-in-detail">
+<title
+>Details zu &arts;</title>
+
+<sect1 id="architecture">
+<title
+>Architektur</title>
+
+<mediaobject
+> <imageobject
+> <imagedata fileref="arts-structure.png" format="PNG"/> </imageobject
+> <textobject
+><phrase
+>Die Struktur von &arts;.</phrase
+></textobject
+> </mediaobject>
+</sect1>
+
+<sect1 id="modules-ports">
+<title
+>Module &amp; Kanäle</title>
+
+<para
+> &arts; beruht auf einem Synthesemodell, bei dem aus kleinen Modulen, die jedes für sich eine spezialisierte Aufgabe haben, komplexe Strukturen aufgebaut werden. Die Module haben normalerweise Eingänge, über die Signale und Parameter übergeben werden, und Ausgänge, an denen die Ergebnissignale anliegen. </para>
+
+<para
+> Das Modul Synth&lowbar;ADD zum Beispiel addiert die zwei Eingangssignal zu einem Summensignal, das als Ausgangssignal verfügbar ist. Die Stellen, mit denen die Ein-/Ausgangssignale verbunden werden heißen Kanäle (ports). </para>
+
+</sect1>
+
+<sect1 id="structures">
+<title
+>Strukturen</title>
+
+<para
+> Eine Struktur besteht aus mehreren verbundenen Modulen, bei denen einige Kanäle feste Parameter haben, andere untereinander verbunden sind während einige Kanäle vielleicht gar nicht verbunden sind. </para>
+
+<para
+> &arts-builder; dient zur Beschreibung dieser Strukturen. Sie beschreiben, welche Module in welcher Weise verbunden werden sollen. Wenn Sie damit fertig sind, können Sie die Beschreibung speichern oder &arts; zu der Erzeugung der Struktur veranlassen (Struktur ausführen). </para>
+
+<para
+> Als Ergebnis hören Sie wahrscheinlich einige Klänge, falls nichts schiefgegangen ist. </para>
+</sect1>
+
+<!-- TODO
+
+<sect1 id="streams">
+<title
+>Streams</title>
+<para>
+</para>
+</sect1>
+
+-->
+
+<sect1 id="latency">
+<title
+>Aussetzer</title>
+
+<sect2 id="what-islatency">
+<title
+>Was bedeutet Verzögerung?</title>
+
+<para
+> Angenommen Sie haben ein Programm mit Namen <quote
+>Mausklick</quote
+>, das ein <quote
+>Klicken</quote
+> von sich geben soll, wenn Sie eine Maustaste betätigen. Die Verzögerungszeit ist die Zeit zwischen dem Betätigen der Maustaste und dem Ertönen des Klicken. Die Einstellung der Verzögerungszeit besteht aus mehreren Verzögerungszeiten, die unterschiedliche Ursachen haben. </para>
+
+</sect2>
+
+<sect2 id="latenbcy-simple">
+<title
+>Verzögerungszeit in einfachen Anwendungen</title>
+
+<para
+> In dieser einfachen Anwendung werden an folgenden Stellen Verzögerungen verursacht: </para>
+
+<itemizedlist
+> <listitem
+> <para
+> Zeit, die der Betriebssystemkern benötigt, um dem X11-Server den Mausklick mitzuteilen. </para
+> </listitem
+> <listitem
+> <para
+> Zeit, die der X11-Server benötigt, um der Anwendung den Mausklick mitzuteilen. </para
+> </listitem
+> <listitem
+> <para
+> Zeit, die die Anwendung benötigt, um aufgrund des Mausklicks einen Klick-Ton auszulösen. </para
+> </listitem
+> <listitem
+> <para
+> Zeit, die die Anwendung benötigt, um dem Soundserver den Befehl zum Klick-Ton zu geben. </para
+> </listitem
+> <listitem
+> <para
+> Zeit, die der Klick-Ton benötigt (den der Soundserver sofort in den Ausgabestrom einmischt), um den Datenpuffer zu passieren, bis er die Stelle erreicht, an der die Soundkarte gerade Daten wiedergibt. </para
+> </listitem
+> <listitem
+> <para
+> Zeit, die der Klick-Ton von den Lautsprechern bis zu Ihrem Ohr benötigt. </para
+> </listitem
+> </itemizedlist>
+
+<para
+> Die ersten drei Verzögerungszeiten sind extern für &arts;. Sie sind wichtig, aber nicht Gegenstand dieser Dokumentation. Sie sollten sich dennoch dieser Verzögerungen bewusst sein, denn selbst wenn Sie alle anderen Verzögerungen sehr gering halten, erhalten Sie vielleicht dennoch nicht exakt die erwarteten Resultate. </para>
+
+<para
+> Ein Spielbefehl an den Server besteht normalerweise aus einem &MCOP;-Funktionsaufruf. Es gibt Geschwindigkeitstests,die belegen, dass ein solcher Befehl auf einem Rechner bei der jetzigen Implementation etwa 9000 mal pro Sekunde ausgeführt werden kann. Ich denke, das meiste der Zeit wird Kernel-Overhead für die Umschaltung zwischen verschiedenen Anwendungen sein. Natürlich hängen diese Werte von den exakten Parametertypen des Aufrufs ab. Die Übergabe eines vollständigen Bildes in einem Aufruf dauert länger als die Übergabe eines einzigen Werte. Das Gleiche gilt für den Rückgabewert. Für normale Zeichenketten (wie der Dateiname der zu spielenden <literal role="extension"
+>wav</literal
+>-Datei) sollte das aber kein Problem darstellen. </para>
+
+<para
+> Das bedeutet, diese Zeit kann mit 1/9000 Sekunde abgeschätzt werden. Das ist weniger als 0,15 ms. Sie werden sehen, das diese Zeitspanne unwichtig ist. </para>
+
+<para
+> Die nächste Verzögerungszeit ist die Zeit vom Starten des Soundservers und der Ankunft dieses Beginns auf der Soundkarte. Der Server muss einen Puffer verwenden, damit man keine Aussetzer hört, wenn eine andere Anwendung wie der X11-Server oder das <quote
+>Mausklick</quote
+>-Programm aktiv sind. Das wird unter &Linux; verwirklicht, indem eine Anzahl Bruchstücke einer bestimmte Größe erzeugt werden. Der Server füllt die Bruchstücke und die Soundkarte spielt die Bruchstücke ab. </para>
+
+<para
+> Angenommen es gibt drei Bruchstücke. Der Server füllt das Erste, die Soundkarte beginnt mit dem Abspielen. Der Server füllt das Zweite. Der Server füllt das Dritte. Der Server ist fertig, andere Anwendungen können nun aktiviert werden. </para>
+
+<para
+> Nach dem ersten Bruchstück spielt die Soundkarte das Zweite ab und der Server füllt das erste Bruchstück wieder. Das geht immer so weiter. </para>
+
+<para
+> Damit ergibt sich eine maximale Verzögerungszeit von (Anzahl der Bruchstücke)*(Größe eines Bruchstückes)/(Samplingrate * (Größe eines Samples)). Bei 44kHz Stereo und 7 Bruchstücken von je 1024 Byte Größe (die aktuellen Standardwerte von aRts) entspricht das einer Verzögerungszeit von 40 ms. </para>
+
+<para
+> Diese Werte können Sie Ihren Anforderungen anpassen. Allerdings steigt die <acronym
+>CPU</acronym
+>-Belastung mit kleineren Verzögerungszeiten, da der Soundserver die Puffer häufiger und in kleineren Bruchstücken füllen muss. Es ist außerdem meistens unmöglich, bessere Werte zu erreichen, ohne das Aussetzer zu hören sind, es sei denn, sie versehen den Soundserver mit Echtzeit-Priorität. </para>
+
+<para
+> Dennoch ist eine Einstellung von 3 Bruchstücken mit je 256 Bytes, die einer Verzögerung von 4,4 ms entsprechen, realistisch. Mit 4,4 ms Verzögerungszeit belastet &arts; die <acronym
+>CPU</acronym
+> im Ruhezustand mit 7,5%. Mit einer Verzögerung von 40 ms beträgt die Belastung etwa 3% (bei einem PII-350, diese Werte können abhängig von der Soundkarte, Kernel-Version und anderen Faktoren variieren). </para>
+
+<para
+> Jetzt zu der Zeit, die der Klick-Ton von den Lautsprechern bis zum Ohr benötigt. Bei einer angenommenen Distanz von 2 Metern ergibt sich bei einer Schallgeschwindigkeit von 330 Meter pro Sekunde eine Verzögerung von etwa 6 ms. </para>
+
+</sect2>
+
+<sect2 id="latency-streaming">
+<title
+>Verzögerungszeit in Streaming-Anwendungen</title>
+
+<para
+> Streaming-Anwendungen produzieren ihre Klänge selbst. Angenommen, ein Spiel, das einen konstanten Strom von Samples erzeugt, soll nun für die Wiedergabe durch &arts; verwendet werden. Als Beispiel: Wenn ich eine Taste drücke, hüpft die Spielfigur und es ertönt ein Boing-Klang. </para>
+
+<para
+> Als Erstes muss man wissen, wie &arts; Streaming realisiert. Der Ablauf ist ähnlich wie bei der Ausgabe auf einer Soundkarte. Das Spiel sendet einige Pakete mit Samples zum Soundserver. Angenommen, es sinc drei Pakete. Sobald der Soundserver das erste Paket wiedergegeben hat, schickt er eine Bestätigung zurück zum Spiel. </para>
+
+<para
+> Das Spiel erzeugt ein neues Paket und schickt es zum Server. Währenddessen verarbeitet der Server das zweite Paket und so weiter. Die Verzögerungszeiten hier sind ähnlich wie bei dem einfachen Beispiel: </para>
+
+<itemizedlist
+> <listitem
+> <para
+> Zeit, bis der Betriebssystemkern dem X11-Server den Tastendruck mitgeteilt hat. </para
+> </listitem
+> <listitem
+> <para
+> Zeit, bis der X11-Server dem Spiel den Tastendruck mitgeteilt hat. </para
+> </listitem
+> <listitem
+> <para
+> Zeit, bis das Spiel entschieden hat, das aufgrund des Tastendrucks ein Boing-Ton auszugeben ist. </para
+> </listitem
+> <listitem
+> <para
+> Zeit, bis das Paket mit dem Anfang des Boing-Tons den Soundserver erreicht hat. </para
+> </listitem
+> <listitem
+> <para
+> Zeit, bis der Boing-Ton (den der Soundserver sofort in die Ausgabe einmischt) den Datenpuffer passiert hat bis zu der Stelle, an der die Soundkarte gerade wiedergibt. </para
+> </listitem
+> <listitem
+> <para
+> Zeit, die der Boing-Ton von den Lautsprechern bis zum Ohr benötigt. </para
+> </listitem
+> </itemizedlist>
+
+<para
+> Die externen Verzögerungen sind gehen wiederum über den Inhalt dieses Dokumentes hinaus. </para>
+
+<para
+> Offensichtlich hängt die Streaming-Verzögerung von der Zeit ab, die alle Pakete benötigen, einmal wiedergegeben zu werden. Also ist diese Zeit (Anzahl der Pakete)*(Größe eines Paketes)/(Samplingrate * (Größe eines Samples)) </para>
+
+<para
+> Wie man sieht, ist das die gleiche Formel, wie sie bei den Bruchstücken verwandt wird. Für Spiele sind solch geringer Verzögerungszeiten wie oben überflüssig. Eine realistische Festlegung für Spiekle wären 2046 Bytes pro Paket bei drei Paketen. Die resultierende Verzögerung ist dann etwa 35 ms. </para>
+
+<para
+> Diese Berechnung basiert auf folgenden Annahmen: das Spiel rendert 25 Bilder pro Sekunde (für die Anzeige). Einen Verschiebung zwischen Ton und Film von einem Bild nimmt man nicht wahr. Daher ist eine Verzögerung von 1/25 Sekunde für Streaming akzeptabel, was wiederum bedeutet, das 40ms in Ordnung sind. </para>
+
+<para
+> Außerdem werden die meisten Leute ihre Spiele nicht mit Echtzeit-Priorität spielen und daher ist die Gefahr von Aussetzern nicht zu vernachlässigen. Bei 3 Paketen je 256 Bytes ist Streaming möglich (nach eigenen Tests) - es verbraucht aber eine Menge <acronym
+>CPU</acronym
+>-Zeit. </para>
+
+<para
+> Für die Serververzögerungszeiten können Sie genau wie oben rechnen. </para>
+
+</sect2>
+
+<sect2 id="cpu-usage">
+<title
+>Einige Überlegungen zu <acronym
+>CPU</acronym
+>-Zeit</title>
+
+<para
+> Es gibt eine Menge Faktoren, die in komplexen Situationen mit einigen Streaming-Anwendungen und einigen Anderen sowie einigen Plugins auf dem Server einen Einfluß auf die <acronym
+>CPU</acronym
+>-Zeit haben. Um einige zu nennen: </para>
+
+<itemizedlist
+> <listitem
+> <para
+> <acronym
+>CPU</acronym
+>-Zeit für die notwendigen Berechnungen. </para
+> </listitem
+> <listitem
+> <para
+> &arts; interner Scheduler-Aufwand - wie &arts; entscheidet, wann welches Modul was berechnen soll. </para
+> </listitem
+> <listitem
+> <para
+> Aufwand zur Konvertierung von Ganzzahlen in Kommazahlen. </para
+> </listitem
+> <listitem
+> <para
+> &MCOP;-Protokoll-Aufwand. </para
+> </listitem
+> <listitem
+> <para
+> Kernel: Prozeß-/Kontextumschaltung. </para
+> </listitem
+> <listitem
+> <para
+> Kernel: Kommunikationsaufwand. </para
+> </listitem
+> </itemizedlist>
+
+<para
+> Für die <acronym
+>CPU</acronym
+>-Berechnungszeit bei zwei gleichzeitig abgespielten Datenströmen muss man Additionen durchführen. Falls man einen Filter verwendet, sind einige weitere Berechnungen notwendig. Ein einfaches Beispiel mit zwei Strömen mit vier <acronym
+>CPU</acronym
+>-Zyklen pro Addition führen auf einem 350MHz-Prozessor zu 44100*2*4/350000000 = 0,1% <acronym
+>CPU</acronym
+>-Auslastung. </para>
+
+<para
+> &arts; internes Scheduling: &arts; muss bestimmen, welches Plugin wann was berechnet. Das benötigt Zeit. Wenn man Genaueres wissen will, sollte man einen Profiler zu Rate ziehen. Generell lässt sich Folgendes sagen: je weniger Wert man auf Echtzeit legt (also je größer die zu berechnenden Blöcke sind) um so wenig Scheduling Zeit wird benötigt. Bei mehr als 128 Samples in einem Stück (also einer Bruchstückgröße von 512 Bytes) ist der Scheduling-Aufwand wahrscheinlich nicht einmal nennenswert. </para>
+
+<para
+> Aufwand zur Konvertierung von Ganzzahlen in Kommazahlen: &arts; verwendet intern Kommazahlen als Datenformat. Sie sind einfach zu verarbeiten und auf zeitgemäßen Prozessoren kaum langsamer als Ganzzahlen. Wenn aber Programme ihre Daten nicht in Kommazahlen abspielen (wie ein Spiel, das seine Känge über &arts; ausgibt), müssen diese Daten konvertiert werden. Das Gleiche gilt für die Ausgabe auf einer Soundkarte. Soundkarten benötigen Ganzzahlen, also muss eine Konvertierung durchgeführt werden. </para>
+
+<para
+> Die folgenden Zahlen gehören zu einem Celeron, ungefähre ticks pro Sample, mit -O2 +egcs 2.91.66 (berechnet von Eugene Smith <email
+>hamster@null.ru</email
+>). Diese Zahlen sind naturgemäß sehr prozessorabhängig. </para>
+
+<programlisting>
+convert_mono_8_float: 14
+convert_stereo_i8_2float: 28
+convert_mono_16le_float: 40
+interpolate_mono_16le_float: 200
+convert_stereo_i16le_2float: 80
+convert_mono_float_16le: 80
+</programlisting>
+
+<para
+> Das bedeutet 1% <acronym
+>CPU</acronym
+>-Zeit für die Konvertierung und 5% für die Interpolation auf diesem 350 MHz-Prozessor. </para>
+
+<para
+> &MCOP; Protokoll-Aufwand: &MCOP; verträgt ungefähr 9000 Aufrufe pro Sekunde. Das hat wenige mit &MCOP; als mit den zwei Kernelgründen zu tun, die weiter unten beschrieben werden. Dennoch gibt das einen Anhaltspunkt für die Berechnung der Kosten von Streaming. </para>
+
+<para
+> Jedes übertragene Datenpaket erfordert einen &MCOP;-Aufruf. Natürlich ist das nur ein Richtwert, da große Pakete langsamer als 9000 Pakete/s sind. </para>
+
+<para
+> Angenommen man verwendet als Paketgröße 1024 Bytes. Für einen Stream mit 44kHz Stereo muss man also 44100*4/1024 = 172 Pakete pro Sekunde übertragen. Weiter angenommen, 9000 Pakete pro Sekunde entspricht einer <acronym
+>CPU</acronym
+>-Auslastung von 100%, dann erhält man (172*100)/9000 = 2% <acronym
+>CPU</acronym
+>-Auslastung bei einem Streaming mit 1024 Bytes pro Paket. </para>
+
+<para
+> Das sind nur Näherungen. Sie zeigen aber deutlich, dass man viel besser dran ist (wenn man die Verzögerungszeit tolerieren kann) mit einer Paketgröße von 4096 Bytes. Wir können eine kompakte Rechnung durchführen, wenn wir die Paketgröße für 100% <acronym
+>CPU</acronym
+>-Auslastung berechnen mit 44100*4/9000 = 19,6 Samples; daraus erhalten wir folgende Formel: </para>
+
+<para
+> Streaming <acronym
+>CPU</acronym
+>-Auslastung in Prozent = 1960/(Paketgröße) </para>
+
+<para
+> das ergibt 0,5% <acronym
+>CPU</acronym
+>-Auslastung bei Streaming mit einer Paketgröße von 4096 Bytes. </para>
+
+<para
+> Kernel Prozeß-/Kontextumschaltung: dieser Aufwand ist ein Teil des &MCOP;-Protokolls. Die Umschaltung zwischen zwei Prozessen benötigt Zeit. Es wird der Speicher neu aufgeteilt, der Cache wird ungültig, und vieles mehr (falls ein Kernel-Experte dieses liest - teilen Sie mir bitte die genauen Gründe mit). Das bedeutet: es benötigt Zeit. </para>
+
+<para
+> Ich weiß nicht wie viele Kontextwechsel Linux verträgt, aber sicher nur eine endliche Zahl. Daher nehme ich an, das ein erheblicher Teil des &MCOP; Protokollaufwandes durch Kontextumschaltung zu Stande kommt. Ich führte einige Tests mit &MCOP;-Kommunikation innerhalb eines Prozesses durch. Sie war wesentlich schneller (etwa viermal so schnell). </para>
+
+<para
+> Kernel: Kommunikationsaufwand: Das ist ebenfalls ein Bestandteil des &MCOP; Protokollaufwandes. Die Datenübertragung zwischen Prozessen wird momentan mittels Sockets durchgeführt. Das ist praktisch, da die üblichen select()-Methoden verwendet werden können, um die Ankunft einer Nachricht zu überprüfen. Das kann leicht mit anderen Ein-/Ausgabequellen wie Audio Ein-/Ausgabe, X11-Server-Kommunikation und einigem Anderen kombiniert werden. </para>
+
+<para
+> Diese Lese- und Schreibaufrufe kosten mit Sicherheit Prozessorzeit. Kleine Aufrufe (um ein Midi-Ereignis zu übertragen) sind vermutlich nicht so schlimm, große Aufrufe (z.B. um ein Videobild mit einigen Megabytes zu übertragen) stellen sicherlich ein Problem dar. </para>
+
+<para
+> In &MCOP; sollte daher möglichst gemeinsam genutzter Speicher verwendet werden. Das sollte aber keine Änderungen für die Anwendungsprogrammierer mit sich bringen. </para>
+
+<para
+> Durch einen Profiler kann man herausbekommen, in welchem Maße genau heutiges Audio Streaming unter der Nichtverwendung von gemeinsam genutztem Speicher leidet. Da Audio Streaming mit &artsd; und <application
+>artscat</application
+> mit 6% <acronym
+>CPU</acronym
+>-Auslastung (Wiedergabe von mp3) durchgeführt werden kann (und 5% für den mp3-Dekoder), kann es nicht so schlimm sein. Das enthält alles einschließlich der notwendigen Berechnungen und dem Socket-Aufwand, daher vermute ich, durch gemeinsam genutzten Speicher könnten vielleicht 1% <acronym
+>CPU</acronym
+>-Auslastung gespart werden. </para>
+
+</sect2>
+
+<sect2 id="hard-numbers">
+<title
+>Einige genaue Zahlen</title>
+
+<para
+> Diese Zahlen wurden mit der aktuellen CVS-Version ermittelt. Außerdem wollte ich Grenzfälle testen, also sind das Fälle, die in normalen Anwendungen nicht auftreten sollten. </para>
+
+<para
+> Ich habe ein Programm namens streamsound geschrieben, das Streaming Daten an &arts; sendet. Die Anwendung läuft hier mit Echtzeit-Priorität (ohne Probleme) und einem kleinen Plugin (für Lauststärkeskalierung und Clipping) auf seiten des Servers: </para>
+
+<programlisting>
+ 4974 stefan    20   0  2360 2360  1784 S       0 17.7  1.8   0:21 artsd
+ 5016 stefan    20   0  2208 2208  1684 S       0  7.2  1.7   0:02 streamsound
+ 5002 stefan    20   0  2208 2208  1684 S       0  6.8  1.7   0:07 streamsound
+ 4997 stefan    20   0  2208 2208  1684 S       0  6.6  1.7   0:07 streamsound
+</programlisting>
+
+<para
+> Das Streaming wird jeweils mit 3 Bruchstücken je 1024 Bytes (18 ms) durchgeführt. Drei Programme laufen gleichzeitig. Das scheint ein bisschen zu viel zu sein; mit einem Profiler kann man versuchen, den Aufwand zu verbessern. </para>
+
+<para
+> Das ist ein nicht realistisches Testbeispiel. Als weiteren Test wurde versucht, die minimal mögliche Verzögerungszeit herauszufinden. Resultat: man kann Streaming ohne Unterbrechungen mit einem Anwendungsprogramm bei zwei Bruchstücken je 128 Bytes zwischen &arts; und der Soundkarte sowie zwischen der Anwendung und &arts; durchführen. Das entspricht einer maximalen Verzögerung von 128*4/44100*4 = 3 ms, wobei 1,5 ms von der Soundkarte und 1,5 ms durch die Kommunikation mit &arts; entstehen. Beide Anwendungen benötigen Echtzeit-Priorität. </para>
+
+<para
+> Das benötigt allerdings einen erheblichen Anteil der <acronym
+>CPU</acronym
+>. Das Beispiel liegt bei etwa 45% auf meinem P-II/350. Es wird ein Klicken hörbar, wenn man Fenster in X11 bewegt oder Festplattenaktivität verursacht. Das hängt mit dem Kernel zusammen. Das Problem ist, das zwei Echtzeitanwendungen einen erheblichen Aufwand verursachen, mehr noch, wenn Sie auch noch miteinander kommunizieren. </para>
+
+<para
+> Schließlich ein realistischeres Beispiel. Es besteht aus &arts; mit artsd und einem artscat (ein Streaming Programm) bei 16 Bruchstücken mit je 4096 Bytes: </para>
+
+<programlisting>
+ 5548 stefan    12   0  2364 2364  1752 R       0  4.9  1.8   0:03 artsd
+ 5554 stefan     3   0   752  752   572 R       0  0.7  0.5   0:00 top
+ 5550 stefan     2   0  2280 2280  1696 S       0  0.5  1.7   0:00 artscat
+</programlisting>
+
+</sect2>
+</sect1>
+
+<!-- TODO
+
+<sect1 id="dynamic-instantiation">
+<title
+>Dynamic Instantiation</title>
+<para>
+</para>
+</sect1>
+
+-->
+
+<sect1 id="busses">
+<title
+>Busse</title>
+
+<para
+> Busse sind dynamisch erzeugte Verbindungen zum Transport von Audiosignalen. Grundlegend werden alle Signale von Uplinks addiert und an die Downlinks weitergeleitet. </para>
+
+<para
+> Busse existieren momentan nur in Stereo. Wenn Sie Mono-Daten transportieren wollen, senden Sie sie über einen Kanal und setzen Sie den anderen auf Null. Zur Verwendung erstellen Sie einen oder mehrere Synth&lowbar;BUS&lowbar;UPLINK-Module und benennen Sie sie mit dem Busnamen, auf dem Sie senden sollen (z.B. <quote
+>audio</quote
+> oder <quote
+>drums</quote
+>). Dann senden Sie die Daten an diese Uplinks. </para>
+
+<para
+> Auf der anderen Seite benötigen Sie einen oder mehrere Synth&lowbar;BUS&lowbar;DOWNLINK-Module, denen Sie die gleichen Busnamen geben (also <quote
+>audio</quote
+> oder <quote
+>drums</quote
+> ... gleiche Busnamen werden verbunden). Über diese Busenden erscheinen die gesendeten Signale wieder in einer Struktur. </para>
+
+<para
+> Die Uplinks und Downlinks können zu unterschiedlichen Strukturen gehören. Sie können sogar zwei Instanzen von &arts-builder; verwenden und in einer davon einen Uplink und in der Anderen den passenden Downlink haben. </para>
+
+<para
+> Eine besondere Eigenschaft ist die Dynamik dieser Verbindungen. Teile können sich jederzeit ein- oder ausklinken; das sollte kein Klicken oder andere Geräusche verursachen. </para>
+
+<para
+> Natürlich sollte kein Teil ausgeklinkt werden, während sein Signalpegel höher als Null ist, da sonst natürlich ein Klicken zu hören sein wird. </para>
+</sect1>
+
+<!-- TODO
+<sect1 id="network-ransparency">
+<title
+>Network Transparency</title>
+<para>
+</para>
+</sect1>
+
+<sect1 id="security">
+<title
+>Security</title>
+<para>
+</para>
+</sect1>
+
+
+<sect1 id="effects">
+<title
+>Effects and Effect Stacks</title>
+<para>
+</para>
+</sect1>
+
+-->
+<sect1 id="trader">
+<title
+>Trader</title>
+
+<para
+> &arts;/&MCOP; basiert sehr auf der Aufteilung von Aufgaben in kleine Komponenten. Das System wird dadurch sehr flexibel, da man das System auf einfache Weise durch das Hinzufügen neuer Komponenten, die neue Effekte, Dateiformate, Oszillatoren, GUI-Elemente, ... bereitstellen, erweitert werden kann. Da beinahe alles als Komponente programmiert ist, kann beinahe alles einfach erweitert werden, ohne die existierenden Quellen zu verändern. Neue Komponenten, die das System erweitern, werden einfach dynamisch geladen. </para>
+
+<para
+> Für einen reibungslosen Ablauf sind zwei Dinge erforderlich: </para>
+
+<itemizedlist
+> <listitem
+> <para
+> Komponenten müssen sich bekannt machen - sie müssen ihre Funktionen beschreiben, damit andere Programme sie verwenden können. </para
+> </listitem
+> <listitem
+> <para
+> Anwendungen müssen aktiv nach verwendbaren Komponenten suchen, anstatt immer die gleichen DInge für eine Aufgabe zu verwenden. </para
+> </listitem
+> </itemizedlist>
+
+<para
+> Die Kombination davon: Komponenten, die sagen: <quote
+>Hier bin ich, verwende mich</quote
+>, und Anwendungen (oder, wenn man so will, andere Komponenten), die nach verwendbaren Komponenten suchen, um eine Aufgabe zu erledigen, nennt man Handel. </para>
+
+<para
+> In &arts; beschreiben Komponenten sich selbst, indem sie Werte festlegen, die sie als Eigenschaften <quote
+>unterstützen</quote
+>. Eine typische Eigenschaft einer Komponente zum Laden einer Datei könnte die Dateinamenerweiterung sein, die sie verarbeiten kann. Typische Werte könnten <literal role="extension"
+>wav</literal
+>, <literal role="extension"
+>aiff</literal
+> oder <literal role="extension"
+>mp3</literal
+> sein. </para>
+
+<para
+> Jede Komponente kann viele verschiedene Werte für eine Eigenschaft anbieten. Eine einzige Komponente kann somit sowohl das Einlesen von <literal role="extension"
+>wav</literal
+> als auch <literal role="extension"
+>aiff</literal
+>-Dateien anbieten, indem sie diese Werte für die Eigenschaft <quote
+>Extension</quote
+> angibt. </para>
+
+<para
+> Um das durchzuführen, muss die Komponente eine <literal role="extension"
+>.mcopclass</literal
+>-Datei an geeigneter Stelle platzieren, in der sie die unterstützten Eigenschaften festlegt. Eine solche Datei könnte folgendermaßen aussehen (und würde in <filename
+><replaceable
+>componentdir</replaceable
+>/Arts/WavPlayObject.mcopclass</filename
+> installiert): </para>
+
+<programlisting>
+Interface=Arts::WavPlayObject,Arts::PlayObject,Arts::SynthModule,Arts::Object
+Author="Stefan Westerfeld &lt;stefan@space.twc.de&gt;"
+URL="http://www.arts-project.org"
+Extension=wav,aiff
+MimeType=audio/x-wav,audio/x-aiff
+</programlisting>
+
+<para
+> It is important that the filename of the <literal role="extension"
+>.mcopclass</literal
+>-file also says what the interface of the component is called like. The trader doesn't look at the contents at all, if the file (like here) is called <filename
+>Arts/WavPlayObject.mcopclass</filename
+>, the component interface is called <interfacename
+>Arts::WavPlayObject</interfacename
+> (modules map to directories). </para>
+
+<para
+> To look for components, there are two interfaces (which are defined in <filename
+>core.idl</filename
+>, so you have them in every application), called <interfacename
+>Arts::TraderQuery</interfacename
+> and <interfacename
+>Arts::TraderOffer</interfacename
+>. You to go on a <quote
+>shopping tour</quote
+> for components like this: </para>
+
+<orderedlist
+> <listitem
+> <para
+> Create a query object: </para
+> <programlisting>
+    Arts::TraderQuery query;
+</programlisting
+> </listitem
+> <listitem
+> <para
+> Specify what you want. As you saw above, components describe themselves using properties, for which they offer certain values. So specifying what you want is done by selecting components that support a certain value for a property. This is done using the supports method of a TraderQuery: </para
+> <programlisting>
+    query.supports("Interface","Arts::PlayObject");
+    query.supports("Extension","wav");
+</programlisting
+> </listitem
+> <listitem
+> <para
+> Finally, perform the query using the query method. Then, you'll (hopefully) get some offers: </para
+> <programlisting>
+    vector&lt;Arts::TraderOffer&gt; *offers = query.query();
+</programlisting
+> </listitem
+> <listitem
+> <para
+> Now you can examine what you found. Important is the interfaceName method of TraderOffer, which will tell you the name of the component, that matched the query. You can also find out further properties by getProperty. The following code will simply iterate through all components, print their interface names (which could be used for creation), and delete the results of the query again: </para
+> <programlisting>
+    vector&lt;Arts::TraderOffer&gt;::iterator i;
+    for(i = offers-&gt;begin(); i != offers-&gt;end(); i++)
+        cout &lt;&lt; i-&gt;interfaceName() &lt;&lt; endl;
+    delete offers;
+</programlisting
+> </listitem
+> </orderedlist>
+
+<para
+> For this kind of trading service to be useful, it is important to somehow agree on what kinds of properties components should usually define. It is essential that more or less all components in a certain area use the same set of properties to describe themselves (and the same set of values where applicable), so that applications (or other components) will be able to find them. </para>
+
+<para
+> Author (type string, optional): This can be used to ultimately let the world know that you wrote something. You can write anything you like in here, e-mail adress is of course helpful. </para>
+
+<para
+> Buildable (type boolean, recommended): This indicates whether the component is usable with <acronym
+>RAD</acronym
+> tools (such as &arts-builder;) which use components by assigning properties and connecting ports. It is recommended to set this value to true for almost any signal processing component (such as filters, effects, oscillators, ...), and for all other things which can be used in <acronym
+>RAD</acronym
+> like fashion, but not for internal stuff like for instance <interfacename
+>Arts::InterfaceRepo</interfacename
+>. </para>
+
+<para
+> Extension (type string, used where relevant): Everything dealing with files should consider using this. You should put the lowercase version of the file extension without the <quote
+>.</quote
+> here, so something like <userinput
+>wav</userinput
+> should be fine. </para>
+
+<para
+> Interface (type string, required): This should include the full list of (useful) interfaces your components supports, probably including <interfacename
+>Arts::Object</interfacename
+> and if applicable <interfacename
+>Arts::SynthModule</interfacename
+>. </para>
+
+<para
+> Language (type string, recommended): If you want your component to be dynamically loaded, you need to specify the language here. Currently, the only allowed value is <userinput
+>C++</userinput
+>, which means the component was written using the normal C++ <acronym
+>API</acronym
+>. If you do so, you'll also need to set the <quote
+>Library</quote
+> property below. </para>
+
+<para
+> Library (type string, used where relevant): Components written in C++ can be dynamically loaded. To do so, you have to compile them into a dynamically loadable libtool (<literal role="extension"
+>.la</literal
+>) module. Here, you can specify the name of the <literal role="extension"
+>.la</literal
+>-File that contains your component. Remember to use REGISTER_IMPLEMENTATION (as always). </para>
+
+<para
+> MimeType (type string, used where relevant): Everything dealing with files should consider using this. You should put the lowercase version of the standard mimetype here, for instance <userinput
+>audio/x-wav</userinput
+>. </para>
+
+<para
+> &URL; (type string, optional): If you like to let people know where they can find a new version of the component (or a homepage or anything), you can do it here. This should be standard &HTTP; or &FTP; &URL;. </para>
+
+</sect1>
+
+<!-- TODO
+<sect1 id="midi-synthesis">
+<title
+><acronym
+>MIDI</acronym
+> Synthesis</title>
+<para>
+</para>
+</sect1>
+
+<sect1 id="instruments">
+<title
+>Instruments</title>
+<para>
+</para>
+</sect1>
+
+<sect1 id="session-management">
+<title
+>Session Management</title>
+<para>
+</para>
+</sect1>
+
+<sect1 id="full-duplex">
+<title
+>Full duplex Audio</title>
+<para>
+</para>
+</sect1>
+-->
+
+<sect1 id="namespaces">
+<title
+>Namespaces in &arts;</title>
+
+<sect2 id="namespaces-intro">
+<title
+>Einleitung</title>
+
+<para
+> Each namespace declaration corresponds to a <quote
+>module</quote
+> declaration in the &MCOP; &IDL;. </para>
+
+<programlisting>
+// mcop idl
+
+module M {
+    interface A
+    {
+    }
+};
+
+interface B;
+</programlisting>
+
+<para
+> In this case, the generated C++ code for the &IDL; snippet would look like this: </para>
+
+<programlisting>
+// C++ header
+
+namespace M {
+    /* declaration of A_base/A_skel/A_stub and similar */
+    class A {        // Smartwrapped reference class
+        /* [...] */
+    };
+}
+
+/* declaration of B_base/B_skel/B_stub and similar */
+class B {
+    /* [...] */
+};
+</programlisting>
+
+<para
+> So when referring the classes from the above example in your C++ code, you would have to write <classname
+>M::A</classname
+>, but only B. However, you can of course use <quote
+>using M</quote
+> somewhere - like with any namespace in C++. </para>
+
+</sect2>
+
+<sect2 id="namespaces-how">
+<title
+>How &arts; uses namespaces</title>
+
+<para
+> There is one global namespace called <quote
+>Arts</quote
+>, which all programs and libraries that belong to &arts; itself use to put their declarations in. This means, that when writing C++ code that depends on &arts;, you normally have to prefix every class you use with <classname
+>Arts::</classname
+>, like this: </para>
+
+<programlisting>
+int main(int argc, char **argv)
+{
+    Arts::Dispatcher dispatcher;
+    Arts::SimpleSoundServer server(Arts::Reference("global:Arts_SimpleSoundServer"));
+
+    server.play("/var/foo/somefile.wav");
+</programlisting>
+
+<para
+> The other alternative is to write a using once, like this: </para>
+
+<programlisting>
+using namespace Arts;
+
+int main(int argc, char **argv)
+{
+    Dispatcher dispatcher;
+    SimpleSoundServer server(Reference("global:Arts_SimpleSoundServer"));
+
+    server.play("/var/foo/somefile.wav");
+    [...]
+</programlisting>
+
+<para
+> In &IDL; files, you don't exactly have a choice. If you are writing code that belongs to &arts; itself, you'll have to put it into module &arts;. </para>
+
+<programlisting>
+// IDL File for aRts code:
+#include &lt;artsflow.idl&gt;
+module Arts {        // put it into the Arts namespace
+    interface Synth_TWEAK : SynthModule
+    {
+        in audio stream invalue;
+        out audio stream outvalue;
+        attribute float tweakFactor;
+    };
+};
+</programlisting>
+
+<para
+> If you write code that doesn't belong to &arts; itself, you should not put it into the <quote
+>Arts</quote
+> namespace. However, you can make an own namespace if you like. In any case, you'll have to prefix classes you use from &arts;. </para>
+
+<programlisting>
+// IDL File for code which doesn't belong to aRts:
+#include &lt;artsflow.idl&gt;
+
+// either write without module declaration, then the generated classes will
+// not use a namespace:
+interface Synth_TWEAK2 : Arts::SynthModule
+{
+    in audio stream invalue;
+    out audio stream outvalue;
+    attribute float tweakFactor;
+};
+
+// however, you can also choose your own namespace, if you like, so if you
+// write an application "PowerRadio", you could for instance do it like this:
+module PowerRadio {
+    struct Station {
+        string name;
+        float frequency;
+    };
+
+    interface Tuner : Arts::SynthModule {
+        attribute Station station;     // no need to prefix Station, same module
+        out audio stream left, right;
+    };
+};
+</programlisting>
+
+</sect2>
+
+<sect2 id="namespaces-implementation">
+<title
+>Internals: How the Implementation Works</title>
+
+<para
+> Often, in interfaces, casts, method signatures and similar, &MCOP; needs to refer to names of types or interfaces. These are represented as string in the common &MCOP; datastructures, while the namespace is always fully represented in the C++ style. This means the strings would contain <quote
+>M::A</quote
+> and <quote
+>B</quote
+>, following the example above. </para>
+
+<para
+> Note this even applies if inside the &IDL; text the namespace qualifiers were not given, since the context made clear which namespace the interface <interfacename
+>A</interfacename
+> was meant to be used in. </para>
+
+</sect2>
+</sect1>
+
+<sect1 id="threads">
+<title
+>Threads in &arts;</title>
+
+<sect2 id="threads-basics">
+<title
+>Basics</title>
+
+<para
+> Using threads isn't possible on all platforms. This is why &arts; was originally written without using threading at all. For almost all problems, for each threaded solution to the problem, there is a non-threaded solution that does the same. </para>
+
+<para
+> For instance, instead of putting audio output in a seperate thread, and make it blocking, &arts; uses non-blocking audio output, and figures out when to write the next chunk of data using <function
+>select()</function
+>. </para>
+
+<para
+> However, &arts; (in very recent versions) at least provides support for people who do want to implement their objects using threads. For instance, if you already have code for an <literal role="extension"
+>mp3</literal
+> player, and the code expects the <literal role="extension"
+>mp3</literal
+> decoder to run in a seperate thread, it's usally the easiest thing to do to keep this design. </para>
+
+<para
+> The &arts;/&MCOP; implementation is built along sharing state between seperate objects in obvious and non-obvious ways. A small list of shared state includes: </para>
+
+<itemizedlist
+> <listitem
+><para
+> The Dispatcher object which does &MCOP; communication. </para
+> </listitem
+> <listitem
+> <para
+> The Reference counting (Smartwrappers). </para
+> </listitem
+> <listitem
+> <para
+> The IOManager which does timer and fd watches. </para
+> </listitem
+> <listitem
+> <para
+> The ObjectManager which creates objects and dynamically loads plugins. </para
+> </listitem
+> <listitem
+> <para
+> The FlowSystem which calls calculateBlock in the appropriate situations. </para
+> </listitem
+> </itemizedlist>
+
+<para
+> All of the above objects don't expect to be used concurrently (&dh; called from seperate threads at the same time). Generally there are two ways of solving this: </para>
+
+<itemizedlist
+> <listitem
+> <para
+> Require the caller of any functions on this objects to acquire a lock before using them. </para
+> </listitem
+> <listitem
+> <para
+> Making these objects really threadsafe and/or create per-thread instances of them. </para
+> </listitem
+> </itemizedlist>
+
+<para
+> &arts; follows the first approach: you will need a lock whenever you talk to any of these objects. The second approach is harder to do. A hack which tries to achieve this is available at <ulink url="http://space.twc.de/~stefan/kde/download/arts-mt.tar.gz"
+> http://space.twc.de/~stefan/kde/download/arts-mt.tar.gz</ulink
+>, but for the current point in time, a minimalistic approach will probably work better, and cause less problems with existing applications. </para>
+
+</sect2>
+<sect2 id="threads-locking">
+<title
+>When/how to acquire the lock?</title>
+
+<para
+> You can get/release the lock with the two functions: </para>
+
+<itemizedlist
+> <listitem
+> <para
+> <ulink url="http://space.twc.de/~stefan/kde/arts-mcop-doc/arts-reference/headers/Arts__Dispatcher.html#lock"
+><function
+>Arts::Dispatcher::lock()</function
+></ulink
+> </para
+> </listitem
+> <listitem
+> <para
+> <ulink url="http://space.twc.de/~stefan/kde/arts-mcop-doc/arts-reference/headers/Arts__Dispatcher.html#unlock"
+><function
+>Arts::Dispatcher::unlock()</function
+></ulink
+> </para
+> </listitem
+> </itemizedlist>
+
+<para
+> Generally, you don't need to acquire the lock (and you shouldn't try to do so), if it is already held. A list of conditions when this is the case is: </para>
+
+<itemizedlist
+> <listitem
+> <para
+> You receive a callback from the IOManager (timer or fd). </para
+> </listitem
+> <listitem
+> <para
+> You get call due to some &MCOP; request. </para
+> </listitem
+> <listitem
+> <para
+> You are called from the NotificationManager. </para
+> </listitem
+> <listitem
+> <para
+> You are called from the FlowSystem (calculateBlock) </para
+> </listitem
+> </itemizedlist>
+
+<para
+> There are also some exceptions of functions. which you can only call in the main thread, and for that reason you will never need a lock to call them: </para>
+
+<itemizedlist
+> <listitem
+> <para
+> Constructor/destructor of Dispatcher/IOManager. </para
+> </listitem
+> <listitem
+> <para
+> <methodname
+>Dispatcher::run()</methodname
+> / <methodname
+>IOManager::run()</methodname
+> </para
+> </listitem
+> <listitem
+> <para
+><methodname
+>IOManager::processOneEvent()</methodname
+></para
+> </listitem
+> </itemizedlist>
+
+<para
+> But that is it. For everything else that is somehow related to &arts;, you will need to get the lock, and release it again when done. Always. Here is a simple example: </para>
+
+<programlisting>
+class SuspendTimeThread : Arts::Thread {
+public:
+    void run() {
+        /*
+         * you need this lock because:
+         *  - constructing a reference needs a lock (as global: will go to
+         *    the object manager, which might in turn need the GlobalComm
+         *    object to look up where to connect to)
+         *  - assigning a smartwrapper needs a lock
+         *  - constructing an object from reference needs a lock (because it
+         *    might need to connect a server)
+         */
+        Arts::Dispatcher::lock();
+        Arts::SoundServer server = Arts::Reference("global:Arts_SoundServer");
+        Arts::Dispatcher::unlock();
+
+        for(;;) {            /*
+             * you need a lock here, because
+             *  - dereferencing a smartwrapper needs a lock (because it might
+             *    do lazy creation)
+             *  - doing an MCOP invocation needs a lock
+             */
+            Arts::Dispatcher::lock();
+            long seconds = server.secondsUntilSuspend();
+            Arts::Dispatcher::unlock();
+
+            printf("seconds until suspend = %d",seconds);
+            sleep(1);
+        }
+    }
+}
+</programlisting>
+
+
+</sect2>
+
+<sect2 id="threads-classes">
+<title
+>Threading related classes</title>
+
+<para
+> The following threading related classes are currently available: </para>
+
+<itemizedlist
+> <listitem
+> <para
+> <ulink url="http://www.arts-project.org/doc/headers/Arts__Thread.html"
+><classname
+> Arts::Thread</classname
+></ulink
+> - which encapsulates a thread. </para
+> </listitem
+> <listitem
+> <para
+> <ulink url="http://www.arts-project.org/doc/headers/Arts__Mutex.html"
+> <classname
+>Arts::Mutex</classname
+></ulink
+> - which encapsulates a mutex. </para
+> </listitem
+> <listitem
+> <para
+> <ulink url="http://www.arts-project.org/doc/headers/Arts__ThreadCondition.html"
+> <classname
+>Arts::ThreadCondition</classname
+></ulink
+> - which provides support to wake up threads which are waiting for a certain condition to become true. </para
+> </listitem
+> <listitem
+> <para
+> <ulink url="http://www.arts-project.org/doc/headers/Arts__SystemThreads.html"
+><classname
+>Arts::SystemThreads</classname
+></ulink
+> - which encapsulates the operating system threading layer (which offers a few helpful functions to application programmers). </para
+> </listitem
+> </itemizedlist>
+
+<para
+> See the links for documentation. </para>
+
+</sect2>
+</sect1>
+
+<sect1 id="references-errors">
+<title
+>References and Error Handling</title>
+
+<para
+> &MCOP; references are one of the most central concepts in &MCOP; programming. This section will try to describe how exactly references are used, and will especially also try to cover cases of failure (server crashes). </para>
+
+<sect2 id="references-properties">
+<title
+>Basic properties of references</title>
+
+<itemizedlist
+> <listitem
+> <para
+> An &MCOP; reference is not an object, but a reference to an object: Even though the following declaration <programlisting>
+   Arts::Synth_PLAY p;
+</programlisting
+> looks like a definition of an object, it only declares a reference to an object. As C++ programmer, you might also think of it as Synth_PLAY *, a kind of pointer to a Synth_PLAY object. This especially means, that p can be the same thing as a NULL pointer. </para
+> </listitem
+> <listitem
+> <para
+> You can create a NULL reference by assigning it explicitly </para
+> <programlisting>
+   Arts::Synth_PLAY p = Arts::Synth_PLAY::null();
+</programlisting
+> </listitem
+> <listitem
+> <para
+> Invoking things on a NULL reference leads to a core dump </para
+> <programlisting>
+   Arts::Synth_PLAY p = Arts::Synth_PLAY::null();
+   string s = p.toString();
+</programlisting
+> <para
+> will lead to a core dump. Comparing this to a pointer, it is essentially the same as <programlisting>
+   QWindow* w = 0;
+   w-&gt;show();
+</programlisting
+> which every C++ programmer would know to avoid. </para
+> </listitem
+> <listitem
+> <para
+> Uninitialized objects try to lazy-create themselves upon first use </para
+> <programlisting>
+   Arts::Synth_PLAY p;
+   string s = p.toString();
+</programlisting
+> <para
+> is something different than dereferencing a NULL pointer. You didn't tell the object at all what it is, and now you try to use it. The guess here is that you want to have a new local instance of a Arts::Synth_PLAY object. Of course you might have wanted something else (like creating the object somewhere else, or using an existing remote object). However, it is a convenient short cut to creating objects. Lazy creation will not work once you assigned something else (like a null reference). </para
+> <para
+> The equivalent C++ terms would be <programlisting>
+   QWidget* w;
+   w-&gt;show();
+</programlisting
+> which obviously in C++ just plain segfaults. So this is different here. This lazy creation is tricky especially as not necessarily an implementation exists for your interface. </para
+> <para
+> For instance, consider an abstract thing like a Arts::PlayObject. There are certainly concrete PlayObjects like those for playing mp3s or wavs, but <programlisting>
+   Arts::PlayObject po;
+   po.play();
+</programlisting
+> will certainly fail. The problem is that although lazy creation kicks in, and tries to create a PlayObject, it fails, because there are only things like Arts::WavPlayObject and similar. Thus, use lazy creation only when you are sure that an implementation exists. </para
+> </listitem
+> <listitem
+> <para
+> References may point to the same object </para
+> <programlisting>
+   Arts::SimpleSoundServer s = Arts::Reference("global:Arts_SimpleSoundServer");
+   Arts::SimpleSoundServer s2 = s;
+</programlisting
+> <para
+> creates two references referring to the same object. It doesn't copy any value, and doesn't create two objects. </para
+> </listitem
+> <listitem
+> <para
+> All objects are reference counted So once an object isn't referred any longer by any references, it gets deleted. There is no way to explicitely delete an object, however, you can use something like this <programlisting>
+   Arts::Synth_PLAY p;
+   p.start();
+   [...]
+   p = Arts::Synth_PLAY::null();
+</programlisting
+> to make the Synth_PLAY object go away in the end. Especially, it should never be necessary to use new and delete in conjunction with references. </para
+> </listitem
+> </itemizedlist>
+
+</sect2>
+
+<sect2 id="references-failure">
+<title
+>The case of failure</title>
+
+<para
+> As references can point to remote objects, the servers containing these objects can crash. What happens then? </para>
+
+<itemizedlist
+> <listitem
+> <para
+> A crash doesn't change whether a reference is a null reference. This means that if <function
+>foo.isNull()</function
+> was <returnvalue
+>true</returnvalue
+> before a server crash then it is also <returnvalue
+>true</returnvalue
+> after a server crash (which is clear). It also means that if <function
+>foo.isNull()</function
+> was <returnvalue
+>false</returnvalue
+> before a server crash (foo referred to an object) then it is also <returnvalue
+>false</returnvalue
+> after the server crash. </para
+> </listitem
+> <listitem
+> <para
+> Invoking methods on a valid reference stays safe Suppose the server containing the object calc crashed. Still calling things like <programlisting>
+   int k = calc.subtract(i,j)
+</programlisting
+> are safe. Obviously subtract has to return something here, which it can't because the remote object no longer exists. In this case (k == 0) would be true. Generally, operations try to return something <quote
+>neutral</quote
+> as result, such as 0.0, a null reference for objects or empty strings, when the object no longer exists. </para
+> </listitem
+> <listitem
+> <para
+> Checking <function
+>error()</function
+> reveals whether something worked. </para
+> <para
+> In the above case, <programlisting>
+   int k = calc.subtract(i,j)
+   if(k.error()) {
+      printf("k is not i-j!\n");
+   }
+</programlisting
+> would print out <computeroutput
+>k is not i-j</computeroutput
+> whenever the remote invocation didn't work. Otherwise <varname
+>k</varname
+> is really the result of the subtract operation as performed by the remote object (no server crash). However, for methods doing things like deleting a file, you can't know for sure whether it really happened. Of course it happened if <function
+>.error()</function
+> is <returnvalue
+>false</returnvalue
+>. However, if <function
+>.error()</function
+> is <returnvalue
+>true</returnvalue
+>, there are two possibilities: </para
+> <itemizedlist
+> <listitem
+> <para
+> The file got deleted, and the server crashed just after deleting it, but before transferring the result. </para
+> </listitem
+> <listitem
+> <para
+> The server crashed before beeing able to delete the file. </para
+> </listitem
+> </itemizedlist
+> </listitem
+> <listitem
+> <para
+> Using nested invocations is dangerous in crash resistent programs </para
+> <para
+> Using something like <programlisting>
+   window.titlebar().setTitle("foo");
+</programlisting
+> is not a good idea. Suppose you know that window contains a valid Window reference. Suppose you know that <function
+>window.titlebar()</function
+> will return a Titlebar reference because the Window object is implemented properly. However, still the above statement isn't safe. </para
+> <para
+> What could happen is that the server containing the Window object has crashed. Then, regardless of how good the Window implementation is, you will get a null reference as result of the window.titlebar() operation. And then of course invoking setTitle on that null reference will lead to a crash as well. </para
+> <para
+> So a safe variant of this would be <programlisting>
+   Titlebar titlebar = window.titlebar();
+   if(!window.error())
+      titlebar.setTitle("foo");
+</programlisting
+> add the appropriate error handling if you like. If you don't trust the Window implementation, you might as well use <programlisting>
+   Titlebar titlebar = window.titlebar();
+   if(!titlebar.isNull())
+      titlebar.setTitle("foo");
+</programlisting
+> which are both safe. </para
+> </listitem
+> </itemizedlist>
+
+<para
+> There are other conditions of failure, such as network disconnection (suppose you remove the cable between your server and client while your application runs). However their effect is the same like a server crash. </para>
+
+<para
+> Overall, it is of course a consideration of policy how strictly you try to trap communcation errors throughout your application. You might follow the <quote
+>if the server crashes, we need to debug the server until it never crashes again</quote
+> method, which would mean you need not bother about all these problems. </para>
+
+</sect2>
+
+<sect2 id="references-internals">
+<title
+>Internals: Distributed Reference Counting</title>
+
+<para
+> An object, to exist, must be owned by someone. If it isn't, it will cease to exist (more or less) immediately. Internally, ownership is indicated by calling <function
+>_copy()</function
+>, which increments an reference count, and given back by calling <function
+>_release()</function
+>. As soon as the reference count drops to zero, a delete will be done. </para>
+
+<para
+> As a variation of the theme, remote usage is indicated by <function
+>_useRemote()</function
+>, and dissolved by <function
+>_releaseRemote()</function
+>. These functions lead a list which server has invoked them (and thus owns the object). This is used in case this server disconnects (&dh; crash, network failure), to remove the references that are still on the objects. This is done in <function
+>_disconnectRemote()</function
+>. </para>
+
+<para
+> Now there is one problem. Consider a return value. Usually, the return value object will not be owned by the calling function any longer. It will however also not be owned by the caller, until the message holding the object is received. So there is a time of <quote
+>ownershipless</quote
+> objects. </para>
+
+<para
+> Now, when sending an object, one can be reasonable sure that as soon as it is received, it will be owned by somebody again, unless, again, the receiver dies. However this means that special care needs to be taken about object at least while sending, probably also while receiving, so that it doesn't die at once. </para>
+
+<para
+> The way &MCOP; does this is by <quote
+>tagging</quote
+> objects that are in process of being copied across the wire. Before such a copy is started, <function
+>_copyRemote</function
+> is called. This prevents the object from being freed for a while (5 seconds). Once the receiver calls <function
+>_useRemote()</function
+>, the tag is removed again. So all objects that are send over wire are tagged before transfer. </para>
+
+<para
+> If the receiver receives an object which is on his server, of course he will not <function
+>_useRemote()</function
+> it. For this special case, <function
+>_cancelCopyRemote()</function
+> exists to remove the tag manually. Other than that, there is also timer based tag removal, if tagging was done, but the receiver didn't really get the object (due to crash, network failure). This is done by the <classname
+>ReferenceClean</classname
+> class. </para>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="detail-gui-elements">
+<title
+>&GUI;-Elemente</title>
+
+<para
+> &GUI;-Elemente sind augenblicklich in einem experimentellen Stadium. Dieser Abschnitt beschreibt also, wie &arts; später einmal mit &GUI;-Elementen umgehen soll. Außerdem ist ein gewisser Teil an Programmzeilen bereits vorhanden. </para>
+
+<para
+> &GUI;-Elemente dienen der Interaktion eines Benutzers mit synthetisierten Strukturen. Im einfachsten Fall soll der Benutzer in der Lage sein, einige Parameter der Struktur direkt zu verändern (z.B. einen Verstärkungsfaktor, der vor dem Abspielmodul verwendet wird). </para>
+
+<para
+> In einem komplexeren Fall wäre vorstellbar, das ein Benutzer Parameter einer ganzen Gruppe von Strukturen oder noch nicht ausgeführten Strukturen ändert, wie z.B. die <acronym
+>ADSR</acronym
+>-Hüllkurve (envelope) des aktiven &MIDI;-Instrumentes. Eine andere denkbare Einstellung wäre der Dateiname eines Instrumentes, das auf einem Sample basiert. </para
+> 
+
+<para
+> Auf der anderen Seite könnte der Benutzer überwachen wollen, was innerhalb des Synthesizers passiert. Dazu könnte es Oszilloskope, Spektrumanalysatoren, Lautstärkeanzeigen und <quote
+>Experimente</quote
+> geben, um z.B. in der Lage zu sein, den Frequenzgang eines bestimmten Filtermodules zu analysieren. </para>
+
+<para
+> Schließlich sollte es möglich sein, mit &GUI;-Elementen die gesamte Struktur zu kontrollieren, die in &arts; ausgeführt wird. Der Benutzer sollte in der Lage sein, Instrumente &MIDI;-Kanälen zuzuordnen, neue Effekte zu starten und zu seinem Hauptmischpult (das ebenfalls aus &arts;-Strukturen besteht) einen weiteren Kanal hinzuzufügen und eine neue Strategie für seine Equalizer einzustellen. </para>
+
+<para
+> Die &GUI;-Elemente bieten dem Benutzer damit Zugriff auf alle Möglichkeiten, die das virtuelle Studio &arts; bietet. Natürlich sollen die &GUI;-Elemente auch mit &MIDI;-Eingaben interagieren können (ein Schieberegler soll sich selbstständig in eine neue Position bewegen, wenn ein Midi-Ereignis gerade diesen Parameter geändert hat), weiterhin sollen die Elemente selbst Ereignisse generieren können, um die Aufnahme der Benutzereingaben zu ermöglichen. </para>
+
+<para
+> Technisch gesprochen benötigt man eine &IDL;-Basisklasse für alle Kontrollelemente (<classname
+>Arts::Widget</classname
+>) und kann von dieser eine Anzahl häufig verwendeter Kontrollelemente (wie <classname
+>Arts::Poti</classname
+>, <classname
+>Arts::Panel</classname
+>, <classname
+>Arts::Window</classname
+>, ...) ableiten. </para>
+
+<para
+> Diese Kontrollelemente sollten mit einer Bibliothek wie &Qt; oder Gtk implementiert werden. Schließlich sollten die &GUI;s der Effekte aus diesen Elementen gebildet werden. Ein Freeverb-Effekt könnte z.B. aus fünf <classname
+>Arts::Poti</classname
+>- und einem <classname
+>Arts::Window</classname
+>-Element gebildet werden. Wenn es also eine &Qt;-Implementation dieser grundlegenden Elemente gibt, kann der Effekt sich mit Hilfe von &Qt; darstellen. Wenn es eine Gtk-Implementation gibt, funktioniert das für Gtk ebenfalls (die Funktionsweise sollte mehr oder weniger gleichwertig sein). </para>
+
+<para
+> Da wir &IDL; benutzen, sollte &arts-builder; (oder andere Programme) in der Lage sein, &GUI;s optisch zusammenzuführen oder mit einigen Parametern basierend auf den Schnittstellen selbst zusammenzustellen. Es sollte relativ einfach sein, eine <quote
+>GUI nach Beschreibung erstellen</quote
+>-Klasse zu programmieren, die eine &GUI;-Beschreibung (in der Form Parameter und Kontrollelement) in ein &GUI;-Objekt umsetzt. </para>
+
+<para
+> Basierend auf &IDL; und dem &arts;/&MCOP;-Komponentenmodell sollte es genau so leicht sein, ein neues &GUI;-Objekt zu erstellen, wie es ist, ein neues Plugin für &arts; zu schreiben, das einen weiteren Filter bereitstellt. </para>
+
+</sect1>
+
+</chapter>
+
+
+

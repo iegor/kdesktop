@@ -1,0 +1,652 @@
+<chapter id="tinkering-under-the-hood">
+<!-- Uncomment the <*info
+> below and add your name to be -->
+<!-- credited for writing this section. -->
+
+<!--
+<chapterinfo>
+<authorgroup>
+<author>
+<firstname
+>Your First Name here</firstname>
+<surname
+>Your Surname here </surname>
+</author>
+</authorgroup>
+</chapterinfo>
+-->
+
+<title
+>Onder de motorkap van &kde; rommelen</title>
+
+<sect1 id="hand-editing-config-files">
+
+<sect1info>
+<author
+><personname
+> <firstname
+>Nicolas</firstname
+> <surname
+>Goutte</surname
+> </personname
+> <email
+>goutte@kde.org</email
+> </author>
+</sect1info>
+
+<title
+>Configuratiebestanden handmatig bewerken</title>
+
+<sect2 id="hand-editing-intro">
+<title
+>Inleiding</title>
+<para
+>In &kde; kunnen de configuratiebestanden eenvoudig met een tekst-editor, zoals &kate;, bewerkt worden, omdat het gewone tekstbestanden zijn.</para>
+
+<para
+>Een voorbeeld van een configuratiebestand:</para>
+
+<programlisting
+>[General]
+AutoSave=1
+LastFile=/var/tmp/test.txt</programlisting>
+
+<para
+>De gebruikersspecifieke configuratiebestanden worden opgeslagen in <filename class="directory"
+>.kde/share/config</filename
+> (vervang <filename
+>.kde</filename
+> door uw  $<envar
+>KDEHOME</envar
+> instelling) en de globale configuratiebestanden bevinden zich in de submap <filename class="directory"
+>share/config</filename
+> van het installatiepad van &kde;. (U kunt dit pad vinden door het commando <command
+>kde-config --prefix</command
+> uit te voeren.) De bestandsnamen eindigen op rc (zonder een punt ervoor), bijvoorbeeld <filename
+>kopeterc</filename
+>.</para>
+
+<warning
+><para
+>De stabiliteit van uw &kde;-installatie kan gevaar lopen wanneer u de bestanden handmatig bewerkt. Toepassingen controleren de de gegevens in de configuratiebestanden niet. Dit betekent dat er storingen kunnen optreden en dat toepassingen kunnen crashen.</para
+></warning>
+
+</sect2>
+
+<sect2 id="hand-editing-backups">
+<title
+>Reservekopieën</title>
+
+<para
+>De eerste regel is dus: maak een reservekopie van het bestand voordat u het gaat bewerken. Deze reservekopie kunt u beter niet in één van de submappen van <filename class="directory"
+>.kde</filename
+> (of de map die overeenkomt met $<envar
+>KDEHOME</envar
+>) opslaan. Het is in het algemeen een goed idee om reservekopieën te maken voor het geval er iets fout gaat met &kde; waardoor u uw belangrijke configuratiebestanden kwijtraakt (bijvoorbeeld de instellingen voor &kmail; in het bestand <filename
+>kmailrc</filename
+>). Zo'n grote storing zou niet voor moeten komen, maar het kán een keer gebeuren.</para>
+</sect2>
+
+<sect2 id="hand-editing">
+<title
+>Bewerken</title>
+
+<para
+>Maar waarom zou u eigenlijk iets aan de configuratiebestanden willen doen? Als u de KIOSK-modus wilt doorvoeren, zult u het wel moeten. Misschien heeft een ontwikkelaar u gevraagd om een item toe te voegen dat hem kan helpen een probleem met de toepassing op te lossen. Misschien wilt u na een storing de bestanden herstellen zonder de complete map <filename class="directory"
+>.kde</filename
+> te hoeven verwijderen. Misschien wilt u wel iets meer te weten komen over de verborgen mogelijkheden van &kde;.</para>
+
+<para
+>De reden doet er niet toe, u wilt handmatig een configuratiebestand wijzigen.</para>
+
+<para
+>Wanneer u zo'n bestand wilt bewerken, zorg dat eerst dat de toepassing dat dat bestand gebruikt niet draait. In het geval dat het één van de basisconfiguratiebestanden is, kunt u er het beste voor zorgen dat &kde; helemaal niet draait.</para>
+
+<para
+>Klaar? Maak een reservekopie van het bestand (Had ik dat al gezegd?), start uw favoriete editor (laten we aannemen dat dit &kate; is) en open het bestand. Zorg ervoor dat het bestand als UTF-8 geladen wordt, &kate; laat dit zien als <quote
+>uft8</quote
+></para>
+
+<para
+>Nu hebt u een bestand als:</para>
+
+<programlisting
+>[Group]
+Key1=Value1
+Key2=Value2
+Key3=Value3</programlisting>
+
+<para
+>U kunt het bestand nu wijzigen (pas op voor typfouten!) en opslaan. (Zorg ervoor dat het weer als <acronym
+>UTF-8</acronym
+> opgeslagen wordt.)</para>
+
+<para
+>Nu kunt u de toepassing testen. Als deze niet goed meer werkt, sluit de toepassing dan af en zet de reservekopie van het configuratiebestand weer terug.</para>
+
+<itemizedlist>
+<title
+>Aanverwante informatie</title>
+
+
+<listitem
+><para
+><xref linkend="kde-for-administrators"/> bevat meer informatie over de mapstructuur van &kde;, dit kan u helpen om het bestand te kunnen vinden dat u moet bewerken.</para>
+</listitem>
+
+</itemizedlist>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="scripting-the-desktop">
+<title
+>Het bureaublad door middel van scripts manipuleren</title>
+
+<para
+>&kde; biedt een krachtig communicatiesysteem, dat tussen processen werkt: &DCOP;, het Desktop COmmunication Protocol. Met &DCOP; hebt u controle over een groot aantal functies in &kde;, vanaf de commandoregel of met een script in u favoriete scripttaal. U kunt ook informatie vanuit &kde;-toepassingen krijgen, verscheidene mediaspelers beschikken bijvoorbeeld over methoden om informatie op te vragen over het bestand dat momenteel afgespeeld wordt.</para>
+
+<para
+>Ruwweg gezegd heeft elke &kde;-toepassing één of meer &DCOP;-<firstterm
+>interfaces</firstterm
+>, die op hun beurt methoden (of functies) bieden die door een andere toepassing aangeroepen kunnen worden. De eerste stap om &DCOP; te gebruiken is het vinden van de juiste methode voor de taak. De gemakkelijkste manier om dit te doen is door middel van de <application
+>kdcop</application
+>-frontend voor de beschikbare &DCOP;-methoden.</para>
+
+<para
+>Start <application
+>kdcop</application
+> vanuit een &konsole; of vanuit de mini-<acronym
+>CLI</acronym
+> (het dialoogvenster dat na het indrukken van <keycombo action="simul"
+>&Alt;<keycap
+>F2</keycap
+> </keycombo
+> verschijnt). Het venster van <application
+>kdcop</application
+> laat de actieve toepassingen die &DCOP;-interfaces bieden in een boomstructuur zien. In het algemeen zult u in de boomstructuur moeten zoeken om de juiste methode te vinden. Het is nuttig om te weten dat de interface waar <quote
+>(default)</quote
+> bij staat gewoonlijk de meestgebruikte functies bevat.</para>
+
+
+
+<para
+>Dubbelklik op het item <guilabel
+>SetColor</guilabel
+> om te testen of de functie doet wat we verwachten. Om de kleur <varname
+>c</varname
+> in te stellen, klikt u op de selectieknop en kiest u een kleur. Bepaal of de kleur al dan niet A moet zijn met het keuzevakje. Klik op <guilabel
+>OK</guilabel
+>, de achtergrondkleur is ingesteld</para>
+
+<para
+>Om de toegang te krijgen tot de &DCOP;-methode vanuit uw favoriete scripttaal gebruikt u &DCOP;-"bindings", als deze beschikbaar zijn in de module "kdebindings", of u gebruikt de commandoregel en roept de toepassing <command
+>dcop</command
+> aan. De commandoregeltoepassing <command
+>dcop</command
+> voldoet voor eenvoudige functies. Om een &DCOP;-methode op de commandoregel aan te roepen moeten we de toepassing en de interface voor de methode, de methode zelf en de argumenten specificeren in een vorm die geaccepteerd wordt door de shell.</para>
+
+<para
+>We specificeren de toepassing, interface en methode in deze volgorde, gevolgd door de argumenten in dezelfde volgorde zoals ze in <application
+>kdcop</application
+> staan. <command
+>dcop</command
+> heeft een groot aantal opties: de uitvoer van <userinput
+><command
+>dcop</command
+> <option
+>--help</option
+></userinput
+> laat een lijst van opties zien.</para>
+
+<para
+>Genoeg theorie, tijd voor een voorbeeld:</para>
+
+<example>
+<title
+>Een script dat de achtergrondkleur wijzigt met &DCOP;</title>
+
+<para
+>Met behulp van de toepassing <command
+>dcop</command
+> en een beetje Perl gaan we een eenvoudig script maken dat de achtergrondkleur van het bureaublad langzaam door het spectrum roteert.</para>
+
+<para
+>Eerst zoeken we in <application
+>kdcop</application
+> naar de juiste methode. Voor dit voorbeeld gaan we rechtstreeks naar <menuchoice
+><guimenu
+>kdesktop</guimenu
+> <guisubmenu
+>KBackgroundIface</guisubmenu
+> <guimenuitem
+>setColor</guimenuitem
+></menuchoice
+>. De argumenten en het teruggegeven type van de functie worden in de stijl van C++ gegeven. Voor <methodname
+>setColor</methodname
+> zijn de argumenten een kleur, <varname
+>c</varname
+>, die de nieuwe achtergrondkleur specificeert, en een logische waarde (true of false), <varname
+>isColorA</varname
+>, die specificeert of het de eerster of tweede kleur is (dit wordt gebruikt om kleurverlopen in te stellen).</para>
+
+<para
+>Om de methode <methodname
+>setColor</methodname
+> op de commandoregel te gebruiken moeten we het volgende typen: <screen
+><prompt
+>%</prompt
+> <userinput
+><command
+>dcop</command
+> kdesktop KBackgroundIface setColor '#ffffff' false</userinput
+>
+</screen>
+</para>
+
+<para
+>Om de kleur te specificeren gebruiken we de hexadecimale RGB-waarde, net als in &HTML;. Opmerking: de waarde staat binnen enkele aanhalingstekens zodat <token
+>#</token
+> niet door de shell geïnterpreteerd zal worden.</para>
+
+<para
+>De hexadecimale RGB-waarde kunt u in elke &kde;-toepassing in het dialoogvenster "Kleur selecteren" vinden (bijvoorbeeld in &kcontrolcenter;, <menuchoice
+><guimenu
+>Uiterlijk &amp; thema's</guimenu
+> <guimenuitem
+>Kleuren</guimenuitem
+></menuchoice
+>), selecteer de gewenste kleur en gebruik de waarde die in het tekstvak <guilabel
+>HTML</guilabel
+> staat.</para>
+
+
+<para
+>Meer hebben we niet nodig van &DCOP;, nu hoeven we alleen het script te schrijven. Hier is een (zeer!) ruwe implementatie: <programlisting
+><![CDATA[
+$min=49;  # Minimum waarde van kleur R, G, of B
+$max=174; # Maximum waarde van kleur R, G, of B
+$step=5;  # Stapgrootte
+$sleeptime=15; # Interval in seconden tussen twee stappen
+
+@start = ($max, $min, $min);
+@colour = @start;
+
+while (1) {
+        foreach (0..5) {
+                my $which = $_ % 3; # Welke kleur (R, G of B) veranderd wordt
+                my $updown = $_ % 2; # Kleurwaarde verhogen of verlagen
+                do {
+                        if ($updown == 0) { $colour[$which]+=$step; }
+                        if ($updown == 1) { $colour[$which]-=$step; }
+                        my $dcopcall=sprintf "dcop kdesktop KBackgroundIface setColor '#%x%x%x' true\n", @colour;
+                        system($dcopcall);
+                        sleep $sleeptime;
+                        } while (($colour[$which] 
+>= $min) and ($colour[$which] <= $max));
+                }
+}
+]]>
+</programlisting>
+</para>
+
+<para
+>Voer het script zonder argumenten uit en het zal de achtergrondkleur door een spectrum van gedempte kleuren roteren tot het beëindigd (gekilld) wordt. <foreignphrase
+>Voil&agrave;</foreignphrase
+>!</para>
+
+</example>
+
+<para
+>Uiteraard is Perl niet de enige taal die u voor het schrijven van scripts met &DCOP; kunt gebruiken &mdash; als u liever een shell-script schrijft, kan dat ook:</para>
+
+<example>
+<title
+>Een achtergrond instellen van het internet</title>
+
+<para
+>Het volgende script haalt de intro-afbeelding van de strip <quote
+>User Friendly</quote
+> op en stelt die in als achtergrond voor het bureaublad met behulp van algemeen beschikbare hulpmiddelen en een beetje &DCOP;.</para>
+
+<programlisting
+><![CDATA[
+#!/bin/sh
+COMICURL=`wget -qO - http://www.userfriendly.org/static/index.html | \
+          grep Latest | sed -e "s,.*SRC=\",," -e "s,\"
+>.*,,"`
+TMPFILE=`mktemp /tmp/$0.XXXXXX` || exit 1
+wget -q -O $TMPFILE $COMICURL
+dcop kdesktop KBackgroundIface setWallpaper $TMPFILE 1
+]]>
+</programlisting>
+
+<para
+>De eerste regel na #!/bin/sh gebruikt <command
+>wget</command
+> en een reguliere expressie-kunstje om de locatie van de afbeelding uit de broncode van de indexpagina te extraheren. De tweede en derde regel downloaden de afbeelding, en tot slot stelt <command
+>dcop</command
+> de afbeelding in als achtergrond.</para>
+
+</example>
+
+
+<!-- <itemizedlist>
+<title
+>Related Information</title>
+<listitem
+><para
+>to be written</para>
+</listitem>
+</itemizedlist
+> -->
+
+
+</sect1>
+
+
+<sect1 id="adding-extra-keys">
+<title
+>Extra sneltoetsen aan &kde; toevoegen</title>
+
+<para
+>Veel moderne toetsenborden bevatten toetsen die niet standaard aan een actie zijn toegewezen.</para>
+
+<para
+><quote
+>Multimedia</quote
+>-toetsen genereren vaak een signaal en kunnen eenvoudig, net als elke andere toets, als sneltoets in een toepassing gekozen worden. Sommige toetsen worden echter niet gedetecteerd en in het dialoogvenster <guilabel
+>Sneltoetsen instellen</guilabel
+> heeft het indrukken ervan geen effect.</para>
+
+<para
+>Sommige IBM-laptops hebben bijvoorbeeld extra toetsen bij de pijltoetsen naar links en rechts die eruitzien als <guiicon
+>pagina links</guiicon
+> en <guiicon
+>pagina rechts</guiicon
+>.</para>
+
+<procedure>
+<step
+><para
+>U kunt het commando <command
+>xev</command
+> gebruiken om de code van de toetsen te vinden. In dit geval is dat 233 en 234. </para
+></step>
+<step
+><para
+>Kies toetssymbolen. Er worden er veel niet standaard gebruikt, deze zijn dus vrij te gebruiken. U kunt de lijst in het bestand <filename
+>/usr/X11R6/include/X11/keysymdef.h</filename
+> vinden (of in het equivalent op uw systeem).</para
+></step>
+<step
+><para
+>Creëer een bestand met de naam <filename
+>.Xmodmap</filename
+> in uw persoonlijke map en typ het volgende erin:</para>
+<screen
+>keycode 233 = Next_Virtual_Screen
+keycode 234 = Prev_Virtual_Screen</screen>
+</step>
+<step
+><para
+>Voer het commando <userinput
+><command
+>xmodmap</command
+> <filename
+>~/.Xmodmap</filename
+></userinput
+> uit.</para
+></step>
+</procedure>
+
+<para
+>Als u nu het commando <command
+>xev</command
+> nog een keer uitvoert, zult u zien dat de toetsen nu de "keysym" (toetssymbool) genereren die u eraan toegewezen hebt. U kunt ze nu aan elke actie toewijzen.</para>
+
+<itemizedlist>
+<title
+>Aanverwante informatie</title>
+<listitem
+><para
+>De <command
+>xev</command
+>-man-pagina. Deze kunt u zien door <userinput
+>man:/xev</userinput
+> in &konqueror; in de locatiebalk te typen of door <userinput
+><command
+>man</command
+> xev</userinput
+> in een terminal te typen.</para
+></listitem>
+</itemizedlist>
+
+</sect1>
+
+<sect1 id="keys-for-scripts">
+<title
+>Sneltoetsen voor nieuwe acties toevoegen</title>
+
+<para
+>Aan de meeste acties op het bureaublad of in toepassingen kunnen gemakkelijk sneltoetsen toegewezen worden. Als de actie waaraan u een sneltoets wilt toewijzen een zelfgeschreven programma is, kunt u net zo gemakkelijk sneltoetsen toewijzen.</para>
+
+<para
+>Misschien wilt u een ongebruikte toets aan een script of aan een dcop-commando toewijzen. In dit voorbeeld gaan we de twee toetsen, die we in <xref linkend="adding-extra-keys"/> toegevoegd hebben, gebruiken om naar het vorige of volgende virtuele bureaublad te gaan; twee functies waarvoor u DCOP nodig hebt (zoals besproken in <xref linkend="scripting-the-desktop"/>).</para>
+
+<para
+>Met de volgende methode is dit gemakkelijk te doen:</para>
+
+<procedure>
+<step>
+<para
+>Open &kcontrol;, kies in het gedeelte <guilabel
+>Regio &amp; toegankelijkheid</guilabel
+> <guilabel
+>Invoeractie</guilabel
+></para>
+</step>
+<step>
+<para
+>Klik op de knop <guibutton
+>Nieuwe actie</guibutton
+></para>
+</step>
+<step>
+<para
+>Geef de nieuwe actie een naam, &eg; <userinput
+>Volgende virtuele scherm</userinput
+></para>
+</step>
+<step>
+<para
+>Selecteer <guilabel
+>Sneltoets -> Command/URL (eenvoudig)</guilabel
+> bij het <guilabel
+>Actietype:</guilabel
+></para>
+</step>
+<step>
+<para
+>Op het tabblad <guilabel
+>sneltoets</guilabel
+> klikt u op de knop die u aan het commando wilt koppelen. In dit voorbeeld zou dat de knop met het pictogram <guiicon
+>Volgende pagina</guiicon
+> zijn. Er verschijnt nu <keysym
+>Next_Virtual_Screen</keysym
+> op de afbeelding.</para>
+</step>
+<step>
+<para
+>Op het tabblad <guilabel
+>Command/URL Settings</guilabel
+> typt u het commando dat uitgevoerd moet worden in: <userinput
+><command
+>dcop kwin default nextDesktop</command
+></userinput
+></para>
+</step>
+</procedure>
+
+<para
+>Herhaal dit voor <keysym
+>Prev_Virtual_Screen</keysym
+> en <userinput
+><command
+>dcop kwin default previousDesktop</command
+></userinput
+>.</para>
+
+<para
+>Wanneer u nu op de toets <keysym
+>Prev_Virtual_Screen</keysym
+> of <keysym
+>Next_Virtual_Screen</keysym
+> drukt, schakelt u over naar respectievelijk het vorige of het volgende virtuele bureaublad.</para>
+
+<para
+>Zoals blijkt, kunt u elke vrije toets aan elke actie toewijzen.</para>
+
+<itemizedlist>
+<title
+>Aanverwante informatie</title
+> 
+<listitem
+><para
+>U kunt de documentatie van <application
+>KHotKeys</application
+> bekijken door het in &khelpcenter; te selecteren of door <userinput
+>help:/khotkeys</userinput
+> in &konqueror; in de locatiebalk te typen.</para
+></listitem
+> 
+<listitem
+><para
+><xref linkend="adding-extra-keys"/></para
+></listitem>
+<listitem
+><para
+><xref linkend="scripting-the-desktop"/></para
+></listitem>
+</itemizedlist>
+
+</sect1>
+
+<sect1 id="kdebugdialog">
+<sect1info>
+<authorgroup>
+<author
+><personname
+> <firstname
+>Adriaan</firstname
+> <surname
+>de Groot</surname
+> </personname
+> <email
+>groot@kde.org</email
+> </author>
+</authorgroup>
+</sect1info>
+
+<title
+>&kdebugdialog; - De "debug"-uitvoer van &kde; beheersen</title>
+
+<sect2 id="kdebugdialog-basic-usage">
+<title
+>Algemeen gebruik</title>
+
+<para
+>&kdebugdialog; staat niet standaard in het &kmenu;. U moet het in een shell of vanuit de mini-CLI met het commando <userinput
+><command
+>kdebugdialog</command
+></userinput
+> opstarten. kdebugdialog; opent een venster met een lange lijst debug-gebieden. Elk gebied heeft een keuzevakje dat u kunt gebruiken om de debug-uitvoer voor dat gedeelte van &kde; in of uit te schakelen.</para>
+
+<para
+>De lijst is op nummer gesorteerd en niet op alfabet, kio (127) staat dus voor artskde (400). De nummers lopen op tot zo'n 200.000, maar er zijn in werkelijkheid slechts 400 gebieden. U hoeft niet door de hele lijst heen te zoeken, bovenin het dialoogvenster is een tekstinvoerveld waarin u een gedeelte van de naam kunt invoeren. De lijst wordt gefilterd en alleen de items die de tekst bevatten die u ingetypt hebt worden getoond. &eg; <userinput
+>k</userinput
+> filtert niet zo veel uit, maar <userinput
+>kont</userinput
+> laat alleen de &kontact; debug-gebieden zien. Om nog sneller de debug-uitvoer in of uit te schakelen kunt u op één van de knoppen <guibutton
+>Alles selecteren</guibutton
+> of <guibutton
+>Alles deselecteren</guibutton
+> klikken, waardoor &kde; een berg aan debug-uitvoer of heel erg weinig uitvoer produceert.</para>
+</sect2>
+
+<sect2 id="kdebugdialog-fullmode">
+<title
+>KDebugDialog in "full"-modus</title>
+
+<!-- this text partly taken from the kdebugdialog handbook -->
+
+<para
+>In "full"-modus, die u krijgt door kdebugdialog met het commando <userinput
+><command
+>kdebugdialog</command
+> <option
+>--fullmode</option
+></userinput
+> op te starten, is dezelfde lijst met debug-gebieden beschikbaar als in de gewone modus, maar nu kunt u slechts één item tegelijk uit een keuzelijst selecteren. U kunt dan de uitvoer voor de verschillende soorten meldingen (informatie, waarschuwing, fout en fatale fout) onafhankelijk van elkaar instellen. Voor elk van deze typen kunt u kiezen waarnaartoe de meldingen gestuurd worden. U kunt kiezen uit:</para>
+
+<para
+>Bestand, in dit geval kunt u een bestandsnaam intypen. Dit bestand wordt naar uw $<envar
+>HOME</envar
+>-map geschreven.</para>
+
+<para
+>Dialoogvenster. Elke debug-melding wordt in een dialoogvenster getoond. U moet elke keer op <guibutton
+>OK</guibutton
+> klikken om de toepassing verder te laten gaan.</para>
+
+<para
+>Shell, de standaard. Meldingen worden naar "stderr" (standaard foutuitvoer) afgedrukt en zullen naar het shell-venster waar de toepassing opgestart werd of in <filename
+>.xsession-errors</filename
+> geschreven worden.</para>
+
+<para
+>Syslog. Elke debug-melding wordt naar de syslog-voorziening van het systeem gestuurd, waarna het verder behandeld wordt.</para>
+
+<para
+>Geen. Dit onderdrukt de uitvoer van dit type melding.</para>
+
+<para
+>Voor meldingen die door fatale fouten gegenereerd worden is het in het algemeen een slecht idee om Geen of Syslog te kiezen, omdat u in beide gevallen de melding waarschijnlijk niet zult zien en de toepassing die een fatale fout tegenkomt zal verdwijnen zonder dat duidelijk wordt waarom. Of een toepassing al dan niet verdwijnt bij een fatale fout kan ingesteld worden met het keuzevakje <guilabel
+>Afsluiten bij fatale fouten</guilabel
+>, dat standaard geselecteerd is &mdash; maar het kan gebeuren dat een toepassing toch crasht na een fatale fout.</para>
+
+<!-- Add links to "further reading" here -->
+<!-- <itemizedlist>
+<title
+>Related Information</title>
+<listitem
+><para
+>to be written</para>
+</listitem>
+</itemizedlist
+>-->
+
+
+
+</sect2>
+</sect1>
+</chapter>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: xml
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:0
+sgml-indent-data:true
+sgml-parent-document:("index.docbook" "book" "chapter")
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

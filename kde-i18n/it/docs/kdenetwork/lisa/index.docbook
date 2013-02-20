@@ -1,0 +1,906 @@
+<?xml version="1.0" ?>
+<!DOCTYPE book PUBLIC "-//KDE//DTD DocBook XML V4.2-Based Variant V1.1//EN" "dtd/kdex.dtd" [
+  <!ENTITY lisa "<application
+>LISa</application
+>">
+  <!ENTITY package "kdenetwork">
+  <!ENTITY reslisa "<application
+>resLISa</application
+>">
+  <!ENTITY kappname "&lisa;"
+><!-- replace kapp here -->
+  <!ENTITY % addindex "IGNORE">
+  <!ENTITY % Italian "INCLUDE"
+><!-- change language only here -->
+]>
+
+<book lang="&language;">
+
+<bookinfo>
+
+<title
+>Manuale di &lisa;</title>
+
+<authorgroup>
+<author
+><firstname
+>Alexander</firstname
+> <surname
+>Neundorf</surname
+> <affiliation
+> <address
+><email
+>neundorf@kde.org</email
+></address>
+</affiliation>
+</author>
+
+<othercredit role="translator"
+><firstname
+>Luciano</firstname
+> <surname
+>Montanaro</surname
+> <affiliation
+><address
+><email
+>mikelima@cirulla.net</email
+></address
+></affiliation
+> <contrib
+>Traduzione del documento</contrib
+></othercredit
+> 
+
+</authorgroup>
+
+<copyright>
+<year
+>2001</year>
+<holder
+>Alexander Neundorf</holder>
+</copyright>
+
+<date
+>2001-07-07</date>
+<releaseinfo
+>0.01.00</releaseinfo>
+
+<abstract>
+<para
+>&lisa; è un programma progettato per fornire una specie di <quote
+>vicinato di rete</quote
+> usando solo la pila di protocolli TCP/IP, non è necessario <acronym
+>SMB</acronym
+> o altro.</para>
+
+<para
+>Questo manuale copre sia il <acronym
+>LAN</acronym
+> Information Server (&lisa;) che il Restricted <acronym
+>LAN</acronym
+> Information Server (&reslisa;) </para>
+
+</abstract>
+
+<keywordset>
+<keyword
+>KDE</keyword>
+<keyword
+>kdenetwork</keyword>
+<keyword
+>LAN</keyword>
+<keyword
+>rete</keyword>
+<keyword
+>vicinato di rete</keyword>
+</keywordset>
+
+</bookinfo>
+
+<chapter id="introduction">
+<title
+>Intoduzione</title>
+
+<para
+>&lisa; è un programma progettato per fornire una specie di <quote
+>vicinato di rete</quote
+> usando solo la pila di protocolli TCP/IP, non <acronym
+>SMB</acronym
+> o altro.</para>
+
+<para
+>È completamente indipendente da &kde;/&Qt;</para>
+
+<para
+>L'elenco degli host attivi è fornito attraverso la porta <acronym
+>TCP</acronym
+> 7741.</para>
+
+<para
+>&lisa; è dotata di due metodi di ricerca degli host:</para>
+
+<orderedlist>
+<listitem>
+<para
+>Si può fornire a &lisa; una sequenza di indirizzi <acronym
+>IP</acronym
+>, in questo caso &lisa; invierà richieste di eco <acronym
+>ICMP</acronym
+> a tutti gli indirizzi <acronym
+>IP</acronym
+>, ed aspetterà le risposte.</para>
+</listitem>
+<listitem>
+<para
+>Si può dire a &lisa; di eseguire <command
+>nmblookup</command
+> <option
+>"*"</option
+>. Lo strumento da linea di comando <command
+>nmblookup</command
+> del pacchetto Samba deve essere installato. <command
+>nmblookup</command
+> <option
+>"*"</option
+> invia una richiesta broadcast alle reti a cui siamo collegati, e tutti gli host dotati di servizi <acronym
+>SMB</acronym
+> risponderanno a questa trasmissione.</para>
+</listitem>
+
+</orderedlist>
+
+</chapter>
+
+<chapter id="how-it-works">
+<title
+>Come funziona</title>
+
+<para
+>Nel file di configurazione si fornisce un elenco di indirizzi IP che &lisa; deve controllare per vedere se sono attivi.</para>
+
+<para
+>Nel caso più semplice questo potrebbe essere l'indirizzo di rete/maschera di sottorete della stazione di lavoro. In questo caso, &lisa; verificherebbe tutti gli host della rete per vedere se è in esecuzione.</para>
+
+<para
+>La verifica degli host è fatta usando richieste di eco <acronym
+>ICMP</acronym
+>. Per poter inviare e ricevere le richieste di eco <acronym
+>ICMP</acronym
+> e le risposte, il programma deve aprire un cosiddetto <quote
+>socket raw</quote
+>. Quindi ha bisogno dei privilegi di <systemitem class="username"
+>root</systemitem
+>. Questo socket è aperto all'inizio dell'esecuzione del programma, e subito dopo l'apertura del socket i privilegi di root sono immediatamente lasciati cadere. (vedi <filename
+>main.cpp</filename
+> e <filename
+>strictmain.cpp</filename
+>).</para>
+
+<para
+>Se &lisa; è configurato per usare <command
+>nmblookup</command
+>, eseguirà <literal
+>popen("nmblookup \"*\"")</literal
+> e ne valuterà il risultato.</para>
+
+<para
+>Dal momento che le richieste <acronym
+>ICMP</acronym
+> e le trasmissioni broadcast possono congestionare la rete se c'è più di un server di questo tipo su una rete, i server cooperano tra di loro. Prima di iniziare i ping (o <command
+>nmblookup</command
+>), inviano una richiesta broadcast sulla porta 7741.</para>
+
+<para
+>Se qualcuno risponde alla richiesta broadcast, ottengono la lista completa degli host attivi attraverso la porta <acronym
+>TCP</acronym
+> 7741 di chi ha risposto, e non eseguono alcun ping (o onym
+> 7741 di chi ha risposto, e non eseguono alcun ping (o <command
+>nmblookup</command
+>).</para>
+
+<para
+>Se nessuno risponde, l'host che ha inviato la richiesta broadcast inizerà a fare ping (o <command
+>nmblookup</command
+>) sugli host e poi apre un socket in ascolto per la richiesta broadcast menzionata. Se l'host aveva ricevuto risposta alla richiesta, non apre alcun socket per l'ascolto di richieste broadcast. In questo modo, tipicamente, esattamente uno dei server avrà il socket aperto, e solo questo host eseguirà i ping (o <command
+>nmblookup</command
+>) per gli altri host. </para>
+
+<para
+>In altre parole, i server sono pigri, lavorano pensando <quote
+>Farò qualcosa solo se nessun altro lo può fare al mio posto</quote
+>.</para>
+
+<para
+>C'è un'altra funzione che riduce il carico di rete.</para>
+
+<para
+>Diciamo che hai configurato &lisa; per un aggiornamento ogni dieci minuti. Ora non accedi molto spesso al server. Se nessuno accede al server per l'intero periodo fra un aggiornamento e l'altro, il server eseguirà un aggiornamento (o direttamente o attraverso quello che fa effettivamente il lavoro) e poi raddoppia il proprio periodo di aggiornamento,  &ie; il successivo aggiornamento avverrà dopo venti minuti.</para>
+
+<para
+>Questo avverrà quattro volte, per cui se nessuno accede al server con un periodo di aggiornamento di dieci minuti per molto tempo, l'intervallo di aggiornamento crescerà fino a centosessanta minuti, quasi tre ore. Se a questo punto qualcuno accede ai dati dal server, otterrà una lista vecchia (anche di centosessanta minuti). Accedendo al server si reimposta l'intervallo di aggiornamento al valore iniziale, &ie; dieci minuti, e se l'ultimo aggiornamento è più vecchio di dieci minuti, eseguirà un aggiornamento immediatamente. Quindi, se si ottiene una lista molto vecchia, si può riprovare dopo pochi secondi per avere una lista corrente.</para>
+
+<para
+>Questo avrà un effetto evidente sui server che  non fanno ping (o nmblookup) per proprio conto, dal momento che tipicamente un solo utente vi accederà, ed un effetto minore sul server che fa il ping (o <command
+>nmblookup</command
+>), visto che questo è interrogato dagli altri server della rete.</para>
+
+<para
+>In questo modo è possibile che molti host di una rete abbiano questo server attivo, ma che il carico di rete rimanga basso. Per l'utente non è necessario sapere se c'è un server (&ie; un nameserver o un server di file o altro) sulla rete che contiene anche &lisa;,  Può sempre attivare &lisa; in locale e &lisa; farà il necessario in modo trasparente per l'utente.</para>
+
+<para
+>Il primo client di &lisa; è un ioslave di &kde; 2, quindi si può accedere alla rete con l'URL <userinput
+>lan:://localhost/</userinput
+> o <userinput
+>lan:/</userinput
+>, che contattano entrambi &lisa; sulla macchina locale.</para>
+
+<para
+>Se c'è una macchina sempre accesa e questa ha &lisa; abilitato, si può usare direttamente il client &lisa; con il server attivo su questa (cioè con l'ioslave menzionato <userinput
+>lan://nome_del_server/</userinput
+>).</para>
+
+<para
+>Volendo evitare che &lisa; prenda parte alla rete di broadcast, ma faccia la scansione in modo autonomo, si può forzare l'uso di una porta differente con l'opzione da linea di comando <option
+>--port</option
+> o <option
+>-p</option
+>. L'uso di questa opzione nel caso generale è vivamente sconsigliato!</para>
+
+<para
+>&lisa; rilegge il file di configurazione ogni volta che riceve un <command
+>SIGHUP</command
+>. Inoltre, stampa su stdout alcune informazioni sul proprio stato.</para>
+
+<para
+>I dati forniti sul socket hanno un formato molto semplice: <computeroutput
+>&lt;indirizzo ip decimale in network byte order&gt;&lt;uno spazio 0x20&gt;&lt;nome completo dell'host&gt;&lt;uno '\0' di terminazione&gt;&lt;a-capo '\n'&lt;</computeroutput
+> e l'ultima linea <computeroutput
+>0 succeeded&lt;'\n'&gt;</computeroutput
+> </para>
+
+<para
+>Per esempio,</para>
+
+<screen
+><computeroutput
+>17302538 un_host.qualcosa.it
+18285834 linux.qualcosa.it
+17827082 nameserver.qualcosa.it
+0 succeeded</computeroutput
+></screen>
+
+<para
+>Questo dovrebbe renderne facile l'elaborazione con strumenti informatici.</para>
+
+<para
+>Su una rete con politica di sicurezza molto stretta, i ping potrebbero essere considerati un potenziale attacco. Se questo è un problema, prova ad usare &reslisa;.</para
+> 
+
+</chapter>
+
+<chapter id="reslisa">
+<title
+>&reslisa;</title>
+
+<para
+>Se la rete ha regole di sicurezza molto strette, e non vuoi avere un'ulteriore porta aperta, puoi usare &reslisa;.</para>
+
+<para
+>Con &reslisa; non si possono eseguire ping a reti o sequenze di indirizzi, si può solo passare a &reslisa; fino a sessantaquattro host per nome nel file di configurazione. Questi riceveranno il ping. Si può ancora usare <command
+>nmblookup</command
+>.</para>
+
+<para
+>&reslisa; fornisce l'informazione solo su un socket di dominio unix, &ie; non sulla rete. Il nome del socket è <filename
+>/tmp/resLisa-TuoLoginName</filename
+>, in modo che &reslisa; possa essere lanciato da più utenti della macchina contemporaneamente.</para>
+
+<para
+>&reslisa; può essere installato setuid <systemitem class="username"
+>root</systemitem
+>, visto che non dovrebbe porre rischi di alcun tipo per la sicurezza. I privilegi di<systemitem class="username"
+>root</systemitem
+> vengono lasciati cadere subito dopo la partenza (vedi <filename
+>strictmain.cpp</filename
+>), e sono usati solo per creare il socket raw usato per inviare le richieste <acronym
+>ICMP</acronym
+>.</para>
+
+<para
+>Inoltre, non invia o riceve richieste broadcast. Il suo primo client è anche un ioslave di &kde; 2 (<userinput
+>rlan:/</userinput
+> in &konqueror; per esempio.)</para>
+
+</chapter>
+
+<chapter id="config-file-format">
+<title
+>Il file di configurazione</title>
+
+<para
+>Ecco un esempio di file di configurazione:</para>
+
+<screen
+>PingAddresses = 192.168.100.0/255.255.255.0;192.168.100.10-192.168.199.19;192.168.200.1;192-192.168-168.100-199.0-9;
+PingNames = bb_mail;
+AllowedAddresses = 192.168.0.0/255.255.0.0
+BroadcastNetwork = 192.168.100.0/255.255.255.0
+SearchUsingNmblookup = 1                #also try nmblookup
+FirstWait = 30                          #30 hundredth seconds
+SecondWait = -1                         #only one try
+#SecondWait = 60                         #try twice, and the second time wait 0.6 seconds
+UpdatePeriod = 300                      #update after 300 secs
+DeliverUnnamedHosts = 0                 #don't publish hosts without name
+MaxPingsAtOnce = 256                    #send up to 256 ICMP echo requests at once
+</screen>
+
+<sect1 id="pingaddresses">
+<title
+><option
+>PingAddresses</option
+></title>
+
+<para
+>Questa è probabilmente la voce più importante.</para>
+
+<para
+>Qui vanno inseriti gli indirizzi a cui fare ping. Si possono specificare più sequenze di indirizzi, separati da punto e virgola.</para>
+
+<para
+>Ci sono quattro modi per definire gli indirizzi:</para>
+
+<variablelist>
+<varlistentry>
+<term
+>indirizzo di rete/maschera di rete</term>
+<listitem>
+<para
+>192.168.100.0/255.255.255.0, &ie; un indirizzo <acronym
+>IP</acronym
+> con la maschera di rete assegnata.</para>
+
+<para
+>Questo non deve essere necessariamente l'indirizzo e la maschera di rete della tua macchina. Per esempio, se la tua rete è 10.0.0.0/255.0.0.0, puoi specificare 10.1.2.0/255.255.255.0 se ti interessano solo questi indirizzi. La combinazione indirizzo <acronym
+>IP</acronym
+>-maschera di rete deve essere separata da una barra  <quote
+>/</quote
+> e l'indirizzo non deve essere un vero indirizzo di rete, può anche essere l'indirizzo di un host della rete desiderata, &ie; 10.12.34.67/255.0.0.0 equivale a 10.0.0.0/255.0.0.0 .</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>una sequenza di indirizzi <acronym
+>IP</acronym
+></term>
+<listitem>
+<para
+>Per esempio: 192.168.100.10-192.168.199.19</para>
+
+<para
+>Un indirizzo <acronym
+>IP</acronym
+> da cui cominciare il ping ed un indirizzo <acronym
+>IP</acronym
+> dove terminare il ping.</para>
+
+<para
+>Entrambi gli indirizzi devono essere separati da <quote
+>-</quote
+></para>
+
+<para
+>In questo esempio questo produrrebbe 199-100+1=100, 100*256=25.600, 25.600+(19-10+1)=25.590 indirizzi</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Un indirizzo <acronym
+>IP</acronym
+>, rappresentato da sequenze di ciascuno dei quattro numeri decimali</term>
+<listitem>
+<para
+>un indirizzo <acronym
+>IP</acronym
+> può essere rappresentato con quattro numeri decimali, e si possono specificare sequenze per ciascuno dei quattro numeri: 192-192.169-171.100-199.0-9 </para>
+
+<para
+>In questo esempio tutti gli indirizzi <acronym
+>IP</acronym
+> il cui primo ottetto è 192, il secondo 168, il terzo da 100 a 199 e l'ultimo da 0 a 9 riceveranno un ping, per un totale di 1*1*100*10=1000 indirizzi.</para>
+
+<para
+>Questo è probabilmente utile molto raramente. Si possono fornire sequenze per ciascuno dei quatto numeri, sempre divise da <quote
+>-</quote
+>. </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+>Singoli indirizzi <acronym
+>IP</acronym
+> o hostname</term>
+<listitem>
+<para
+>L'indirizzo <acronym
+>IP</acronym
+> o l'hostname di una macchina specifica.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+<para
+>Si può anche lasciare il campo vuoto.</para>
+
+</sect1>
+
+<sect1 id="pingnames">
+<title
+><option
+>PingNames</option
+></title>
+
+<para
+>Qui si possono specificare gli host a cui fare ping usando il loro nome. I nomi devono essere divisi da punti e virgola. </para>
+
+<para
+>Si può anche lasciare il campo vuoto.</para>
+
+</sect1>
+
+<sect1 id="allowedaddresses">
+<title
+><option
+>AllowedAddresses</option
+></title>
+
+<para
+>Anche questo è molto importante. &lisa; eseguirà ping agli indirizzi, accetterà client e risponderà a messaggi broadcast solo dagli indirizzi coperti dalla serie di indirizzi inserita in questa linea. Si possono inserire fino a 32 indirizzi di rete/maschere di rete od indirizzi singoli. Questi vanno separati con ';' e non vanno lasciati spazi tra uno e l'altro.</para>
+
+<para
+>Per esempio, 192.168.0.0/255.255.0.0;192.169.0.0</para>
+
+<para
+>Una rete intera ed un singolo indirizzo sono validi. Cerca sempre di essere il più preciso possibile. Solitamente, l'uso del tuo indirizzo di rete/maschera di sottorete è una buona scelta.</para>
+
+</sect1>
+
+<sect1 id="broadcastnetwork">
+<title
+><option
+>BroadcastNetwork</option
+></title>
+
+<para
+>Questa voce contiene esattamente una coppia indirizzo di rete/maschera di sottorete. Di solito va bene quella della rete locale, per esempio: 192.0.0/255.255.0.0</para>
+
+</sect1>
+
+<sect1 id="searchusingnmblookup">
+<title
+><option
+>SearchUsingNmblookup</option
+></title>
+
+<para
+>Qui si può inserire <parameter
+>0</parameter
+> o <parameter
+>1</parameter
+>. <parameter
+>1</parameter
+> indica che &lisa; eseguirà <command
+>nmblookup</command
+> <option
+>"*"</option
+> ed analizzerà l'outout del comando. Questo produce meno traffico di rete rispetto all'uso di ping, ma verranno riconosciute solo le macchine con il servizio <acronym
+>SMB</acronym
+> attivo (cioè macchine &Windows; o macchine con samba attivo).</para>
+
+<para
+>Abilitando questa opzione e fornendo anche un indirizzo <acronym
+>IP</acronym
+> a cui fare ping, verrà prima eseguito <command
+>nmblookup</command
+> ed in seguito il ping. In questo modo verranno scanditi con ping solo gli indirizzi che non hanno reagito alla richiesta <command
+>nmblookup</command
+>. Questo dovrebbe alleggerire un poco il carico di rete.</para>
+
+</sect1>
+
+<sect1 id="firstwait">
+<title
+><option
+>FirstWait</option
+></title>
+
+<para
+>Se &lisa; esegue un ping, &ie; invia richieste di eco <acronym
+>ICMP</acronym
+>, ne manda un gruppo di seguito, e poi aspetta per il numero di centesimi di secondo specificato qui. Di solito valori compresi tra 5 e 50 vanno bene, il massimo è 99 (0.99 secondi, un tempo molto lungo). Prova a rendere questo valore il più piccolo che permetta di trovare ancora tutti gli host attivi.</para>
+
+</sect1>
+
+<sect1 id="secondwait">
+<title
+><option
+>SecondWait</option
+></title>
+
+<para
+>Dopo che &lisa; ha inviato le richieste di eco la prima volta, può darsi che alcuni host non vengano trovati. Per migliorare i risultati, &lisa; può eseguire un ping per un'altra volta. Questa volta verranno scanditi solo gli host da cui non si è ricevuta risposta. Se ottieni buoni risultati con un solo ping, puoi disabilitare la seconda scansione impostando SecondWait a <userinput
+>-1</userinput
+></para>
+
+<para
+>Altrimenti può essere una buona idea aumentare questo valore rispetto a quello di <option
+>FirstWait</option
+>, visto che gli host che non sono stati trovati al primo tentativo sono probabilmente più lenti o più lontani, e quindi possono aver bisogno di qualche millisecondo in più per rispondere. Valori fra 5 e 50 sono adeguati; il massimo è 99, e -1 disabilita la seconda scansione.</para>
+
+</sect1>
+
+<sect1 id="updateperiod">
+<title
+><option
+>UpdatePeriod</option
+></title>
+
+<para
+>Questo è l'intervallo di tempo dopo il quale &lisa; si aggiornerà. Trascorso questo lasso di tempo, &lisa; farà di nuovo ping o <command
+>nmblookup</command
+>, o richiederà nuovamente la lista di host dal server &lisa;.</para>
+
+<para
+>I valori validi vanno da 30 a 1800 secondi (cioè mezz'ora). Su una rete molto grande, l'intervallo non deve essere troppo basso (per tenere basso il carico di rete). Valori compresi tra 300 e 900 secondi (da 5 a 15 minuti) vanno bene.</para>
+
+<para
+>Ricorda che il periodo di aggiornamento è raddoppiato se nessuno accede al sever fino a quattro volte, quindi l'intervallo diventerà sedici volte più lungo di quello qui specificato se nessuno accede al server.</para>
+
+</sect1>
+
+<sect1 id="deliver-unnamed-hosts">
+<title
+><option
+>DeliverUnnamedHosts</option
+></title>
+
+<para
+>Se viene ricevuta la risposta ad una richiesta di eco da un indirizzo IP di cui &lisa; non riesce a determinare il nome, questa verrà pubblicata sulla porta solo se questa opzione è impostata ad 1.</para>
+
+<para
+>Non so se questa è una caratteristica utile, ma forse ci sono dei dispositivi di infrastruttura nella rete senza nomi assegnati, in modo che non debbano essere pubblicati. Se vuoi tenerli segreti :-), imposta questo valore a zero. In caso di dubbio, inserisci 0</para>
+
+</sect1>
+
+<sect1 id="max-pings-at-once">
+<title
+>MaxPingsAtOnce</title>
+
+<para
+>Quando fa una scansione, &lisa; invia un gruppo di richieste di eco ed aspetta una risposta. Normalmente sono eseguiti 256 ping di seguito, e di solito non è necessario cambiare questo valore. Aumentandolo troppo, i buffer di ricezione delle richieste di eco diventano troppo piccoli, e quindi l'aggiornamento rallenta.</para>
+
+</sect1>
+
+<sect1 id="examples">
+<title
+>Altri tre file di esempio</title>
+
+<example>
+<title
+>FIXME</title>
+
+<para
+>Fai parte di una piccola rete con una maschera di rete di ventiquattro bit, &ie; fino a duecentocinquantasei host:</para>
+
+<screen
+>PingAddresses = 192.168.100.0/255.255.255.0
+AllowedAddresses = 192.168.100.0/255.255.255.0
+BroadcastNetwork = 192.168.100.0/255.255.255.0
+SearchUsingNmblookup = 0                         #don't use nmblookup
+FirstWait = 20                                   #20 hundredth seconds
+SecondWait = 30                                  #30 hundredth seconds on the seconds try
+UpdatePeriod = 300                               #update after 300 secs
+DeliverUnnamedHosts = 0                          #don't publish hosts without name
+</screen>
+
+</example>
+
+<example>
+<title
+>File di configurazione per i soli host con <acronym
+>SMB</acronym
+></title>
+
+<para
+>Sei interessato solo agli host con i servizi <acronym
+>SMB</acronym
+> attivi, e non ci sono router sul network:</para>
+
+<screen
+>AllowedAddresses = 192.168.100.0/255.255.255.0
+BroadcastNetwork = 192.168.100.0/255.255.255.0
+SearchUsingNmblookup = 1                #use nmblookup
+UpdatePeriod = 300                      #update after 300 secs
+DeliverUnnamedHosts = 0                 #don't publish hosts without name
+</screen>
+</example>
+
+<example>
+<title
+>File di configurazione che usa sia <command
+>nmblookup</command
+> che il ping</title>
+
+<para
+>La stessa rete, ma qui è usato sia nbmlookup che ping.</para>
+
+<screen
+>PingAddresses = 192.168.100.0/255.255.255.0
+PingNames = bb_mail
+AllowedAddresses = 192.168.0.0/255.255.0.0
+BroadcastNetwork = 192.168.100.0/255.255.255.0
+SearchUsingNmblookup = 1                #also try nmblookup
+FirstWait = 30                          #30 hundredth seconds
+SecondWait = -1                         #only one try
+#SecondWait = 60                         #try twice, and the second time wait 0.6 seconds
+UpdatePeriod = 300                      #update after 300 secs
+DeliverUnnamedHosts = 0                 #don't publish hosts without name
+MaxPingsAtOnce = 256                    #send up to 256 ICMP echo requests at once
+</screen>
+
+</example>
+
+<example>
+<title
+>File di configurazione di &reslisa;</title>
+
+<para
+>Ecco un file di configurazione per &reslisa;. PingAddress non è usato da &reslisa;, e nemmeno BroadcastNetwork.</para>
+
+<screen
+>PingNames = bb_mail;some_host;some_other_host
+AllowedAddresses = 192.168.0.0/255.255.0.0
+SearchUsingNmblookup = 1                # use nmblookup
+FirstWait = 30                          #30 hundredth seconds
+SecondWait = -1                         #only one try
+#SecondWait = 60                         #try twice, and the second time wait 0.6 seconds
+UpdatePeriod = 300                      #update after 300 secs
+DeliverUnnamedHosts = 1                 #also publish hosts without name
+MaxPingsAtOnce = 256                    #send up to 256 ICMP echo requests at once
+</screen>
+
+</example>
+</sect1>
+</chapter>
+
+<chapter id="command-line-options">
+<title
+>Opzioni da linea di comando ed altri utilizzi</title>
+
+<para
+>Sono disponibili le seguenti opzioni:</para>
+
+<variablelist>
+<varlistentry>
+<term
+><option
+>-v</option
+>, <option
+>--version</option
+></term>
+<listitem>
+<para
+>Stampa sintetiche informazioni sulla versione del programma.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-h</option
+>, <option
+>--help</option
+></term>
+<listitem>
+<para
+>Offre una panoramica delle opzioni disponibili</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-u</option
+>, <option
+>--unix</option
+></term>
+<listitem>
+<para
+>Cerca prima in <filename
+>$<envar
+>HOME</envar
+>/.lisarc</filename
+>, poi in <filename
+>/etc/lisarc</filename
+>. Questo è il comportamento predefinito.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-k</option
+>, <option
+>--kde1</option
+></term>
+<listitem>
+<para
+>Cerca prima nel file <filename
+>$<envar
+>HOME</envar
+>/.kde/share/config/lisarc</filename
+> e poi in <filename
+>$<envar
+>KDEDIR</envar
+>/share/config/lisarc</filename
+>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-K</option
+>, <option
+>--kde2</option
+></term>
+<listitem>
+<para
+>Cerca il file <filename
+>lisarc</filename
+> in tutte le cartelle restituite dall'esecuzione di <userinput
+><command
+>kde-config</command
+> <option
+>--path</option
+> <parameter
+>config</parameter
+></userinput
+></para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-c</option
+>, <option
+>--config=</option
+><parameter
+>FILE</parameter
+></term>
+<listitem>
+<para
+>Legge <parameter
+>FILE</parameter
+> e nessun altro file di configurazione.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term
+><option
+>-p</option
+>, <option
+>--port</option
+> <parameter
+>PORTNR</parameter
+></term>
+<listitem>
+<para
+>Avvia il server su questo numero di porta. Usando questa opzione, &lisa; non potrà cooperare con altre sue istanze sulla rete. L'opzione non è disponibile per &reslisa;</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+     
+<para
+>Inviando un segnale Hangup a &lisa; o &reslisa; questi rileggeranno i file di configurazione (<userinput
+><command
+>killall</command
+> <option
+>-HUP lisa</option
+></userinput
+>).</para>
+
+<para
+>Inviando un segnale User1 a &lisa; o &reslisa; questi stamperanno sul canale di output standard  alcune informazioni sul loro stato (<userinput
+><command
+>killall</command
+> <option
+>-USR1 lisa</option
+></userinput
+>). Se la console da cui &lisa; o &reslisa; sono stati lanciati è stata chiusa, non si otterrà alcun messaggio.</para>
+
+
+
+</chapter>
+
+<chapter id="credits-and-license">
+<title
+>Riconoscimenti e licenze</title>
+
+<para
+>&lisa; e &reslisa; copyright 2000, 2001, Alexander Neundorf</para>
+
+
+
+<para
+>Traduzione di Luciano Montanaro <email
+>mikelima@kde.org</email
+>.</para
+> 
+
+<para
+>Have fun, Alexander Neundorf <email
+>neundorf@kde.org</email
+></para>
+&underFDL; &underGPL; </chapter>
+
+<appendix id="installation">
+<title
+>Installazione</title>
+
+<para
+>&lisa; e &reslisa; richiedono la presenza della libreria libstdc++ (ne usano la classe string), non hanno bisogno né di &Qt; né di &kde;.</para>
+
+&install.compile.documentation;
+
+<sect1 id="other-requirements">
+<title
+>Altri requisiti</title>
+
+<para
+>Sia &reslisa; che &lisa; aprono un cosiddetto <quote
+>socket raw</quote
+> per inviare e ricevere richieste di eco <acronym
+>ICMP</acronym
+> (ping). Per fare ciò, richiedono privilegi di <systemitem class="username"
+>root</systemitem
+>.</para>
+
+
+<para
+>&lisa; offre un servizio sulla porta <acronym
+>TCP</acronym
+> 7741, e dovrebbe essere installato da <systemitem class="username"
+>root</systemitem
+> ed avviato alla partenza del sistema. Come fare ciò è un fattore pesantemente dipendente dal sistema operativo in uso.</para>
+
+<para
+>&reslisa; è progettato per essere avviato dall'utente, e non offre niente alla rete. Deve essere installato setuid <systemitem class="username"
+>root</systemitem
+>.</para>
+
+<para
+>Usando il kioslave <userinput
+>rlan</userinput
+> da &kde; 2, &reslisa; può essere avviato in modo automatico.</para>
+
+<para
+>&lisa; legge il file <filename
+>lisarc</filename
+>, &reslisa; legge <filename
+>reslisarc</filename
+>. volendo configurare i due programmi da &kcontrol;, questi vanno avviati con l'opzione <option
+>-K</option
+>.</para>
+
+<para
+> Per maggiori informazioni su dove trovino i file di configurazione, vedi il capitolo su <xref linkend="command-line-options"/>.</para>
+
+</sect1>
+</appendix>
+</book>

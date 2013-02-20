@@ -1,0 +1,4 @@
+KDE_LANG = cs
+SUBDIRS = $(AUTODIRS)
+KDE_DOCS = kcontrol/email
+KDE_MANS = AUTO
