@@ -1,0 +1,3 @@
+SUBDIRS = gettext linguist xliff
+
+
