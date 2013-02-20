@@ -163,7 +163,6 @@ KMMsgDict::~KMMsgDict()
 }
 
 //-----------------------------------------------------------------------------
-
 const KMMsgDict* KMMsgDict::instance()
 {
   if ( !m_self ) {
@@ -329,15 +328,14 @@ void KMMsgDict::getLocation(unsigned long key,
   }
 }
 
-void KMMsgDict::getLocation(const KMMsgBase *msg,
-                            KMFolder **retFolder, int *retIndex) const
+void KMMsgDict::getLocation(const KMMsgBase *msg, KMFolder **retFolder, int *retIndex) const
 {
-  getLocation(msg->getMsgSerNum(), retFolder, retIndex);
+  this->getLocation(msg->getMsgSerNum(), retFolder, retIndex);
 }
 
-void KMMsgDict::getLocation( const KMMessage * msg, KMFolder * *retFolder, int * retIndex ) const
+void KMMsgDict::getLocation(const KMMessage *msg, KMFolder **retFolder, int *retIndex) const
 {
-  getLocation( msg->toMsgBase().getMsgSerNum(), retFolder, retIndex );
+  this->getLocation( msg->toMsgBase().getMsgSerNum(), retFolder, retIndex );
 }
 
 //-----------------------------------------------------------------------------

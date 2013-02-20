@@ -61,7 +61,7 @@ bool MessageProperty::filtering( const KMMsgBase *msgBase )
 
 void MessageProperty::setFiltering( const KMMsgBase *msgBase, bool filter )
 {
-  setFiltering( msgBase->getMsgSerNum(), filter );
+	MessageProperty::setFiltering( msgBase->getMsgSerNum(), filter );
 }
 
 KMFolder* MessageProperty::filterFolder( Q_UINT32 serNum )

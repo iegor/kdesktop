@@ -81,7 +81,6 @@ KMAcctImap::KMAcctImap(AccountManager* aOwner, const QString& aAccountName, uint
     }
 }
 
-
 //-----------------------------------------------------------------------------
 KMAcctImap::~KMAcctImap()
 {
@@ -96,7 +95,6 @@ KMAcctImap::~KMAcctImap()
       serNums.append( it.currentKey() );
   config.writeEntry( "unfiltered", serNums );
 }
-
 
 //-----------------------------------------------------------------------------
 QString KMAcctImap::type() const
@@ -122,9 +120,7 @@ void KMAcctImap::setImapFolder(KMFolderImap *aFolder)
   mFolder->setImapPath( "/" );
 }
 
-
 //-----------------------------------------------------------------------------
-
 bool KMAcctImap::handleError( int errorCode, const QString &errorMsg, KIO::Job* job, const QString& context, bool abortSync )
 {
   /* TODO check where to handle this one better. */
@@ -136,7 +132,6 @@ bool KMAcctImap::handleError( int errorCode, const QString &errorMsg, KIO::Job* 
   }
   return ImapAccountBase::handleError( errorCode, errorMsg, job, context, abortSync );
 }
-
 
 //-----------------------------------------------------------------------------
 void KMAcctImap::killAllJobs( bool disconnectSlave )
@@ -370,7 +365,7 @@ void KMAcctImap::processNewMail(bool interactive)
               mMailCheckProgressItem->incCompletedItems();
               mMailCheckProgressItem->updateProgress();
             }
-	    
+
 	    /*
 	     since the list of folders might have been updated at this point,
 	     mMailCheckFolders may be invalid, so break
@@ -401,6 +396,7 @@ void KMAcctImap::postProcessNewMail(KMFolderImap* folder, bool)
   postProcessNewMail(static_cast<KMFolder*>(folder->folder()));
 }
 
+//-----------------------------------------------------------------------------
 void KMAcctImap::postProcessNewMail( KMFolder * folder )
 {
   disconnect( folder->storage(), SIGNAL(numUnreadMsgsChanged(KMFolder*)),
@@ -566,6 +562,7 @@ FolderStorage* const KMAcctImap::rootFolder() const
   return mFolder;
 }
 
+//-----------------------------------------------------------------------------
 ImapAccountBase::ConnectionState KMAcctImap::makeConnection()
 {
   if ( mSlaveConnectionError )
@@ -576,12 +573,14 @@ ImapAccountBase::ConnectionState KMAcctImap::makeConnection()
   return ImapAccountBase::makeConnection();
 }
 
+//-----------------------------------------------------------------------------
 void KMAcctImap::slotResetConnectionError()
 {
   mSlaveConnectionError = false;
   kdDebug(5006) << k_funcinfo << endl;
 }
 
+//-----------------------------------------------------------------------------
 void KMAcctImap::slotFolderSelected( KMFolderImap* folder, bool )
 {
   folder->setSelected( false );
@@ -591,6 +590,7 @@ void KMAcctImap::slotFolderSelected( KMFolderImap* folder, bool )
   folder->close( "acctimap" );
 }
 
+//-----------------------------------------------------------------------------
 void KMAcctImap::execFilters(Q_UINT32 serNum)
 {
   if ( !kmkernel->filterMgr()->atLeastOneFilterAppliesTo( id() ) ) return;
@@ -601,6 +601,7 @@ void KMAcctImap::execFilters(Q_UINT32 serNum)
   mFilterSerNumsToSave.insert( QString( "%1" ).arg( serNum ), (const int *)1 );
 }
 
+//-----------------------------------------------------------------------------
 int KMAcctImap::slotFilterMsg( KMMessage *msg )
 {
   if ( !msg ) {

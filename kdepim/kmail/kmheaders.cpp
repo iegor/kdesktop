@@ -1270,23 +1270,31 @@ int KMHeaders::slotFilterMsg(KMMessage *msg)
 {
   if ( !msg ) return 2; // messageRetrieve(0) is always possible
   msg->setTransferInProgress(false);
+
   int filterResult = kmkernel->filterMgr()->process(msg,KMFilterMgr::Explicit);
+
+	if (filterResult == 0)
+		return 2;
+
   if (filterResult == 2) {
     // something went horribly wrong (out of space?)
     kmkernel->emergencyExit( i18n("Unable to process messages: " ) + QString::fromLocal8Bit(strerror(errno)));
     return 2;
   }
+
   if (msg->parent()) { // unGet this msg
     int idx = -1;
-    KMFolder * p = 0;
-    KMMsgDict::instance()->getLocation( msg, &p, &idx );
+	KMFolder * p = 0;
+	const KMMsgDict* inst = KMMsgDict::instance();
+
+	if (inst != NULL)
+		inst->getLocation( msg, &p, &idx );
     assert( p == msg->parent() ); assert( idx >= 0 );
     p->unGetMsg( idx );
   }
 
   return filterResult;
 }
-
 
 void KMHeaders::slotExpandOrCollapseThread( bool expand )
 {
