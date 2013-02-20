@@ -1,0 +1,674 @@
+dnl Copyright (c) 2002  Leon Bottou and Yann Le Cun.
+dnl Copyright (c) 2001  AT&T
+dnl
+dnl Most of these macros are derived from macros listed
+dnl at the GNU Autoconf Macro Archive
+dnl http://www.gnu.org/software/ac-archive/
+dnl
+dnl This program is free software; you can redistribute it and/or modify
+dnl it under the terms of the GNU General Public License as published by
+dnl the Free Software Foundation; either version 2 of the License, or
+dnl (at your option) any later version.
+dnl
+dnl This program is distributed in the hope that it will be useful,
+dnl but WITHOUT ANY WARRANTY; without even the implied warranty of
+dnl MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+dnl GNU General Public License for more details.
+dnl
+dnl You should have received a copy of the GNU General Public License
+dnl along with this program; if not, write to the Free Software
+dnl Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA02111 USA
+dnl
+
+dnl -------------------------------------------------------
+dnl @synopsis AC_CHECK_CXX_OPT(OPTION,
+dnl               ACTION-IF-OKAY,ACTION-IF-NOT-OKAY)
+dnl Check if compiler accepts option OPTION.
+dnl -------------------------------------------------------
+AC_DEFUN([AC_CHECK_CXX_OPT],[
+ opt="$1"
+ AC_MSG_CHECKING([if $CXX accepts $opt])
+ echo 'void f(){}' > conftest.cc
+ if test -z "`${CXX} ${CXXFLAGS} ${OPTS} $opt -c conftest.cc 2>&1`"; then
+    AC_MSG_RESULT(yes)
+    rm conftest.* 
+    $2
+ else
+    AC_MSG_RESULT(no)
+    rm conftest.*
+    $3
+ fi
+])
+
+dnl -------------------------------------------------------
+dnl @synopsis AC_CXX_MEMBER_TEMPLATES
+dnl If the compiler supports member templates, 
+dnl define HAVE_MEMBER_TEMPLATES.
+dnl -------------------------------------------------------
+AC_DEFUN([AC_CXX_MEMBER_TEMPLATES],
+[AC_CACHE_CHECK(whether the compiler supports member templates,
+ac_cv_cxx_member_templates,
+[AC_LANG_SAVE
+ AC_LANG_CPLUSPLUS
+ AC_TRY_COMPILE([
+template<class T, int N> class A
+{ public:
+  template<int N2> A<T,N> operator=(const A<T,N2>& z) { return A<T,N>(); }
+};],[A<double,4> x; A<double,7> y; x = y; return 0;],
+ ac_cv_cxx_member_templates=yes, ac_cv_cxx_member_templates=no)
+ AC_LANG_RESTORE
+])
+if test "$ac_cv_cxx_member_templates" = yes; then
+  AC_DEFINE(HAVE_MEMBER_TEMPLATES,1,
+        [define if the compiler supports member templates])
+fi
+])
+
+
+dnl -------------------------------------------------------
+dnl @synopsis AC_CXX_NAMESPACES
+dnl Define HAVE_NAMESPACES if the compiler supports
+dnl namespaces.
+dnl -------------------------------------------------------
+AC_DEFUN([AC_CXX_NAMESPACES],
+[AC_CACHE_CHECK(whether the compiler implements namespaces,
+ac_cv_cxx_namespaces,
+[ AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  AC_TRY_COMPILE([namespace Outer { namespace Inner { int i = 0; }}],
+                 [using namespace Outer::Inner; return i;],
+                 ac_cv_cxx_namespaces=yes, ac_cv_cxx_namespaces=no)
+  AC_LANG_RESTORE
+])
+if test "$ac_cv_cxx_namespaces" = yes && test "$ac_debug" = no; then
+  AC_DEFINE(HAVE_NAMESPACES,1,
+             [define if the compiler implements namespaces])
+fi
+])
+
+
+
+dnl -------------------------------------------------------
+dnl @synopsis AC_CXX_TYPENAME
+dnl Define HAVE_TYPENAME if the compiler recognizes 
+dnl keyword typename.
+dnl -------------------------------------------------------
+AC_DEFUN([AC_CXX_TYPENAME],
+[AC_CACHE_CHECK(whether the compiler recognizes typename,
+ac_cv_cxx_typename,
+[AC_LANG_SAVE
+ AC_LANG_CPLUSPLUS
+ AC_TRY_COMPILE([template<typename T>class X {public:X(){}};],
+[X<float> z; return 0;],
+ ac_cv_cxx_typename=yes, ac_cv_cxx_typename=no)
+ AC_LANG_RESTORE
+])
+if test "$ac_cv_cxx_typename" = yes; then
+  AC_DEFINE(HAVE_TYPENAME,1,[define if the compiler recognizes typename])
+fi
+])
+
+
+dnl -------------------------------------------------------
+dnl @synopsis AC_CXX_STDINCLUDES
+dnl Define HAVE_STDINCLUDES if the compiler has the
+dnl new style include files (without the .h)
+dnl -------------------------------------------------------
+AC_DEFUN([AC_CXX_STDINCLUDES],
+[AC_CACHE_CHECK(whether the compiler comes with standard includes,
+ac_cv_cxx_stdincludes,
+[AC_LANG_SAVE
+ AC_LANG_CPLUSPLUS
+ AC_TRY_COMPILE([#include <new>
+struct X { int a; X(int a):a(a){}; };
+X* foo(void *x) { return new(x) X(2); } ],[],
+ ac_cv_cxx_stdincludes=yes, ac_cv_cxx_stdincludes=no)
+ AC_LANG_RESTORE
+])
+if test "$ac_cv_cxx_stdincludes" = yes; then
+  AC_DEFINE(HAVE_STDINCLUDES,1,
+    [define if the compiler comes with standard includes])
+fi
+])
+
+
+dnl -------------------------------------------------------
+dnl @synopsis AC_CXX_BOOL
+dnl If the compiler recognizes bool as a separate built-in type,
+dnl define HAVE_BOOL. Note that a typedef is not a separate
+dnl type since you cannot overload a function such that it 
+dnl accepts either the basic type or the typedef.
+dnl -------------------------------------------------------
+AC_DEFUN([AC_CXX_BOOL],
+[AC_CACHE_CHECK(whether the compiler recognizes bool as a built-in type,
+ac_cv_cxx_bool,
+[AC_LANG_SAVE
+ AC_LANG_CPLUSPLUS
+ AC_TRY_COMPILE([
+int f(int  x){return 1;}
+int f(char x){return 1;}
+int f(bool x){return 1;}
+],[bool b = true; return f(b);],
+ ac_cv_cxx_bool=yes, ac_cv_cxx_bool=no)
+ AC_LANG_RESTORE
+])
+if test "$ac_cv_cxx_bool" = yes; then
+  AC_DEFINE(HAVE_BOOL,1,[define if bool is a built-in type])
+fi
+])
+
+dnl -------------------------------------------------------
+dnl @synopsis AC_CXX_EXCEPTIONS
+dnl If the C++ compiler supports exceptions handling (try,
+dnl throw and catch), define HAVE_EXCEPTIONS.
+dnl -------------------------------------------------------
+AC_DEFUN([AC_CXX_EXCEPTIONS],
+[AC_CACHE_CHECK(whether the compiler supports exceptions,
+ac_cv_cxx_exceptions,
+[AC_LANG_SAVE
+ AC_LANG_CPLUSPLUS
+ AC_TRY_COMPILE(,[try { throw  1; } catch (int i) { return i; }],
+ ac_cv_cxx_exceptions=yes, ac_cv_cxx_exceptions=no)
+ AC_LANG_RESTORE
+])
+if test "$ac_cv_cxx_exceptions" = yes; then
+  AC_DEFINE(HAVE_EXCEPTIONS,1,[define if the compiler supports exceptions])
+fi
+])
+
+
+dnl -------------------------------------------------------
+dnl @synopsis AC_CXX_RPO
+dnl Defines option --enable-rpo and searches program RPO.
+dnl Set output variables CXXRPOFLAGS and RPO. 
+dnl -------------------------------------------------------
+AC_DEFUN([AC_CXX_RPO],
+[ CXXRPOFLAGS=
+  RPO_YES='#'
+  RPO_NO=''
+  if test x$GXX = xyes ; then
+    AC_ARG_ENABLE([rpo],
+      AC_HELP_STRING([--enable-rpo],
+                     [Enable compilation with option -frepo]),
+      [ac_rpo=$enableval], [ac_rpo=no] )
+    if test x$ac_rpo != xno ; then
+      CXXRPOFLAGS='-frepo -fno-rtti'
+      RPO_YES=''
+      RPO_NO='#'
+    fi
+  fi
+  AC_SUBST(CXXRPOFLAGS)
+  AC_SUBST(RPO_YES)
+  AC_SUBST(RPO_NO)
+])
+
+
+dnl ------------------------------------------------------------------
+dnl @synopsis AC_PATH_PTHREAD([ACTION-IF-FOUND[, ACTION-IF-NOT-FOUND]])
+dnl This macro figures out how to build C programs using POSIX
+dnl threads.  It sets the PTHREAD_LIBS output variable to the threads
+dnl library and linker flags, and the PTHREAD_CFLAGS output variable
+dnl to any special C compiler flags that are needed.  (The user can also
+dnl force certain compiler flags/libs to be tested by setting these
+dnl environment variables.).  
+dnl ------------------------------------------------------------------
+AC_DEFUN([AC_PATH_PTHREAD], [
+AC_REQUIRE([AC_CANONICAL_HOST])
+acx_pthread_ok=no
+# First, check if the POSIX threads header, pthread.h, is available.
+# If it isn't, don't bother looking for the threads libraries.
+AC_CHECK_HEADER(pthread.h, , acx_pthread_ok=noheader)
+# We must check for the threads library under a number of different
+# names; the ordering is very important because some systems
+# (e.g. DEC) have both -lpthread and -lpthreads, where one of the
+# libraries is broken (non-POSIX).
+# First of all, check if the user has set any of the PTHREAD_LIBS,
+# etcetera environment variables, and if threads linking works.
+if test x${PTHREAD_LIBS+set} = xset ||
+   test x${PTHREAD_CFLAGS+set} = xset ; then
+        save_CFLAGS="$CFLAGS"
+        CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+        save_CXXFLAGS="$CXXFLAGS"
+        CXXFLAGS="$CXXFLAGS $PTHREAD_CFLAGS"
+        save_LIBS="$LIBS"
+        LIBS="$PTHREAD_LIBS $LIBS"
+        AC_MSG_CHECKING([provided PTHREAD_LIBS/PTHREAD_CFLAGS.])
+        AC_TRY_LINK_FUNC(pthread_join, acx_pthread_ok=yes)
+        AC_MSG_RESULT($acx_pthread_ok)
+        if test x"$acx_pthread_ok" = xno; then
+                PTHREAD_LIBS=""
+                PTHREAD_CFLAGS=""
+        fi
+        LIBS="$save_LIBS"
+        CFLAGS="$save_CFLAGS"
+        CXXFLAGS="$save_CXXFLAGS"
+fi
+# Create a list of thread flags to try.  Items starting with a "-" are
+# C compiler flags, and other items are library names, except for "none"
+# which indicates that we try without any flags at all.
+acx_pthread_flags="pthreads none -Kthread -kthread lthread 
+                   -pthread -pthreads -mthreads pthread
+                   --thread-safe -mt"
+# The ordering *is* (sometimes) important.  
+# Some notes on the individual items follow:
+# pthreads: AIX (must check this before -lpthread)
+# none: in case threads are in libc; should be tried before -Kthread and
+#       other compiler flags to prevent continual compiler warnings
+# -Kthread: Sequent (threads in libc, but -Kthread needed for pthread.h)
+# -kthread: FreeBSD kernel threads (preferred to -pthread since SMP-able)
+# lthread: LinuxThreads port on FreeBSD (also preferred to -pthread)
+# -pthread: Linux/gcc (kernel threads), BSD/gcc (userland threads)
+# -pthreads: Solaris/gcc
+# -mthreads: Mingw32/gcc, Lynx/gcc
+# -mt: Sun Workshop C (may only link SunOS threads [-lthread], but it
+#      doesn't hurt to check since this sometimes defines pthreads too;
+#      also defines -D_REENTRANT)
+# pthread: Linux, etcetera
+# --thread-safe: KAI C++
+case "${host_cpu}-${host_os}" in
+        *solaris*)
+        # On Solaris (at least, for some versions), libc contains stubbed
+        # (non-functional) versions of the pthreads routines, so link-based
+        # tests will erroneously succeed.  (We need to link with -pthread or
+        # -lpthread.)  (The stubs are missing pthread_cleanup_push, or rather
+        # a function called by this macro, so we could check for that, but
+        # who knows whether they'll stub that too in a future libc.)  So,
+        # we'll just look for -pthreads and -lpthread first:
+        acx_pthread_flags="-pthread -pthreads pthread -mt $acx_pthread_flags"
+        ;;
+esac
+if test x"$acx_pthread_ok" = xno; then
+for flag in $acx_pthread_flags; do
+        case $flag in
+                none)
+                AC_MSG_CHECKING([whether pthreads work without any flags])
+                ;;
+                -*)
+                AC_MSG_CHECKING([whether pthreads work with $flag])
+                PTHREAD_CFLAGS="$flag"
+                ;;
+                *)
+                AC_MSG_CHECKING([for the pthreads library -l$flag])
+                PTHREAD_LIBS="-l$flag"
+                ;;
+        esac
+        save_LIBS="$LIBS"
+        save_CFLAGS="$CFLAGS"
+        save_CXXFLAGS="$CXXFLAGS"
+        LIBS="$PTHREAD_LIBS $LIBS"
+        CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+        CXXFLAGS="$CXXFLAGS $PTHREAD_CFLAGS"
+        # Check for various functions.  We must include pthread.h,
+        # since some functions may be macros.  (On the Sequent, we
+        # need a special flag -Kthread to make this header compile.)
+        # We check for pthread_join because it is in -lpthread on IRIX
+        # while pthread_create is in libc.  We check for pthread_attr_init
+        # due to DEC craziness with -lpthreads.  We check for
+        # pthread_cleanup_push because it is one of the few pthread
+        # functions on Solaris that doesn't have a non-functional libc stub.
+        # We try pthread_create on general principles.
+        AC_TRY_LINK([#include <pthread.h>],
+                    [pthread_t th; pthread_join(th, 0);
+                     pthread_attr_init(0); pthread_cleanup_push(0, 0);
+                     pthread_create(0,0,0,0); pthread_cleanup_pop(0); ],
+                    [acx_pthread_ok=yes])
+        LIBS="$save_LIBS"
+        CFLAGS="$save_CFLAGS"
+        CXXFLAGS="$save_CXXFLAGS"
+        AC_MSG_RESULT($acx_pthread_ok)
+        if test "x$acx_pthread_ok" = xyes; then
+                break;
+        fi
+        PTHREAD_LIBS=""
+        PTHREAD_CFLAGS=""
+done
+fi
+# Various other checks:
+if test "x$acx_pthread_ok" = xyes; then
+        save_LIBS="$LIBS"
+        LIBS="$PTHREAD_LIBS $LIBS"
+        save_CFLAGS="$CFLAGS"
+        CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+        save_CXXFLAGS="$CXXFLAGS"
+        CXXFLAGS="$CXXFLAGS $PTHREAD_CFLAGS"
+        AC_MSG_CHECKING([if more special flags are required for pthreads])
+        flag=no
+        case "${host_cpu}-${host_os}" in
+                *-aix* | *-freebsd*)     flag="-D_THREAD_SAFE";;
+                *solaris* | alpha*-osf*) flag="-D_REENTRANT";;
+        esac
+        AC_MSG_RESULT(${flag})
+        if test "x$flag" != xno; then
+                PTHREAD_CFLAGS="$flag $PTHREAD_CFLAGS"
+        fi
+        LIBS="$save_LIBS"
+        CFLAGS="$save_CFLAGS"
+        CXXFLAGS="$save_CXXFLAGS"
+fi
+AC_ARG_VAR(PTHREAD_LIBS, [Flags for linking pthread programs.])
+AC_ARG_VAR(PTHREAD_CFLAGS, [Flags for compiling pthread programs.])
+# execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
+if test x"$acx_pthread_ok" = xyes; then
+        AC_DEFINE(HAVE_PTHREAD,1,[Define if pthreads are available])
+        ifelse([$1],,:,[$1])
+else
+        ifelse([$2],,:,[$2])
+fi
+])
+
+
+dnl ------------------------------------------------------------------
+dnl @synopsis AC_PATH_COTHREADS([ACTION-IF-FOUND[, ACTION-IF-NOT-FOUND]])
+dnl Define HAVE_COTHREAD if cothreads can be used.
+dnl Define HAVE_COTHREAD_PATCH if cothread libgcc patch is available
+dnl ------------------------------------------------------------------
+
+AC_DEFUN([AC_PATH_COTHREAD], [
+AC_REQUIRE([AC_CANONICAL_HOST])
+acx_cothread=no
+if test x$GXX = xyes ; then
+  AC_MSG_CHECKING([whether cothreads work with ${host_cpu}])
+  case ${host_cpu} in
+    i?86|powerpc*|mips*|alpha*|hppa*)
+      acx_cothread=yes
+      ;;   
+  esac
+  AC_MSG_RESULT($acx_cothread)
+fi
+if test x$acx_cothread != xno ; then
+  AC_MSG_CHECKING([whether libgcc contains the cothread patch])
+  AC_LANG_PUSH([C++])
+  AC_TRY_LINK([extern "C" { void *(*__get_eh_context_ptr)();
+                            void *__new_eh_context(void); }],
+              [ __get_eh_context_ptr = &__new_eh_context;],
+              [acx_cothread_patch=yes], [acx_cothread_patch=no])
+  AC_LANG_POP([C++])
+  AC_MSG_RESULT($acx_cothread_patch)
+  if test x$acx_cothread_patch = xno ; then
+    AC_MSG_CHECKING([if the cothread patch is critical]) 
+    echo 'void foo() { throw "Hello"; }' > conftest.cc
+    compile="$CXX $CXXFLAGS -c conftest.cc"
+    check="nm conftest.o | grep sjthrow | cat > conftest.out"
+    acx_cothread_patch=yes
+    if AC_TRY_EVAL(compile) && AC_TRY_EVAL(check) ; then
+      if test -z "`cat conftest.out`" ; then
+        acx_cothread_patch=no
+      fi
+    fi
+    AC_MSG_RESULT($acx_cothread_patch)
+    rm conftest.*
+    if test x$acx_cothread_patch = xyes ; then
+        acx_cothread=no
+        AC_MSG_WARN([Cothread cannot work without the patch])
+    else
+        AC_MSG_WARN([Applying the patch is recommended anyway])
+    fi
+    AC_MSG_WARN([See the INSTALL file for more information])
+  fi
+fi
+# Must do.
+if test x$acx_cothread = xyes ; then
+   AC_DEFINE(HAVE_COTHREAD,1,
+                [Define if cothreads are available.])
+   if test x$acx_cothread_patch = xyes ; then
+      AC_DEFINE(HAVE_COTHREAD_PATCH,1,
+                [Define if libgcc contains the cothread patch.])
+   fi
+   ifelse([$1],,:,[$1])
+else
+   ifelse([$2],,:,[$2])
+fi
+])
+
+dnl ------------------------------------------------------------------
+dnl @synopsis AC_PATH_THREADS([ACTION-IF-FOUND[, ACTION-IF-NOT-FOUND]])
+dnl Process optional option --enable-threads
+dnl Check availability of pthreads or cothreads
+dnl using AC_PATH_PTHREAD and AC_PATH_COTHREAD.
+dnl Set output variable THREADS_LIBS and THREADS_CFLAGS
+dnl ------------------------------------------------------------------
+
+AC_DEFUN([AC_PATH_THREADS], [
+AC_ARG_ENABLE(threads,
+            AC_HELP_STRING([--enable-threads],
+                           [select threading model (default is auto)]),
+            ac_use_threads=$enableval, ac_use_threads=auto)
+ac_threads=no
+if test x$ac_use_threads != xno ; then
+  case x$ac_use_threads in
+  x|xyes|xauto|xposix|xpthread)
+        AC_PATH_PTHREAD(
+                [ ac_threads=pthread
+                  ac_use_threads=pthread
+                  THREAD_LIBS="$PTHREAD_LIBS"
+                  THREAD_CFLAGS="$PTHREAD_CFLAGS -DTHREADMODEL=POSIXTHREADS"
+                ] )
+        ;;
+  esac
+  case x$ac_use_threads in
+  xposix|xpthread)
+        ;;
+  x|xyes|xauto|xcothread)
+        AC_PATH_COTHREAD(
+                [ ac_threads=cothread
+                  THREAD_CFLAGS="-DTHREADMODEL=COTHREADS"
+                ] )
+        ;;
+  *)
+        AC_MSG_ERROR(
+[Invalid argument for --enable-threads
+Valid arguments are: yes, no, posix, pthread, cothread, auto.])
+        ;;
+  esac
+fi
+AC_SUBST(THREAD_LIBS)
+AC_SUBST(THREAD_CFLAGS)
+AC_MSG_CHECKING([threading model])
+AC_MSG_RESULT($ac_threads)
+if test $ac_threads != no ; then
+   AC_MSG_RESULT([setting THREAD_CFLAGS=$THREAD_CFLAGS])
+   AC_MSG_RESULT([setting THREAD_LIBS=$THREAD_LIBS])
+   ifelse([$1],,:,[$1])
+else
+   ifelse([$2],,:,[$2])
+fi
+])
+
+
+dnl ------------------------------------------------------------------
+dnl @synopsis AC_PATH_TIFF([ACTION-IF-FOUND[, ACTION-IF-NOT-FOUND]])
+dnl Process option --with-tiff
+dnl Search LIBTIFF. Define HAVE_TIFF.
+dnl Set output variable TIFF_CFLAGS and TIFF_LIBS
+dnl ------------------------------------------------------------------
+
+AC_DEFUN([AC_PATH_TIFF],
+[
+  AC_ARG_VAR(TIFF_LIBS)
+  AC_ARG_VAR(TIFF_CFLAGS)
+  ac_tiff=no
+  AC_ARG_WITH(tiff,
+     AC_HELP_STRING([--with-tiff=DIR],
+                    [where libtiff is located]),
+     [ac_tiff=$withval], [ac_tiff=yes] )
+  # Process specification
+  if test x$ac_tiff = xyes ; then
+     test x${TIFF_LIBS+set} != xset && TIFF_LIBS="-ltiff"
+  elif test x$ac_tiff != xno ; then
+     test x${TIFF_LIBS+set} != xset && TIFF_LIBS="-L$ac_tiff -ltiff"
+     test x${TIFF_CFLAGS+set} != xset && TIFF_CFLAGS="-I$ac_tiff"
+  fi
+  # Try linking
+  if test x$ac_tiff != xno ; then
+     AC_MSG_CHECKING([for the libtiff library])
+     save_CFLAGS="$CFLAGS"
+     save_CXXFLAGS="$CXXFLAGS"
+     save_LIBS="$LIBS"
+     CFLAGS="$CFLAGS $TIFF_CFLAGS"
+     CXXFLAGS="$CXXFLAGS $TIFF_CFLAGS"
+     LIBS="$LIBS $TIFF_LIBS"
+     AC_TRY_LINK([
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include <stdio.h> 
+#include <tiffio.h>
+#ifdef __cplusplus
+}
+#endif ],[
+TIFFOpen(0,0);],
+       [ac_tiff=yes], [ac_tiff=no] )
+     CFLAGS="$save_CFLAGS"
+     CXXFLAGS="$save_CXXFLAGS"
+     LIBS="$save_LIBS"
+     AC_MSG_RESULT($ac_tiff)
+   fi
+   # Finish
+   if test x$ac_tiff = xno; then
+      TIFF_CFLAGS= ; TIFF_LIBS=
+      ifelse([$2],,:,[$2])
+   else
+      AC_DEFINE(HAVE_TIFF,1,[Define if you have libtiff.])
+      AC_MSG_RESULT([setting TIFF_CFLAGS=$TIFF_CFLAGS])
+      AC_MSG_RESULT([setting TIFF_LIBS=$TIFF_LIBS])
+      ifelse([$1],,:,[$1])
+   fi
+])
+
+# C++
+AC_LANG(C++)
+AC_CXX_BOOL
+AC_CXX_EXCEPTIONS
+AC_CXX_TYPENAME
+AC_CXX_STDINCLUDES
+AC_CXX_NAMESPACES
+AC_CXX_MEMBER_TEMPLATES
+AC_CXX_RPO
+
+# ----------------------------------------
+# Libraries
+# ----------------------------------------
+
+AC_CHECK_LIB(m,sqrt)
+AC_CHECK_LIB(iconv,libiconv)
+
+# ----------------------------------------
+# Header Files
+# ----------------------------------------
+
+AC_HEADER_STDC
+AC_HEADER_DIRENT
+AC_HEADER_TIME
+AC_HEADER_SYS_WAIT
+AC_CHECK_HEADERS(wchar.h wctype.h sys/mman.h iconv.h)
+AC_CHECK_HEADERS(stdint.h sys/ipc.h sys/shm.h)
+
+# ----------------------------------------
+# Types
+# ----------------------------------------
+
+AC_CHECK_TYPES(wchar_t)
+AC_CHECK_TYPES(long long int)
+AC_CHECK_TYPES(mbstate_t,,,[#include "wchar.h"])
+
+# ----------------------------------------
+# Functions
+# ----------------------------------------
+
+AC_FUNC_MMAP
+AC_FUNC_FORK
+AC_CHECK_FUNCS(wcrtomb iswspace)
+AC_CHECK_FUNCS(putc_unlocked strerror vsnprintf)
+AC_CHECK_FUNCS(gethostname iconv strftime getpwuid)
+
+# ----------------------------------------
+# Test auxilliary packages
+# ----------------------------------------
+
+# Search TIFF library
+AC_PATH_TIFF(,
+[ no_tiff=yes
+  AC_MSG_WARN([Tiff support is disabled]) ])
+
+# Search MULTITHREADING library
+AC_PATH_THREADS(,
+[ no_threads=yes
+  AC_MSG_WARN([Thread support is disabled]) ])
+
+# ----------------------------------------
+# Stuff added to config.h
+# ----------------------------------------
+
+# Fence
+AH_TOP([
+#ifndef DJVU_CONFIG_H
+#define DJVU_CONFIG_H
+/* config.h: begin */
+])
+
+# L18N Macros
+AH_BOTTOM([
+/* - Miscellaneous */
+#define UNIX 1
+#define NEED_GNUG_PRAGMAS 0
+
+/* - BOOL */
+#if !defined(HAVE_BOOL) && !defined(bool)
+#define bool  char
+#define true  1
+#define false 0
+#endif
+
+/* - WCHAR etc.*/
+#if ! defined(HAVE_WCHAR_T)
+#define HAS_WCHAR 0
+#define HAS_WCTYPE 0
+#define HAS_MBSTATE 0
+#else
+#define HAS_WCHAR 1
+#if defined(HAVE_WCTYPE_H) && defined(HAVE_ISWSPACE)
+#define HAS_WCTYPE 1
+#endif
+#if defined(HAVE_MBSTATE_T) && defined(HAVE_WCRTOMB)
+#define HAS_MBSTATE 1
+#endif
+#endif
+#if defined(HAVE_ICONV_H) && defined(HAVE_ICONV)
+#define HAS_ICONV 1
+#else
+#define HAS_ICONV 0
+#endif
+
+/* - I18N MESSAGES HELL */
+#define HAS_CTRL_C_IN_ERR_MSG 1
+
+/* - CONTAINERS */
+#ifndef HAVE_MEMBER_TEMPLATES
+#define GCONTAINER_NO_MEMBER_TEMPLATES
+#endif
+#ifndef HAVE_TYPENAME
+#define GCONTAINER_NO_TYPENAME
+#endif
+
+/* - COTHREAD */
+#ifdef HAVE_COTHREAD
+#ifndef HAVE_COTHREAD_PATCH
+#define NO_LIBGCC_HOOKS
+#endif
+#endif
+
+/* - JPEG */
+#ifdef HAVE_LIBJPEG
+#define NEED_JPEG_DECODER
+#endif
+
+/* - MMAP */
+#if defined(HAVE_MMAP) && defined(HAVE_SYS_MMAN_H)
+#define HAS_MEMMAP 1
+#else
+#define HAS_MEMMAP 0
+#endif
+
+/* config.h: end */
+#endif
+])

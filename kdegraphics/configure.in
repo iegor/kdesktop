@@ -1,0 +1,2071 @@
+dnl =======================================================
+dnl FILE: ./admin/configure.in.min
+dnl =======================================================
+
+dnl    This file is part of the KDE libraries/packages
+dnl    Copyright (C) 2001 Stephan Kulow (coolo@kde.org)
+ 
+dnl    This file is free software; you can redistribute it and/or
+dnl    modify it under the terms of the GNU Library General Public
+dnl    License as published by the Free Software Foundation; either
+dnl    version 2 of the License, or (at your option) any later version.
+ 
+dnl    This library is distributed in the hope that it will be useful,
+dnl    but WITHOUT ANY WARRANTY; without even the implied warranty of
+dnl    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+dnl    Library General Public License for more details.
+ 
+dnl    You should have received a copy of the GNU Library General Public License
+dnl    along with this library; see the file COPYING.LIB.  If not, write to
+dnl    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+dnl    Boston, MA 02110-1301, USA.
+
+# Original Author was Kalle@kde.org
+# I lifted it in some mater. (Stephan Kulow)
+# I used much code from Janos Farkas
+
+dnl Process this file with autoconf to produce a configure script.
+
+AC_INIT(acinclude.m4) dnl a source file from your sub dir
+
+dnl This is so we can use kde-common
+AC_CONFIG_AUX_DIR(admin)
+
+dnl This ksh/zsh feature conflicts with `cd blah ; pwd`
+unset CDPATH
+
+dnl Checking host/target/build systems, for make, install etc.
+AC_CANONICAL_SYSTEM 
+dnl Perform program name transformation
+AC_ARG_PROGRAM
+
+dnl Automake doc recommends to do this only here. (Janos)
+AM_INIT_AUTOMAKE(kdegraphics, "3.5.10") dnl searches for some needed programs
+
+KDE_SET_PREFIX
+
+dnl generate the config header
+AM_CONFIG_HEADER(config.h) dnl at the distribution this done
+
+AC_PROG_CC
+AC_PROG_CXX
+AC_EXEEXT
+AC_OBJEXT
+
+dnl Checks for programs.
+AC_CHECK_COMPILERS
+AC_ENABLE_SHARED(yes)
+AC_ENABLE_STATIC(no)
+KDE_PROG_LIBTOOL
+
+dnl for NLS support. Call them in this order!
+dnl WITH_NLS is for the po files
+AM_KDE_WITH_NLS
+
+dnl KDE_USE_QT
+AC_PATH_KDE
+dnl =======================================================
+dnl FILE: configure.in.in
+dnl =======================================================
+
+#MIN_CONFIG
+DO_NOT_COMPILE="$DO_NOT_COMPILE"
+
+dnl Checks for header files.
+AC_HEADER_DIRENT
+AC_HEADER_STDC
+AC_CHECK_HEADERS(fcntl.h sys/time.h unistd.h stdlib.h paths.h)
+AC_CHECK_SETENV
+AC_CHECK_UNSETENV
+AC_CHECK_USLEEP
+AC_CHECK_MKSTEMPS
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_HEADER_TIME
+
+CXXFLAGS="$CXXFLAGS $KDE_DEFAULT_CXXFLAGS"
+
+KDE_INIT_DOXYGEN([KDE Graphics API Reference], [Version $VERSION])
+dnl =======================================================
+dnl FILE: ./kamera/configure.in.in
+dnl =======================================================
+
+dnl KDE_FIND_GPHOTO2 - Find gphoto2 libraries and include files
+dnl
+dnl Adapted from kdebase/nsplugins/configure.in.in
+
+AC_DEFUN([KDE_FIND_GPHOTO2],
+[
+
+
+
+# Clear working variables
+gphoto2_includes=
+gphoto2_libraries=
+
+
+
+# Process user input to configure
+AC_ARG_WITH(kamera,
+AC_HELP_STRING([--without-kamera],[do not build kamera (gphoto2 required)]),
+[if test "$withval" = "no" ; then
+  gphoto2_includes=none
+  gphoto2_libraries=none
+fi])dnl
+
+AC_ARG_WITH(gphoto2-includes,
+AC_HELP_STRING([--with-gphoto2-includes=DIR],[gphoto2 include files are in DIR]),
+gphoto2_includes="$withval")
+
+AC_ARG_WITH(gphoto2-libraries,
+AC_HELP_STRING([--with-gphoto2-libraries=DIR],[gphoto2 libraries are in DIR]),
+gphoto2_libraries="$withval")
+
+AC_MSG_CHECKING(for gPhoto2)
+# the pkg-config way first, if user did not use --with-
+AC_CHECK_PROG(gphoto2_config,gphoto2-config,gphoto2-config,no)
+AC_CHECK_PROG(gphoto2_port_config,gphoto2-port-config,gphoto2-port-config,no)
+if test "$gphoto2_includes" = "" -a "$gphoto2_libraries" = "" -a "$gphoto2_config" != "no" -a "$gphoto2_port_config" != "no"
+then
+	with_kamera="yes"
+	GPHOTO2_INCS="`$gphoto2_config --cflags` `$gphoto2_port_config --cflags`"
+	GPHOTO2_LIBS="`$gphoto2_config --libs` `$gphoto2_port_config --libs`"
+else
+#
+# Search for gphoto2 include files.
+#
+	if test "$gphoto2_includes" = ""; then
+		AC_CACHE_VAL(ac_cv_gphoto2_includes, [
+			ac_gphoto2_save_LIBS="$LIBS"
+			LIBS="-lgphoto2 $LIBS"
+			ac_cv_gphoto2_includes="none"
+			AC_TRY_COMPILE([#include <gphoto2.h>],[int a;],
+			[
+			# gphoto2.h is in the standard search path.
+				ac_cv_gphoto2_includes=
+			],[
+			# gphoto2.h is not in the standard search path.
+			# Locate it and put its directory in `gphoto2_includes'
+			for dir in /usr/include /usr/local/include \
+			   /usr/include/gphoto2 /usr/local/include/gphoto2; do
+				if test -f "$dir/gphoto2.h"; then
+					ac_cv_gphoto2_includes="$dir"
+					break
+				fi
+			done
+			])
+			#
+			LIBS="$ac_gphoto2_save_LIBS"
+		])
+		gphoto2_includes="$ac_cv_gphoto2_includes"
+	fi
+
+	#
+	# Search for libgphoto2
+	#
+	if test "$gphoto2_libraries" = ""; then
+		AC_CACHE_VAL(ac_cv_gphoto2_libraries,[
+			ac_gphoto2_save_LIBS="$LIBS"
+			LIBS="-lgphoto2_port -lgphoto2 $LIBS"
+			ac_cv_gphoto2_libraries="none"
+			AC_TRY_LINK([#include <gphoto2.h>],[gp_context_progress_start(0,0,0,0);], [
+				# libgphoto2 is in the standard search path.
+				ac_cv_gphoto2_libraries=
+			],[
+				# libgphoto2 is not in the standard search path.
+				# Locate it and put its directory in `gphoto2_libraries'
+				for dir in /usr/lib /usr/local/lib; do
+					if test -d "$dir" && test "`ls $dir/libgphoto2.* 2> /dev/null`" != ""; then
+						ac_cv_gphoto2_libraries="$dir"
+						break
+					fi
+				done
+			])
+			#
+			LIBS="$ac_gphoto2_save_LIBS"
+		])
+		#
+		gphoto2_libraries="$ac_cv_gphoto2_libraries"
+	fi
+# Initialise compiler and linker flag variables for export
+	if test "$gphoto2_includes" = "none" -o "$gphoto2_libraries" = "none" ; then
+		with_kamera="no"
+	else
+		with_kamera="yes"
+
+		if test "$gphoto2_libraries" = "" -o "$gphoto2_libraries" = "none"; then
+			GPHOTO2_LIBS="-lgphoto2"
+		else
+			GPHOTO2_LIBS="-L$gphoto2_libraries -lgphoto2"
+		fi
+		if test "$gphoto2_includes" != "" -a "$gphoto2_includes" != "none"; then
+			GPHOTO2_INCS="-I$gphoto2_includes"
+		fi
+	fi
+fi
+
+if test "$with_kamera" = "yes" ; then
+	# Check if it works.
+	ac_gphoto2_save_LIBS="$LIBS"
+	ac_gphoto2_save_CFLAGS="$CFLAGS"
+	LIBS="$LIBS $GPHOTO2_LIBS"
+	CFLAGS="$CFLAGS $GPHOTO2_INCS"
+	AC_TRY_LINK([#include <gphoto2.h>],[gp_context_progress_start(0,0,0,0);], [
+		# It works.
+		AC_DEFINE(HAVE_GPHOTO2,1,[Define if you have gPhoto2 installed])
+	],[
+		with_kamera="no"
+	])
+	LIBS="$ac_gphoto2_save_LIBS"
+	CFLAGS="$ac_gphoto2_save_CFLAGS"
+fi
+dnl **** Check for va_copy ****
+AC_CACHE_CHECK([for va_copy], ac_cv_c_va_copy,
+ AC_TRY_LINK(
+   [#include <stdarg.h>],
+   [va_list ap1, ap2;
+    va_copy(ap1,ap2);
+   ],
+   [ac_cv_c_va_copy="yes"],
+   [ac_cv_c_va_copy="no"])
+ )
+if test "$ac_cv_c_va_copy" = "yes"
+then
+    AC_DEFINE(HAVE_VA_COPY, 1, [Define if we have va_copy])
+fi
+AC_CACHE_CHECK([for __va_copy], ac_cv_c___va_copy,
+ AC_TRY_LINK(
+   [#include <stdarg.h>],
+   [va_list ap1, ap2;
+    __va_copy(ap1,ap2);
+   ],
+   [ac_cv_c___va_copy="yes"],
+   [ac_cv_c___va_copy="no"])
+ )
+if test "$ac_cv_c___va_copy" = "yes"
+then
+    AC_DEFINE(HAVE___VA_COPY, 1, [Define if we have __va_copy])
+fi
+
+# Export compiler and linker flags for replacement in Makefile
+AC_SUBST(GPHOTO2_INCS)
+AC_SUBST(GPHOTO2_LIBS)
+
+
+# Display results of configuration
+gphoto2_libraries_result="$gphoto2_libraries"
+gphoto2_includes_result="$gphoto2_includes"
+
+test "$gphoto2_libraries" = "" && gphoto2_libraries_result="in default path"
+test "$gphoto2_includes" = "" && gphoto2_includes_result="in default path"
+
+test "$gphoto2_libraries" = "none" && gphoto2_libraries_result="(none)"
+test "$gphoto2_includes" = "none" && gphoto2_includes_result="(none)"
+
+AC_MSG_RESULT(
+  [gphoto2 libraries $gphoto2_libraries_result, gphoto2 headers $gphoto2_includes_result])
+
+]) dnl end of KDE_FIND_GPHOTO2 definition
+
+KDE_FIND_GPHOTO2
+if test "$with_kamera" = "no"; then
+dnl  AC_MSG_WARN([You need to install gphoto 2.0 (or later), e.g. http://gphoto.net/dist/gphoto2-2.0.tar.gz if your distributor doesn't have a package])
+  DO_NOT_COMPILE="$DO_NOT_COMPILE kamera"
+fi
+dnl =======================================================
+dnl FILE: ./kdvi/configure.in.in
+dnl =======================================================
+
+
+dnl the following is just to fool the toplevel configure.in
+LTLIBOBJS=
+AC_SUBST(LTLIBOBJS)
+
+compile_kdvi=yes
+for j in $DO_NOT_COMPILE; do
+   if test "kdvi" = $j; then
+       compile_kdvi=no
+   fi
+done
+
+dnl AC_CONFIG_SUBDIRS has to be done before KDE_CREATE_SUBDIRSLIST
+if test "$compile_kdvi" = "yes"; then
+
+   KDE_FIND_PATH(kpsewhich, KPSEWHICH, [/usr/bin /bin /usr/sbin /opt/teTeX/bin /opt/local/bin /opt/bin /usr/local/bin], [ ])
+
+   have_kpsewhich=no
+   test_kpsewhich="`${KPSEWHICH-kpsewhich} -show-path cnf 2>/dev/null`"
+   test -n "${test_kpsewhich}" && have_kpsewhich=yes
+
+fi
+
+AC_CHECK_HEADERS(sys/types.h sys/params.h limits.h)
+
+# Check for freetype2
+KDE_FIND_PATH(freetype-config, FREETYPE_CONFIG, [${prefix}/bin ${exec_prefix}/bin /usr/local/bin /opt/local/bin],)
+
+if test -n "$FREETYPE_CONFIG"; then
+  vers=`$FREETYPE_CONFIG --version 2>/dev/null | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
+  if test -n "$vers" && test "$vers" -ge 8000002
+  then
+     LIBFREETYPE_LIBS="`$FREETYPE_CONFIG --libs`"
+     FREETYPE_RPATH=
+     for args in $LIBFREETYPE_LIBS; do
+	  case $args in
+	    -L*)
+  	       FREETYPE_RPATH="$FREETYPE_RPATH $args"
+ 	       ;;
+          esac
+     done
+     FREETYPE_RPATH=`echo $FREETYPE_RPATH | sed -e "s/-L/-R/g"`
+     LIBFREETYPE_CFLAGS="`$FREETYPE_CONFIG --cflags`"
+
+     AC_DEFINE_UNQUOTED(HAVE_FREETYPE, 1, [Defines if your system has the freetype library])
+  fi
+fi
+
+AC_SUBST(LIBFREETYPE_LIBS)
+AC_SUBST(LIBFREETYPE_CFLAGS)
+AC_SUBST(FREETYPE_RPATH)
+
+if test -z "$LIBFREETYPE_LIBS"; then
+	DO_NOT_COMPILE="$DO_NOT_COMPILE kdvi"
+fi
+dnl =======================================================
+dnl FILE: ./kfile-plugins/exr/configure.in.in
+dnl =======================================================
+
+AC_ARG_WITH([openexr],
+  [AC_HELP_STRING([--with-openexr],
+    [Enable support for OpenEXR @<:@default=check@:>@])],
+  [], with_openexr=check)
+
+if test "x$with_openexr" != xno; then
+  KDE_FIND_LIBEXR
+
+  if test "x$with_openexr" != xcheck && test -z "$LIB_EXR"; then
+    AC_MSG_ERROR([--with-openexr was given, but test for OpenEXR failed])
+  fi
+fi
+
+AM_CONDITIONAL(include_EXR_MODULES, test -n "$LIB_EXR")
+dnl =======================================================
+dnl FILE: ./kfile-plugins/pdf/configure.in.in
+dnl =======================================================
+
+AC_ARG_WITH([poppler],
+  [AC_HELP_STRING([--with-poppler],
+    [Enable PDF support through poppler  @<:@default=check@:>@])],
+  [], with_poppler=check)
+
+# Compile the pdf meta info plugin only if Poppler is available
+if test "x$with_poppler" != xno; then
+  PKG_CHECK_MODULES(POPPLER, poppler >= 0.3.1, have_poppler=yes, have_poppler=no)
+
+  if test "x$with_poppler" != xcheck && test "x$have_poppler" != xyes; then
+    AC_MSG_ERROR([--with-poppler was given, but test for poppler failed])
+  fi
+fi
+
+AM_CONDITIONAL(include_PDF, test "x$have_poppler" = xyes)
+dnl =======================================================
+dnl FILE: ./kfile-plugins/tiff/configure.in.in
+dnl =======================================================
+
+# Compile the tiff meta info plugin only if libtiff was detected
+AC_FIND_TIFF
+AM_CONDITIONAL(include_TIFF, test -n "$LIBTIFF")
+dnl =======================================================
+dnl FILE: ./kgamma/configure.in.in
+dnl =======================================================
+
+#MIN_CONFIG(3)
+
+dnl PACKAGE set before
+
+dnl CXXFLAGS="$NOOPT_CXXFLAGS" dnl __kdevelop[noopt]__
+dnl CFLAGS="$NOOPT_CFLAGS" dnl __kdevelop[noopt]__
+dnl CXXFLAGS="$CXXFLAGS $USE_EXCEPTIONS" dnl __kdevelop[exc]__
+
+dnl KDE_NEED_FLEX dnl __kdevelop__
+dnl AC_PROG_YACC dnl __kdevelop__
+
+dnl This test is taken from the aktion configure.in.in
+dnl Modified by Michael v.Ostheim
+dnl Checking for XFree86 VidMode Extensions
+AC_MSG_CHECKING([for XFree86-VidModeExtension])
+
+AC_CACHE_VAL(ac_cv_lib_vm,
+ [ac_save_LIBS="$LIBS"
+  kgamma_save_CFLAGS=$CFLAGS
+ CFLAGS="$CFLAGS $all_includes"
+ LIBS="-L$x_libraries -lXxf86vm -lXext -lX11"
+ AC_TRY_LINK( [
+              #include <X11/Xlib.h>
+              #include <X11/Xatom.h>
+              #include <X11/extensions/xf86vmode.h>
+              ],
+              [],
+              eval "ac_cv_lib_vm='-lXxf86vm'",
+              [AC_MSG_RESULT(no)
+              eval "ac_cv_lib_vm=no"])
+ LIBS="$ac_save_LIBS"
+ CFLAGS=$kgamma_save_CFLAGS
+])
+
+if eval "test ! \"`echo $ac_cv_lib_vm`\" = no"; then
+  LIBVM="$ac_cv_lib_vm"
+  AC_SUBST(LIBVM)
+  AC_MSG_RESULT($ac_cv_lib_vm)
+
+    AC_MSG_CHECKING([for gamma functions in XFree86-VidModeExtension])
+
+    AC_CACHE_VAL(ac_cv_lib_vmgamma,
+    [ac_save_LIBS="$LIBS"
+    kgamma_save_CFLAGS=$CFLAGS
+    CFLAGS="$CFLAGS $all_includes"
+    LIBS="-L$x_libraries -lXxf86vm -lXext -lX11"
+    AC_TRY_LINK( [],
+                [XF86VidModeGetGamma();],
+                 [AC_MSG_RESULT(yes)
+                 eval "ac_cv_lib_vm='-lXxf86vm'"],
+                 [AC_MSG_RESULT(no)
+                 eval "ac_cv_lib_vm=no"])
+    LIBS="$ac_save_LIBS"
+    CFLAGS=$kgamma_save_CFLAGS
+    ])
+fi
+
+if eval "test \"`echo $ac_cv_lib_vm`\" = no"; then
+    DO_NOT_COMPILE="$DO_NOT_COMPILE kgamma"
+fi
+
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_CHECK_HEADERS(sstream)
+AC_LANG_RESTORE
+dnl =======================================================
+dnl FILE: ./kooka/configure.in.in
+dnl =======================================================
+
+dnl AC_SEARCH_LIBS(pgm2asc,Pgm2asc)
+dnl AC_CHECK_LIB(Pgm2asc,pgm2asc)
+dnl should define HAVE_LIBPGM2ASC if available
+
+AC_ARG_WITH([kadmos],
+  [AC_HELP_STRING([--with-kadmos],
+    [Enable the kadmos OCR engine @<:@default=check@:>@])],
+  [], with_kadmos=check)
+
+AC_ARG_WITH([kadmos-dir],
+  AC_HELP_STRING([--with-kadmos-dir],
+    [sets the path to the kadmos engine @<:@default=/usr/local@:>@]),
+  [ac_kadmos_value=$withval], [ac_kadmos_value=/usr/local])
+
+KADMOS_INC=
+KADMOS_LIB=
+
+if test "x$with_kadmos" != xno; then
+	if test -r "$ac_kadmos_value/kadmos.h"; then
+		KADMOS_INC="-I$ac_kadmos_value"
+		KADMOS_LIB="$ac_kadmos_value/librep.a"
+		AC_DEFINE_UNQUOTED(HAVE_KADMOS, 1, [Defines if your system has the kadmos libraries])
+	else
+		AC_MSG_WARN([couldn't find kadmos engine header file under $ac_kadmos_value/kadmos.h])
+	fi
+
+	if test "x$with_kadmos" != xcheck && test -z "$KADMOS_LIB"; then
+		AC_MSG_ERROR([--with-kadmos was given, but test for kadmos failed])
+	fi
+fi
+
+AC_SUBST(KADMOS_LIB)
+AC_SUBST(KADMOS_INC)
+dnl =======================================================
+dnl FILE: ./kpdf/configure.in.in
+dnl =======================================================
+
+dnl ##### Check for FreeType 2.0.5+.
+dnl ##### (Note: FT_Get_Name_Index was added in FT 2.0.5, and is
+dnl ##### the reason that Xpdf requires 2.0.5+.)
+
+KDE_FIND_PATH(freetype-config, FREETYPE_CONFIG, [${prefix}/bin ${exec_prefix}/bin /usr/local/bin /opt/local/bin], [
+  AC_MSG_WARN([Could not find libfreetype anywhere, check http://www.freetype.org/])
+])
+
+if test -n "$FREETYPE_CONFIG"; then
+  FREETYPE_VERSION=`$FREETYPE_CONFIG --version 2>/dev/null | sed -e 's/libfreetype //' | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
+  if test -n "$FREETYPE_VERSION" && test "$FREETYPE_VERSION" -ge 9000000; then
+    LIBFREETYPE_LIBS="`$FREETYPE_CONFIG --libs`"
+    LIBFREETYPE_RPATH=
+    for args in $LIBFREETYPE_LIBS; do
+      case $args in
+        -L*) LIBFREETYPE_RPATH="$LIBFREETYPE_RPATH $args" ;;
+      esac
+    done
+    LIBFREETYPE_RPATH=`echo $LIBFREETYPE_RPATH | sed -e "s/-L/-R/g"`
+    LIBFREETYPE_CFLAGS="`$FREETYPE_CONFIG --cflags`"
+    AC_DEFINE_UNQUOTED(HAVE_FREETYPE, 1, [Defines if your system has the freetype library])
+  else
+    AC_MSG_WARN([You need at least libfreetype 2.0.5])
+    DO_NOT_COMPILE="$DO_NOT_COMPILE kpdf"
+  fi
+else
+  DO_NOT_COMPILE="$DO_NOT_COMPILE kpdf"
+fi
+
+AC_SUBST(FREETYPE_VERSION)
+AC_SUBST(LIBFREETYPE_LIBS)
+AC_SUBST(LIBFREETYPE_CFLAGS)
+AC_SUBST(LIBFREETYPE_RPATH)
+
+# Check for dirent
+AC_HEADER_DIRENT
+
+# Check for xft
+KDE_PKG_CHECK_MODULES(XFT, xft >= 2.0, ,
+  # This older xft-config stuff can (eventually) go away.
+  KDE_FIND_PATH(xft-config, XFT_CONFIG, [${prefix}/bin ${exec_prefix}/bin /usr/local/bin /opt/local/bin],)
+  if "$XFT_CONFIG"; then
+    XFT_CFLAGS="`$XFT_CONFIG --cflags`"
+    XFT_LIBS="`$XFT_CONFIG --libs`"
+  fi
+  AC_SUBST(XFT_CFLAGS)
+  AC_SUBST(XFT_LIBS)
+)
+
+if test -z "$XFT_LIBS"; then
+        DO_NOT_COMPILE="$DO_NOT_COMPILE kpdf"
+fi
+
+dnl ##### Check for libpaper (Debian).
+LIBPAPER_LIBS=
+KDE_CHECK_HEADER(paper.h, [
+  LIBPAPER_LIBS='-lpaper'
+  AC_DEFINE_UNQUOTED(HAVE_PAPER_H, 1, [Define to 1 if you have the <paper.h>  header file.])
+],
+  AC_DEFINE_UNQUOTED(HAVE_PAPER_H, 0, [Define to 1 if you have the <paper.h>  header file.])
+)
+AC_SUBST(LIBPAPER_LIBS)
+
+AC_CHECK_FUNCS(fseek64 mkstemp mkstemps popen)
+
+AC_FIND_FILE(xpdfrc, [/etc /usr/local/etc /etc/xpdf], xpdfrc)
+if test "$xpdfrc" != NO; then
+  AC_DEFINE_UNQUOTED(SYSTEM_XPDFRC, "$xpdfrc/xpdfrc", [Define the location your xpdfrc])
+fi
+
+dnl #### Check for FSEEK variants
+KDE_CHECK_LARGEFILE
+AC_FUNC_FSEEKO
+AC_CHECK_FUNCS(fseek64, xpdf_cv_func_fseek64=yes, xpdf_cv_func_fseek64=no)
+AC_CHECK_FUNCS(ftell64, xpdf_cv_func_ftell64=yes, xpdf_cv_func_ftell64=no)
+if test "$xpdf_cv_func_fseek64" = yes -a "$xpdf_cv_func_ftell64" = yes; then
+        AC_DEFINE(HAVE_FSEEK64, 1)
+else
+	AC_DEFINE(HAVE_FSEEK64, 0)
+fi
+	  
+dnl #### Enable the user to enable multithearind on xpdf
+AC_ARG_ENABLE(multithreaded-kpdf,
+	      AC_HELP_STRING([--enable-multithreaded-kpdf],[include support for multithreading in xpdf code inside kpdf. Has nothing to do with threaded generation of contents, this is configurable via a dialog inside the program itself]),
+[
+    case $enableval in
+	yes)
+		AC_DEFINE(MULTITHREADED, 1, [Defines if use multithreading in xpdf code inside kpdf])
+		;;
+	no)
+		AC_DEFINE(MULTITHREADED, 0, [Defines if use multithreading in xpdf code inside kpdf])
+		;;
+	*)
+		AC_DEFINE(MULTITHREADED, 1, [Defines if use multithreading in xpdf code inside kpdf])
+		;;
+ esac
+]
+, AC_DEFINE(MULTITHREADED, 0, [Defines if use multithreading in xpdf code inside kpdf])
+)
+
+dnl #### Enable the user to decide if he wants to force drm or not
+AC_ARG_ENABLE(force-kpdf-drm,
+	      AC_HELP_STRING([--enable-force-kpdf-drm],[Forces kpdf to check for DRM to decide if you can copy/print protected pdf. (default=no)]),
+[
+    case $enableval in
+	yes)
+		AC_DEFINE(KPDF_FORCE_DRM, 1, [Defines if force the use DRM in kpdf])
+		;;
+	no)
+		AC_DEFINE(KPDF_FORCE_DRM, 0, [Defines if force the use DRM in kpdf])
+		;;
+	*)
+		AC_DEFINE(KPDF_FORCE_DRM, 1, [Defines if force the use DRM in kpdf])
+		;;
+ esac
+]
+, AC_DEFINE(KPDF_FORCE_DRM, 0, [Defines if force the use DRM in kpdf])
+)
+
+KDE_CHECK_COMPILER_FLAG([fno-regmove], SUPPORTS_NOREGMOVE=true, SUPPORTS_NOREGMOVE=false)
+if test "x$SUPPORTS_NOREGMOVE" = xtrue; then
+	NOREGMOVE="-fno-regmove"
+fi
+AC_SUBST(NOREGMOVE)
+dnl =======================================================
+dnl FILE: ./kpovmodeler/configure.in.in
+dnl =======================================================
+
+have_gl_headers=yes
+can_link_gl=yes
+KPOVMODELER_OPENGL=yes;
+
+KDE_CHECK_HEADERS(GL/gl.h GL/glu.h GL/glx.h)
+if test "$ac_cv_header_GL_gl_h" = "no"; then
+  have_gl_headers=no;
+fi
+if test "$ac_cv_header_GL_glu_h" = "no"; then
+  have_gl_headers=no;
+fi
+if test "$ac_cv_header_GL_glx_h" = "no"; then
+  have_gl_headers=no;
+fi
+
+if test "$have_gl_headers" = "yes"; then
+  AC_HAVE_GL( can_link_gl=yes, can_link_gl=no )
+fi
+
+if test "$have_gl_headers" = "no"; then
+  KPOVMODELER_OPENGL=no;
+fi
+if test "$can_link_gl" = "no"; then
+  KPOVMODELER_OPENGL=no;
+fi
+
+if test "$KPOVMODELER_OPENGL" = "no"; then
+  DO_NOT_COMPILE="$DO_NOT_COMPILE kpovmodeler"
+fi
+
+
+KDE_FIND_PATH(freetype-config, FREETYPE_CONFIG, [${prefix}/bin ${exec_prefix}/bin /usr/local/bin /opt/local/bin])
+
+if test -n "$FREETYPE_CONFIG"; then
+  vers=`$FREETYPE_CONFIG --version 2>/dev/null | sed -e 's/libfreetype //' | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
+  if test -n "$vers" && test "$vers" -ge 5000000
+  then
+     LIBFREETYPE_LIBS="`$FREETYPE_CONFIG --libs`"
+     LIBFREETYPE_RPATH=
+     for args in $LIBFREETYPE_LIBS; do
+          case $args in
+            -L*)
+               LIBFREETYPE_RPATH="$LIBFREETYPE_RPATH $args"
+               ;;
+          esac
+     done
+     LIBFREETYPE_RPATH=`echo $LIBFREETYPE_RPATH | sed -e "s/-L/-R/g"`
+     LIBFREETYPE_CFLAGS="`$FREETYPE_CONFIG --cflags`"
+
+     AC_DEFINE_UNQUOTED(HAVE_FREETYPE, 1, [Defines if your system has the libfreetype library])
+     AC_MSG_RESULT([libraries $LIBFREETYPE_LIBS, headers $LIBFREETYPE_CFLAGS])
+  else
+     AC_MSG_WARN([You need at least libfreetype 5.0])
+  fi
+fi
+
+
+AC_SUBST(LIBFREETYPE_LIBS)
+AC_SUBST(LIBFREETYPE_CFLAGS)
+AC_SUBST(LIBFREETYPE_RPATH)
+dnl =======================================================
+dnl FILE: ./ksnapshot/configure.in.in
+dnl =======================================================
+
+dnl Check for the X shaped windows extension - test taken from kdebase/kwin/clients/keramik
+KDE_CHECK_HEADERS(X11/extensions/shape.h,,,
+[
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+])
+dnl =======================================================
+dnl FILE: ./ksvg/configure.in.in
+dnl =======================================================
+
+# Check for libart
+KDE_FIND_PATH(libart2-config, LIBART_CONFIG, [${prefix}/bin ${exec_prefix}/bin /usr/local/bin /opt/local/bin],)
+
+if test -n "$LIBART_CONFIG"; then
+  vers=`$LIBART_CONFIG --version 2>/dev/null | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
+  if test -n "$vers" && test "$vers" -ge 2003008
+  then
+     LIBART_LIBS="`$LIBART_CONFIG --libs`"
+     LIBART_RPATH=
+     for args in $LIBART_LIBS; do
+	  case $args in
+	    -L*)
+  	       LIBART_RPATH="$LIBART_RPATH $args"
+ 	       ;;
+          esac
+     done
+     LIBART_RPATH=`echo $LIBART_RPATH | sed -e "s/-L/-R/g"`
+     LIBART_CFLAGS="`$LIBART_CONFIG --cflags`"
+
+     AC_DEFINE_UNQUOTED(HAVE_LIBART, 1, [Defines if your system has the libart library])
+  fi
+fi
+
+AC_SUBST(LIBART_LIBS)
+AC_SUBST(LIBART_CFLAGS)
+AC_SUBST(LIBART_RPATH)
+
+if test -z "$LIBART_LIBS"; then
+	DO_NOT_COMPILE="$DO_NOT_COMPILE ksvg"
+fi
+
+# Check for fontconfig
+KDE_FIND_PATH(fontconfig-config, FONTCONFIG_CONFIG, [${prefix}/bin ${exec_prefix}/bin /usr/local/bin /opt/local/bin], [
+  KDE_FIND_PATH( pkg-config, PKG_CONFIG, [${prefix}/bin ${exec_prefix}/bin /usr/local/bin /opt/local/bin /usr/bin],)
+  if test -n "$PKG_CONFIG"; then
+	if ! $PKG_CONFIG --exists fontconfig; then
+		unset PKG_CONFIG
+	fi
+  fi
+])
+if test -n "$FONTCONFIG_CONFIG" -o -n "$PKG_CONFIG"; then
+	if test -n "$FONTCONFIG_CONFIG"; then
+		fontconfigvers="`$FONTCONFIG_CONFIG --version 2>/dev/null | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`"
+		fontconfiglibs="`$FONTCONFIG_CONFIG --libs`"
+		fontconfigcflags="`$FONTCONFIG_CONFIG --cflags`"
+	else
+		fontconfigvers=`$PKG_CONFIG --modversion fontconfig 2>/dev/null | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3; }'`
+		fontconfiglibs=`$PKG_CONFIG --libs fontconfig`
+		fontconfigcflags="`$PKG_CONFIG --cflags fontconfig`"
+	fi
+	if test -n "$vers" && test "$vers" -ge 2002000
+	then
+		FONTCONFIG_LIBS=$fontconfiglibs
+		FONTCONFIG_RPATH=
+			for args in $FONTCONFIG_LIBS; do
+				case $args in
+					-L*)
+						FONTCONFIG_RPATH="$FONTCONFIG_RPATH $args"
+						;;
+				esac
+			done
+		FONTCONFIG_RPATH=`echo $FONTCONFIG_RPATH | sed -e "s/-L/-R/g"`
+		FONTCONFIG_CFLAGS=$fontconfigcflags
+
+		AC_DEFINE_UNQUOTED(HAVE_FONTCONFIG, 1, [Defines if your system has the fontconfig library])
+	fi
+fi
+
+AC_SUBST(FONTCONFIG_LIBS)
+AC_SUBST(FONTCONFIG_CFLAGS)
+AC_SUBST(FONTCONFIG_RPATH)
+
+if test -z "$FONTCONFIG_LIBS"; then
+	DO_NOT_COMPILE="$DO_NOT_COMPILE ksvg"
+fi
+
+# Check for freetype2
+KDE_FIND_PATH(freetype-config, FREETYPE_CONFIG, [${prefix}/bin ${exec_prefix}/bin /usr/local/bin /opt/local/bin],)
+
+if test -n "$FREETYPE_CONFIG"; then
+  vers=`$FREETYPE_CONFIG --version 2>/dev/null | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
+  if test -n "$vers" && test "$vers" -ge 8000002
+  then
+     FREETYPE_LIBS="`$FREETYPE_CONFIG --libs`"
+     FREETYPE_RPATH=
+     for args in $FREETYPE_LIBS; do
+	  case $args in
+	    -L*)
+  	       FREETYPE_RPATH="$FREETYPE_RPATH $args"
+ 	       ;;
+          esac
+     done
+     FREETYPE_RPATH=`echo $FREETYPE_RPATH | sed -e "s/-L/-R/g"`
+     FREETYPE_CFLAGS="`$FREETYPE_CONFIG --cflags`"
+
+     AC_DEFINE_UNQUOTED(HAVE_FREETYPE, 1, [Defines if your system has the freetype library])
+
+     ftvers=`$FREETYPE_CONFIG --ftversion 2>/dev/null | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
+     if test -n "$ftvers" && test "$ftvers" -ge 2002000
+     then
+        AC_DEFINE_UNQUOTED(HAVE_FREETYPE_2_2_x, 1, [Defines if your system has the 2.2.x freetype library])
+     fi
+  fi
+fi
+
+AC_SUBST(FREETYPE_LIBS)
+AC_SUBST(FREETYPE_CFLAGS)
+AC_SUBST(FREETYPE_RPATH)
+
+if test -z "$FREETYPE_LIBS"; then
+	DO_NOT_COMPILE="$DO_NOT_COMPILE ksvg"
+fi
+
+# Check for lcms
+have_lcms_header='no'
+KDE_CHECK_HEADER(lcms2.h,have_lcms_header='yes',,)
+if test "$have_lcms_header" = 'yes'
+then
+	LCMS_LIBS='-llcms2'
+	AC_DEFINE(LCMS_HEADER, <lcms2.h>, [The correct header])
+else
+	# Alternative! Debian does it this way...
+	KDE_CHECK_HEADER(lcms.h,have_lcms_header='yes',,)
+	if test "$have_lcms_header" = 'yes'
+	then
+		LCMS_LIBS='-llcms'
+		AC_DEFINE(LCMS_HEADER, <lcms.h>, [The correct header])
+
+		# Try to find the full path of lcms.h
+		for a in $includedir $prefix/include /usr/include /usr/local/include $kde_extra_includes; do
+			for b in lcms.h lcms/lcms.h ; do
+				if test -d "$a"  && test -f "$a/$b" ; then
+					LCMSHDR="$a/$b"
+				fi
+			done
+		done
+		# Check if lcms.h was found. If not then it means that we didn't search
+		# the right dirs since the kde check already found a usable lcms.h
+		if test -n "$LCMSHDR" ; then
+			# Get lcms version
+			lcms_ver_line=`cat $LCMSHDR | grep '^// Version' `
+			if test -z "$lcms_ver_line" ; then
+				# Some versions of lcms have the version in /* */
+				lcms_ver_line=`cat $LCMSHDR | grep '^/\* Version' `
+			fi
+			lcms_ver=`echo "$lcms_ver_line" | head -n 1 | cut -d ' ' -f 3 `
+ 
+			# Get major and minor version numbers
+			lcms_var_maj=`echo $lcms_ver | cut -d . -f 1`
+ 
+			# Some versions have a character attached to the end of minor version
+			lcms_var_min=`echo $lcms_ver | cut -d . -f 2 | sed 's,[^0-9],,g'`
+ 
+			if test "$lcms_var_maj" -gt 1 || test "$lcms_var_min" -lt 9 ; then
+				LCMS_LIBS=''
+		fi
+	fi
+	else
+		LCMS_LIBS=''
+	fi
+fi
+
+if test -z "$LCMS_LIBS"; then
+	DO_NOT_COMPILE="$DO_NOT_COMPILE ksvg"
+fi
+
+AC_SUBST(LCMS_LIBS)
+
+# Check for fribidi
+KDE_FIND_PATH(fribidi, FRIBIDI, [${prefix}/bin ${exec_prefix}/bin /usr/local/bin /opt/local/bin],)
+
+if test -n "$FRIBIDI"; then
+  vers=`$FRIBIDI --version 2>/dev/null | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 10 + $2) * 10 + $3;}'`
+  echo "FRIBIDI VERSION: "
+  if test -n "$vers" && test "$vers" -ge 10004
+  then
+     FRIBIDI_LIBS="`$PKG_CONFIG --libs fribidi`"
+     FRIBIDI_RPATH=
+     for args in $FIBIDI_LIBS; do
+	case $args in
+		-L*)
+		FRIBIDI_RPATH="$FRIBIDI $args"
+		;;
+	esac
+     done
+     FRIBIDI_RPATH=`echo $FRIBIDI_RPATH | sed -e "s/-L/-R/g"`
+     FRIBIDI_CFLAGS="`$PKG_CONFIG --cflags fribidi`"
+
+     AC_DEFINE_UNQUOTED(HAVE_FRIBIDI, 1, [Defines if your system has the fribidi library])
+  fi
+fi
+
+AC_SUBST(FRIBIDI_LIBS)
+AC_SUBST(FRIBIDI_CFLAGS)
+AC_SUBST(FRIBIDI_RPATH)
+
+if test -z "$FRIBIDI_LIBS"; then
+	DO_NOT_COMPILE="$DO_NOT_COMPILE ksvg"
+fi
+
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_CHECK_HEADERS(sstream)
+AC_LANG_RESTORE
+dnl =======================================================
+dnl FILE: ./ksvg/impl/libs/libtext2path/configure.in.in
+dnl =======================================================
+
+#AC_INIT(src/Converter.h)
+#AM_CONFIG_HEADER(config.h)
+
+dnl -----------------------------------------------
+dnl Package name and version number (user defined)
+dnl -----------------------------------------------
+GENERIC_LIBRARY_NAME=libtext2path-0.1
+
+# release versioning
+GENERIC_MAJOR_VERSION=0
+GENERIC_MINOR_VERSION=1
+GENERIC_MICRO_VERSION=0
+
+# API version (often = GENERIC_MAJOR_VERSION.GENERIC_MINOR_VERSION)
+GENERIC_API_VERSION=0.1
+AC_SUBST(GENERIC_API_VERSION)
+
+#shared library versioning
+GENERIC_LIBRARY_VERSION=0:1:0
+
+dnl --------------------------------
+dnl Package name and version number
+dnl --------------------------------
+AC_SUBST(GENERIC_LIBRARY_VERSION)
+
+AC_SUBST(GENERIC_LIBRARY_NAME)
+
+GENERIC_VERSION=$GENERIC_MAJOR_VERSION.$GENERIC_MINOR_VERSION.$GENERIC_MICRO_VERSION
+GENERIC_RELEASE=$GENERIC_MAJOR_VERSION.$GENERIC_MINOR_VERSION
+AC_SUBST(GENERIC_RELEASE)
+AC_SUBST(GENERIC_VERSION)
+
+
+dnl -----------------------------------------------
+dnl Checks for programs.
+dnl -----------------------------------------------
+
+dnl Check for fontconfig
+# PKG_CHECK_MODULES(DEPS, fontconfig >= 2.2.0)
+#AC_SUBST(DEPS_CFLAGS)
+#AC_SUBST(DEPS_LIBS)
+dnl =======================================================
+dnl FILE: ./kuickshow/configure.in.in
+dnl =======================================================
+
+#MIN_CONFIG
+
+#dnl PACKAGE set before
+ 
+# my own additions to KDE's version
+#
+# checking for Imlib...
+
+AC_DEFUN([KDE_FIND_IMLIB_CONFIG],
+   [AC_MSG_CHECKING([for imlib-config])
+
+imlib_config_given=NO
+ac_imlib_config=""
+
+AC_ARG_WITH(imlib-config,
+AC_HELP_STRING([--with-imlib-config=DIR],[directory where "imlib-config" is located]),
+[  ac_imlib_config="$withval/imlib-config"
+   imlib_config_given=yes
+])
+
+if test "$imlib_config_given" = "yes"; then
+  if test ! -r $ac_imlib_config; then
+    AC_MSG_RESULT(wrong file specified)
+    ac_imlib_config=""
+  else
+    AC_MSG_RESULT($ac_imlib_config)
+    LIB_IMLIB=`$ac_imlib_config --libs`
+    AC_SUBST(LIB_IMLIB)
+  fi
+else
+  ac_imlib_config=`which imlib-config 2>/dev/null`
+  if test -z "$ac_imlib_config"; then
+    AC_MSG_RESULT(no)
+  else
+    dummy=`echo "$ac_imlib_config" | grep '/imlib-config'`
+    if test -z "$dummy"; then
+      AC_MSG_RESULT(no)
+      ac_imlib_config=""
+    else
+      LIB_IMLIB=`$ac_imlib_config --libs`
+      IMLIB_CFLAGS=`$ac_imlib_config --cflags`
+      imlib_config=`echo "$LIB_IMLIB" | grep lImlib`
+      if test -z "$imlib_config"; then
+        AC_MSG_RESULT(no)
+        ac_imlib_config=""
+      else
+        AC_SUBST(LIB_IMLIB)
+        AC_SUBST(IMLIB_CFLAGS)
+        AC_MSG_RESULT($ac_imlib_config)
+      fi
+    fi
+  fi
+fi
+
+])
+
+dnl #### now some kuickshow stuff ###
+dnl Check if Imlib is installed properly
+KDE_PKG_CHECK_MODULES(IMLIB, imlib >= 1.9.10, 
+  LIB_IMLIB=$IMLIB_LIBS
+  AC_SUBST(LIB_IMLIB)
+,
+KDE_FIND_IMLIB_CONFIG
+)
+ 
+if test -z "$LIB_IMLIB"; then
+dnl  AC_MSG_ERROR([You need to install Imlib 1.x, e.g. http://freshmeat.net/redir/imlib/4385/url_tgz/imlib-1.9.10.tar.gz if your distributor doesn't have a package])
+  DO_NOT_COMPILE="$DO_NOT_COMPILE kuickshow"
+fi
+dnl =======================================================
+dnl FILE: ./kviewshell/plugins/djvu/libdjvu/configure.in.in
+dnl =======================================================
+
+dnl Copyright (c) 2002  Leon Bottou and Yann Le Cun.
+dnl Copyright (c) 2001  AT&T
+dnl
+dnl Most of these macros are derived from macros listed
+dnl at the GNU Autoconf Macro Archive
+dnl http://www.gnu.org/software/ac-archive/
+dnl
+dnl This program is free software; you can redistribute it and/or modify
+dnl it under the terms of the GNU General Public License as published by
+dnl the Free Software Foundation; either version 2 of the License, or
+dnl (at your option) any later version.
+dnl
+dnl This program is distributed in the hope that it will be useful,
+dnl but WITHOUT ANY WARRANTY; without even the implied warranty of
+dnl MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+dnl GNU General Public License for more details.
+dnl
+dnl You should have received a copy of the GNU General Public License
+dnl along with this program; if not, write to the Free Software
+dnl Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA02111 USA
+dnl
+
+dnl -------------------------------------------------------
+dnl @synopsis AC_CHECK_CXX_OPT(OPTION,
+dnl               ACTION-IF-OKAY,ACTION-IF-NOT-OKAY)
+dnl Check if compiler accepts option OPTION.
+dnl -------------------------------------------------------
+AC_DEFUN([AC_CHECK_CXX_OPT],[
+ opt="$1"
+ AC_MSG_CHECKING([if $CXX accepts $opt])
+ echo 'void f(){}' > conftest.cc
+ if test -z "`${CXX} ${CXXFLAGS} ${OPTS} $opt -c conftest.cc 2>&1`"; then
+    AC_MSG_RESULT(yes)
+    rm conftest.* 
+    $2
+ else
+    AC_MSG_RESULT(no)
+    rm conftest.*
+    $3
+ fi
+])
+
+dnl -------------------------------------------------------
+dnl @synopsis AC_CXX_MEMBER_TEMPLATES
+dnl If the compiler supports member templates, 
+dnl define HAVE_MEMBER_TEMPLATES.
+dnl -------------------------------------------------------
+AC_DEFUN([AC_CXX_MEMBER_TEMPLATES],
+[AC_CACHE_CHECK(whether the compiler supports member templates,
+ac_cv_cxx_member_templates,
+[AC_LANG_SAVE
+ AC_LANG_CPLUSPLUS
+ AC_TRY_COMPILE([
+template<class T, int N> class A
+{ public:
+  template<int N2> A<T,N> operator=(const A<T,N2>& z) { return A<T,N>(); }
+};],[A<double,4> x; A<double,7> y; x = y; return 0;],
+ ac_cv_cxx_member_templates=yes, ac_cv_cxx_member_templates=no)
+ AC_LANG_RESTORE
+])
+if test "$ac_cv_cxx_member_templates" = yes; then
+  AC_DEFINE(HAVE_MEMBER_TEMPLATES,1,
+        [define if the compiler supports member templates])
+fi
+])
+
+
+dnl -------------------------------------------------------
+dnl @synopsis AC_CXX_NAMESPACES
+dnl Define HAVE_NAMESPACES if the compiler supports
+dnl namespaces.
+dnl -------------------------------------------------------
+AC_DEFUN([AC_CXX_NAMESPACES],
+[AC_CACHE_CHECK(whether the compiler implements namespaces,
+ac_cv_cxx_namespaces,
+[ AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  AC_TRY_COMPILE([namespace Outer { namespace Inner { int i = 0; }}],
+                 [using namespace Outer::Inner; return i;],
+                 ac_cv_cxx_namespaces=yes, ac_cv_cxx_namespaces=no)
+  AC_LANG_RESTORE
+])
+if test "$ac_cv_cxx_namespaces" = yes && test "$ac_debug" = no; then
+  AC_DEFINE(HAVE_NAMESPACES,1,
+             [define if the compiler implements namespaces])
+fi
+])
+
+
+
+dnl -------------------------------------------------------
+dnl @synopsis AC_CXX_TYPENAME
+dnl Define HAVE_TYPENAME if the compiler recognizes 
+dnl keyword typename.
+dnl -------------------------------------------------------
+AC_DEFUN([AC_CXX_TYPENAME],
+[AC_CACHE_CHECK(whether the compiler recognizes typename,
+ac_cv_cxx_typename,
+[AC_LANG_SAVE
+ AC_LANG_CPLUSPLUS
+ AC_TRY_COMPILE([template<typename T>class X {public:X(){}};],
+[X<float> z; return 0;],
+ ac_cv_cxx_typename=yes, ac_cv_cxx_typename=no)
+ AC_LANG_RESTORE
+])
+if test "$ac_cv_cxx_typename" = yes; then
+  AC_DEFINE(HAVE_TYPENAME,1,[define if the compiler recognizes typename])
+fi
+])
+
+
+dnl -------------------------------------------------------
+dnl @synopsis AC_CXX_STDINCLUDES
+dnl Define HAVE_STDINCLUDES if the compiler has the
+dnl new style include files (without the .h)
+dnl -------------------------------------------------------
+AC_DEFUN([AC_CXX_STDINCLUDES],
+[AC_CACHE_CHECK(whether the compiler comes with standard includes,
+ac_cv_cxx_stdincludes,
+[AC_LANG_SAVE
+ AC_LANG_CPLUSPLUS
+ AC_TRY_COMPILE([#include <new>
+struct X { int a; X(int a):a(a){}; };
+X* foo(void *x) { return new(x) X(2); } ],[],
+ ac_cv_cxx_stdincludes=yes, ac_cv_cxx_stdincludes=no)
+ AC_LANG_RESTORE
+])
+if test "$ac_cv_cxx_stdincludes" = yes; then
+  AC_DEFINE(HAVE_STDINCLUDES,1,
+    [define if the compiler comes with standard includes])
+fi
+])
+
+
+dnl -------------------------------------------------------
+dnl @synopsis AC_CXX_BOOL
+dnl If the compiler recognizes bool as a separate built-in type,
+dnl define HAVE_BOOL. Note that a typedef is not a separate
+dnl type since you cannot overload a function such that it 
+dnl accepts either the basic type or the typedef.
+dnl -------------------------------------------------------
+AC_DEFUN([AC_CXX_BOOL],
+[AC_CACHE_CHECK(whether the compiler recognizes bool as a built-in type,
+ac_cv_cxx_bool,
+[AC_LANG_SAVE
+ AC_LANG_CPLUSPLUS
+ AC_TRY_COMPILE([
+int f(int  x){return 1;}
+int f(char x){return 1;}
+int f(bool x){return 1;}
+],[bool b = true; return f(b);],
+ ac_cv_cxx_bool=yes, ac_cv_cxx_bool=no)
+ AC_LANG_RESTORE
+])
+if test "$ac_cv_cxx_bool" = yes; then
+  AC_DEFINE(HAVE_BOOL,1,[define if bool is a built-in type])
+fi
+])
+
+dnl -------------------------------------------------------
+dnl @synopsis AC_CXX_EXCEPTIONS
+dnl If the C++ compiler supports exceptions handling (try,
+dnl throw and catch), define HAVE_EXCEPTIONS.
+dnl -------------------------------------------------------
+AC_DEFUN([AC_CXX_EXCEPTIONS],
+[AC_CACHE_CHECK(whether the compiler supports exceptions,
+ac_cv_cxx_exceptions,
+[AC_LANG_SAVE
+ AC_LANG_CPLUSPLUS
+ AC_TRY_COMPILE(,[try { throw  1; } catch (int i) { return i; }],
+ ac_cv_cxx_exceptions=yes, ac_cv_cxx_exceptions=no)
+ AC_LANG_RESTORE
+])
+if test "$ac_cv_cxx_exceptions" = yes; then
+  AC_DEFINE(HAVE_EXCEPTIONS,1,[define if the compiler supports exceptions])
+fi
+])
+
+
+dnl -------------------------------------------------------
+dnl @synopsis AC_CXX_RPO
+dnl Defines option --enable-rpo and searches program RPO.
+dnl Set output variables CXXRPOFLAGS and RPO. 
+dnl -------------------------------------------------------
+AC_DEFUN([AC_CXX_RPO],
+[ CXXRPOFLAGS=
+  RPO_YES='#'
+  RPO_NO=''
+  if test x$GXX = xyes ; then
+    AC_ARG_ENABLE([rpo],
+      AC_HELP_STRING([--enable-rpo],
+                     [Enable compilation with option -frepo]),
+      [ac_rpo=$enableval], [ac_rpo=no] )
+    if test x$ac_rpo != xno ; then
+      CXXRPOFLAGS='-frepo -fno-rtti'
+      RPO_YES=''
+      RPO_NO='#'
+    fi
+  fi
+  AC_SUBST(CXXRPOFLAGS)
+  AC_SUBST(RPO_YES)
+  AC_SUBST(RPO_NO)
+])
+
+
+dnl ------------------------------------------------------------------
+dnl @synopsis AC_PATH_PTHREAD([ACTION-IF-FOUND[, ACTION-IF-NOT-FOUND]])
+dnl This macro figures out how to build C programs using POSIX
+dnl threads.  It sets the PTHREAD_LIBS output variable to the threads
+dnl library and linker flags, and the PTHREAD_CFLAGS output variable
+dnl to any special C compiler flags that are needed.  (The user can also
+dnl force certain compiler flags/libs to be tested by setting these
+dnl environment variables.).  
+dnl ------------------------------------------------------------------
+AC_DEFUN([AC_PATH_PTHREAD], [
+AC_REQUIRE([AC_CANONICAL_HOST])
+acx_pthread_ok=no
+# First, check if the POSIX threads header, pthread.h, is available.
+# If it isn't, don't bother looking for the threads libraries.
+AC_CHECK_HEADER(pthread.h, , acx_pthread_ok=noheader)
+# We must check for the threads library under a number of different
+# names; the ordering is very important because some systems
+# (e.g. DEC) have both -lpthread and -lpthreads, where one of the
+# libraries is broken (non-POSIX).
+# First of all, check if the user has set any of the PTHREAD_LIBS,
+# etcetera environment variables, and if threads linking works.
+if test x${PTHREAD_LIBS+set} = xset ||
+   test x${PTHREAD_CFLAGS+set} = xset ; then
+        save_CFLAGS="$CFLAGS"
+        CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+        save_CXXFLAGS="$CXXFLAGS"
+        CXXFLAGS="$CXXFLAGS $PTHREAD_CFLAGS"
+        save_LIBS="$LIBS"
+        LIBS="$PTHREAD_LIBS $LIBS"
+        AC_MSG_CHECKING([provided PTHREAD_LIBS/PTHREAD_CFLAGS.])
+        AC_TRY_LINK_FUNC(pthread_join, acx_pthread_ok=yes)
+        AC_MSG_RESULT($acx_pthread_ok)
+        if test x"$acx_pthread_ok" = xno; then
+                PTHREAD_LIBS=""
+                PTHREAD_CFLAGS=""
+        fi
+        LIBS="$save_LIBS"
+        CFLAGS="$save_CFLAGS"
+        CXXFLAGS="$save_CXXFLAGS"
+fi
+# Create a list of thread flags to try.  Items starting with a "-" are
+# C compiler flags, and other items are library names, except for "none"
+# which indicates that we try without any flags at all.
+acx_pthread_flags="pthreads none -Kthread -kthread lthread 
+                   -pthread -pthreads -mthreads pthread
+                   --thread-safe -mt"
+# The ordering *is* (sometimes) important.  
+# Some notes on the individual items follow:
+# pthreads: AIX (must check this before -lpthread)
+# none: in case threads are in libc; should be tried before -Kthread and
+#       other compiler flags to prevent continual compiler warnings
+# -Kthread: Sequent (threads in libc, but -Kthread needed for pthread.h)
+# -kthread: FreeBSD kernel threads (preferred to -pthread since SMP-able)
+# lthread: LinuxThreads port on FreeBSD (also preferred to -pthread)
+# -pthread: Linux/gcc (kernel threads), BSD/gcc (userland threads)
+# -pthreads: Solaris/gcc
+# -mthreads: Mingw32/gcc, Lynx/gcc
+# -mt: Sun Workshop C (may only link SunOS threads [-lthread], but it
+#      doesn't hurt to check since this sometimes defines pthreads too;
+#      also defines -D_REENTRANT)
+# pthread: Linux, etcetera
+# --thread-safe: KAI C++
+case "${host_cpu}-${host_os}" in
+        *solaris*)
+        # On Solaris (at least, for some versions), libc contains stubbed
+        # (non-functional) versions of the pthreads routines, so link-based
+        # tests will erroneously succeed.  (We need to link with -pthread or
+        # -lpthread.)  (The stubs are missing pthread_cleanup_push, or rather
+        # a function called by this macro, so we could check for that, but
+        # who knows whether they'll stub that too in a future libc.)  So,
+        # we'll just look for -pthreads and -lpthread first:
+        acx_pthread_flags="-pthread -pthreads pthread -mt $acx_pthread_flags"
+        ;;
+esac
+if test x"$acx_pthread_ok" = xno; then
+for flag in $acx_pthread_flags; do
+        case $flag in
+                none)
+                AC_MSG_CHECKING([whether pthreads work without any flags])
+                ;;
+                -*)
+                AC_MSG_CHECKING([whether pthreads work with $flag])
+                PTHREAD_CFLAGS="$flag"
+                ;;
+                *)
+                AC_MSG_CHECKING([for the pthreads library -l$flag])
+                PTHREAD_LIBS="-l$flag"
+                ;;
+        esac
+        save_LIBS="$LIBS"
+        save_CFLAGS="$CFLAGS"
+        save_CXXFLAGS="$CXXFLAGS"
+        LIBS="$PTHREAD_LIBS $LIBS"
+        CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+        CXXFLAGS="$CXXFLAGS $PTHREAD_CFLAGS"
+        # Check for various functions.  We must include pthread.h,
+        # since some functions may be macros.  (On the Sequent, we
+        # need a special flag -Kthread to make this header compile.)
+        # We check for pthread_join because it is in -lpthread on IRIX
+        # while pthread_create is in libc.  We check for pthread_attr_init
+        # due to DEC craziness with -lpthreads.  We check for
+        # pthread_cleanup_push because it is one of the few pthread
+        # functions on Solaris that doesn't have a non-functional libc stub.
+        # We try pthread_create on general principles.
+        AC_TRY_LINK([#include <pthread.h>],
+                    [pthread_t th; pthread_join(th, 0);
+                     pthread_attr_init(0); pthread_cleanup_push(0, 0);
+                     pthread_create(0,0,0,0); pthread_cleanup_pop(0); ],
+                    [acx_pthread_ok=yes])
+        LIBS="$save_LIBS"
+        CFLAGS="$save_CFLAGS"
+        CXXFLAGS="$save_CXXFLAGS"
+        AC_MSG_RESULT($acx_pthread_ok)
+        if test "x$acx_pthread_ok" = xyes; then
+                break;
+        fi
+        PTHREAD_LIBS=""
+        PTHREAD_CFLAGS=""
+done
+fi
+# Various other checks:
+if test "x$acx_pthread_ok" = xyes; then
+        save_LIBS="$LIBS"
+        LIBS="$PTHREAD_LIBS $LIBS"
+        save_CFLAGS="$CFLAGS"
+        CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+        save_CXXFLAGS="$CXXFLAGS"
+        CXXFLAGS="$CXXFLAGS $PTHREAD_CFLAGS"
+        AC_MSG_CHECKING([if more special flags are required for pthreads])
+        flag=no
+        case "${host_cpu}-${host_os}" in
+                *-aix* | *-freebsd*)     flag="-D_THREAD_SAFE";;
+                *solaris* | alpha*-osf*) flag="-D_REENTRANT";;
+        esac
+        AC_MSG_RESULT(${flag})
+        if test "x$flag" != xno; then
+                PTHREAD_CFLAGS="$flag $PTHREAD_CFLAGS"
+        fi
+        LIBS="$save_LIBS"
+        CFLAGS="$save_CFLAGS"
+        CXXFLAGS="$save_CXXFLAGS"
+fi
+AC_ARG_VAR(PTHREAD_LIBS, [Flags for linking pthread programs.])
+AC_ARG_VAR(PTHREAD_CFLAGS, [Flags for compiling pthread programs.])
+# execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
+if test x"$acx_pthread_ok" = xyes; then
+        AC_DEFINE(HAVE_PTHREAD,1,[Define if pthreads are available])
+        ifelse([$1],,:,[$1])
+else
+        ifelse([$2],,:,[$2])
+fi
+])
+
+
+dnl ------------------------------------------------------------------
+dnl @synopsis AC_PATH_COTHREADS([ACTION-IF-FOUND[, ACTION-IF-NOT-FOUND]])
+dnl Define HAVE_COTHREAD if cothreads can be used.
+dnl Define HAVE_COTHREAD_PATCH if cothread libgcc patch is available
+dnl ------------------------------------------------------------------
+
+AC_DEFUN([AC_PATH_COTHREAD], [
+AC_REQUIRE([AC_CANONICAL_HOST])
+acx_cothread=no
+if test x$GXX = xyes ; then
+  AC_MSG_CHECKING([whether cothreads work with ${host_cpu}])
+  case ${host_cpu} in
+    i?86|powerpc*|mips*|alpha*|hppa*)
+      acx_cothread=yes
+      ;;   
+  esac
+  AC_MSG_RESULT($acx_cothread)
+fi
+if test x$acx_cothread != xno ; then
+  AC_MSG_CHECKING([whether libgcc contains the cothread patch])
+  AC_LANG_PUSH([C++])
+  AC_TRY_LINK([extern "C" { void *(*__get_eh_context_ptr)();
+                            void *__new_eh_context(void); }],
+              [ __get_eh_context_ptr = &__new_eh_context;],
+              [acx_cothread_patch=yes], [acx_cothread_patch=no])
+  AC_LANG_POP([C++])
+  AC_MSG_RESULT($acx_cothread_patch)
+  if test x$acx_cothread_patch = xno ; then
+    AC_MSG_CHECKING([if the cothread patch is critical]) 
+    echo 'void foo() { throw "Hello"; }' > conftest.cc
+    compile="$CXX $CXXFLAGS -c conftest.cc"
+    check="nm conftest.o | grep sjthrow | cat > conftest.out"
+    acx_cothread_patch=yes
+    if AC_TRY_EVAL(compile) && AC_TRY_EVAL(check) ; then
+      if test -z "`cat conftest.out`" ; then
+        acx_cothread_patch=no
+      fi
+    fi
+    AC_MSG_RESULT($acx_cothread_patch)
+    rm conftest.*
+    if test x$acx_cothread_patch = xyes ; then
+        acx_cothread=no
+        AC_MSG_WARN([Cothread cannot work without the patch])
+    else
+        AC_MSG_WARN([Applying the patch is recommended anyway])
+    fi
+    AC_MSG_WARN([See the INSTALL file for more information])
+  fi
+fi
+# Must do.
+if test x$acx_cothread = xyes ; then
+   AC_DEFINE(HAVE_COTHREAD,1,
+                [Define if cothreads are available.])
+   if test x$acx_cothread_patch = xyes ; then
+      AC_DEFINE(HAVE_COTHREAD_PATCH,1,
+                [Define if libgcc contains the cothread patch.])
+   fi
+   ifelse([$1],,:,[$1])
+else
+   ifelse([$2],,:,[$2])
+fi
+])
+
+dnl ------------------------------------------------------------------
+dnl @synopsis AC_PATH_THREADS([ACTION-IF-FOUND[, ACTION-IF-NOT-FOUND]])
+dnl Process optional option --enable-threads
+dnl Check availability of pthreads or cothreads
+dnl using AC_PATH_PTHREAD and AC_PATH_COTHREAD.
+dnl Set output variable THREADS_LIBS and THREADS_CFLAGS
+dnl ------------------------------------------------------------------
+
+AC_DEFUN([AC_PATH_THREADS], [
+AC_ARG_ENABLE(threads,
+            AC_HELP_STRING([--enable-threads],
+                           [select threading model (default is auto)]),
+            ac_use_threads=$enableval, ac_use_threads=auto)
+ac_threads=no
+if test x$ac_use_threads != xno ; then
+  case x$ac_use_threads in
+  x|xyes|xauto|xposix|xpthread)
+        AC_PATH_PTHREAD(
+                [ ac_threads=pthread
+                  ac_use_threads=pthread
+                  THREAD_LIBS="$PTHREAD_LIBS"
+                  THREAD_CFLAGS="$PTHREAD_CFLAGS -DTHREADMODEL=POSIXTHREADS"
+                ] )
+        ;;
+  esac
+  case x$ac_use_threads in
+  xposix|xpthread)
+        ;;
+  x|xyes|xauto|xcothread)
+        AC_PATH_COTHREAD(
+                [ ac_threads=cothread
+                  THREAD_CFLAGS="-DTHREADMODEL=COTHREADS"
+                ] )
+        ;;
+  *)
+        AC_MSG_ERROR(
+[Invalid argument for --enable-threads
+Valid arguments are: yes, no, posix, pthread, cothread, auto.])
+        ;;
+  esac
+fi
+AC_SUBST(THREAD_LIBS)
+AC_SUBST(THREAD_CFLAGS)
+AC_MSG_CHECKING([threading model])
+AC_MSG_RESULT($ac_threads)
+if test $ac_threads != no ; then
+   AC_MSG_RESULT([setting THREAD_CFLAGS=$THREAD_CFLAGS])
+   AC_MSG_RESULT([setting THREAD_LIBS=$THREAD_LIBS])
+   ifelse([$1],,:,[$1])
+else
+   ifelse([$2],,:,[$2])
+fi
+])
+
+
+dnl ------------------------------------------------------------------
+dnl @synopsis AC_PATH_TIFF([ACTION-IF-FOUND[, ACTION-IF-NOT-FOUND]])
+dnl Process option --with-tiff
+dnl Search LIBTIFF. Define HAVE_TIFF.
+dnl Set output variable TIFF_CFLAGS and TIFF_LIBS
+dnl ------------------------------------------------------------------
+
+AC_DEFUN([AC_PATH_TIFF],
+[
+  AC_ARG_VAR(TIFF_LIBS)
+  AC_ARG_VAR(TIFF_CFLAGS)
+  ac_tiff=no
+  AC_ARG_WITH(tiff,
+     AC_HELP_STRING([--with-tiff=DIR],
+                    [where libtiff is located]),
+     [ac_tiff=$withval], [ac_tiff=yes] )
+  # Process specification
+  if test x$ac_tiff = xyes ; then
+     test x${TIFF_LIBS+set} != xset && TIFF_LIBS="-ltiff"
+  elif test x$ac_tiff != xno ; then
+     test x${TIFF_LIBS+set} != xset && TIFF_LIBS="-L$ac_tiff -ltiff"
+     test x${TIFF_CFLAGS+set} != xset && TIFF_CFLAGS="-I$ac_tiff"
+  fi
+  # Try linking
+  if test x$ac_tiff != xno ; then
+     AC_MSG_CHECKING([for the libtiff library])
+     save_CFLAGS="$CFLAGS"
+     save_CXXFLAGS="$CXXFLAGS"
+     save_LIBS="$LIBS"
+     CFLAGS="$CFLAGS $TIFF_CFLAGS"
+     CXXFLAGS="$CXXFLAGS $TIFF_CFLAGS"
+     LIBS="$LIBS $TIFF_LIBS"
+     AC_TRY_LINK([
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include <stdio.h> 
+#include <tiffio.h>
+#ifdef __cplusplus
+}
+#endif ],[
+TIFFOpen(0,0);],
+       [ac_tiff=yes], [ac_tiff=no] )
+     CFLAGS="$save_CFLAGS"
+     CXXFLAGS="$save_CXXFLAGS"
+     LIBS="$save_LIBS"
+     AC_MSG_RESULT($ac_tiff)
+   fi
+   # Finish
+   if test x$ac_tiff = xno; then
+      TIFF_CFLAGS= ; TIFF_LIBS=
+      ifelse([$2],,:,[$2])
+   else
+      AC_DEFINE(HAVE_TIFF,1,[Define if you have libtiff.])
+      AC_MSG_RESULT([setting TIFF_CFLAGS=$TIFF_CFLAGS])
+      AC_MSG_RESULT([setting TIFF_LIBS=$TIFF_LIBS])
+      ifelse([$1],,:,[$1])
+   fi
+])
+
+# C++
+AC_LANG(C++)
+AC_CXX_BOOL
+AC_CXX_EXCEPTIONS
+AC_CXX_TYPENAME
+AC_CXX_STDINCLUDES
+AC_CXX_NAMESPACES
+AC_CXX_MEMBER_TEMPLATES
+AC_CXX_RPO
+
+# ----------------------------------------
+# Libraries
+# ----------------------------------------
+
+AC_CHECK_LIB(m,sqrt)
+AC_CHECK_LIB(iconv,libiconv)
+
+# ----------------------------------------
+# Header Files
+# ----------------------------------------
+
+AC_HEADER_STDC
+AC_HEADER_DIRENT
+AC_HEADER_TIME
+AC_HEADER_SYS_WAIT
+AC_CHECK_HEADERS(wchar.h wctype.h sys/mman.h iconv.h)
+AC_CHECK_HEADERS(stdint.h sys/ipc.h sys/shm.h)
+
+# ----------------------------------------
+# Types
+# ----------------------------------------
+
+AC_CHECK_TYPES(wchar_t)
+AC_CHECK_TYPES(long long int)
+AC_CHECK_TYPES(mbstate_t,,,[#include "wchar.h"])
+
+# ----------------------------------------
+# Functions
+# ----------------------------------------
+
+AC_FUNC_MMAP
+AC_FUNC_FORK
+AC_CHECK_FUNCS(wcrtomb iswspace)
+AC_CHECK_FUNCS(putc_unlocked strerror vsnprintf)
+AC_CHECK_FUNCS(gethostname iconv strftime getpwuid)
+
+# ----------------------------------------
+# Test auxilliary packages
+# ----------------------------------------
+
+# Search TIFF library
+AC_PATH_TIFF(,
+[ no_tiff=yes
+  AC_MSG_WARN([Tiff support is disabled]) ])
+
+# Search MULTITHREADING library
+AC_PATH_THREADS(,
+[ no_threads=yes
+  AC_MSG_WARN([Thread support is disabled]) ])
+
+# ----------------------------------------
+# Stuff added to config.h
+# ----------------------------------------
+
+# Fence
+AH_TOP([
+#ifndef DJVU_CONFIG_H
+#define DJVU_CONFIG_H
+/* config.h: begin */
+])
+
+# L18N Macros
+AH_BOTTOM([
+/* - Miscellaneous */
+#define UNIX 1
+#define NEED_GNUG_PRAGMAS 0
+
+/* - BOOL */
+#if !defined(HAVE_BOOL) && !defined(bool)
+#define bool  char
+#define true  1
+#define false 0
+#endif
+
+/* - WCHAR etc.*/
+#if ! defined(HAVE_WCHAR_T)
+#define HAS_WCHAR 0
+#define HAS_WCTYPE 0
+#define HAS_MBSTATE 0
+#else
+#define HAS_WCHAR 1
+#if defined(HAVE_WCTYPE_H) && defined(HAVE_ISWSPACE)
+#define HAS_WCTYPE 1
+#endif
+#if defined(HAVE_MBSTATE_T) && defined(HAVE_WCRTOMB)
+#define HAS_MBSTATE 1
+#endif
+#endif
+#if defined(HAVE_ICONV_H) && defined(HAVE_ICONV)
+#define HAS_ICONV 1
+#else
+#define HAS_ICONV 0
+#endif
+
+/* - I18N MESSAGES HELL */
+#define HAS_CTRL_C_IN_ERR_MSG 1
+
+/* - CONTAINERS */
+#ifndef HAVE_MEMBER_TEMPLATES
+#define GCONTAINER_NO_MEMBER_TEMPLATES
+#endif
+#ifndef HAVE_TYPENAME
+#define GCONTAINER_NO_TYPENAME
+#endif
+
+/* - COTHREAD */
+#ifdef HAVE_COTHREAD
+#ifndef HAVE_COTHREAD_PATCH
+#define NO_LIBGCC_HOOKS
+#endif
+#endif
+
+/* - JPEG */
+#ifdef HAVE_LIBJPEG
+#define NEED_JPEG_DECODER
+#endif
+
+/* - MMAP */
+#if defined(HAVE_MMAP) && defined(HAVE_SYS_MMAN_H)
+#define HAS_MEMMAP 1
+#else
+#define HAS_MEMMAP 0
+#endif
+
+/* config.h: end */
+#endif
+])
+dnl =======================================================
+dnl FILE: ./libkscan/configure.in.in
+dnl =======================================================
+
+
+KDE_FIND_PATH( sane-config, SANE_CONFIG, [ ${prefix}/bin, ${exec_prefix}/bin, 
+                                           /usr/local/bin, /opt/local/bin,
+                                           /usr/bin ] )
+if test -n "$SANE_CONFIG"; then
+    dnl ### version check. Klaas, which version is minimum?
+
+    LIBSANE_LIBS="`$SANE_CONFIG --libs`" 
+    LIBSANE_LDFLAGS="`$SANE_CONFIG --ldflags`"
+    dnl Bah, --cflags is -I lines only (according to the sane-config.in source
+    dnl and _INCLUDES looks nicer  :)
+    LIBSANE_INCLUDES="`$SANE_CONFIG --cflags`"
+
+    AC_DEFINE_UNQUOTED(HAVE_SANE, 1, [Defines if your system has the sane libraries]) 
+else
+    DO_NOT_COMPILE="$DO_NOT_COMPILE libkscan kooka"
+fi
+
+AM_CONDITIONAL(include_kooka, test -n "$SANE_CONFIG")
+AC_SUBST(LIBSANE_LIBS)
+AC_SUBST(LIBSANE_LDFLAGS)
+AC_SUBST(LIBSANE_INCLUDES)
+KDE_CREATE_SUBDIRSLIST
+AM_CONDITIONAL(doc_SUBDIR_included, test "x$doc_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kamera_SUBDIR_included, test "x$kamera_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kcoloredit_SUBDIR_included, test "x$kcoloredit_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kfax_SUBDIR_included, test "x$kfax_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kgamma_SUBDIR_included, test "x$kgamma_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kghostview_SUBDIR_included, test "x$kghostview_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kiconedit_SUBDIR_included, test "x$kiconedit_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kmrml_SUBDIR_included, test "x$kmrml_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kolourpaint_SUBDIR_included, test "x$kolourpaint_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kpdf_SUBDIR_included, test "x$kpdf_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kpovmodeler_SUBDIR_included, test "x$kpovmodeler_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kruler_SUBDIR_included, test "x$kruler_SUBDIR_included" = xyes)
+AM_CONDITIONAL(ksnapshot_SUBDIR_included, test "x$ksnapshot_SUBDIR_included" = xyes)
+AM_CONDITIONAL(ksvg_SUBDIR_included, test "x$ksvg_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kuickshow_SUBDIR_included, test "x$kuickshow_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kview_SUBDIR_included, test "x$kview_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kviewshell_SUBDIR_included, test "x$kviewshell_SUBDIR_included" = xyes)
+AM_CONDITIONAL(libkscan_SUBDIR_included, test "x$libkscan_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kfile_plugins_SUBDIR_included, test "x$kfile_plugins_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kfaxview_SUBDIR_included, test "x$kfaxview_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kdvi_SUBDIR_included, test "x$kdvi_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kooka_SUBDIR_included, test "x$kooka_SUBDIR_included" = xyes)
+AC_CONFIG_FILES([ Makefile ])
+AC_CONFIG_FILES([ doc/Makefile ])
+AC_CONFIG_FILES([ doc/kamera/Makefile ])
+AC_CONFIG_FILES([ doc/kcoloredit/Makefile ])
+AC_CONFIG_FILES([ doc/kdvi/Makefile ])
+AC_CONFIG_FILES([ doc/kgamma/Makefile ])
+AC_CONFIG_FILES([ doc/kghostview/Makefile ])
+AC_CONFIG_FILES([ doc/kiconedit/Makefile ])
+AC_CONFIG_FILES([ doc/kolourpaint/Makefile ])
+AC_CONFIG_FILES([ doc/kooka/Makefile ])
+AC_CONFIG_FILES([ doc/kpdf/Makefile ])
+AC_CONFIG_FILES([ doc/kpovmodeler/Makefile ])
+AC_CONFIG_FILES([ doc/kruler/Makefile ])
+AC_CONFIG_FILES([ doc/ksnapshot/Makefile ])
+AC_CONFIG_FILES([ doc/kuickshow/Makefile ])
+AC_CONFIG_FILES([ doc/kview/Makefile ])
+AC_CONFIG_FILES([ kamera/Makefile ])
+AC_CONFIG_FILES([ kamera/kcontrol/Makefile ])
+AC_CONFIG_FILES([ kamera/kioslave/Makefile ])
+AC_CONFIG_FILES([ kamera/pics/Makefile ])
+AC_CONFIG_FILES([ kcoloredit/Makefile ])
+AC_CONFIG_FILES([ kdvi/Makefile ])
+AC_CONFIG_FILES([ kdvi/pix/Makefile ])
+AC_CONFIG_FILES([ kfax/Makefile ])
+AC_CONFIG_FILES([ kfaxview/Makefile ])
+AC_CONFIG_FILES([ kfaxview/libkfaximage/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/bmp/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/dds/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/dvi/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/exr/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/gif/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/ico/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/jpeg/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/pcx/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/pdf/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/png/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/pnm/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/ps/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/raw/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/rgb/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/tga/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/tiff/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/xbm/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/xpm/Makefile ])
+AC_CONFIG_FILES([ kgamma/Makefile ])
+AC_CONFIG_FILES([ kgamma/kcmkgamma/Makefile ])
+AC_CONFIG_FILES([ kgamma/kcmkgamma/pics/Makefile ])
+AC_CONFIG_FILES([ kgamma/xf86gammacfg/Makefile ])
+AC_CONFIG_FILES([ kghostview/Makefile ])
+AC_CONFIG_FILES([ kghostview/data/Makefile ])
+AC_CONFIG_FILES([ kiconedit/Makefile ])
+AC_CONFIG_FILES([ kiconedit/pics/Makefile ])
+AC_CONFIG_FILES([ kiconedit/pics/icons/Makefile ])
+AC_CONFIG_FILES([ kiconedit/pics/toolbar/Makefile ])
+AC_CONFIG_FILES([ kmrml/Makefile ])
+AC_CONFIG_FILES([ kmrml/kmrml/Makefile ])
+AC_CONFIG_FILES([ kmrml/kmrml/kcontrol/Makefile ])
+AC_CONFIG_FILES([ kmrml/kmrml/lib/Makefile ])
+AC_CONFIG_FILES([ kmrml/kmrml/server/Makefile ])
+AC_CONFIG_FILES([ kolourpaint/Makefile ])
+AC_CONFIG_FILES([ kolourpaint/cursors/Makefile ])
+AC_CONFIG_FILES([ kolourpaint/pics/Makefile ])
+AC_CONFIG_FILES([ kolourpaint/pics/custom/Makefile ])
+AC_CONFIG_FILES([ kolourpaint/pixmapfx/Makefile ])
+AC_CONFIG_FILES([ kolourpaint/tools/Makefile ])
+AC_CONFIG_FILES([ kolourpaint/views/Makefile ])
+AC_CONFIG_FILES([ kolourpaint/widgets/Makefile ])
+AC_CONFIG_FILES([ kooka/Makefile ])
+AC_CONFIG_FILES([ kooka/pics/Makefile ])
+AC_CONFIG_FILES([ kpdf/Makefile ])
+AC_CONFIG_FILES([ kpdf/conf/Makefile ])
+AC_CONFIG_FILES([ kpdf/core/Makefile ])
+AC_CONFIG_FILES([ kpdf/core/generator_kimgio/Makefile ])
+AC_CONFIG_FILES([ kpdf/core/generator_pdf/Makefile ])
+AC_CONFIG_FILES([ kpdf/shell/Makefile ])
+AC_CONFIG_FILES([ kpdf/ui/Makefile ])
+AC_CONFIG_FILES([ kpdf/xpdf/Makefile ])
+AC_CONFIG_FILES([ kpdf/xpdf/fofi/Makefile ])
+AC_CONFIG_FILES([ kpdf/xpdf/goo/Makefile ])
+AC_CONFIG_FILES([ kpdf/xpdf/splash/Makefile ])
+AC_CONFIG_FILES([ kpdf/xpdf/xpdf/Makefile ])
+AC_CONFIG_FILES([ kpovmodeler/Makefile ])
+AC_CONFIG_FILES([ kpovmodeler/examples/Makefile ])
+AC_CONFIG_FILES([ kpovmodeler/examples/includes/Makefile ])
+AC_CONFIG_FILES([ kpovmodeler/examples/includes/inlined/Makefile ])
+AC_CONFIG_FILES([ kpovmodeler/examples/includes/original/Makefile ])
+AC_CONFIG_FILES([ kpovmodeler/examples/scenes/Makefile ])
+AC_CONFIG_FILES([ kpovmodeler/examples/scenes/advanced/Makefile ])
+AC_CONFIG_FILES([ kpovmodeler/examples/scenes/csg/Makefile ])
+AC_CONFIG_FILES([ kpovmodeler/examples/scenes/interior/Makefile ])
+AC_CONFIG_FILES([ kpovmodeler/examples/scenes/lights/Makefile ])
+AC_CONFIG_FILES([ kpovmodeler/examples/scenes/objects/Makefile ])
+AC_CONFIG_FILES([ kpovmodeler/pics/Makefile ])
+AC_CONFIG_FILES([ kpovmodeler/pics/crystalsvg/Makefile ])
+AC_CONFIG_FILES([ kpovmodeler/pics/locolor/Makefile ])
+AC_CONFIG_FILES([ kruler/Makefile ])
+AC_CONFIG_FILES([ kruler/pics/Makefile ])
+AC_CONFIG_FILES([ ksnapshot/Makefile ])
+AC_CONFIG_FILES([ ksvg/Makefile ])
+AC_CONFIG_FILES([ ksvg/core/Makefile ])
+AC_CONFIG_FILES([ ksvg/dom/Makefile ])
+AC_CONFIG_FILES([ ksvg/ecma/Makefile ])
+AC_CONFIG_FILES([ ksvg/impl/Makefile ])
+AC_CONFIG_FILES([ ksvg/impl/libs/Makefile ])
+AC_CONFIG_FILES([ ksvg/impl/libs/art_support/Makefile ])
+AC_CONFIG_FILES([ ksvg/impl/libs/libtext2path/Makefile ])
+AC_CONFIG_FILES([ ksvg/impl/libs/libtext2path/src/Makefile ])
+AC_CONFIG_FILES([ ksvg/impl/libs/xrgbrender/Makefile ])
+AC_CONFIG_FILES([ ksvg/plugin/Makefile ])
+AC_CONFIG_FILES([ ksvg/plugin/backends/Makefile ])
+AC_CONFIG_FILES([ ksvg/plugin/backends/agg/Makefile ])
+AC_CONFIG_FILES([ ksvg/plugin/backends/libart/Makefile ])
+AC_CONFIG_FILES([ ksvg/test/Makefile ])
+AC_CONFIG_FILES([ ksvg/test/external/Makefile ])
+AC_CONFIG_FILES([ kuickshow/Makefile ])
+AC_CONFIG_FILES([ kuickshow/misc/Makefile ])
+AC_CONFIG_FILES([ kuickshow/pics/Makefile ])
+AC_CONFIG_FILES([ kuickshow/src/Makefile ])
+AC_CONFIG_FILES([ kview/Makefile ])
+AC_CONFIG_FILES([ kview/config/Makefile ])
+AC_CONFIG_FILES([ kview/config/plugins/Makefile ])
+AC_CONFIG_FILES([ kview/kimageviewer/Makefile ])
+AC_CONFIG_FILES([ kview/kviewcanvas/Makefile ])
+AC_CONFIG_FILES([ kview/kviewcanvas/config/Makefile ])
+AC_CONFIG_FILES([ kview/kviewcanvas/test/Makefile ])
+AC_CONFIG_FILES([ kview/kviewviewer/Makefile ])
+AC_CONFIG_FILES([ kview/kviewviewer/config/Makefile ])
+AC_CONFIG_FILES([ kview/kviewviewer/test/Makefile ])
+AC_CONFIG_FILES([ kview/modules/Makefile ])
+AC_CONFIG_FILES([ kview/modules/browser/Makefile ])
+AC_CONFIG_FILES([ kview/modules/effects/Makefile ])
+AC_CONFIG_FILES([ kview/modules/presenter/Makefile ])
+AC_CONFIG_FILES([ kview/modules/presenter/config/Makefile ])
+AC_CONFIG_FILES([ kview/modules/scale/Makefile ])
+AC_CONFIG_FILES([ kview/modules/scanner/Makefile ])
+AC_CONFIG_FILES([ kview/modules/template/Makefile ])
+AC_CONFIG_FILES([ kview/photobook/Makefile ])
+AC_CONFIG_FILES([ kviewshell/Makefile ])
+AC_CONFIG_FILES([ kviewshell/pics/Makefile ])
+AC_CONFIG_FILES([ kviewshell/pics/icons/Makefile ])
+AC_CONFIG_FILES([ kviewshell/plugins/Makefile ])
+AC_CONFIG_FILES([ kviewshell/plugins/djvu/Makefile ])
+AC_CONFIG_FILES([ kviewshell/plugins/djvu/libdjvu/Makefile ])
+AC_CONFIG_FILES([ libkscan/Makefile ])
+AC_CONFIG_FILES([ libkscan/pics/Makefile ])
+AC_OUTPUT
+if test -z "$LIBTIFF"; then
+  echo ""
+  echo "You're missing libtiff. The additional info plugin for TIFF images"
+  echo "files won't be compiled without libtiff."
+  echo "You can download it from http://www.libtiff.org"
+  echo ""
+  all_tests=bad
+fi
+
+if test -z "$POPPLER_LIBS"; then
+  echo ""
+  echo "You're missing poppler. The additional info plugin for PDF files"
+  echo "files won't be compiled without poppler >= 0.3.1."
+  echo "You can download poppler from http://poppler.freedesktop.org/"
+  echo ""
+fi
+
+if test "$EXRSTATUS" = "no"; then
+  echo ""
+  echo "No OpenEXR Libraries were found"
+  echo "Install the OpenEXR package (from http://www.openexr.org)"
+  echo "if you want EXR image format support"
+  echo ""
+fi
+
+if test "$EXRSTATUS" = "old"; then
+  echo ""
+  echo "OpenEXR libraries were found, but at least version 1.1.0 is required"
+  echo "Install a newer OpenEXR package (from http://www.openexr.org)"
+  echo "if you want EXR image format support"
+  echo ""
+fi
+if test -z "$FREETYPE_CONFIG"; then
+  echo ""
+  echo "You're missing freetype development libs."
+  echo "KPDF will not be build without them"
+  echo ""
+fi
+
+if test x$FREETYPE_VERSION != x; then
+  if test $FREETYPE_VERSION -lt 9008003; then
+    echo ""
+    echo "You're using freetype older than 2.1.10, it is not mandatory"
+    echo "to use 2.1.10 but kpdf improves its rendering in some pdf with it"
+    echo ""
+  fi
+fi
+
+if test -z "$XFT_LIBS"; then
+  echo ""
+  echo "You're missing XFT development libs."
+  echo "KPDF will not be build without them"
+  echo ""
+fi
+
+if test "$HAVE_LIBJPEG" = "no"; then
+  echo ""
+  echo "You're missing libjpeg development libs."
+  echo "KPDF will not be build without them"
+  echo ""
+fi
+
+if test "$KPOVMODELER_OPENGL" = "no"; then
+  if test "$have_gl_headers" = "no"; then
+    echo ""
+    echo "You are missing"
+    if test "$ac_cv_header_GL_gl_h" = "no"; then
+      echo "    - OpenGL (mesa)"
+    fi
+    if test "$ac_cv_header_GL_glu_h" = "no"; then
+      echo "    - GLU"
+    fi
+    if test "$ac_cv_header_GL_glx_h" = "no"; then
+      echo "    - GLX"
+    fi
+    echo "KPovModeler will not be compiled."
+    echo "You can download them from"
+    echo "http://mesa3d.sf.net"
+    echo ""
+  else
+    echo ""
+    echo "Your system fails at linking a small OpenGL application!"
+    echo "KPovModeler will not be compiled."
+    echo "Check, if OpenGL and GLU are installed correctly on your system."
+    echo "For more details about this problem, look at config.log after"
+    echo "the line \"checking for GL\"."
+    echo ""
+  fi
+  all_tests=bad
+fi
+
+if test -z "$LIBFREETYPE_LIBS"; then
+  echo ""
+  echo "You're missing freetype2. KPovModeler will not display true type texts."
+  echo "You can download it from"
+  echo "http://www.freetype.org"
+  echo ""
+  all_tests=bad
+fi
+if test -z "$LCMS_LIBS" -o -z "$LIBART_LIBS" -o \
+        -z "$FREETYPE_LIBS" -o -z "$FRIBIDI_LIBS" -o -z "$FONTCONFIG_LIBS"; then
+  echo ""
+  echo "Some of the libraries required for KSVG are missing or too old,"
+  echo "therefore KSVG will not be compiled."
+  echo ""
+  echo "If you want to compile KSVG you should install:"
+  if test -z "$LCMS_LIBS"; then
+    echo "  * lcms 1.09 or newer (http://www.littlecms.com/)"
+  fi
+  if test -z "$LIBART_LIBS"; then
+    echo "  * libart 2.3.8 or newer (http://www.levien.com/libart/)"
+  fi
+  if test -z "$FREETYPE_LIBS"; then
+    echo "  * freetype 2.0.6 or newer (http://www.freetype.org)"
+  fi
+  if test -z "$FONTCONFIG_LIBS"; then
+    echo "  * fontconfig 2.2.0 or newer (http://fontconfig.org)"
+  fi
+  if test -z "$FRIBIDI_LIBS"; then
+    echo "  * fribidi 0.10.4 or newer (http://freedesktop.org/Software/FriBidi)"
+  fi
+  echo ""
+  all_tests=bad
+fi
+if test -z "$LIB_IMLIB"; then
+  echo ""
+  echo "You're missing Imlib 1.x. The graphics browser/viewer KuickShow"
+  echo "won't be compiled without Imlib."
+  echo "You can download it from"
+  echo "http://freshmeat.net/redir/imlib/4385/url_tgz/imlib-1.9.10.tar.gz"
+  echo ""
+  all_tests=bad
+fi
+if test -z "$SANE_CONFIG"; then
+  echo ""
+  echo "You're missing development files for libsane - "
+  echo "libkscan/kooka won't be compiled without libsane."
+  echo "You can download it from"
+  echo "http://www.sane-project.org/"
+  echo ""
+  all_tests=bad
+fi
+# Check if KDE_SET_PREFIX was called, and --prefix was passed to configure
+if test -n "$kde_libs_prefix" -a -n "$given_prefix"; then
+  # And if so, warn when they don't match
+  if test "$kde_libs_prefix" != "$given_prefix"; then
+    # And if kde doesn't know about the prefix yet
+    echo ":"`kde-config --path exe`":" | grep ":$given_prefix/bin/:" 2>&1 >/dev/null
+    if test $? -ne 0; then
+      echo ""
+      echo "Warning: you chose to install this package in $given_prefix,"
+      echo "but KDE was found in $kde_libs_prefix."
+      echo "For this to work, you will need to tell KDE about the new prefix, by ensuring"
+      echo "that KDEDIRS contains it, e.g. export KDEDIRS=$given_prefix:$kde_libs_prefix"
+      echo "Then restart KDE."
+      echo ""
+    fi
+  fi
+fi
+
+if test x$GXX = "xyes" -a x$kde_have_gcc_visibility = "xyes" -a x$kde_cv_val_qt_gcc_visibility_patched = "xno"; then
+  echo ""
+  echo "Your GCC supports symbol visibility, but the patch for Qt supporting visibility"
+  echo "was not included. Therefore, GCC symbol visibility support remains disabled."
+  echo ""
+  echo "For better performance, consider including the Qt visibility supporting patch"
+  echo "located at:"
+  echo ""
+  echo "http://bugs.kde.org/show_bug.cgi?id=109386"
+  echo ""
+  echo "and recompile all of Qt and KDE. Note, this is entirely optional and"
+  echo "everything will continue to work just fine without it."
+  echo ""
+fi
+
+if test "$all_tests" = "bad"; then
+  if test ! "$cache_file" = "/dev/null"; then
+    echo ""
+    echo "Please remove the file $cache_file after changing your setup"
+    echo "so that configure will find the changes next time."
+    echo ""
+  fi
+else
+  echo ""
+  echo "Good - your configure finished. Start make now"
+  echo ""
+fi

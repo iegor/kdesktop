@@ -1,0 +1,164 @@
+function printg( a )
+{
+    printf a >> FILENAME ".h"
+}
+function doFunc( a )
+{
+    gsub("attribute", "", $0)  
+    nr = split($0, b, " ")
+    printg( "\t" )
+    # do method
+    i = 1
+    while ( i  < nr && b[i + 1] != "(" )
+    {
+        printg( b[i++] )
+        printg( " " )
+    }    
+    while ( i  < nr && b[i + 1] != ");"  )
+    {
+        if( b[i] == "in" )
+        {
+            if( b[i + 1] != "float" && b[i + 1] != "unsigned" && b[i+1] != "short" && b[i+1] != "bool" )
+            {
+                float = "ok"
+                printg( "const " )
+            }
+            else
+                float = "bad"
+            i++
+            while ( i + 1 < nr && b[i + 1] != "in" && b[i + 1] != ");" )
+            {
+                printg( b[i++] " " )
+                #if( b[ i ] != ");" ) printg( " " )
+            }
+            if( float == "ok" )
+                printg( "&" b[i++]  )
+            else
+                printg( b[i++]  )
+            if( i < nr ) printg( " " )
+        }
+        else
+            printg( b[i++] )
+    }
+    printg( ");\n" );
+}
+
+function doAttr( a, class )
+{
+    sub( ";", "", a)
+    sub( "\r", "", a)
+    gsub("attribute", "", a)  
+    nr = split(a, b, " ")
+
+    # do put method
+    printg( "\tvoid set" )
+    printg( toupper( substr( b[nr], 1, 1) ) )
+    printg( substr( b[nr], 2) "(" )
+    i = 1
+    if( b[i] != "float" && b[i] != "unsigned" && b[i] != "short" && b[i] != "bool" )
+    #if( b[i] != "float" && match( b[i], "unsigned") == 0)
+    {
+    	float = "ok"
+    	printg( "const " )
+    }
+    else
+        float = "bad"
+    while ( i  < nr  )
+    {
+        printg( b[i++] )
+	if( i < nr ) printg( " " )
+    }
+    if( float == "ok" )
+        printg( " &" )
+    else
+        printg( " " )
+
+    printg( b[nr] ");\n" )
+
+    # do get method
+    printg("\t")
+    i = 1
+    while ( i  < nr  )
+    {
+        printg( b[i++] " " )
+    }
+    $temp = b[nr]
+    printg( $temp "() const;" )
+    printg( "\n\n" )
+}
+
+function doReadonlyAttr( a, class )
+{
+    gsub("readonly attribute", "", $0)  
+    nr = split($0, b, " ")
+    
+    # do get method
+    i = 1
+    printg("\t")
+    while ( i  < nr  )
+    {
+        printg( b[i++] " " )
+    }
+    sub( ";", "", b[nr])
+    sub( "\r", "", b[nr])
+    $temp = b[nr]
+    printg( $temp "() const;" )
+    printg( "\n" )
+}
+{
+ sub("boolean", "bool", $0); # to shut up frerich :P
+ if(/interface /)
+ {
+   gsub("  interface ", "", $0) 
+   gsub(": ", ": public ", $0) 
+   gsub(",", ", public", $0) 
+   gsub("{", "\n{", $0) 
+   sub( ";", "", $0 )
+   sub( "\r", "", $0 )
+   nr = split($0, b, " ")
+   clas = b[1]
+   printg( "class " clas "Impl;" )
+   printg( "\nclass " )
+   printg( $0 )
+   printg( "\npublic:\n" )
+   printg( "\t"  clas "();\n" )
+   printg( "\t"  clas "(const " clas " &other);\n" )
+   printg( "\t"  clas " &operator=(const " clas " &other);\n" )
+   printg( "\t"  clas "(" clas "Impl *other);\n" )
+   printg( "\tvirtual ~" clas "();\n\n" )
+   #printg( "\tbool isNull() const { return !impl; }\n" )
+ }
+ else if(/readonly attribute/)
+ { 
+    doReadonlyAttr( $0, $class )
+ }
+ else if(/attribute /)
+ { 
+    doAttr( $0, $class )
+ }
+ else if(/raises/)
+ { 
+ }
+ else if(/\)/)
+ { 
+    doFunc( $0 );
+ }
+ else if(/};/)
+ { 
+    printg( "private:\n\t" clas "Impl *impl;\n};\n\n" );
+ }
+ else if(/ = /)
+ { 
+    sub( "\r", "", $0 )
+    printg( $0 "\n" );
+ }
+ #else  if(//)
+ #{
+ #  # end of class
+ #  printf $0;
+ #}
+}
+# END
+# {
+#    print "};";
+# }

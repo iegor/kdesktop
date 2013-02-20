@@ -1,0 +1,211 @@
+function printg( a )
+{
+    printf a >> FILENAME ".cc"
+}
+function doFunc( a )
+{
+    gsub("attribute", "", $0)  
+    nr = split($0, b, " ")
+    # do method
+    i = 1
+    nrparams = 0
+    rettype = b[1]
+    while ( i  < nr && b[i + 1] != "(" )
+    {
+        printg( b[i++] )
+        printg( " " )
+    }
+    printg( clas "::" )
+    method = b[i]
+    while ( i  < nr && b[i + 1] != ");"  )
+    {
+        if( b[i] == "in" )
+        {
+            if( b[i + 1] != "float" && match( b[i + 1], "unsigned") == 0)
+            {
+                float = "ok"
+                printg( "const " )
+            }
+            else
+                float = "bad"
+            i++
+            while ( i + 1 < nr && b[i + 1] != "in" && b[i + 1] != ");" )
+            {
+                printg( b[i++] " " )
+            }
+	    param[nrparams++] = b[i]
+            if( float == "ok" )
+                printg( "&" b[i++]  )
+            else
+                printg( b[i++]  )
+            if( i < nr ) printg( " " )
+        }
+        else
+            printg( b[i++] )
+    }
+    printg( ")\n{\n" );
+    if( rettype != "void" )
+    {
+        printg( "\tif(!impl) return ; // FIXME\n" )
+        printg( "\treturn impl->" method "(" )
+    }
+    else
+        printg( "\tif(impl)\n\t\timpl->" method "(" )
+    k = 0
+    while( k < nrparams )
+    {
+        printg( param[k++] )
+	if( k < nrparams ) printg( " " )
+    }
+    printg( ");\n" )
+    printg( "}\n\n" );
+}
+
+function doAttr( a, class )
+{
+    sub( ";", "", a)
+    sub( "\r", "", a)
+    gsub("attribute", "", a)  
+    nr = split(a, b, " ")
+
+    # do put method
+    printg( "void " clas "::set" )
+    printg( toupper( substr( b[nr], 1, 1) ) )
+    printg( substr( b[nr], 2) "(" )
+    i = 1
+    if( b[i] != "float" && match( b[i], "unsigned") == 0)
+    {
+    	float = "ok"
+    	printg( "const " )
+    }
+    else
+        float = "bad"
+    while ( i  < nr  )
+    {
+        printg( b[i++] )
+	if( i < nr ) printg( " " )
+    }
+    if( float == "ok" )
+        printg( " &" b[nr] ")\n{\n" )
+    else
+        printg( " " b[nr] ")\n{\n" )
+    printg( "\tif(impl)\n\t\timpl->set")
+    printg( toupper( substr( b[nr], 1, 1) ) )
+    printg( substr( b[nr], 2) "(" )
+    printg( b[nr] ");\n}\n\n" )
+
+    # do get method
+    i = 1
+    while ( i  < nr  )
+    {
+        printg( b[i++] " " )
+    }
+    $temp = b[nr]
+    printg( clas "::" $temp "() const\n{\n" )
+    printg( "\tif(!impl) return ; // FIXME\n\treturn impl->" )
+    printg( substr( b[nr], 1) "(" )
+    printg( ");\n}\n\n" )
+}
+
+function doReadonlyAttr( a, class )
+{
+    gsub("readonly attribute", "", $0)  
+    nr = split($0, b, " ")
+    
+    # do get method
+    i = 1
+    while ( i  < nr  )
+    {
+        printg( b[i++] " " )
+    }
+    sub( ";", "", b[nr])
+    sub( "\r", "", b[nr])
+    $temp = b[nr]
+    printg( clas "::" $temp "() const\n{\n" )
+    printg( "\tif(!impl) return ; // FIXME\n\treturn impl->" )
+    printg( substr( b[nr], 1) "(" )
+    printg( ");\n}\n\n" )
+}
+{
+ sub("boolean", "bool", $0)
+ if(/interface /)
+ {
+   gsub("  interface ", "", $0) 
+   gsub(": ", ": public ", $0) 
+   gsub(",", ", public", $0) 
+   gsub("{", "\n{", $0) 
+   sub( ";", "", $0 )
+   sub( "\r", "", $0 )
+   nr = split($0, b, " ")
+   clas = b[1]
+   #printg( "// " clas " specification\n\n\n" )
+   printg( clas "::"  clas "()" )
+   if( nr > 2 )
+   {
+       i = 2
+       sub( ":", " : ", b[i] )
+       while ( i  < nr  )
+       {
+          sub( "public", "", b[i] )
+          sub( ",", "(), ", b[i] )
+          printg( b[i++] ) 
+       }
+       printg( "()" )
+   }
+   printg( "\n{\n\timpl = new " clas "Impl();\n\timpl->ref();\n}\n\n" )
+   printg( clas "::"  clas "(const " clas " &other)" )
+   if( nr > 2 )
+   {
+       i = 2
+       while ( i  < nr  )
+          printg( b[i++] ) 
+
+       printg( "(), impl(0)" )
+   }
+   else
+      printg( " : impl(0)" )
+   printg( "\n{\n\t(*this) = other;\n}\n\n" )
+   printg( clas " &" clas "::operator =(const " clas " &other)\n{\n\tif(impl == other.impl)\n\t\treturn *this;\n\n\tif(impl)\n\t\timpl->deref();\n\n\timpl = other.impl;\n\n\tif(impl)\n\t\timpl->ref();\n\n\treturn *this;\n}\n\n" )
+   printg( clas "::" clas "(" clas "Impl *other)" )
+   if( nr > 2 )
+   {
+       i = 2
+       while ( i  < nr  )
+          printg( b[i++] ) 
+
+       printg( "()" )
+   }
+   printg( "\n{\n\timpl = other;\n\tif(impl)\n\t\timpl->ref();\n}\n\n" )
+   printg( clas "::~" clas "()\n{\n\tif(impl)\n\t\timpl->deref();\n}\n\n" )
+ }
+ else if(/readonly attribute/)
+ { 
+    doReadonlyAttr( $0, $class )
+ }
+ else if(/attribute /)
+ { 
+    doAttr( $0, $class )
+ }
+ else if(/raises/)
+ { 
+ }
+ else if(/\)/)
+ { 
+    doFunc( $0 );
+ }
+ else if(/};/)
+ { 
+ }
+ else if(/ = /)
+ { 
+ }
+ #else  if(//)
+ #{
+ #  # end of class
+ #  printf $0;
+ #}
+}
+# END
+# {
+#    print "};";
+# }

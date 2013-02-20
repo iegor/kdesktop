@@ -1,0 +1,204 @@
+# Check for libart
+KDE_FIND_PATH(libart2-config, LIBART_CONFIG, [${prefix}/bin ${exec_prefix}/bin /usr/local/bin /opt/local/bin],)
+
+if test -n "$LIBART_CONFIG"; then
+  vers=`$LIBART_CONFIG --version 2>/dev/null | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
+  if test -n "$vers" && test "$vers" -ge 2003008
+  then
+     LIBART_LIBS="`$LIBART_CONFIG --libs`"
+     LIBART_RPATH=
+     for args in $LIBART_LIBS; do
+	  case $args in
+	    -L*)
+  	       LIBART_RPATH="$LIBART_RPATH $args"
+ 	       ;;
+          esac
+     done
+     LIBART_RPATH=`echo $LIBART_RPATH | sed -e "s/-L/-R/g"`
+     LIBART_CFLAGS="`$LIBART_CONFIG --cflags`"
+
+     AC_DEFINE_UNQUOTED(HAVE_LIBART, 1, [Defines if your system has the libart library])
+  fi
+fi
+
+AC_SUBST(LIBART_LIBS)
+AC_SUBST(LIBART_CFLAGS)
+AC_SUBST(LIBART_RPATH)
+
+if test -z "$LIBART_LIBS"; then
+	DO_NOT_COMPILE="$DO_NOT_COMPILE ksvg"
+fi
+
+# Check for fontconfig
+KDE_FIND_PATH(fontconfig-config, FONTCONFIG_CONFIG, [${prefix}/bin ${exec_prefix}/bin /usr/local/bin /opt/local/bin], [
+  KDE_FIND_PATH( pkg-config, PKG_CONFIG, [${prefix}/bin ${exec_prefix}/bin /usr/local/bin /opt/local/bin /usr/bin],)
+  if test -n "$PKG_CONFIG"; then
+	if ! $PKG_CONFIG --exists fontconfig; then
+		unset PKG_CONFIG
+	fi
+  fi
+])
+if test -n "$FONTCONFIG_CONFIG" -o -n "$PKG_CONFIG"; then
+	if test -n "$FONTCONFIG_CONFIG"; then
+		fontconfigvers="`$FONTCONFIG_CONFIG --version 2>/dev/null | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`"
+		fontconfiglibs="`$FONTCONFIG_CONFIG --libs`"
+		fontconfigcflags="`$FONTCONFIG_CONFIG --cflags`"
+	else
+		fontconfigvers=`$PKG_CONFIG --modversion fontconfig 2>/dev/null | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3; }'`
+		fontconfiglibs=`$PKG_CONFIG --libs fontconfig`
+		fontconfigcflags="`$PKG_CONFIG --cflags fontconfig`"
+	fi
+	if test -n "$vers" && test "$vers" -ge 2002000
+	then
+		FONTCONFIG_LIBS=$fontconfiglibs
+		FONTCONFIG_RPATH=
+			for args in $FONTCONFIG_LIBS; do
+				case $args in
+					-L*)
+						FONTCONFIG_RPATH="$FONTCONFIG_RPATH $args"
+						;;
+				esac
+			done
+		FONTCONFIG_RPATH=`echo $FONTCONFIG_RPATH | sed -e "s/-L/-R/g"`
+		FONTCONFIG_CFLAGS=$fontconfigcflags
+
+		AC_DEFINE_UNQUOTED(HAVE_FONTCONFIG, 1, [Defines if your system has the fontconfig library])
+	fi
+fi
+
+AC_SUBST(FONTCONFIG_LIBS)
+AC_SUBST(FONTCONFIG_CFLAGS)
+AC_SUBST(FONTCONFIG_RPATH)
+
+if test -z "$FONTCONFIG_LIBS"; then
+	DO_NOT_COMPILE="$DO_NOT_COMPILE ksvg"
+fi
+
+# Check for freetype2
+KDE_FIND_PATH(freetype-config, FREETYPE_CONFIG, [${prefix}/bin ${exec_prefix}/bin /usr/local/bin /opt/local/bin],)
+
+if test -n "$FREETYPE_CONFIG"; then
+  vers=`$FREETYPE_CONFIG --version 2>/dev/null | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
+  if test -n "$vers" && test "$vers" -ge 8000002
+  then
+     FREETYPE_LIBS="`$FREETYPE_CONFIG --libs`"
+     FREETYPE_RPATH=
+     for args in $FREETYPE_LIBS; do
+	  case $args in
+	    -L*)
+  	       FREETYPE_RPATH="$FREETYPE_RPATH $args"
+ 	       ;;
+          esac
+     done
+     FREETYPE_RPATH=`echo $FREETYPE_RPATH | sed -e "s/-L/-R/g"`
+     FREETYPE_CFLAGS="`$FREETYPE_CONFIG --cflags`"
+
+     AC_DEFINE_UNQUOTED(HAVE_FREETYPE, 1, [Defines if your system has the freetype library])
+
+     ftvers=`$FREETYPE_CONFIG --ftversion 2>/dev/null | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
+     if test -n "$ftvers" && test "$ftvers" -ge 2002000
+     then
+        AC_DEFINE_UNQUOTED(HAVE_FREETYPE_2_2_x, 1, [Defines if your system has the 2.2.x freetype library])
+     fi
+  fi
+fi
+
+AC_SUBST(FREETYPE_LIBS)
+AC_SUBST(FREETYPE_CFLAGS)
+AC_SUBST(FREETYPE_RPATH)
+
+if test -z "$FREETYPE_LIBS"; then
+	DO_NOT_COMPILE="$DO_NOT_COMPILE ksvg"
+fi
+
+# Check for lcms
+have_lcms_header='no'
+KDE_CHECK_HEADER(lcms2.h,have_lcms_header='yes',,)
+if test "$have_lcms_header" = 'yes'
+then
+	LCMS_LIBS='-llcms2'
+	AC_DEFINE(LCMS_HEADER, <lcms2.h>, [The correct header])
+else
+	# Alternative! Debian does it this way...
+	KDE_CHECK_HEADER(lcms.h,have_lcms_header='yes',,)
+	if test "$have_lcms_header" = 'yes'
+	then
+		LCMS_LIBS='-llcms'
+		AC_DEFINE(LCMS_HEADER, <lcms.h>, [The correct header])
+
+		# Try to find the full path of lcms.h
+		for a in $includedir $prefix/include /usr/include /usr/local/include $kde_extra_includes; do
+			for b in lcms.h lcms/lcms.h ; do
+				if test -d "$a"  && test -f "$a/$b" ; then
+					LCMSHDR="$a/$b"
+				fi
+			done
+		done
+		# Check if lcms.h was found. If not then it means that we didn't search
+		# the right dirs since the kde check already found a usable lcms.h
+		if test -n "$LCMSHDR" ; then
+			# Get lcms version
+			lcms_ver_line=`cat $LCMSHDR | grep '^// Version' `
+			if test -z "$lcms_ver_line" ; then
+				# Some versions of lcms have the version in /* */
+				lcms_ver_line=`cat $LCMSHDR | grep '^/\* Version' `
+			fi
+			lcms_ver=`echo "$lcms_ver_line" | head -n 1 | cut -d ' ' -f 3 `
+ 
+			# Get major and minor version numbers
+			lcms_var_maj=`echo $lcms_ver | cut -d . -f 1`
+ 
+			# Some versions have a character attached to the end of minor version
+			lcms_var_min=`echo $lcms_ver | cut -d . -f 2 | sed 's,[^0-9],,g'`
+ 
+			if test "$lcms_var_maj" -gt 1 || test "$lcms_var_min" -lt 9 ; then
+				LCMS_LIBS=''
+		fi
+	fi
+	else
+		LCMS_LIBS=''
+	fi
+fi
+
+if test -z "$LCMS_LIBS"; then
+	DO_NOT_COMPILE="$DO_NOT_COMPILE ksvg"
+fi
+
+AC_SUBST(LCMS_LIBS)
+
+# Check for fribidi
+KDE_FIND_PATH(fribidi, FRIBIDI, [${prefix}/bin ${exec_prefix}/bin /usr/local/bin /opt/local/bin],)
+
+if test -n "$FRIBIDI"; then
+  vers=`$FRIBIDI --version 2>/dev/null | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 10 + $2) * 10 + $3;}'`
+  echo "FRIBIDI VERSION: "
+  if test -n "$vers" && test "$vers" -ge 10004
+  then
+     FRIBIDI_LIBS="`$PKG_CONFIG --libs fribidi`"
+     FRIBIDI_RPATH=
+     for args in $FIBIDI_LIBS; do
+	case $args in
+		-L*)
+		FRIBIDI_RPATH="$FRIBIDI $args"
+		;;
+	esac
+     done
+     FRIBIDI_RPATH=`echo $FRIBIDI_RPATH | sed -e "s/-L/-R/g"`
+     FRIBIDI_CFLAGS="`$PKG_CONFIG --cflags fribidi`"
+
+     AC_DEFINE_UNQUOTED(HAVE_FRIBIDI, 1, [Defines if your system has the fribidi library])
+  fi
+fi
+
+AC_SUBST(FRIBIDI_LIBS)
+AC_SUBST(FRIBIDI_CFLAGS)
+AC_SUBST(FRIBIDI_RPATH)
+
+if test -z "$FRIBIDI_LIBS"; then
+	DO_NOT_COMPILE="$DO_NOT_COMPILE ksvg"
+fi
+
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_CHECK_HEADERS(sstream)
+AC_LANG_RESTORE
