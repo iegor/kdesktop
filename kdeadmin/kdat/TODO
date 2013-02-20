@@ -1,0 +1,225 @@
+Outstanding Bugs
+
+2002-04-22
+ From Bas:
+ 1) DAT tape works with tar from command line but not within kdat when the
+    device is specified as /dev/st0.  It works within kdat when a symbolic
+    link to /dev/tape is made and given to kdat, but only if the startup
+    option "mount tape at startup" is NOT checked.
+
+2002-01-31
+ From RG:
+ 1) Restore data
+    when asked for "Restore to directory:" in Dialog box "Restore Options"
+    enter a not existing directory (e.g.: /tmp/xyz ), kdat will restore, but no
+    data is written to requested place, Logfile shows success.
+    !!!! The data are restored to the place, where application kdat is started !
+    reason: file VerifyDlg.cpp  line: 397
+  > void VerifyDlg::show()
+  > {
+  >     chdir( QFile::encodeName(_workingDir) );
+  >
+    there is no error handling !!!
+  
+    same problem for Verify !
+    How to deal with ??
+    - Restore: ask the user, if kdat should create the new directory ?
+    - Verify: a verify makes no sense, if the directory is not existing
+  
+    So I think a correction should be done within the
+          VerifyOptDlg::okClicked() method !?!                                 
+ 2) adding new data to a tape, UI is not updated, while forwarding to the end of
+    tape
+ 3) forward to the end of tape:  text in status line not completely visible
+ 4) tape with 10 and more archives:
+         Tape or Tape Index: Archives not correctly ordered:
+           1, 10, 12, 12, 2, 3, 4, 5, 6
+         Note: The reindexing run lists them in correct oder
+ 5) status line: only sunken, where text is why not complete status line ?                         
+
+2002-01-30
+ 1) When a dump fails with a write() error, no index is written
+    to disk.  When the tape is then mounted, kdat does not
+    prompt to ask whether the index should be recreated.
+    /* 2002-01-31 LEW. This may now be fixed by adding freopen()  */
+ 2) From RG:
+    - change of Archive Name is not written to file (Tape Index)
+      open Tape Index, select archive, modify Archive Name (right pane),
+      press Apply, Note: tree is updated,
+      quit kdat, restart kdat, open Tape Index, old name appears
+      /* 2002-01-31 LEW. This is now fixed by adding freopen()  */
+    - kdat, mounted tape, open tree Tape, select an archive,
+      go to right pane, unmount tape via toolbar icon
+      --> right pane is still active, but useless ??
+           Do now a modification of Archive name, -> Entry under
+            Tape INdexes is updated !
+    - Tree: Click on Selected/unselected Icon opend/closes the subtree
+      /* 2002-01-30 LEW: workaround is in place */
+
+    Nice to have:
+    - System Notification (Sound, when backup/Restore/Verify is
+      finished, OK or error )
+    - Rewind on unmount ?!?
+    - kdat does not respect the user setting of the decimal seperator in
+      kcontrol -> Personalization -> Contry & Language -> Numbers
+    
+ 3) From FP:
+ A.) * mount a tape with a backup on it
+     - open a directory with click on the plus sign
+     - open again a dir only with click on plus until you see a file
+     - click on the white quadrat to select this file
+     => crash
+     /* 2002-01-30 LEW: hopefully, this is fixed in the KDat.cpp:1250 patch */
+ B.) - select a single file (black x):
+     - the restore doesn't restore only that file, but also
+      the content of the directories above (they marked with the
+      grey X for "some_selected")
+ C.) * mount a tape with a backup on it
+     - open a directory with click on the plus sign
+     - click on the name of a directory
+     => "Restore" and "Verify" in Toolbar becomes active,
+      but there are no visible (x) selected dirs/files shown
+     (A restore in that situation restores that file and all
+     dirs above including there additional content - see B)
+ D.) - save log in the restore window brings up a Qt file dialog?
+ E.) - a directory containing a file (size 194byte) is not restored
+     - not with trying the file directly: startrecord: 10104 end 10109
+       or the dir above: startrecord 10103 end 10104
+ F.) * mount a tape with a backup on it
+     - open the tree, do 2 dirs deeper and select a file inside (black X)
+     - restore that file
+       the restore window comes up select a dir etc,
+       after the successful restore close the Restore window with ok
+     -> the file is still in black selected, the dirs above in grey
+     - now collapse the tree above the file with clicking on the "+"
+     of a grey marked dir
+     => crash                                   
+     /* 2002-01-30 LEW: hopefully, this is fixed in the KDat.cpp:1250 patch */
+
+2002-01-29
+ 1) Major memory leak or very inefficient memory allocation:
+    Saving the log file to disk is very slow (158560 lines of text 
+    over 50 min).  The free function shows that at the end of the save() 
+    function, there were 35MB of swap space left on the machine.  After 
+    the log file was freed from memory (again a very long process),
+    there were 361MB free (a difference of 326MB, or 2KB per line,
+    where each line has an average of 63 characters.
+    top showed that the size of kdat was 235M with RSS=215M when
+    the log file memory allocation was freed.  free RAM during
+    this time was 3MB (out of 257MB).  When kdat was terminated, free
+    RAM increased from 3MB to 214MB.
+
+2002-01-28
+ 1) The font size and line spacing vary from machine to machine
+    (e.g., Red Hat 7.0 and Red Hat 7.2).  The dialog window has
+    been made larger until a way to size automatically is set up.
+
+2002-01-25
+
+ 1) FP notes "This part of KDat seems to need a cleanup in a
+    later version. For example the toolbar icons are in real at
+    a size at 22x22, but the filenames say 16x16.  If you
+    change the names to hi22 kdat don't find them :-( In the
+    future there should be a set of 16x16, 22x22 and 32x32
+    toolbar icons, the menu and toolbar can then be created
+    with the KAction class and XMLGUI and the toolbar menu will
+    then have an effect :-)"
+
+2002-01-23
+
+ 1) FP reports: "One more problem: If you open in the tree a
+    archive and try to select some dir inside, a error handler
+    comes up and I have to kill KDat." /* 2002-01-28 LEW: this
+    problem is intermittent.  A signal handler is now added
+    that allows the user to dump core when a problem occurs. */
+
+ 2) LEW can't see archives on tape. /* 2002-01-28 LEW: this
+    problem mysteriously disappeared today.  Perhaps it had
+    something to do with configuration.  In case it recurs, the
+    notes below showing a relationship to _stubbed are retained. */
+    /* 2002-01-31 LEW. This may now be fixed by adding freopen()  */
+
+  Progress so far:
+
+  2002-01-26 LEW: in Tape.cpp, readVersion4Index() on a recent tape dump
+    shows that numArchives is 0 even though the tape has the dumped files
+    on it (as shown by running tar tfv /dev/nst0 3 times). A problem with
+    creating the archive after the tape is dumped?  In fact, the Archive
+    dialog during the dump shows that no files are being dumped when in
+    fact they are.
+
+    Also, TapeManager::findTape() shows that the newly mounted tape's ID
+    is used to retrieve the Tape* entry in _tapes, but _tapes has no
+    entries.  It is supposed to contain the details from all the index
+    files in the appdata directory.  But, when those files are read when
+    the TapeManager is instantiated, only their names are stored 
+    (in QStringList _tapeIDs).  The files themselves are not examined.
+
+  2002-01-28 LEW: On further examination, the BackupDlg widget does in fact
+    call Tape::addChild( Archive* archive ) to add the new archive, and
+    addChild() does call read() in preparation for updating the on-disk
+    tape file.  However, read() refuses to do anything because the tape
+    isn't stubbed (_stubbed==FALSE).  I don't know what this means yet.
+    Forcing _stubbed=TRUE doesn't work either.  It looks like _stubbed has
+    to do with whether the tape ID is recognized as belonging to an index
+    file on disk or not (see the second paragraph of 2002-01-26).
+
+2002-01-21 
+
+ 1) While dumping 9.5GB to 8.3GB tape:
+   In file tools/qgarray.cpp, line 227: Out of memory
+   kdeinit: Fatal IO error: client killed
+   kdeinit: sending SIGHUP to children.
+   Mutex destroy failure: Device or resource busy
+   kdeinit: sending SIGTERM to children.
+   kdeinit: Exit.   
+   /* 2002-01-21 LEW: added signal handler to KDat so it won't
+      crash when it receives SIGHUPs, SIGTERMs, etc., and that
+      allows user to dump core if (s)he wishes. */
+
+c/o rolandg at onlinehome.de:
+
+ 2) Tree Widget: Mounted Tape
+   Icon too big -> the backup sets are not visible on the screen.
+   If I select the archive, I see the upper pixel of some marked text.
+
+ 3) Tree Widget: Tape Index is empty, but I did just a few minutes ago
+   a 1st backup onto the the tape.
+   The tape index file is stored in .kde/share/apps/kdat.
+   /* 2002-01-24 RG sent patch */
+
+ 4)  Backup Profiles
+  o Delete Profile does not work
+  o after creating several new profiles the directory  .kde/share/apps/kdat
+    lists some with their default names, and some with the by me defined 
+    profile names.
+ 5)  When backup up   some more files, kdat calculates the complete size
+   of the data. In the status line the filenames are running through.
+   I see no way to cancel this action.  /* 2002-01-24 LEW: new dialog added */
+
+2002-01-20 Outstanding bugs
+
+ 1) The vertical line in the tree widget that shows indenting levels is not
+    drawn correctly: there is a small hole in the dir lines. (Thanks
+    to Frank Pieczynski <pieczyk at knuut.de>.)  /* fixed 2002-01-24 with new
+    icons that FP sent in. */
+ 2) when files are restored, they are copied correctly from the tape to
+    disk, but their names in the log window are corrupted (this is an old
+    bug).  /* reported fixed by RG 2002-01-23 */
+ 3) Verify quits early (this is an old bug).
+
+2001-08-01  These are possible sources of bugs:
+
+1) don't return 0 instead of a null QString
+    (e.g., BackupProfile::getWorkingDirectory())
+2) don't test for FALSE predicate values with
+   !().  Use == FALSE instead.
+3) don't piggyback .remove with .first:
+   _relativeFiles.remove(_relativeFiles.first())
+
+   Instead, separate the two:
+      QString my_first = _relativeFiles.first();
+      _relativeFiles.remove( my_first );
+
+   This may be important with any call to .remove()
+   as may be found with: `grep "\.remove" *.cpp`
