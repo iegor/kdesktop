@@ -1,0 +1,30 @@
+AC_ARG_WITH(berkeley-db,
+  [AC_HELP_STRING([--with-berkeley-db],[enable support for Berkeley DB++ @<:@default=check@:>@])],
+  [], with_berkeley_db=check)
+
+AC_ARG_WITH(db-lib,
+  [AC_HELP_STRING([--with-db-lib=NAME],[name of the Berkeley DB++ library @<:@default=db_cxx@:>@])],
+    [ac_db_name="$withval"], [ac_db_name="db_cxx"])
+
+berkeley_db=no
+if test "x$with_berkeley_db" != xno; then
+  berkeley_db=yes
+
+  KDE_CHECK_HEADER([db_cxx.h],
+    [:], [berkeley_db=no])
+
+  AC_CHECK_LIB([$ac_db_name], [main],
+    [:], [berkeley_db=no])
+
+  if test "x$berkeley_db" = xyes; then
+    AC_DEFINE(BERKELEY_DB, 1, [Define if you have Berkeley DB++ installed])
+    BERKELEY_DB_LIBS="-l$ac_db_name"
+    AC_SUBST(BERKELEY_DB_LIBS)
+  fi
+
+  if test "x$with_berkeley_db" != xcheck && test "x$berkeley_db" != xyes; then
+    AC_MSG_ERROR([--with-berkeley-db was given, but test for Berkeley DB++ failed])
+  fi
+fi
+
+AM_CONDITIONAL(include_BERKELEY_DB, test "$berkeley_db" = yes)

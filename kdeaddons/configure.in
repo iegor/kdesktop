@@ -1,0 +1,616 @@
+dnl =======================================================
+dnl FILE: ./admin/configure.in.min
+dnl =======================================================
+
+dnl    This file is part of the KDE libraries/packages
+dnl    Copyright (C) 2001 Stephan Kulow (coolo@kde.org)
+ 
+dnl    This file is free software; you can redistribute it and/or
+dnl    modify it under the terms of the GNU Library General Public
+dnl    License as published by the Free Software Foundation; either
+dnl    version 2 of the License, or (at your option) any later version.
+ 
+dnl    This library is distributed in the hope that it will be useful,
+dnl    but WITHOUT ANY WARRANTY; without even the implied warranty of
+dnl    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+dnl    Library General Public License for more details.
+ 
+dnl    You should have received a copy of the GNU Library General Public License
+dnl    along with this library; see the file COPYING.LIB.  If not, write to
+dnl    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+dnl    Boston, MA 02110-1301, USA.
+
+# Original Author was Kalle@kde.org
+# I lifted it in some mater. (Stephan Kulow)
+# I used much code from Janos Farkas
+
+dnl Process this file with autoconf to produce a configure script.
+
+AC_INIT(acinclude.m4) dnl a source file from your sub dir
+
+dnl This is so we can use kde-common
+AC_CONFIG_AUX_DIR(admin)
+
+dnl This ksh/zsh feature conflicts with `cd blah ; pwd`
+unset CDPATH
+
+dnl Checking host/target/build systems, for make, install etc.
+AC_CANONICAL_SYSTEM 
+dnl Perform program name transformation
+AC_ARG_PROGRAM
+
+dnl Automake doc recommends to do this only here. (Janos)
+AM_INIT_AUTOMAKE(kdeaddons, "3.5.10") dnl searches for some needed programs
+
+KDE_SET_PREFIX
+
+dnl generate the config header
+AM_CONFIG_HEADER(config.h) dnl at the distribution this done
+
+AC_PROG_CC
+AC_PROG_CXX
+AC_EXEEXT
+AC_OBJEXT
+
+dnl Checks for programs.
+AC_CHECK_COMPILERS
+AC_ENABLE_SHARED(yes)
+AC_ENABLE_STATIC(no)
+KDE_PROG_LIBTOOL
+
+dnl for NLS support. Call them in this order!
+dnl WITH_NLS is for the po files
+AM_KDE_WITH_NLS
+
+dnl KDE_USE_QT
+AC_PATH_KDE
+dnl =======================================================
+dnl FILE: configure.in.in
+dnl =======================================================
+
+#MIN_CONFIG
+
+AC_CHECK_SETENV
+CXXFLAGS="$CXXFLAGS $KDE_DEFAULT_CXXFLAGS"
+dnl =======================================================
+dnl FILE: ./atlantikdesigner/configure.in.in
+dnl =======================================================
+
+ATLANTIKDESIGNER_SUBDIR=
+KDE_CHECK_HEADER(atlantik/ui/board.h, ATLANTIKDESIGNER_SUBDIR=atlantikdesigner)
+
+if test -z "$ATLANTIKDESIGNER_SUBDIR"; then
+  dnl dir will only be compiled conditionally
+  DO_NOT_COMPILE="$DO_NOT_COMPILE atlantikdesigner"
+fi
+dnl =======================================================
+dnl FILE: ./kaddressbook-plugins/configure.in.in
+dnl =======================================================
+
+KADDRESSBOOK_SUBDIR=
+KDE_CHECK_HEADER(kaddressbook/xxport.h, KADDRESSBOOK_SUBDIR=kaddressbook-plugins)
+
+if test -z "$KADDRESSBOOK_SUBDIR"; then
+  dnl dir will only be compiled conditionally
+  DO_NOT_COMPILE="$DO_NOT_COMPILE kaddressbook-plugins"
+fi
+dnl =======================================================
+dnl FILE: ./kfile-plugins/cert/configure.in.in
+dnl =======================================================
+
+KDE_CHECK_SSL
+AM_CONDITIONAL(include_kfileplugin_cert_SUBDIR, test "$have_ssl" = yes)
+dnl =======================================================
+dnl FILE: ./kicker-applets/ktimemon/configure.in.in
+dnl =======================================================
+
+AC_CHECK_HEADERS(fcntl.h)
+AC_CHECK_LIB(kstat, kstat_open, LIBKSTAT="-lkstat")
+AC_SUBST(LIBKSTAT) 
+dnl =======================================================
+dnl FILE: ./kicker-applets/mediacontrol/configure.in.in
+dnl =======================================================
+
+dnl AM_PATH_XMMS([1.0.0])
+dnl dnl PACKAGE set before
+dnl AC_PATH_PROG(XMMS_CONFIG, xmms-config, no)
+dnl AM_PATH_XMMS(1.0.0,,AC_MSG_ERROR([*** XMMS >= 1.0.0 not installed - please install first ***]))
+
+AC_DEFUN([AC_CHECK_XMMS],
+[
+  AC_MSG_CHECKING([for libxmms])
+  AC_CACHE_VAL(ac_cv_have_xmms,
+  [
+    ac_save_libs="$LIBS"
+    LIBS="`xmms-config --libs`"
+    ac_CPPFLAGS_save="$CPPFLAGS"
+    CPPFLAGS="$CPPFLAGS $all_includes `xmms-config --cflags 2> /dev/null`"
+    ac_LDFLAGS_save="$LDFLAGS"
+    LDFLAGS="$LDFLAGS $all_libraries"
+    AC_TRY_LINK(
+      [#include <xmms/xmmsctrl.h>],
+      [xmms_remote_play_pause(0);],
+      [ac_cv_have_xmms="yes"],
+      [ac_cv_have_xmms="no"]
+    )
+    LIBS="$ac_save_libs"
+    LDFLAGS="$ac_LDFLAGS_save"
+    CPPFLAGS="$ac_CPPFLAGS_save"
+  ])
+  AC_MSG_RESULT($ac_cv_have_xmms)
+  if test "$ac_cv_have_xmms" = "yes"; then
+    XMMS_LIBS="`xmms-config --libs`"
+    XMMS_INCLUDES="`xmms-config --cflags`"
+    AC_DEFINE(HAVE_XMMS, 1, [Define if you have xmms libraries and header files.])
+  fi
+])
+
+AC_ARG_WITH(xmms,
+  [AC_HELP_STRING([--with-xmms],[enable XMMS control applet @<:@default=check@:>@])],
+  [], with_xmms=check)
+
+if test "x$with_xmms" != xno; then
+  AC_CHECK_XMMS
+
+  if test "x$with_xmms" != xcheck && test "x$ac_cv_have_xmms" != xyes; then
+    AC_MSG_ERROR([--with-xmms was given, but test for XMMS failed])
+  fi
+fi
+
+AC_SUBST(XMMS_LIBS)
+AC_SUBST(XMMS_INCLUDES)
+dnl =======================================================
+dnl FILE: ./konq-plugins/sidebar/metabar/configure.in.in
+dnl =======================================================
+
+#MIN_CONFIG(3.2.0)
+
+dnl PACKAGE set before
+AC_C_BIGENDIAN
+AC_CHECK_KDEMAXPATHLEN
+dnl =======================================================
+dnl FILE: ./noatun-plugins/configure.in.in
+dnl =======================================================
+
+# taken from SDL.m4
+# Sam Lantinga 9/21/99
+# stolen from Manish Singh
+# stolen back from Frank Belew
+# stolen from Manish Singh
+# Shamelessly stolen from Owen Taylor
+
+AM_CONDITIONAL(include_noatunplugin, test x$build_arts = xyes)
+
+dnl AM_PATH_SDL([MINIMUM-VERSION, [ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND]]])
+dnl Test for SDL, and define SDL_CFLAGS and SDL_LIBS
+dnl
+AC_DEFUN([NOATUN_PATH_SDL],
+[
+dnl 
+dnl Get the cflags and libraries from the sdl-config script
+dnl
+AC_ARG_WITH(sdl-prefix,[AC_HELP_STRING([--with-sdl-prefix=PFX],
+	    [Prefix where SDL is installed (optional)])],
+            sdl_prefix="$withval", sdl_prefix="")
+AC_ARG_WITH(sdl-exec-prefix,[AC_HELP_STRING([--with-sdl-exec-prefix=PFX],
+            [Exec prefix where SDL is installed (optional)])],
+            sdl_exec_prefix="$withval", sdl_exec_prefix="")
+AC_ARG_ENABLE(sdltest, [AC_HELP_STRING([--disable-sdltest],
+                    [Do not try to compile and run a test SDL program])],
+		    , enable_sdltest=yes)
+
+  if test x$sdl_exec_prefix != x ; then
+     sdl_args="$sdl_args --exec-prefix=$sdl_exec_prefix"
+     if test x${SDL_CONFIG+set} != xset ; then
+        SDL_CONFIG=$sdl_exec_prefix/bin/sdl-config
+     fi
+  fi
+  if test x$sdl_prefix != x ; then
+     sdl_args="$sdl_args --prefix=$sdl_prefix"
+     if test x${SDL_CONFIG+set} != xset ; then
+        SDL_CONFIG=$sdl_prefix/bin/sdl-config
+     fi
+  fi
+
+  AC_PATH_PROG(SDL_CONFIG, sdl-config, no)
+  min_sdl_version=ifelse([$1], ,0.11.0,$1)
+  AC_MSG_CHECKING(for SDL - version >= $min_sdl_version)
+  no_sdl=""
+  if test "$SDL_CONFIG" = "no" ; then
+    no_sdl=yes
+  else
+    SDL_CFLAGS=`$SDL_CONFIG $sdlconf_args --cflags`
+    SDL_LIBS=`$SDL_CONFIG $sdlconf_args --libs | sed 's/[[^ ]]*-rpath[[^ ]]*//'`
+
+    sdl_major_version=`$SDL_CONFIG $sdl_args --version | \
+           sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\1/'`
+    sdl_minor_version=`$SDL_CONFIG $sdl_args --version | \
+           sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\2/'`
+    sdl_micro_version=`$SDL_CONFIG $sdl_config_args --version | \
+           sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\3/'`
+    if test "x$enable_sdltest" = "xyes" ; then
+      ac_save_CFLAGS="$CFLAGS"
+      ac_save_LIBS="$LIBS"
+      CFLAGS="$CFLAGS $SDL_CFLAGS"
+      LIBS="$LIBS $SDL_LIBS"
+dnl
+dnl Now check if the installed SDL is sufficiently new. (Also sanity
+dnl checks the results of sdl-config to some extent
+dnl
+      rm -f conf.sdltest
+      AC_TRY_RUN([
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "SDL.h"
+
+char*
+my_strdup (char *str)
+{
+  char *new_str;
+  
+  if (str)
+    {
+      new_str = (char *)malloc ((strlen (str) + 1) * sizeof(char));
+      strcpy (new_str, str);
+    }
+  else
+    new_str = NULL;
+  
+  return new_str;
+}
+
+int main (int argc, char *argv[])
+{
+  int major, minor, micro;
+  char *tmp_version;
+
+  /* This hangs on some systems (?)
+  system ("touch conf.sdltest");
+  */
+  { FILE *fp = fopen("conf.sdltest", "a"); if ( fp ) fclose(fp); }
+
+  /* HP/UX 9 (%@#!) writes to sscanf strings */
+  tmp_version = my_strdup("$min_sdl_version");
+  if (sscanf(tmp_version, "%d.%d.%d", &major, &minor, &micro) != 3) {
+     printf("%s, bad version string\n", "$min_sdl_version");
+     exit(1);
+   }
+
+   if (($sdl_major_version > major) ||
+      (($sdl_major_version == major) && ($sdl_minor_version > minor)) ||
+      (($sdl_major_version == major) && ($sdl_minor_version == minor) && ($sdl_micro_version >= micro)))
+    {
+      return 0;
+    }
+  else
+    {
+      printf("\n*** 'sdl-config --version' returned %d.%d.%d, but the minimum version\n", $sdl_major_version, $sdl_minor_version, $sdl_micro_version);
+      printf("*** of SDL required is %d.%d.%d. If sdl-config is correct, then it is\n", major, minor, micro);
+      printf("*** best to upgrade to the required version.\n");
+      printf("*** If sdl-config was wrong, set the environment variable SDL_CONFIG\n");
+      printf("*** to point to the correct copy of sdl-config, and remove the file\n");
+      printf("*** config.cache before re-running configure\n");
+      return 1;
+    }
+}
+
+],, no_sdl=yes,[echo $ac_n "cross compiling; assumed OK... $ac_c"])
+       CFLAGS="$ac_save_CFLAGS"
+       LIBS="$ac_save_LIBS"
+     fi
+  fi
+  if test "x$no_sdl" = x ; then
+     AC_MSG_RESULT(yes)
+     ifelse([$2], , :, [$2])     
+  else
+     AC_MSG_RESULT(no)
+     if test "$SDL_CONFIG" = "no" ; then
+       echo "*** The sdl-config script installed by SDL could not be found"
+       echo "*** If SDL was installed in PREFIX, make sure PREFIX/bin is in"
+       echo "*** your path, or set the SDL_CONFIG environment variable to the"
+       echo "*** full path to sdl-config."
+     else
+       if test -f conf.sdltest ; then
+        :
+       else
+          echo "*** Could not run SDL test program, checking why..."
+          CFLAGS="$CFLAGS $SDL_CFLAGS"
+          LIBS="$LIBS $SDL_LIBS"
+          AC_TRY_LINK([
+#include <stdio.h>
+#include "SDL.h"
+],      [ return 0; ],
+        [ echo "*** The test program compiled, but did not run. This usually means"
+          echo "*** that the run-time linker is not finding SDL or finding the wrong"
+          echo "*** version of SDL. If it is not finding SDL, you'll need to set your"
+          echo "*** LD_LIBRARY_PATH environment variable, or edit /etc/ld.so.conf to point"
+          echo "*** to the installed location  Also, make sure you have run ldconfig if that"
+          echo "*** is required on your system"
+	  echo "***"
+          echo "*** If you have an old version installed, it is best to remove it, although"
+          echo "*** you may also be able to get things to work by modifying LD_LIBRARY_PATH"],
+        [ echo "*** The test program failed to compile or link. See the file config.log for the"
+          echo "*** exact error that occured. This usually means SDL was incorrectly installed"
+          echo "*** or that you have moved SDL since it was installed. In the latter case, you"
+          echo "*** may want to edit the sdl-config script: $SDL_CONFIG" ])
+          CFLAGS="$ac_save_CFLAGS"
+          LIBS="$ac_save_LIBS"
+       fi
+     fi
+     SDL_CFLAGS=""
+     SDL_LIBS=""
+     ifelse([$3], , :, [$3])
+  fi
+  AC_SUBST(SDL_CFLAGS)
+  AC_SUBST(SDL_LIBS)
+  rm -f conf.sdltest
+])
+
+noatun_sdl=no
+dnl Check for SDL
+dnl require SDL 1.2 just because it's the new stable version, and it's what I have
+
+AC_ARG_WITH(sdl,
+  [AC_HELP_STRING([--with-sdl],[enable SDL Noatun plugins @<:@default=check@:>@])],
+  [], with_sdl=check)
+
+if test "x$with_sdl" != xno; then
+  NOATUN_PATH_SDL([1.2.0], [noatun_sdl=yes], [])
+
+  if test "x$with_sdl" != xcheck && test "x$noatun_sdl" != xyes; then
+    AC_MSG_ERROR([--with-sdl was given, but test for SDL failed])
+  fi
+fi
+
+AM_CONDITIONAL(include_SDL, test "$noatun_sdl" = yes)
+
+AC_CHECK_HEADERS(endian.h)
+
+NOATUN_SUBDIR=
+KDE_CHECK_HEADER(noatun/app.h, NOATUN_SUBDIR=noatun-plugins)
+
+if test -z "$NOATUN_SUBDIR"; then
+  dnl dir will only be compiled conditionally
+  DO_NOT_COMPILE="$DO_NOT_COMPILE noatun-plugins"
+fi
+
+dnl =======================================================
+dnl FILE: ./noatun-plugins/dub/configure.in.in
+dnl =======================================================
+
+#MIN_CONFIG
+
+dnl PACKAGE set before
+
+dnl =======================================================
+dnl FILE: ./noatun-plugins/oblique/configure.in.in
+dnl =======================================================
+
+AC_ARG_WITH(berkeley-db,
+  [AC_HELP_STRING([--with-berkeley-db],[enable support for Berkeley DB++ @<:@default=check@:>@])],
+  [], with_berkeley_db=check)
+
+AC_ARG_WITH(db-lib,
+  [AC_HELP_STRING([--with-db-lib=NAME],[name of the Berkeley DB++ library @<:@default=db_cxx@:>@])],
+    [ac_db_name="$withval"], [ac_db_name="db_cxx"])
+
+berkeley_db=no
+if test "x$with_berkeley_db" != xno; then
+  berkeley_db=yes
+
+  KDE_CHECK_HEADER([db_cxx.h],
+    [:], [berkeley_db=no])
+
+  AC_CHECK_LIB([$ac_db_name], [main],
+    [:], [berkeley_db=no])
+
+  if test "x$berkeley_db" = xyes; then
+    AC_DEFINE(BERKELEY_DB, 1, [Define if you have Berkeley DB++ installed])
+    BERKELEY_DB_LIBS="-l$ac_db_name"
+    AC_SUBST(BERKELEY_DB_LIBS)
+  fi
+
+  if test "x$with_berkeley_db" != xcheck && test "x$berkeley_db" != xyes; then
+    AC_MSG_ERROR([--with-berkeley-db was given, but test for Berkeley DB++ failed])
+  fi
+fi
+
+AM_CONDITIONAL(include_BERKELEY_DB, test "$berkeley_db" = yes)
+KDE_CREATE_SUBDIRSLIST
+AM_CONDITIONAL(atlantikdesigner_SUBDIR_included, test "x$atlantikdesigner_SUBDIR_included" = xyes)
+AM_CONDITIONAL(doc_SUBDIR_included, test "x$doc_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kaddressbook_plugins_SUBDIR_included, test "x$kaddressbook_plugins_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kate_SUBDIR_included, test "x$kate_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kfile_plugins_SUBDIR_included, test "x$kfile_plugins_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kicker_applets_SUBDIR_included, test "x$kicker_applets_SUBDIR_included" = xyes)
+AM_CONDITIONAL(knewsticker_scripts_SUBDIR_included, test "x$knewsticker_scripts_SUBDIR_included" = xyes)
+AM_CONDITIONAL(konq_plugins_SUBDIR_included, test "x$konq_plugins_SUBDIR_included" = xyes)
+AM_CONDITIONAL(ksig_SUBDIR_included, test "x$ksig_SUBDIR_included" = xyes)
+AM_CONDITIONAL(noatun_plugins_SUBDIR_included, test "x$noatun_plugins_SUBDIR_included" = xyes)
+AM_CONDITIONAL(renamedlgplugins_SUBDIR_included, test "x$renamedlgplugins_SUBDIR_included" = xyes)
+AC_CONFIG_FILES([ Makefile ])
+AC_CONFIG_FILES([ atlantikdesigner/Makefile ])
+AC_CONFIG_FILES([ atlantikdesigner/designer/Makefile ])
+AC_CONFIG_FILES([ atlantikdesigner/pics/Makefile ])
+AC_CONFIG_FILES([ doc/Makefile ])
+AC_CONFIG_FILES([ doc/kate-plugins/Makefile ])
+AC_CONFIG_FILES([ doc/kicker-applets/Makefile ])
+AC_CONFIG_FILES([ doc/konq-plugins/Makefile ])
+AC_CONFIG_FILES([ doc/konq-plugins/babel/Makefile ])
+AC_CONFIG_FILES([ doc/konq-plugins/crashes/Makefile ])
+AC_CONFIG_FILES([ doc/konq-plugins/dirfilter/Makefile ])
+AC_CONFIG_FILES([ doc/konq-plugins/domtreeviewer/Makefile ])
+AC_CONFIG_FILES([ doc/konq-plugins/fsview/Makefile ])
+AC_CONFIG_FILES([ doc/konq-plugins/imgallery/Makefile ])
+AC_CONFIG_FILES([ doc/konq-plugins/khtmlsettings/Makefile ])
+AC_CONFIG_FILES([ doc/konq-plugins/kuick/Makefile ])
+AC_CONFIG_FILES([ doc/konq-plugins/mediaplayer/Makefile ])
+AC_CONFIG_FILES([ doc/konq-plugins/uachanger/Makefile ])
+AC_CONFIG_FILES([ doc/konq-plugins/validators/Makefile ])
+AC_CONFIG_FILES([ doc/konq-plugins/webarchiver/Makefile ])
+AC_CONFIG_FILES([ doc/ksig/Makefile ])
+AC_CONFIG_FILES([ kaddressbook-plugins/Makefile ])
+AC_CONFIG_FILES([ kaddressbook-plugins/xxports/Makefile ])
+AC_CONFIG_FILES([ kaddressbook-plugins/xxports/gmx/Makefile ])
+AC_CONFIG_FILES([ kaddressbook-plugins/xxports/kworldclock/Makefile ])
+AC_CONFIG_FILES([ kate/Makefile ])
+AC_CONFIG_FILES([ kate/cppsymbolviewer/Makefile ])
+AC_CONFIG_FILES([ kate/filelistloader/Makefile ])
+AC_CONFIG_FILES([ kate/filetemplates/Makefile ])
+AC_CONFIG_FILES([ kate/filetemplates/plugin/Makefile ])
+AC_CONFIG_FILES([ kate/filetemplates/templates/Makefile ])
+AC_CONFIG_FILES([ kate/helloworld/Makefile ])
+AC_CONFIG_FILES([ kate/htmltools/Makefile ])
+AC_CONFIG_FILES([ kate/insertcommand/Makefile ])
+AC_CONFIG_FILES([ kate/kjswrapper/Makefile ])
+AC_CONFIG_FILES([ kate/kjswrapper/samples/Makefile ])
+AC_CONFIG_FILES([ kate/kpybrowser/Makefile ])
+AC_CONFIG_FILES([ kate/make/Makefile ])
+AC_CONFIG_FILES([ kate/modeline/Makefile ])
+AC_CONFIG_FILES([ kate/openheader/Makefile ])
+AC_CONFIG_FILES([ kate/scripts/Makefile ])
+AC_CONFIG_FILES([ kate/snippets/Makefile ])
+AC_CONFIG_FILES([ kate/tabbarextension/Makefile ])
+AC_CONFIG_FILES([ kate/textfilter/Makefile ])
+AC_CONFIG_FILES([ kate/xmlcheck/Makefile ])
+AC_CONFIG_FILES([ kate/xmltools/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/cert/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/desktop/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/folder/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/html/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/lnk/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/mhtml/Makefile ])
+AC_CONFIG_FILES([ kfile-plugins/txt/Makefile ])
+AC_CONFIG_FILES([ kicker-applets/Makefile ])
+AC_CONFIG_FILES([ kicker-applets/kbinaryclock/Makefile ])
+AC_CONFIG_FILES([ kicker-applets/kolourpicker/Makefile ])
+AC_CONFIG_FILES([ kicker-applets/ktimemon/Makefile ])
+AC_CONFIG_FILES([ kicker-applets/math/Makefile ])
+AC_CONFIG_FILES([ kicker-applets/mediacontrol/Makefile ])
+AC_CONFIG_FILES([ kicker-applets/mediacontrol/pics/Makefile ])
+AC_CONFIG_FILES([ kicker-applets/mediacontrol/pics/blueish/Makefile ])
+AC_CONFIG_FILES([ kicker-applets/mediacontrol/pics/default/Makefile ])
+AC_CONFIG_FILES([ kicker-applets/mediacontrol/pics/fulldecent/Makefile ])
+AC_CONFIG_FILES([ knewsticker-scripts/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/akregator/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/arkplugin/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/autorefresh/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/babelfish/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/crashes/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/dirfilter/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/domtreeviewer/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/fsview/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/imagerotation/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/khtmlsettingsplugin/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/kimgalleryplugin/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/kuick/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/kuick/kcmkuick/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/mediarealfolder/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/microformat/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/minitools/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/rellinks/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/searchbar/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/searchbar/icons/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/sidebar/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/sidebar/delicious/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/sidebar/delicious/pics/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/sidebar/mediaplayer/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/sidebar/mediaplayer/pics/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/sidebar/metabar/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/sidebar/metabar/src/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/sidebar/newsticker/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/sidebar/newsticker/pics/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/uachanger/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/validators/Makefile ])
+AC_CONFIG_FILES([ konq-plugins/webarchiver/Makefile ])
+AC_CONFIG_FILES([ ksig/Makefile ])
+AC_CONFIG_FILES([ noatun-plugins/Makefile ])
+AC_CONFIG_FILES([ noatun-plugins/alarm/Makefile ])
+AC_CONFIG_FILES([ noatun-plugins/alsaplayer/Makefile ])
+AC_CONFIG_FILES([ noatun-plugins/blurscope/Makefile ])
+AC_CONFIG_FILES([ noatun-plugins/charlatan/Makefile ])
+AC_CONFIG_FILES([ noatun-plugins/dub/Makefile ])
+AC_CONFIG_FILES([ noatun-plugins/dub/dub/Makefile ])
+AC_CONFIG_FILES([ noatun-plugins/ffrs/Makefile ])
+AC_CONFIG_FILES([ noatun-plugins/luckytag/Makefile ])
+AC_CONFIG_FILES([ noatun-plugins/lyrics/Makefile ])
+AC_CONFIG_FILES([ noatun-plugins/nexscope/Makefile ])
+AC_CONFIG_FILES([ noatun-plugins/noatunmadness/Makefile ])
+AC_CONFIG_FILES([ noatun-plugins/oblique/Makefile ])
+AC_CONFIG_FILES([ noatun-plugins/oblique/schemas/Makefile ])
+AC_CONFIG_FILES([ noatun-plugins/pitchablespeed/Makefile ])
+AC_CONFIG_FILES([ noatun-plugins/synaescope/Makefile ])
+AC_CONFIG_FILES([ noatun-plugins/tippercanoe/Makefile ])
+AC_CONFIG_FILES([ noatun-plugins/tyler/Makefile ])
+AC_CONFIG_FILES([ noatun-plugins/wavecapture/Makefile ])
+AC_CONFIG_FILES([ renamedlgplugins/Makefile ])
+AC_CONFIG_FILES([ renamedlgplugins/audio/Makefile ])
+AC_CONFIG_FILES([ renamedlgplugins/images/Makefile ])
+AC_OUTPUT
+if test "x$ATLANTIKDESIGNER_SUBDIR" = "x"; then
+  echo ""
+  echo "You're missing the Atlantik header files, therefore Atlantik Designer"
+  echo "will not be compiled. Install Atlantik from kdegames if you want to"
+  echo "compile Atlantik Designer."
+  echo ""
+  all_tests=bad
+fi
+
+if test "x$NOATUN_SUBDIR" = "x"; then
+  echo ""
+  echo "You're missing the noatun header files, therefore"
+  echo "the noatun plugins cannot be compiled. If you want them,"
+  echo "you should install kdemultimedia first."
+  echo ""
+  all_tests=bad
+fi
+
+
+# Check if KDE_SET_PREFIX was called, and --prefix was passed to configure
+if test -n "$kde_libs_prefix" -a -n "$given_prefix"; then
+  # And if so, warn when they don't match
+  if test "$kde_libs_prefix" != "$given_prefix"; then
+    # And if kde doesn't know about the prefix yet
+    echo ":"`kde-config --path exe`":" | grep ":$given_prefix/bin/:" 2>&1 >/dev/null
+    if test $? -ne 0; then
+      echo ""
+      echo "Warning: you chose to install this package in $given_prefix,"
+      echo "but KDE was found in $kde_libs_prefix."
+      echo "For this to work, you will need to tell KDE about the new prefix, by ensuring"
+      echo "that KDEDIRS contains it, e.g. export KDEDIRS=$given_prefix:$kde_libs_prefix"
+      echo "Then restart KDE."
+      echo ""
+    fi
+  fi
+fi
+
+if test x$GXX = "xyes" -a x$kde_have_gcc_visibility = "xyes" -a x$kde_cv_val_qt_gcc_visibility_patched = "xno"; then
+  echo ""
+  echo "Your GCC supports symbol visibility, but the patch for Qt supporting visibility"
+  echo "was not included. Therefore, GCC symbol visibility support remains disabled."
+  echo ""
+  echo "For better performance, consider including the Qt visibility supporting patch"
+  echo "located at:"
+  echo ""
+  echo "http://bugs.kde.org/show_bug.cgi?id=109386"
+  echo ""
+  echo "and recompile all of Qt and KDE. Note, this is entirely optional and"
+  echo "everything will continue to work just fine without it."
+  echo ""
+fi
+
+if test "$all_tests" = "bad"; then
+  if test ! "$cache_file" = "/dev/null"; then
+    echo ""
+    echo "Please remove the file $cache_file after changing your setup"
+    echo "so that configure will find the changes next time."
+    echo ""
+  fi
+else
+  echo ""
+  echo "Good - your configure finished. Start make now"
+  echo ""
+fi
