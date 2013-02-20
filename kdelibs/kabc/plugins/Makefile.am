@@ -1,0 +1,1 @@
+SUBDIRS = file dir ldapkio
