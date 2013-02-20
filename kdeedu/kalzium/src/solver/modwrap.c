@@ -23,6 +23,7 @@
 
 #include <caml/mlvalues.h>
 #include <caml/callback.h>
+#include <caml/alloc.h>
 
 char* solve_equation(const char * eq)
 {
