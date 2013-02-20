@@ -1,0 +1,398 @@
+dnl =======================================================
+dnl FILE: ./admin/configure.in.min
+dnl =======================================================
+
+dnl    This file is part of the KDE libraries/packages
+dnl    Copyright (C) 2001 Stephan Kulow (coolo@kde.org)
+ 
+dnl    This file is free software; you can redistribute it and/or
+dnl    modify it under the terms of the GNU Library General Public
+dnl    License as published by the Free Software Foundation; either
+dnl    version 2 of the License, or (at your option) any later version.
+ 
+dnl    This library is distributed in the hope that it will be useful,
+dnl    but WITHOUT ANY WARRANTY; without even the implied warranty of
+dnl    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+dnl    Library General Public License for more details.
+ 
+dnl    You should have received a copy of the GNU Library General Public License
+dnl    along with this library; see the file COPYING.LIB.  If not, write to
+dnl    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+dnl    Boston, MA 02110-1301, USA.
+
+# Original Author was Kalle@kde.org
+# I lifted it in some mater. (Stephan Kulow)
+# I used much code from Janos Farkas
+
+dnl Process this file with autoconf to produce a configure script.
+
+AC_INIT(acinclude.m4) dnl a source file from your sub dir
+
+dnl This is so we can use kde-common
+AC_CONFIG_AUX_DIR(admin)
+
+dnl This ksh/zsh feature conflicts with `cd blah ; pwd`
+unset CDPATH
+
+dnl Checking host/target/build systems, for make, install etc.
+AC_CANONICAL_SYSTEM 
+dnl Perform program name transformation
+AC_ARG_PROGRAM
+
+dnl Automake doc recommends to do this only here. (Janos)
+AM_INIT_AUTOMAKE(kdeartwork, "3.5.10") dnl searches for some needed programs
+
+KDE_SET_PREFIX
+
+dnl generate the config header
+AM_CONFIG_HEADER(config.h) dnl at the distribution this done
+
+AC_PROG_CC
+AC_PROG_CXX
+AC_EXEEXT
+AC_OBJEXT
+
+dnl Checks for programs.
+AC_CHECK_COMPILERS
+AC_ENABLE_SHARED(yes)
+AC_ENABLE_STATIC(no)
+KDE_PROG_LIBTOOL
+
+dnl for NLS support. Call them in this order!
+dnl WITH_NLS is for the po files
+AM_KDE_WITH_NLS
+
+dnl KDE_USE_QT
+AC_PATH_KDE
+dnl =======================================================
+dnl FILE: configure.in.in
+dnl =======================================================
+
+#MIN_CONFIG
+CXXFLAGS="$CXXFLAGS $KDE_DEFAULT_CXXFLAGS"
+
+dnl Themes are installed by the toplevel Makefile.am
+DO_NOT_COMPILE="$DO_NOT_COMPILE Themes"
+dnl =======================================================
+dnl FILE: ./kscreensaver/configure.in.in
+dnl =======================================================
+
+
+AC_MSG_CHECKING(for Qt with OpenGL support)
+AC_CACHE_VAL(ac_cv_kde_qt_has_opengl,
+[
+  AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+
+  save_CXXFLAGS="$CXXFLAGS"
+  save_LIBS="$LIBS"
+  save_LDFLAGS="$LDFLAGS"
+
+  CXXFLAGS="$CXXFLAGS -I$qt_incdir $all_includes"
+  LDFLAGS="$LDFLAGS -L$qt_libdir $all_libraries $USER_LDFLAGS $KDE_MT_LDFLAGS"
+  LIBS="$LIBS $LIBQT $KDE_MT_LIBS"
+
+  AC_TRY_LINK([
+  #include <qgl.h>
+  ],
+  [
+   (void)new QGLWidget((QWidget*)0, "qgl");
+  ],
+  ac_cv_kde_qt_has_opengl=yes,
+  ac_cv_kde_qt_has_opengl=no)
+
+  CXXFLAGS="$save_CXXFLAGS"
+  LIBS="$save_LIBS"
+  LDFLAGS="$save_LDFLAGS"
+  AC_LANG_RESTORE
+])
+AC_MSG_RESULT($ac_cv_kde_qt_has_opengl)
+
+AC_HAVE_GL( have_gl=yes, have_gl=no )
+
+AM_CONDITIONAL(COMPILE_GL_XSAVERS, test x$have_gl = xyes)
+AM_CONDITIONAL(COMPILE_GL_KSAVERS, test x$have_gl = xyes && test x$ac_cv_kde_qt_has_opengl = xyes) 
+AM_CONDITIONAL(COMPILE_X11_KSAVERS, test "x$ac_x_includes" != x && test "x$ac_x_libraries" != x)
+AM_CONDITIONAL(COMPILE_ARTS_KSAVERS, test x$build_arts = xyes)
+AM_CONDITIONAL(COMPILE_ARTS_GL_KSAVERS, test x$have_gl = xyes && test x$ac_cv_kde_qt_has_opengl = xyes && test x$build_arts = xyes)
+
+AC_ARG_WITH(libart,
+  [AC_HELP_STRING(--with-libart,
+    [enable support for libart @<:@default=check@:>@])],
+  [], with_libart=check)
+
+LIBART=
+if test "x$with_libart" != xno; then
+  KDE_FIND_PATH(libart2-config, LIBART_CONFIG, [${prefix}/bin ${exec_prefix}/bin /usr/local/bin /opt/local/bin], [
+    AC_MSG_WARN([Could not find libart anywhere, check http://www.levien.com/libart/])
+  ])
+
+  if test -n "$LIBART_CONFIG"; then
+    vers=`$LIBART_CONFIG --version 2>/dev/null | awk 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
+    if test -n "$vers" && test "$vers" -ge 2003008; then
+      LIBART_LIBS="`$LIBART_CONFIG --libs`"
+      LIBART_RPATH=
+      for args in $LIBART_LIBS; do
+	  case $args in
+	    -L*)
+	       LIBART_RPATH="$LIBART_RPATH $args"
+	       ;;
+          esac
+      done
+      LIBART_RPATH=`echo $LIBART_RPATH | sed -e "s/-L/-R/g"`
+      LIBART_CFLAGS="`$LIBART_CONFIG --cflags`"
+      LIBART=yes
+
+      AC_DEFINE_UNQUOTED(HAVE_LIBART, 1, [Defines if your system has the libart library])
+    else
+      AC_MSG_WARN([You need at least libart 2.3.8])
+    fi
+  fi
+
+  if test "x$with_libart" != xcheck && test -z "$LIBART"; then
+      AC_MSG_ERROR([--with-libart was given, but test for libart failed])
+  fi
+fi
+
+AC_SUBST(LIBART_LIBS)
+AC_SUBST(LIBART_CFLAGS)
+AC_SUBST(LIBART_RPATH)
+AM_CONDITIONAL(COMPILE_LIBART_KSAVERS, test -n "$LIBART")
+
+
+AC_CHECK_FUNCS(gettimeofday)
+
+AC_HAVE_DPMS()
+dnl =======================================================
+dnl FILE: ./kscreensaver/kxsconfig/configure.in.in
+dnl =======================================================
+
+AC_DEFUN([KDE_CHECK_XSREENSAVER],
+[
+     XSCREENSAVER_CONFIG=NO
+     AC_FIND_FILE($1/flame.xml, [ $xscreensaver_prefixes ], XSCREENSAVER_CONFIG)
+     if test "$XSCREENSAVER_CONFIG" != NO; then
+	XSCREENSAVER_CONFIG="$XSCREENSAVER_CONFIG/$1"
+     fi
+])
+
+
+xscreensaver_prefixes="$exec_prefix $prefix /usr /usr/local /opt/local /usr/X11R6 /usr/X11R6 /opt/kde /opt/kde3 /usr/kde /usr/local/kde /usr/local/xscreensaver /usr/openwin/lib/xscreensaver /etc"
+
+old_IFS=$IFS
+IFS=:
+for path in $PATH; do 
+   case $path in
+      */bin)
+	path=`echo $path | sed -e 's,/bin$,,'`
+	xscreensaver_prefixes="$path $xscreensaver_prefixes"
+        ;;
+   esac
+done
+IFS=$old_IFS
+
+AC_ARG_WITH(xscreensaver,
+  [AC_HELP_STRING(--with-xscreensaver,
+    [enable support for xscreensaver @<:@default=check@:>@])],
+  [], with_xscreensaver=check)
+
+XSCREENSAVER=''
+echo "Searching in $xscreensaver_prefixes"
+if test "x$with_xscreensaver" != xno; then
+  for xsdir in lib$kdelibsuff/xscreensaver lib/xscreensaver \
+               lib$kdelibsuff/misc/xscreensaver lib/misc/xscreensaver \
+               libexec$kdelibsuff/xscreensaver libexec/xscreensaver \
+               bin/xscreensaver-hacks hacks; do
+    test -n "$XSCREENSAVER" && break
+    KDE_FIND_PATH("$xsdir/flame", XSCREENSAVER, [ $xscreensaver_prefixes ])
+  done
+
+  if test "x$with_xscreensaver" != xcheck && test "x$XSCREENSAVER" = x; then
+    AC_MSG_ERROR([--with-xscreensaver was given, but test for xscreensaver failed])
+  fi
+fi
+
+XSCREENSAVER_HACKS_DIR=
+
+if test -n "$XSCREENSAVER"; then
+     XSCREENSAVER_HACKS_DIR=`echo $XSCREENSAVER | sed -e 's,/flame$,,'`
+     AC_DEFINE_UNQUOTED(XSCREENSAVER_HACKS_DIR, "$XSCREENSAVER_HACKS_DIR", [Defines where xscreensaver stores its graphic hacks])
+
+     AC_MSG_CHECKING([for flame.xml])
+     for subdir in lib/xscreensaver/config \
+		   lib/X11/xscreensaver/config \
+		   share/control-center/screensavers \
+		   share/xscreensaver/config \
+                   xscreensaver \
+		   config/control-center-2.0; do
+         KDE_CHECK_XSREENSAVER($subdir)
+         if test "$XSCREENSAVER_CONFIG" != NO; then
+		break
+         fi
+     done
+     AC_MSG_RESULT([$XSCREENSAVER_CONFIG])
+     AC_DEFINE_UNQUOTED(XSCREENSAVER_CONFIG_DIR, "$XSCREENSAVER_CONFIG", 
+	[Defines where xscreensaver stores it's config files])
+fi
+
+AM_CONDITIONAL(include_XSCREENSAVER, test -n "$XSCREENSAVER")
+AC_SUBST(XSCREENSAVER_HACKS_DIR)
+dnl =======================================================
+dnl FILE: ./kwin-styles/configure.in.in
+dnl =======================================================
+
+if test "x$kde_use_qt_mac" = "xyes"; then
+	DO_NOT_COMPILE="$DO_NOT_COMPILE kwin-styles"
+fi
+dnl =======================================================
+dnl FILE: ./kwin-styles/fahrenheit/configure.in.in
+dnl =======================================================
+
+#MIN_CONFIG
+
+dnl PACKAGE set before
+KDE_CREATE_SUBDIRSLIST
+AM_CONDITIONAL(IconThemes_SUBDIR_included, test "x$IconThemes_SUBDIR_included" = xyes)
+AM_CONDITIONAL(emoticons_SUBDIR_included, test "x$emoticons_SUBDIR_included" = xyes)
+AM_CONDITIONAL(icewm_themes_SUBDIR_included, test "x$icewm_themes_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kscreensaver_SUBDIR_included, test "x$kscreensaver_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kwin_styles_SUBDIR_included, test "x$kwin_styles_SUBDIR_included" = xyes)
+AM_CONDITIONAL(kworldclock_SUBDIR_included, test "x$kworldclock_SUBDIR_included" = xyes)
+AM_CONDITIONAL(sounds_SUBDIR_included, test "x$sounds_SUBDIR_included" = xyes)
+AM_CONDITIONAL(styles_SUBDIR_included, test "x$styles_SUBDIR_included" = xyes)
+AM_CONDITIONAL(wallpapers_SUBDIR_included, test "x$wallpapers_SUBDIR_included" = xyes)
+AC_CONFIG_FILES([ Makefile ])
+AC_CONFIG_FILES([ IconThemes/Makefile ])
+AC_CONFIG_FILES([ emoticons/Makefile ])
+AC_CONFIG_FILES([ emoticons/BoxedEmoticonSet/Makefile ])
+AC_CONFIG_FILES([ emoticons/GroupWise/Makefile ])
+AC_CONFIG_FILES([ emoticons/KMess/Makefile ])
+AC_CONFIG_FILES([ emoticons/KMess-Blue/Makefile ])
+AC_CONFIG_FILES([ emoticons/KMess-Cartoon/Makefile ])
+AC_CONFIG_FILES([ emoticons/KMess-Violet/Makefile ])
+AC_CONFIG_FILES([ emoticons/ccmathteam.com/Makefile ])
+AC_CONFIG_FILES([ emoticons/greggman.com/Makefile ])
+AC_CONFIG_FILES([ emoticons/phpBB/Makefile ])
+AC_CONFIG_FILES([ emoticons/plain/Makefile ])
+AC_CONFIG_FILES([ emoticons/redones/Makefile ])
+AC_CONFIG_FILES([ emoticons/set1/Makefile ])
+AC_CONFIG_FILES([ icewm-themes/Makefile ])
+AC_CONFIG_FILES([ icewm-themes/MenschMaschine/Makefile ])
+AC_CONFIG_FILES([ icewm-themes/Model/Makefile ])
+AC_CONFIG_FILES([ kscreensaver/Makefile ])
+AC_CONFIG_FILES([ kscreensaver/kdesavers/Makefile ])
+AC_CONFIG_FILES([ kscreensaver/kdesavers/data/Makefile ])
+AC_CONFIG_FILES([ kscreensaver/kpartsaver/Makefile ])
+AC_CONFIG_FILES([ kscreensaver/kxsconfig/Makefile ])
+AC_CONFIG_FILES([ kscreensaver/xsavers/Makefile ])
+AC_CONFIG_FILES([ kwin-styles/Makefile ])
+AC_CONFIG_FILES([ kwin-styles/cde/Makefile ])
+AC_CONFIG_FILES([ kwin-styles/cde/config/Makefile ])
+AC_CONFIG_FILES([ kwin-styles/fahrenheit/Makefile ])
+AC_CONFIG_FILES([ kwin-styles/fahrenheit/client/Makefile ])
+AC_CONFIG_FILES([ kwin-styles/fahrenheit/client/pics/Makefile ])
+AC_CONFIG_FILES([ kwin-styles/glow/Makefile ])
+AC_CONFIG_FILES([ kwin-styles/glow/config/Makefile ])
+AC_CONFIG_FILES([ kwin-styles/glow/themes/Makefile ])
+AC_CONFIG_FILES([ kwin-styles/glow/themes/default/Makefile ])
+AC_CONFIG_FILES([ kwin-styles/glow/themes/glass/Makefile ])
+AC_CONFIG_FILES([ kwin-styles/glow/themes/glass_huge/Makefile ])
+AC_CONFIG_FILES([ kwin-styles/glow/themes/glass_large/Makefile ])
+AC_CONFIG_FILES([ kwin-styles/glow/themes/glass_verylarge/Makefile ])
+AC_CONFIG_FILES([ kwin-styles/glow/themes/square/Makefile ])
+AC_CONFIG_FILES([ kwin-styles/icewm/Makefile ])
+AC_CONFIG_FILES([ kwin-styles/icewm/config/Makefile ])
+AC_CONFIG_FILES([ kwin-styles/icewm/icewm-themes/Makefile ])
+AC_CONFIG_FILES([ kwin-styles/kde1/Makefile ])
+AC_CONFIG_FILES([ kwin-styles/kstep/Makefile ])
+AC_CONFIG_FILES([ kwin-styles/openlook/Makefile ])
+AC_CONFIG_FILES([ kwin-styles/riscos/Makefile ])
+AC_CONFIG_FILES([ kwin-styles/smooth-blend/Makefile ])
+AC_CONFIG_FILES([ kwin-styles/smooth-blend/client/Makefile ])
+AC_CONFIG_FILES([ kwin-styles/smooth-blend/client/config/Makefile ])
+AC_CONFIG_FILES([ kwin-styles/system/Makefile ])
+AC_CONFIG_FILES([ kworldclock/Makefile ])
+AC_CONFIG_FILES([ kworldclock/alt/Makefile ])
+AC_CONFIG_FILES([ kworldclock/bio/Makefile ])
+AC_CONFIG_FILES([ kworldclock/caida/Makefile ])
+AC_CONFIG_FILES([ kworldclock/caida_bw/Makefile ])
+AC_CONFIG_FILES([ kworldclock/mggd/Makefile ])
+AC_CONFIG_FILES([ kworldclock/rainfall/Makefile ])
+AC_CONFIG_FILES([ sounds/Makefile ])
+AC_CONFIG_FILES([ styles/Makefile ])
+AC_CONFIG_FILES([ styles/dotnet/Makefile ])
+AC_CONFIG_FILES([ styles/phase/Makefile ])
+AC_CONFIG_FILES([ styles/phase/config/Makefile ])
+AC_CONFIG_FILES([ wallpapers/Makefile ])
+AC_OUTPUT
+if test x$have_gl = xno; then
+  echo ""
+  echo "You are missing"
+  if test "$ac_cv_header_GL_gl_h" = "no"; then
+    echo "    - OpenGL (mesa)"
+  fi
+  if test "$ac_cv_header_GL_glu_h" = "no"; then
+    echo "    - GLU"
+  fi
+  if test "$ac_cv_header_GL_glut_h" = "no"; then
+    echo "    - GLUT"
+  fi
+  echo "OpenGL support has been disabled."
+  echo "Some of the screensavers wont be compiled."
+  echo ""
+  all_tests=bad
+fi
+if test "x$with_xscreensaver" = xcheck && test "$XSCREENSAVER" = "NO"; then
+  echo ""
+  echo "xscreensaver could not be detected on your system."
+  echo "Check www.jwz.org/xscreensaver if you're loving to"
+  echo "have tons of screensavers in KDE"
+  echo ""
+  all_tests=bad
+fi
+
+# Check if KDE_SET_PREFIX was called, and --prefix was passed to configure
+if test -n "$kde_libs_prefix" -a -n "$given_prefix"; then
+  # And if so, warn when they don't match
+  if test "$kde_libs_prefix" != "$given_prefix"; then
+    # And if kde doesn't know about the prefix yet
+    echo ":"`kde-config --path exe`":" | grep ":$given_prefix/bin/:" 2>&1 >/dev/null
+    if test $? -ne 0; then
+      echo ""
+      echo "Warning: you chose to install this package in $given_prefix,"
+      echo "but KDE was found in $kde_libs_prefix."
+      echo "For this to work, you will need to tell KDE about the new prefix, by ensuring"
+      echo "that KDEDIRS contains it, e.g. export KDEDIRS=$given_prefix:$kde_libs_prefix"
+      echo "Then restart KDE."
+      echo ""
+    fi
+  fi
+fi
+
+if test x$GXX = "xyes" -a x$kde_have_gcc_visibility = "xyes" -a x$kde_cv_val_qt_gcc_visibility_patched = "xno"; then
+  echo ""
+  echo "Your GCC supports symbol visibility, but the patch for Qt supporting visibility"
+  echo "was not included. Therefore, GCC symbol visibility support remains disabled."
+  echo ""
+  echo "For better performance, consider including the Qt visibility supporting patch"
+  echo "located at:"
+  echo ""
+  echo "http://bugs.kde.org/show_bug.cgi?id=109386"
+  echo ""
+  echo "and recompile all of Qt and KDE. Note, this is entirely optional and"
+  echo "everything will continue to work just fine without it."
+  echo ""
+fi
+
+if test "$all_tests" = "bad"; then
+  if test ! "$cache_file" = "/dev/null"; then
+    echo ""
+    echo "Please remove the file $cache_file after changing your setup"
+    echo "so that configure will find the changes next time."
+    echo ""
+  fi
+else
+  echo ""
+  echo "Good - your configure finished. Start make now"
+  echo ""
+fi

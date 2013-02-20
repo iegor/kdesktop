@@ -1,0 +1,11 @@
+#ifndef RESOURCES_H
+#define RESOURCES_H
+
+#define DEFAULT_CLOSE_BUTTON_COLOR Qt::red
+#define DEFAULT_MAXIMIZE_BUTTON_COLOR Qt::yellow
+#define DEFAULT_ICONIFY_BUTTON_COLOR Qt::green
+#define DEFAULT_HELP_BUTTON_COLOR Qt::white
+#define DEFAULT_STICKY_BUTTON_COLOR Qt::white
+
+#endif
+
