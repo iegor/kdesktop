@@ -47,6 +47,11 @@ KDE_SET_PREFIX
 dnl generate the config header
 AM_CONFIG_HEADER(config.h) dnl at the distribution this done
 
+AC_PROG_CC
+AC_PROG_CXX
+AC_EXEEXT
+AC_OBJEXT
+
 dnl Checks for programs.
 AC_CHECK_COMPILERS
 AC_ENABLE_SHARED(yes)
@@ -110,8 +115,8 @@ AC_DEFUN([KDE_CHECK_GNOKII],
        [ LIB_GNOKII="-lgnokii $LIB_BLUETOOTH" ],
        [
     	AC_CHECK_LIB(gnokii, gn_cfg_get,
-       	[ LIB_GNOKII="-lgnokii -lintl $LIB_BLUETOOTH" ],
-       	[], $all_libraries -lintl -lXpm -lX11 $LIB_BLUETOOTH )
+       	[ LIB_GNOKII="-lgnokii $LIB_BLUETOOTH" ],
+       	[], $all_libraries -lXpm -lX11 $LIB_BLUETOOTH )
        ],
        $all_libraries -lXpm -lX11 $LIB_BLUETOOTH )
   AC_SUBST(LIB_GNOKII)
@@ -404,9 +409,7 @@ export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:$prefix/lib/pkgconfig:/usr/local/lib/p
 
 
 HAVE_OPENSYNC=0
-HAVE_OPENSYNC_ENGINE=0
-PKG_CHECK_MODULES(OPENSYNC, opensync-1.0 >= 0.19, HAVE_OPENSYNC=1,HAVE_OPENSYNC=0)
-PKG_CHECK_MODULES(OPENSYNCENGINE, osengine-1.0 >= 0.19, HAVE_OPENSYNC_ENGINE=1, HAVE_OPENSYNC_ENGINE=0)
+PKG_CHECK_MODULES(OPENSYNC, opensync-1.0 >= 0.33, HAVE_OPENSYNC=1,HAVE_OPENSYNC=0)
 PKG_CHECK_MODULES(LIBXML,   libxml-2.0, , HAVE_OPENSYNC=0)
 PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.6, , HAVE_OPENSYNC=0)
 
@@ -427,9 +430,9 @@ AC_SUBST(OPENSYNC_FORMATSDIR)
 AC_SUBST(OPENSYNC_HEADERDIR)
 
 dnl Check if we can compile KitchenSync
-AM_CONDITIONAL(compile_kitchensync, test "$HAVE_OPENSYNC" = 1 -a "$HAVE_OPENSYNC_ENGINE" = 1)
+AM_CONDITIONAL(compile_kitchensync, test "$HAVE_OPENSYNC" = 1)
 
-if test "$HAVE_OPENSYNC" = 1 -a "$HAVE_OPENSYNC_ENGINE" = 1 ; then
+if test "$HAVE_OPENSYNC" = 1; then
     AC_MSG_RESULT([found])
 else
     AC_MSG_RESULT([not found])
@@ -504,8 +507,30 @@ if test "x$kde_enable_inotify" = "xyes"; then
   AC_LANG_RESTORE
   ])
 
-  if test "$kde_cv_have_inotify" = "yes" ; then
+	AC_CACHE_VAL(kde_cv_have_sys_inotify,
+	[
+		kde_cv_have_sys_inotify=no
+		AC_LANG_SAVE
+		AC_LANG_C
+
+		AC_TRY_COMPILE(
+		[
+			#include <sys/inotify.h>
+		],
+		[
+			#ifndef IN_ALL_EVENTS
+				#error no inotify notifcation
+			#endif
+		], kde_cv_have_sys_inotify=yes,kde_cv_have_sys_inotify=no)
+
+	AC_LANG_RESTORE
+	])
+
+  if test "$kde_cv_have_inotify" = "yes" -o "$kde_cv_have_sys_inotify" = "yes" ; then
     AC_DEFINE_UNQUOTED(HAVE_INOTIFY, 1, [Define if your system has Linux Inode Notification])
+		if test "$kde_cv_have_sys_inotify" = "yes"; then
+			AC_DEFINE_UNQUOTED(HAVE_SYS_INOTIFY, 1, [Define if your system has glibc support for inotofy])
+		fi
     AC_MSG_RESULT(yes)
   else
     AC_MSG_RESULT(no)
@@ -1842,6 +1867,7 @@ AC_CONFIG_FILES([ indexlib/tests/Makefile ])
 AC_CONFIG_FILES([ kabc/Makefile ])
 AC_CONFIG_FILES([ kabc/frontend/Makefile ])
 AC_CONFIG_FILES([ kabc/kabc2mutt/Makefile ])
+AC_CONFIG_FILES([ kabc/kabcdistlistupdater/Makefile ])
 AC_CONFIG_FILES([ kaddressbook/Makefile ])
 AC_CONFIG_FILES([ kaddressbook/common/Makefile ])
 AC_CONFIG_FILES([ kaddressbook/csv-templates/Makefile ])
@@ -2114,10 +2140,10 @@ if test "x$with_sasl" = xcheck && test -z "$SASL2_LIBS"; then
   echo ""
   all_tests=bad
 fi
-if test "$HAVE_OPENSYNC" = 0 -o "$HAVE_OPENSYNC_ENGINE" = 0; then
+if test "$HAVE_OPENSYNC" = 0; then
 	echo ""
 	echo "You're missing a compatible version of libopensync."
-        echo "Version 0.19 or greater is needed."
+        echo "Version 0.31 or greater is needed."
 	echo "kitchensync will not be built."
 	echo ""
 	all_tests=bad
