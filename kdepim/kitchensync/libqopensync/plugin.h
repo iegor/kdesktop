@@ -30,7 +30,7 @@ namespace QSync {
 
 class Plugin
 {
-  friend class Environment;
+  friend class PluginEnv;
   friend class Member;
 
   public:

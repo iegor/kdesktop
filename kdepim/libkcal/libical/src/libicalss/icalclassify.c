@@ -153,14 +153,14 @@ void icalssutil_get_parts(icalcomponent* c,
     parts->reply_partstat = ICAL_PARTSTAT_NONE;
 
     if(c == 0){
-	return;
+	    return;
     }
 
     parts->c = c;
 
     p = icalcomponent_get_first_property(c,ICAL_METHOD_PROPERTY);
     if(p!=0){
-	parts->method = icalproperty_get_method(p);
+	    parts->method = icalproperty_get_method(p);
     }
 
     inner = icalcomponent_get_first_real_component(c);
@@ -177,47 +177,45 @@ void icalssutil_get_parts(icalcomponent* c,
 
     p = icalcomponent_get_first_property(inner,ICAL_SEQUENCE_PROPERTY);    
     if(p!=0){
-	parts->sequence = icalproperty_get_sequence(p);
+	    parts->sequence = icalproperty_get_sequence(p);
     }
 
-    p = icalcomponent_get_first_property(inner,ICAL_UID_PROPERTY);
-    if(p!=0){
-      const char *p_uid = icalproperty_get_uid(p);
-      if (p_uid!=0) {
-        parts->uid = strdup(p_uid);
-      }
-    }
-
-    p = icalcomponent_get_first_property(inner,ICAL_RECURRENCEID_PROPERTY);
-    if(p!=0){
-	parts->recurrence_id = icalproperty_get_recurrenceid(p);
-    }
-
-    p = icalcomponent_get_first_property(inner,ICAL_DTSTAMP_PROPERTY);
-    if(p!=0){
-	parts->dtstamp = icalproperty_get_dtstamp(p);
-    }
-
-    if(parts->method==ICAL_METHOD_REPLY){
-	icalparameter *param;
-	p  = icalcomponent_get_first_property(inner,ICAL_ATTENDEE_PROPERTY);
-
-	if(p!=0){
-	    const char *attendee = 0;
-	    param = icalproperty_get_first_parameter(p,ICAL_PARTSTAT_PARAMETER);
-	    
-	    if(param != 0){
-		parts->reply_partstat = 
-		    icalparameter_get_partstat(param);
-	    }
-	    attendee = icalproperty_get_attendee(p);
-	    if ( attendee )
-		parts->reply_attendee = strdup( attendee );
+	p = icalcomponent_get_first_property(inner,ICAL_UID_PROPERTY);
+	if(p!=0) {
+		const char *p_uid = icalproperty_get_uid(p);
+		if (p_uid!=0) {
+			parts->uid = strdup(p_uid);
+		}
 	}
 
-    }    
+	p = icalcomponent_get_first_property(inner,ICAL_RECURRENCEID_PROPERTY);
+	if(p!=0) {
+		parts->recurrence_id = icalproperty_get_recurrenceid(p);
+	}
 
+	p = icalcomponent_get_first_property(inner,ICAL_DTSTAMP_PROPERTY);
+	if(p!=0) {
+		parts->dtstamp = icalproperty_get_dtstamp(p);
+	}
 
+	if(parts->method==ICAL_METHOD_REPLY){
+		icalparameter *param;
+		p  = icalcomponent_get_first_property(inner,ICAL_ATTENDEE_PROPERTY);
+		
+		if(p!=0) {
+			const char *attendee = 0;
+			param = icalproperty_get_first_parameter(p,ICAL_PARTSTAT_PARAMETER);
+			
+			if(param != 0) {
+				parts->reply_partstat = icalparameter_get_partstat(param);
+			}
+
+			attendee = icalproperty_get_attendee(p);
+
+			if ( attendee )
+				parts->reply_attendee = strdup( attendee );
+		}
+	}
 }
 
 

@@ -84,7 +84,6 @@ CategoryEditDialog::CategoryEditDialog( KPimPrefs *prefs, QWidget* parent,
   d->mDeleteButton = new QPushButton( i18n( "Remove" ), widget );
   layout->addWidget( d->mDeleteButton, 2, 1 );
 
-
   fillList();
 
   connect( d->mAddButton, SIGNAL( clicked() ), this, SLOT( add() ) );

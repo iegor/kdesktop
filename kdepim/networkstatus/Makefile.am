@@ -3,7 +3,7 @@
 METASOURCES = AUTO
 
 kde_module_LTLIBRARIES = kded_networkstatus.la 
-noinst_LTLIBRARIES = libnetworkstatus.la libconnectionmanager.la
+lib_LTLIBRARIES = libnetworkstatus.la libconnectionmanager.la
 
 libnetworkstatus_la_LIBADD = $(LIB_KDECORE)
 libnetworkstatus_la_LDFLAGS = $(all_libraries)
@@ -24,8 +24,10 @@ kded_networkstatus_la_LDFLAGS = $(all_libraries) -module -avoid-version
 servicesdir = $(kde_servicesdir)/kded
 services_DATA = networkstatus.desktop
 
-noinst_HEADERS = serviceiface.h networkstatuscommon.h serviceifaceimpl.h \
-	network.h clientifaceimpl.h provideriface.h testservice.h connectionmanager.h
+noinst_HEADERS = serviceifaceimpl.h \
+	network.h clientifaceimpl.h testservice.h connectionmanager.h
+
+include_HEADERS = serviceiface.h provideriface.h networkstatuscommon.h
 
 bin_PROGRAMS = networkstatustestservice
 

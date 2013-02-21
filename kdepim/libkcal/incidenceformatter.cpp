@@ -583,9 +583,6 @@ QString IncidenceFormatter::extensiveDisplayString( IncidenceBase *incidence )
     return QString::null;
 }
 
-
-
-
 /*******************************************************************
  *  Helper functions for the body part formatter of kmail
  *******************************************************************/

@@ -117,21 +117,21 @@ typedef struct icaltime_span icaltime_span;
  */
 struct icaltimetype
 {
-	int year;	/**< Actual year, e.g. 2001. */
-	int month;	/**< 1 (Jan) to 12 (Dec). */
-	int day;
-	int hour;
-	int minute;
-	int second;
+    int year;	/**< Actual year, e.g. 2001. */
+    int month;  /**< 1 (Jan) to 12 (Dec). */
+    int day;
+    int hour;
+    int minute;
+    int second;
 
-	int is_utc;     /**< 1-> time is in UTC timezone */
+    int is_utc;     /**< 1-> time is in UTC timezone */
 
-	int is_date;    /**< 1 -> interpret this as date. */
-   
-	int is_daylight; /**< 1 -> time is in daylight savings time. */
-   
-	icaltimezone *zone;	/**< timezone */
-};	
+    int is_date;    /**< 1 -> interpret this as date. */
+
+    int is_daylight; /**< 1 -> time is in daylight savings time. */
+
+    icaltimezone *zone; /**< timezone */
+};
 
 typedef struct icaltimetype icaltimetype;
 

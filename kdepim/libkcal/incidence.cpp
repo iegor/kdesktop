@@ -30,10 +30,13 @@
 
 using namespace KCal;
 
-Incidence::Incidence() :
-  IncidenceBase(),
-  mRelatedTo(0), mStatus(StatusNone), mSecrecy(SecrecyPublic),
-  mPriority(0), mRecurrence(0)
+Incidence::Incidence()
+:   IncidenceBase(),
+    mRelatedTo(0),
+    mStatus(StatusNone),
+    mSecrecy(SecrecyPublic),
+    mPriority(0),
+    mRecurrence(0)
 {
   recreate();
 
@@ -375,9 +378,7 @@ void Incidence::removeRelation(Incidence *event)
   mRelatedToUid=QString();
 }
 
-
 // %%%%%%%%%%%%  Recurrence-related methods %%%%%%%%%%%%%%%%%%%%
-
 
 Recurrence *Incidence::recurrence() const
 {

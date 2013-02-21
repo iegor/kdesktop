@@ -3,8 +3,6 @@
  FILE: icalarray.h
  CREATOR: Damon Chaplin 07 March 2001
 
-
-
  (C) COPYRIGHT 2001, Ximian, Inc.
 
  This program is free software; you can redistribute it and/or modify
@@ -17,10 +15,7 @@
 
     The Mozilla Public License Version 1.0. You may obtain a copy of
     the License at http://www.mozilla.org/MPL/
-
-
 ======================================================================*/
-
 
 #ifndef ICALARRAY_H
 #define ICALARRAY_H
@@ -40,22 +35,11 @@ struct _icalarray {
     void		*data;
 };
 
-
-
-icalarray *icalarray_new		(int		 element_size,
-					 int		 increment_size);
-void	   icalarray_free		(icalarray	*array);
-
-void	   icalarray_append		(icalarray	*array,
-					 const void		*element);
-void	   icalarray_remove_element_at	(icalarray	*array,
-					 int		 position);
-
-void	  *icalarray_element_at		(icalarray	*array,
-					 int		 position);
-
-void	   icalarray_sort		(icalarray	*array,
-					 int	       (*compare) (const void *, const void *));
-
+icalarray *icalarray_new(int element_size, int increment_size);
+void icalarray_free(icalarray *array);
+void icalarray_append(icalarray *array, const void *element);
+void icalarray_remove_element_at(icalarray *array, int position);
+void *icalarray_element_at(icalarray *array, int position);
+void icalarray_sort(icalarray *array, int (*compare)(const void*, const void*));
 
 #endif /* ICALARRAY_H */
