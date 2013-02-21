@@ -4,9 +4,8 @@
 
 
  (C) COPYRIGHT 2000, Eric Busboom <eric@softwarestudio.org>
-     http://www.softwarestudio.org
+    http://www.softwarestudio.org
 ======================================================================*/
-
 
 #ifndef __PVL_H__
 #define __PVL_H__
@@ -27,8 +26,6 @@ typedef struct pvl_elem_t
 	struct pvl_elem_t *next;	/**< Next element */
 	struct pvl_elem_t *prior;	/**< Prior element */
 } pvl_elem_t;
-
-
 
 /**
  * This global is incremented for each call to pvl_new_element(); it gives each
@@ -76,7 +73,6 @@ void* pvl_data(pvl_elem);
 #define pvl_data(x) x==0 ? 0 : ((struct pvl_elem_t *)x)->d;
 #endif
 
-
 /* Find an element for which a function returns true */
 typedef int (*pvl_findf)(void* a, void* b); /*a is list elem, b is other data*/
 pvl_elem pvl_find(pvl_list l,pvl_findf f,void* v);
@@ -89,10 +85,4 @@ pvl_elem pvl_find_next(pvl_list l,pvl_findf f,void* v);
 typedef void (*pvl_applyf)(void* a, void* b);
 void pvl_apply(pvl_list l,pvl_applyf f, void *v);
 
-
 #endif /* __PVL_H__ */
-
-
-
-
-

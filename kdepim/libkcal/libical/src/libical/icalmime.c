@@ -193,7 +193,7 @@ icalcomponent* icalmime_parse(char* (*get_string)(char *s, size_t size,
     for(i = 0; i <NUM_PARTS && parts[i].header.major != SSPM_NO_MAJOR_TYPE ; i++){
 
 #define TMPSZ 1024
-	char mimetype[TMPSZ];			       
+	char mimetype[TMPSZ];
 	const char* major = sspm_major_type_string(parts[i].header.major);
 	const char* minor = sspm_minor_type_string(parts[i].header.minor);
 

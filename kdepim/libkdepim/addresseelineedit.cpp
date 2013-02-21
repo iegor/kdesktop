@@ -96,11 +96,9 @@ static bool itemIsHeader( const QListBoxItem* item )
   return item && !item->text().startsWith( s_completionItemIndentString );
 }
 
-
-
-AddresseeLineEdit::AddresseeLineEdit( QWidget* parent, bool useCompletion,
-                                      const char *name )
-  : ClickLineEdit( parent, QString::null, name ), DCOPObject( newLineEditDCOPObjectName() )
+AddresseeLineEdit::AddresseeLineEdit( QWidget* parent, bool useCompletion, const char *name )
+: ClickLineEdit( parent, QString::null, name )
+, DCOPObject( newLineEditDCOPObjectName() )
 {
   m_useCompletion = useCompletion;
   m_completionInitialized = false;
@@ -113,7 +111,6 @@ AddresseeLineEdit::AddresseeLineEdit( QWidget* parent, bool useCompletion,
   if ( m_useCompletion )
     s_addressesDirty = true;
 }
-
 
 void AddresseeLineEdit::init()
 {
@@ -229,68 +226,64 @@ void AddresseeLineEdit::keyPressEvent( QKeyEvent *e )
 
 void AddresseeLineEdit::insert( const QString &t )
 {
-  if ( !m_smartPaste ) {
-    KLineEdit::insert( t );
-    return;
-  }
+    if(!m_smartPaste) {
+        KLineEdit::insert(t);
+        return;
+    }
 
-  //kdDebug(5300) << "     AddresseeLineEdit::insert( \"" << t << "\" )" << endl;
+    //kdDebug(5300) << "     AddresseeLineEdit::insert( \"" << t << "\" )" << endl;
 
-  QString newText = t.stripWhiteSpace();
-  if ( newText.isEmpty() )
-    return;
+    QString newText = t.stripWhiteSpace();
+    if (newText.isEmpty()) return;
 
-  // remove newlines in the to-be-pasted string
-  QStringList lines = QStringList::split( QRegExp("\r?\n"), newText, false );
-  for ( QStringList::iterator it = lines.begin();
-       it != lines.end(); ++it ) {
-    // remove trailing commas and whitespace
-    (*it).remove( QRegExp(",?\\s*$") );
-  }
-  newText = lines.join( ", " );
+    // remove newlines in the to-be-pasted string
+    QStringList lines = QStringList::split(QRegExp("\r?\n"), newText, false);
+    for(QStringList::iterator it = lines.begin(); it != lines.end(); ++it) {
+        // remove trailing commas and whitespace
+        (*it).remove( QRegExp(",?\\s*$") );
+    }
+    newText = lines.join(", ");
 
-  if ( newText.startsWith("mailto:") ) {
-    KURL url( newText );
-    newText = url.path();
-  }
-  else if ( newText.find(" at ") != -1 ) {
-    // Anti-spam stuff
-    newText.replace( " at ", "@" );
-    newText.replace( " dot ", "." );
-  }
-  else if ( newText.find("(at)") != -1 ) {
-    newText.replace( QRegExp("\\s*\\(at\\)\\s*"), "@" );
-  }
+    if(newText.startsWith("mailto:")) {
+        KURL url( newText );
+        newText = url.path();
+    }
+    else if(newText.find(" at ") != -1) {
+        // Anti-spam stuff
+        newText.replace( " at ", "@" );
+        newText.replace( " dot ", "." );
+    }
+    else if(newText.find("(at)") != -1) {
+        newText.replace( QRegExp("\\s*\\(at\\)\\s*"), "@" );
+    }
 
-  QString contents = text();
-  int start_sel = 0;
-  int end_sel = 0;
-  int pos = cursorPosition( );
-  if ( getSelection( &start_sel, &end_sel ) ) {
-    // Cut away the selection.
-    if ( pos > end_sel )
-      pos -= (end_sel - start_sel);
-    else if ( pos > start_sel )
-      pos = start_sel;
-    contents = contents.left( start_sel ) + contents.right( end_sel + 1 );
-  }
+    QString contents = text();
+    int start_sel = 0;
+    int pos = cursorPosition();
+    if(hasSelectedText()) {
+        // Cut away the selection.
+        start_sel = selectionStart();
+        pos = start_sel;
+        contents = contents.left(start_sel) + contents.right(start_sel + selectedText().length());
+    }
 
-  int eot = contents.length();
-  while ((eot > 0) && contents[ eot - 1 ].isSpace() ) eot--;
-  if ( eot == 0 )
-    contents = QString::null;
-  else if ( pos >= eot ) {
-    if ( contents[ eot - 1 ] == ',' )
-      eot--;
-    contents.truncate( eot );
-    contents += ", ";
-    pos = eot + 2;
-  }
+    int eot = contents.length();
 
-  contents = contents.left( pos ) + newText + contents.mid( pos );
-  setText( contents );
-  setEdited( true );
-  setCursorPosition( pos + newText.length() );
+    while((eot > 0) && contents[eot-1].isSpace()) eot--;
+
+    if (eot == 0)
+        contents = QString::null;
+    else if (pos >= eot) {
+        if (contents[ eot - 1 ] == ',') eot--;
+        contents.truncate(eot);
+        contents += ", ";
+        pos = eot + 2;
+    }
+
+    contents = contents.left(pos) + newText + contents.mid(pos);
+    setText(contents);
+    setEdited(true);
+    setCursorPosition(pos + newText.length());
 }
 
 void AddresseeLineEdit::setText( const QString & text )
@@ -539,8 +532,10 @@ void AddresseeLineEdit::loadContacts()
       int weight = config.readNumEntry( resource->identifier(), 60 );
       s_completionSources->append( resource->resourceName() );
       KABC::Resource::Iterator it;
-      for ( it = resource->begin(); it != resource->end(); ++it )
-        addContact( *it, weight, s_completionSources->size()-1 );
+        if(resource->type() != "ldapkio") {
+            for(it = resource->begin(); it != resource->end(); ++it)
+                addContact(*it, weight, s_completionSources->size()-1);
+        }
     }
   }
 
