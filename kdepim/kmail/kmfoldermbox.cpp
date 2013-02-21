@@ -994,7 +994,7 @@ if( fileD1.open( IO_WriteOnly ) ) {
   if (len <= 0)
   {
     kdDebug(5006) << "Message added to folder `" << name() << "' contains no data. Ignoring it." << endl;
-		if(opened) close("mboxaddMsg");
+		if(folder()->isOpened()) close("mboxaddMsg");
     return 0;
   }
 
@@ -1019,7 +1019,7 @@ if( fileD1.open( IO_WriteOnly ) ) {
   fseek(mStream,0,SEEK_END); // this is needed on solaris and others
   int error = ferror(mStream);
   if (error) {
-		if(opened) close("mboxaddMsg");
+		if(folder()->isOpened()) close("mboxaddMsg");
     return error;
 	}
 
@@ -1138,7 +1138,7 @@ if( fileD1.open( IO_WriteOnly ) ) {
 
   if (aIndex_ret) *aIndex_ret = idx;
   emitMsgAddedSignals(idx);
-	if(opened) close("mboxaddMsg");
+	if(folder()->isOpened()) close("mboxaddMsg");
 
   // All streams have been flushed without errors if we arrive here
   // Return success!

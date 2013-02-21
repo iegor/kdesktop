@@ -433,7 +433,7 @@ if( fileD0.open( IO_WriteOnly ) ) {
   if (moveInternal(tmp_file, new_loc, filename, aMsg->status()).isNull())
   {
     file.remove();
-		if(opened) close("maildir");
+		if(folder()->isOpened()) close("maildir");
     return -1;
   }
 
@@ -530,7 +530,7 @@ if( fileD0.open( IO_WriteOnly ) ) {
   emitMsgAddedSignals(idx);
   needsCompact = true;
 
-	if(opened) close("maildir");
+	if(folder()->isOpened()) close("maildir");
 
 /*
 QFile fileD1( "testdat_xx-kmfoldermaildir-1" );
