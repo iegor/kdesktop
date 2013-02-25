@@ -62,7 +62,7 @@ public:
   /** If the message is being filtered  */
   static bool filtering( Q_UINT32 );
   static void setFiltering( Q_UINT32, bool filtering );
-  static bool filtering( const KMMsgBase* );
+//   static bool filtering( const KMMsgBase* );
   static void setFiltering( const KMMsgBase*, bool filtering );
   /** The folder this message is to be moved into once
       filtering is finished, or null if the message is not

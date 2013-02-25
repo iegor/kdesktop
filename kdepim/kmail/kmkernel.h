@@ -153,7 +153,6 @@ public:
                        const QString &body,bool hidden);
 
   /** DCOP call used to set the default transport. */
-
   void setDefaultTransport( const QString & transport );
 
   /** DCOP call used by the Kontact plugin to create a new message. */
@@ -256,8 +255,7 @@ public:
                const QString &bcc, const QString &subj, const QString &body,
                const KURL &messageFile, const KURL::List &attach,
                const QCStringList &customHeaders);
-  void byteArrayToRemoteFile(const QByteArray&, const KURL&,
-			     bool overwrite = FALSE);
+  void byteArrayToRemoteFile(const QByteArray&, const KURL&, bool overwrite = FALSE);
   bool folderIsDraftOrOutbox( const KMFolder * );
   bool folderIsDrafts( const KMFolder * );
   bool folderIsTemplates( const KMFolder * );

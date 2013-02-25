@@ -54,10 +54,10 @@ void MessageProperty::setFiltering( Q_UINT32 serNum, bool filter )
     sFolders.remove(serNum);
 }
 
-bool MessageProperty::filtering( const KMMsgBase *msgBase )
-{
-  return filtering( msgBase->getMsgSerNum() );
-}
+// bool MessageProperty::filtering( const KMMsgBase *msgBase )
+// {
+//   return filtering( msgBase->getMsgSerNum() );
+// }
 
 void MessageProperty::setFiltering( const KMMsgBase *msgBase, bool filter )
 {
