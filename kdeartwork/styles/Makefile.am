@@ -1,1 +1,1 @@
-SUBDIRS = dotnet phase
+SUBDIRS = dotnet phase polyester qindustrial
