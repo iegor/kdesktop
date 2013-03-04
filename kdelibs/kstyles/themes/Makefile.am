@@ -3,7 +3,7 @@ kstylethemesdata_DATA = qtplatinum.themerc qtcde.themerc qtmotif.themerc qtwindo
 	qtsgi.themerc qtmotifplus.themerc\
 	highcolor.themerc \
 	default.themerc b3.themerc light-v2.themerc \
-	light-v3.themerc keramik.themerc
+	light-v3.themerc keramik.themerc beos.themerc
 kstylethemesdatadir = $(kde_datadir)/kstyle/themes
 
 EXTRA_DIST = $(kstylethemesdata_DATA)
