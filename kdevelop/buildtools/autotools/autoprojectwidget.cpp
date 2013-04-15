@@ -1,3 +1,4 @@
+//kate: indent-mode csands; tab-width 4; space-indent off;
 /*
    KDevelop Autotools Support
    Copyright (c) 2001-2002 by Bernd Gehrmann <bernd@kdevelop.org>
@@ -13,7 +14,6 @@
  *                                                                         *
  ***************************************************************************
 */
-
 
 #include "autoprojectwidget.h"
 
@@ -648,19 +648,28 @@ TargetItem *AutoProjectWidget::createTargetItem( const QString &name,
 	return titem;
 }
 
-
 FileItem *AutoProjectWidget::createFileItem( const QString &name, SubprojectItem *subproject )
 {
 	bool is_subst;
-	if(name.find("$(") == 0 || name.find("${") == 0)
-		is_subst = true;
-	else
+    QString sFileName_Rel2Proj = QString::null;
+    if(name.find("$(") == 0 || name.find("${") == 0) {
+        is_subst = true;
+
+        if (QString("$(top_srcdir)") == name.left(13)) {
+            sFileName_Rel2Proj += m_part->projectDirectory();
+        }
+
+      sFileName_Rel2Proj += "/" + name.mid(14);
+    }
+    else {
 		is_subst = false;
+    }
 
 	FileItem * fitem = new FileItem( m_subprojectView->listView(), name, is_subst );
 	fitem->uiFileLink = m_detailView->getUiFileLink(subproject->relativePath()+"/", name );
 	m_subprojectView->listView()->takeItem( fitem );
 	fitem->name = name;
+    fitem->m_sRelativeToProjName = sFileName_Rel2Proj;
 
 	return fitem;
 }
@@ -744,5 +753,3 @@ MakefileHandler* AutoProjectWidget::makefileHandler()
 {
 	return m_makefileHandler;
 }
-//kate: indent-mode csands; tab-width 4; space-indent off;
-

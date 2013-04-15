@@ -64,20 +64,17 @@ SubprojectItem::SubprojectItem( QListView *parent, const QString &text )
 	init();
 }
 
-
 SubprojectItem::SubprojectItem( SubprojectItem *parent, const QString &text )
 		: ProjectItem( Subproject, parent, text )
 {
 	init();
 }
 
-
 void SubprojectItem::init()
 {
 	targets.setAutoDelete( true );
 	setPixmap( 0, SmallIcon( "folder" ) );
 }
-
 
 QString SubprojectItem::relativePath()
 {
@@ -93,7 +90,6 @@ QString SubprojectItem::relativePath()
     return relpath;
 }
 
-
 /**
 * Class TargetItem
 */
@@ -104,7 +100,6 @@ TargetItem::TargetItem( QListView *lv, bool group, const QString &text )
 	sources.setAutoDelete( true );
 	setPixmap( 0, group ? SmallIcon( "tar" ) : SmallIcon( "binary" ) );
 }
-
 
 /**
 * Class FileItem
@@ -123,11 +118,10 @@ FileItem::FileItem( QListView *lv, const QString &text, bool set_is_subst )
 	}
 }
 
-
 void FileItem::changeSubstitution()
 {
-if(!is_subst)
-return;
+  if(!is_subst)
+    return;
 
 	bool ok;
 	QString text = QInputDialog::getText(
@@ -164,16 +158,16 @@ void FileItem::changeMakefileEntry(const QString& new_name)
 		varname = target->prefix + "_" + target->primary;
 	if( AutoDetailsView* lv = dynamic_cast<AutoDetailsView*>(listView()) )
 	{
- 		if ( SubprojectItem* subProject = lv->m_part->m_widget->selectedSubproject() )
+    if ( SubprojectItem* subProject = lv->m_part->m_widget->selectedSubproject() )
 		{
 			QStringList sources = QStringList::split(QRegExp("[ \t\n]"), subProject->variables[varname]);
 			QStringList::iterator it = sources.find(name);
 			(*it) = new_name;
 			subProject->variables[varname] = sources.join(" ");
 			replaceMap.insert(varname, subProject->variables[varname]);
-		
+
 			AutoProjectTool::addToMakefileam(subProject->path + "/Makefile.am", replaceMap);
-		
+
 			if(new_name == "")
 				target->sources.remove(this);
 		}

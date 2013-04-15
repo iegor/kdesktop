@@ -57,7 +57,6 @@ public:
 	 * configure.in as arguments to AC_OUTPUT
 	 */
 	static void configureinSaveMakefiles( QString configureinpath, QStringList makefiles );
-
 };
 
 #endif

@@ -97,47 +97,45 @@ private:
 class TargetItem : public ProjectItem
 {
 public:
-	//enum TargetKind { Program, Library, DataGroup, IconGroup, DocGroup };
+    //enum TargetKind { Program, Library, DataGroup, IconGroup, DocGroup };
 
-	TargetItem( QListView *lv, bool group, const QString &text );
+    TargetItem( QListView *lv, bool group, const QString &text );
 
-	// Target kind - not used currently
-	//TargetKind kind;
-	//! Name of target, e.g. foo
-	QString name;
-	//! One of PROGRAMS, LIBRARIES, LTLIBRARIES, SCRIPTS, HEADERS, DATA, JAVA
-	//! In addition to these automake primaries, we use KDEICON and KDEDOCS
-	//! for am_edit magic
-	QString primary;
-	//! May be bin, pkglib, noinst, check, sbin, pkgdata, java...
-	QString prefix;
-	//! Content of foo_SOURCES (or java_JAVA) assignment
-	QPtrList<FileItem> sources;
-	//! Content of foo_LDFLAGS assignment
-	QString ldflags;
-	//! Content of foo_LDADD assignment
-	QString ldadd;
-	//! Content of foo_LIBADD assignment
-	QString libadd;
-	//! Content of foo_DEPENDENCIES assignment
-	QString dependencies;
+    // Target kind - not used currently
+    //TargetKind kind;
+    //! Name of target, e.g. foo
+    QString name;
+    //! One of PROGRAMS, LIBRARIES, LTLIBRARIES, SCRIPTS, HEADERS, DATA, JAVA
+    //! In addition to these automake primaries, we use KDEICON and KDEDOCS
+    //! for am_edit magic
+    QString primary;
+    //! May be bin, pkglib, noinst, check, sbin, pkgdata, java...
+    QString prefix;
+    //! Content of foo_SOURCES (or java_JAVA) assignment
+    QPtrList<FileItem> sources;
+    //! Content of foo_LDFLAGS assignment
+    QString ldflags;
+    //! Content of foo_LDADD assignment
+    QString ldadd;
+    //! Content of foo_LIBADD assignment
+    QString libadd;
+    //! Content of foo_DEPENDENCIES assignment
+    QString dependencies;
 };
 
 
 // Not sure if this complexity is really necessary...
 class FileItem : public ProjectItem
 {
-
 public:
-	FileItem( QListView *lv, const QString &text, bool set_is_subst = false );
-	void changeSubstitution();
-	void changeMakefileEntry( const QString& );
+    FileItem( QListView *lv, const QString &text, bool set_is_subst = false );
+    void changeSubstitution();
+    void changeMakefileEntry( const QString& );
 
-	QString name;
-	QString uiFileLink;
-	const bool is_subst;
+    QString name;
+    QString uiFileLink;
+    const bool is_subst;
+    QString m_sRelativeToProjName;
 };
 
-#endif 
-// kate: indent-mode csands; tab-width 4;
-
+#endif

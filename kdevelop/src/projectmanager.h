@@ -40,7 +40,6 @@ Loads and unloads projects.
 class ProjectManager : public QObject, public KXMLGUIClient
 {
   Q_OBJECT
-
 public:
 
   ~ProjectManager();
@@ -105,6 +104,13 @@ private:
   QString m_vcsName;
 
   QString m_oldProfileName;
+};
+
+#if (VSTUDIO_SUPPORT == 1)
+class VSProjectManager : public ProjectManager {
+  Q_OBJECT
+public:
+
 };
 
 

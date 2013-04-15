@@ -22,7 +22,6 @@ class AutoProjectPart;
 class SubprojectItem;
 class TargetItem;
 
-
 class RemoveFileDialog : public RemoveFileDlgBase
 {
 	Q_OBJECT

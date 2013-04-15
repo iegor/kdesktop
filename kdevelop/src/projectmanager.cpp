@@ -130,8 +130,8 @@ void ProjectManager::slotOpenProject()
 	QString defaultProjectsDir = config->readPathEntry("DefaultProjectsDir", QDir::homeDirPath()+"/");
 
   KURL url = KFileDialog::getOpenURL(defaultProjectsDir,
-		i18n("*.kdevelop|KDevelop 3 Project Files\n"
-		     "*.kdevprj|KDevelop 2 Project Files"),
+		i18n("*.kdevelop|KDevelop 3 Project Files"
+		     "\n*.kdevprj|KDevelop 2 Project Files"),
 		TopLevel::getInstance()->main(), i18n("Open Project") );
 
   if( url.isEmpty() )
@@ -294,7 +294,7 @@ void ProjectManager::slotLoadProject( )
   m_openRecentProjectAction->addURL(projectFile(), projectName());  // KDE >= 3.5.x
 #else
   m_openRecentProjectAction->addURL(projectFile());                 // KDE 3.4.x
-#endif 
+#endif
   m_closeProjectAction->setEnabled(true);
   m_projectOptionsAction->setEnabled(true);
 
